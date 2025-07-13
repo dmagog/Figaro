@@ -196,3 +196,62 @@ async def admin_purchases(request: Request, session=Depends(get_session)):
         "request": request
     }
     return templates.TemplateResponse("admin_purchases.html", context)
+
+
+@home_route.get("/admin/concerts", response_class=HTMLResponse)
+async def admin_concerts(request: Request, session=Depends(get_session)):
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Доступ запрещён")
+
+    from models import Concert, Hall
+    from sqlalchemy import select
+    concerts = session.exec(select(Concert)).scalars().all()
+    halls = {h.id: h for h in session.exec(select(Hall)).scalars().all()}
+
+    # Заглушка для количества оставшихся билетов
+    def get_tickets_left(concert_id):
+        import random
+        return random.randint(0, 20)
+
+    concerts_data = []
+    for c in concerts:
+        hall = halls.get(c.hall_id)
+        seats = hall.seats if hall else 0
+        tickets_left = get_tickets_left(c.id)
+        tickets_available = tickets_left > 0
+        concerts_data.append({
+            'concert': c,
+            'hall': hall,
+            'seats': seats,
+            'tickets_left': tickets_left,
+            'tickets_available': tickets_available
+        })
+
+    # Формируем список уникальных дней концертов
+    concert_days = []
+    seen = set()
+    for item in concerts_data:
+        dt = item['concert'].datetime
+        if dt:
+            day = dt.date()
+            if day not in seen:
+                concert_days.append(day)
+                seen.add(day)
+    concert_days.sort()
+
+    context = {
+        "user": user_obj,
+        "concerts_data": concerts_data,
+        "concert_days": concert_days,
+        "request": request
+    }
+    return templates.TemplateResponse("admin_concerts.html", context)

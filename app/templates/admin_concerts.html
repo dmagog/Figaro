@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Концерты — Админка</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        body { background: #f6f7fb; font-family: 'Segoe UI', 'Arial', sans-serif; }
+        .admin-container { max-width: 1200px; margin: 40px auto; padding: 30px; background: white; border-radius: 18px; box-shadow: 0 8px 32px rgba(60,60,120,0.08); }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .admin-header h1 { font-size: 2.2em; margin: 0; }
+        .admin-nav { display: flex; gap: 18px; }
+        .admin-nav a { background: #667eea; color: white; padding: 10px 22px; border-radius: 8px; text-decoration: none; font-weight: 500; transition: background 0.2s; }
+        .admin-nav a:hover { background: #4f5bd5; }
+        table { width: 100%; border-collapse: collapse; margin-top: 30px; background: #f8f9fa; border-radius: 12px; overflow: hidden; }
+        th, td { padding: 14px 10px; text-align: left; }
+        th { background: #e0e7ff; color: #333; font-weight: 600; }
+        tr:nth-child(even) { background: #f0f4ff; }
+        tr:hover { background: #e3eafe; }
+
+        /* Новый стиль бейджа номера концерта */
+        .concert-title-flex {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .concert-number {
+            display: inline-block;
+            width: 48px;
+            height: 28px;
+            padding-left: 10px;
+            font-size: 1.08em;
+            font-weight: bold;
+            color: #fff;
+            border-radius: 0 12px 12px 0;
+            margin-right: 10px;
+            text-align: left;
+            line-height: 28px;
+            vertical-align: middle;
+        }
+        .concert-number-day1 { background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); }
+        .concert-number-day2 { background: linear-gradient(90deg, #6366f1 0%, #818cf8 100%); }
+        .concert-number-day3 { background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%); }
+        .concert-number-day4 { background: linear-gradient(90deg, #06b6d4 0%, #0ea5e9 100%); }
+        .concert-number-day5 { background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%); }
+        .concert-number-day6 { background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%); }
+        .concert-number-day7 { background: linear-gradient(90deg, #818cf8 0%, #3b82f6 100%); }
+        .concert-title-text {
+            flex: 1;
+            line-height: 1.3;
+            font-size: 1.08em;
+            font-weight: 500;
+        }
+        .concert-date-text {
+            display: block;
+            font-size: 0.95em;
+            color: #888;
+            margin-top: 2px;
+            font-weight: 400;
+        }
+        /* Новый стиль бейджа зала */
+        .hall-badge {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            border-radius: 8px;
+            padding: 4px 14px;
+            font-size: 1em;
+            font-weight: 400;
+            margin: 0;
+        }
+        .tickets-badge { font-weight: bold; color: #1976d2; background: #e0e7ff; border-radius: 8px; padding: 4px 12px; display: inline-block; }
+        .tickets-badge.no { color: #fff; background: #e57373; }
+        th.sortable { cursor: pointer; user-select: none; position: relative; transition: background 0.15s, color 0.15s; }
+        th.sortable:hover { background: #dbeafe; color: #4f5bd5; }
+        th.sortable:after { content: ''; position: absolute; right: 10px; font-size: 1em; }
+        th.sorted-asc:after { content: '▲'; }
+        th.sorted-desc:after { content: '▼'; }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>Концерты</h1>
+            <nav class="admin-nav">
+                <a href="/admin">Главная</a>
+                <a href="/admin/users">Пользователи</a>
+                <a href="/admin/purchases">Покупки</a>
+                <a href="/admin/concerts">Концерты</a>
+                <a href="/">На сайт</a>
+            </nav>
+        </div>
+        <!-- Фильтры по дням -->
+        <div class="filter-block" id="day-filters" style="margin-bottom: 18px; display: flex; align-items: center; gap: 18px; background: #f4f6fb; border-radius: 12px; padding: 14px 24px;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                {% set month_names = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'] %}
+                {% for day in concert_days %}
+                    <a href="#" class="day-filter-link" data-day="{{ day.isoformat() }}" style="display:inline-block; padding:7px 18px; border-radius:8px; background:#e0e7ff; color:#4f5bd5; font-weight:500; text-decoration:none; font-size:1.05em; transition:background 0.15s, color 0.15s;">{{ day.day }} {{ month_names[day.month-1] }}</a>
+                {% endfor %}
+            </div>
+            <button id="reset-day-filter" type="button" style="height:38px; width:38px; display:flex; align-items:center; justify-content:center; border:none; border-radius:50%; background:#e0e7ff; color:#4f5bd5; font-size:1.3em; margin-left:10px; box-shadow:0 2px 8px rgba(102,126,234,0.07); cursor:pointer; transition:background 0.2s;" title="Сбросить фильтр по дню">
+                &#8635;
+            </button>
+        </div>
+        <div id="concerts-count" style="margin: 8px 0 0 0; color: #aaa; font-size: 0.98em; text-align: right;">
+            Показано концертов: <span id="concerts-count-value">{{ concerts_data|length }}</span>
+        </div>
+        <table id="concerts-table">
+            <thead>
+                <tr>
+                    <th class="sortable" colspan="2">Концерт</th>
+                    <th class="sortable">Зал</th>
+                    <th class="sortable">Всего мест</th>
+                    <th class="sortable">Осталось билетов</th>
+                    <th class="sortable">Доступно</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in concerts_data %}
+                <tr>
+                    <td colspan="2">
+                        <div class="concert-title-flex">
+                            {% set concert = item.concert %}
+                            {% set day = 1 %}
+                            {% if concert.datetime %}
+                                {% set day = concert.datetime.day %}
+                                {% if day > 7 %}{% set day = 7 %}{% endif %}
+                                {% if day < 1 %}{% set day = 1 %}{% endif %}
+                            {% endif %}
+                            <span class="concert-number concert-number-day{{ day }}">{{ concert.id }}</span>
+                            <span class="concert-title-text">
+                                {{ concert.name }}
+                                {% if concert.datetime %}
+                                    <span class="concert-date-text" data-day="{{ concert.datetime.date().isoformat() }}">
+                                        {{ concert.datetime.day }}
+                                        {% set month_names = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'] %}
+                                        {{ month_names[concert.datetime.month-1] }},
+                                        {{ concert.datetime.strftime('%H:%M') }}
+                                    </span>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </td>
+                    <td><span class="hall-badge">{{ item.hall.name if item.hall else '—' }}</span></td>
+                    <td>{{ item.seats }}</td>
+                    <td>
+                        <span class="tickets-badge{% if not item.tickets_available %} no{% endif %}">
+                            {{ item.tickets_left }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if item.tickets_available %}
+                            <span style="color:#388e3c; font-weight:600;">Да</span>
+                        {% else %}
+                            <span style="color:#e53935; font-weight:600;">Нет</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <script>
+    // Функция для обновления счётчика видимых концертов
+    function updateConcertsCount() {
+        const table = document.getElementById('concerts-table');
+        const countSpan = document.getElementById('concerts-count-value');
+        if (!table || !countSpan) return;
+        let visible = 0;
+        Array.from(table.tBodies[0].rows).forEach(row => {
+            if (row.style.display !== 'none') visible++;
+        });
+        countSpan.textContent = visible;
+    }
+    // JS-сортировка таблицы по клику на заголовки
+    document.addEventListener('DOMContentLoaded', function() {
+        const table = document.getElementById('concerts-table');
+        const headers = table.querySelectorAll('th.sortable');
+        let sortCol = null;
+        let sortDir = 1;
+
+        headers.forEach((th, idx) => {
+            th.addEventListener('click', function() {
+                if (sortCol === idx) {
+                    sortDir = -sortDir;
+                } else {
+                    sortCol = idx;
+                    sortDir = 1;
+                }
+                headers.forEach(h => h.classList.remove('sorted-asc', 'sorted-desc'));
+                th.classList.add(sortDir === 1 ? 'sorted-asc' : 'sorted-desc');
+                sortTable(idx, sortDir);
+                updateConcertsCount();
+            });
+        });
+        function parseCell(cell, idx) {
+            let text = cell.textContent.trim();
+            // Сортировка по номеру концерта для объединённой колонки (индекс 0)
+            if (idx === 0) {
+                let numEl = cell.querySelector && cell.querySelector('.concert-number');
+                if (numEl) {
+                    return parseInt(numEl.textContent.trim()) || 0;
+                }
+            }
+            if (idx === 2 || idx === 3 || idx === 4) {
+                return parseInt(text.replace(/[^\d]/g, '')) || 0;
+            }
+            if (idx === 5) {
+                // Доступно: Да/Нет
+                return text === 'Да' ? 1 : 0;
+            }
+            return text.toLowerCase();
+        }
+        function sortTable(col, dir) {
+            const tbody = table.tBodies[0];
+            const rows = Array.from(tbody.rows);
+            rows.sort((a, b) => {
+                let A = parseCell(a.cells[col], col);
+                let B = parseCell(b.cells[col], col);
+                if (A < B) return -1 * dir;
+                if (A > B) return 1 * dir;
+                return 0;
+            });
+            rows.forEach(row => tbody.appendChild(row));
+        }
+    });
+    // Фильтр по дням концертов
+    document.addEventListener('DOMContentLoaded', function() {
+        const dayLinks = document.querySelectorAll('.day-filter-link');
+        const resetBtn = document.getElementById('reset-day-filter');
+        const table = document.getElementById('concerts-table');
+        let activeDay = null;
+        dayLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                dayLinks.forEach(l => l.style.background = '#e0e7ff');
+                dayLinks.forEach(l => l.style.color = '#4f5bd5');
+                this.style.background = '#4f5bd5';
+                this.style.color = '#fff';
+                activeDay = this.getAttribute('data-day');
+                filterByDay();
+            });
+        });
+        resetBtn.addEventListener('click', function() {
+            dayLinks.forEach(l => l.style.background = '#e0e7ff');
+            dayLinks.forEach(l => l.style.color = '#4f5bd5');
+            activeDay = null;
+            filterByDay();
+        });
+        function filterByDay() {
+            Array.from(table.tBodies[0].rows).forEach(row => {
+                let dateText = row.querySelector('.concert-date-text');
+                if (!dateText) { row.style.display = ''; return; }
+                let rowDay = dateText.getAttribute('data-day');
+                if (!activeDay) { row.style.display = ''; return; }
+                if (rowDay === activeDay) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            updateConcertsCount();
+        }
+        // Обновлять счётчик при загрузке
+        updateConcertsCount();
+    });
+    </script>
+</body>
+</html> 
