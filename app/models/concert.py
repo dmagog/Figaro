@@ -1,19 +1,26 @@
-from typing import Optional
+from typing import Optional, List
 from sqlmodel import SQLModel, Field, Relationship
 from datetime import datetime, timedelta
 
-from .hall import Hall  # относительный импорт
+from .hall import Hall
+from .artist import Artist, ConcertArtistLink
+from .composition import Composition, ConcertCompositionLink
+
 
 class Concert(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    external_id: int = Field(index=True, description="ID концерта во внешней системе (ShowId)")
-    name: str = Field(index=True, description="Название концерта")
+    external_id: int = Field(index=True)
+    name: str
     datetime: datetime
-    duration: timedelta  = Field(default=timedelta(minutes=45), description="Продолжительность концерта")
-    genre: Optional[str] = Field(default=None, description="Жанр концерта")
-    price: Optional[int] = Field(default=None, description="Цена билета")
-    is_family_friendly: bool = Field(default=False, description="Подходит для семейного посещения")
-    tickets_available: bool = Field(default=True, description="Билеты в продаже")
-    link: Optional[str] = Field(default=None, description="Ссылка на страницу концерта")
+    duration: timedelta
+    genre: Optional[str]
+    price: Optional[int]
+    is_family_friendly: bool = Field(default=False)
+    tickets_available: bool = Field(default=True)
+    link: Optional[str]
 
     hall_id: int = Field(foreign_key="hall.id")
+    hall: Optional[Hall] = Relationship()
+
+    artists: List[Artist] = Relationship(back_populates="concerts", link_model=ConcertArtistLink)
+    compositions: List[Composition] = Relationship(back_populates="concerts", link_model=ConcertCompositionLink)
