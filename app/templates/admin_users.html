@@ -53,29 +53,39 @@
             </nav>
         </div>
         <div class="filter-block">
-            <div class="filter-item" style="flex:2; min-width:220px;">
+            <div class="filter-item" style="flex:2; min-width:200px;">
                 <label for="search-input">Поиск</label>
                 <input type="text" id="search-input" placeholder="Поиск по всем полям...">
             </div>
-            <div class="filter-item">
+            <div class="filter-item" style="min-width:140px;">
                 <label for="role-filter">Роль</label>
                 <select id="role-filter">
                     <option value="">Все роли</option>
-                    <option value="Суперадмин">Суперадмин</option>
-                    <option value="Пользователь">Пользователь</option>
-                    <option value="Админ">Админ</option>
+                    {% set roles = users | map(attribute='role') | list %}
+                    {% set unique_roles = roles | map('lower') | unique | list %}
+                    {% for role in unique_roles %}
+                        <option value="{{ role|title }}">{{ role|title }}</option>
+                    {% endfor %}
                 </select>
             </div>
-            <div class="filter-item">
+            <div class="filter-item" style="min-width:140px;">
                 <label for="date-from">Дата регистрации от</label>
                 <input type="date" id="date-from">
             </div>
-            <div class="filter-item">
+            <div class="filter-item" style="min-width:140px;">
                 <label for="date-to">Дата регистрации до</label>
                 <input type="date" id="date-to">
             </div>
+            <div style="display:flex; align-items:flex-end; padding-bottom:2px; margin-left:8px;">
+                <button id="reset-filters" type="button" style="height:44px; width:44px; display:flex; align-items:center; justify-content:center; border:none; border-radius:50%; background:#e0e7ff; color:#4f5bd5; font-size:1.5em; box-shadow:0 2px 8px rgba(102,126,234,0.07); cursor:pointer; transition:background 0.2s;">
+                    <span title="Сбросить фильтры" style="display:inline-block; line-height:1;">&#8635;</span>
+                </button>
+            </div>
         </div>
         <table id="users-table">
+        <div style="margin: 8px 0 0 0; color: #aaa; font-size: 0.98em; text-align: right;">
+            Всего пользователей: {{ users|length }}, с покупками: {{ users_with_purchases_count }}
+        </div>
             <thead>
                 <tr>
                     <th class="sortable">Email</th>
@@ -117,10 +127,11 @@
         const roleFilter = document.getElementById('role-filter');
         const dateFrom = document.getElementById('date-from');
         const dateTo = document.getElementById('date-to');
+        const resetBtn = document.getElementById('reset-filters');
 
         function filterTable() {
             const search = searchInput.value.toLowerCase();
-            const role = roleFilter.value;
+            const role = roleFilter.value.toLowerCase();
             const from = dateFrom.value;
             const to = dateTo.value;
             Array.from(table.tBodies[0].rows).forEach(row => {
@@ -130,26 +141,41 @@
                 if (search && !cells.some(c => c.includes(search))) show = false;
                 // Фильтр по роли
                 if (role) {
-                    let roleCell = row.cells[2].textContent.trim();
+                    let roleCell = row.cells[2].textContent.trim().toLowerCase();
                     if (roleCell !== role) show = false;
                 }
                 // Фильтр по дате регистрации
+                // Преобразуем дату из таблицы в ISO (YYYY-MM-DD)
+                function toISODate(d) {
+                    let parts = d.split('.');
+                    if (parts.length === 3) {
+                        let day = parts[0].padStart(2, '0');
+                        let month = parts[1].padStart(2, '0');
+                        let year = parts[2];
+                        return `${year}-${month}-${day}`;
+                    }
+                    return '';
+                }
+                let rowDateISO = toISODate(row.cells[3].textContent.trim());
                 if (from) {
-                    let d = row.cells[3].textContent.split('.');
-                    let rowDate = new Date(d[2], d[1]-1, d[0]);
-                    let fromDate = new Date(from);
-                    if (rowDate < fromDate) show = false;
+                    if (rowDateISO < from) show = false;
                 }
                 if (to) {
-                    let d = row.cells[3].textContent.split('.');
-                    let rowDate = new Date(d[2], d[1]-1, d[0]);
-                    let toDate = new Date(to);
-                    if (rowDate > toDate) show = false;
+                    if (rowDateISO > to) show = false;
                 }
                 row.style.display = show ? '' : 'none';
             });
         }
         [searchInput, roleFilter, dateFrom, dateTo].forEach(el => el && el.addEventListener('input', filterTable));
+
+        // Сброс фильтров
+        resetBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            roleFilter.value = '';
+            dateFrom.value = '';
+            dateTo.value = '';
+            filterTable();
+        });
 
         // Сортировка (оставляем как было)
         headers.forEach((th, idx) => {

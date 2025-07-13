@@ -110,10 +110,13 @@ async def admin_users(request: Request, session=Depends(get_session)):
         spent = session.exec(select(func.coalesce(func.sum(Purchase.price), 0)).where(Purchase.user_external_id == str(ext_id))).scalar_one()
         user_stats[u.id] = {"count": count, "spent": spent}
 
+    users_with_purchases_count = sum(1 for u in users if user_stats.get(u.id, {}).get('count', 0) > 0)
+
     context = {
         "user": user_obj,
         "users": users,
         "user_stats": user_stats,
+        "users_with_purchases_count": users_with_purchases_count,
         "request": request
     }
     return templates.TemplateResponse("admin_users.html", context)
