@@ -3,6 +3,8 @@ from sqlmodel import Session, select
 from models import Purchase, Concert, Hall
 from typing import List, Optional
 from datetime import datetime
+from models import User
+from sqlalchemy import func
 
 
 def get_user_purchased_concerts(session: Session, user_external_id: str) -> List[Concert]:
@@ -127,3 +129,26 @@ def get_user_purchases_by_date_range(
     
     concerts = session.exec(statement).all()
     return concerts 
+
+
+def get_festival_summary_stats(session: Session) -> dict:
+    """
+    Возвращает сводную статистику по фестивалю:
+    - Количество пользователей
+    - Количество концертов
+    - Количество купленных билетов
+    - Сумма покупок
+    - Средняя заполняемость концертов (купленных билетов / концертов)
+    """
+    users_count = session.exec(select(func.count(User.id))).one()
+    concerts_count = session.exec(select(func.count(Concert.id))).one()
+    tickets_count = session.exec(select(func.count(Purchase.id))).one()
+    total_spent = session.exec(select(func.coalesce(func.sum(Purchase.price), 0))).one()
+    avg_fill = (tickets_count / concerts_count) if concerts_count else 0
+    return {
+        "users_count": users_count,
+        "concerts_count": concerts_count,
+        "tickets_count": tickets_count,
+        "total_spent": total_spent,
+        "avg_fill": avg_fill
+    } 

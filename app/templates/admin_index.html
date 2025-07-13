@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админка — Фестиваль Фигаро</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        body {
+            background: #f6f7fb;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+        }
+        .admin-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 8px 32px rgba(60,60,120,0.08);
+        }
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .admin-header h1 {
+            font-size: 2.2em;
+            margin: 0;
+        }
+        .admin-nav {
+            display: flex;
+            gap: 18px;
+        }
+        .admin-nav a {
+            background: #667eea;
+            color: white;
+            padding: 10px 22px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .admin-nav a:hover {
+            background: #4f5bd5;
+        }
+        .admin-summary {
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 24px;
+        }
+        .summary-card {
+            background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 100%);
+            border-radius: 12px;
+            padding: 24px 18px;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.07);
+            text-align: center;
+        }
+        .summary-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.1em;
+            color: #667eea;
+            font-weight: 600;
+        }
+        .summary-card p {
+            margin: 0;
+            font-size: 2em;
+            font-weight: bold;
+            color: #222;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>Админка фестиваля</h1>
+            <nav class="admin-nav">
+                <a href="/admin">Главная</a>
+                <a href="/admin/users">Пользователи</a>
+                <a href="/admin/purchases">Покупки</a>
+                <a href="/">На сайт</a>
+            </nav>
+        </div>
+        <div>
+            <h2>Добро пожаловать, {{ user.name or user.email }}!</h2>
+            <p>Это главная страница админки. Здесь будет сводная статистика и быстрый доступ к разделам управления.</p>
+        </div>
+        <div class="admin-summary">
+            <div class="summary-card">
+                <h3>Пользователей</h3>
+                <p>{{ summary.users_count }}</p>
+            </div>
+            <div class="summary-card">
+                <h3>Концертов</h3>
+                <p>{{ summary.concerts_count }}</p>
+            </div>
+            <div class="summary-card">
+                <h3>Билетов куплено</h3>
+                <p>{{ summary.tickets_count }}</p>
+            </div>
+            <div class="summary-card">
+                <h3>Сумма покупок</h3>
+                <p>{{ "{:,}".format(summary.total_spent) }} ₽</p>
+            </div>
+            <div class="summary-card">
+                <h3>Средняя заполняемость</h3>
+                <p>{{ '%.2f' % summary.avg_fill }}</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

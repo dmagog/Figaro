@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Пользователи — Админка</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        body { background: #f6f7fb; font-family: 'Segoe UI', 'Arial', sans-serif; }
+        .admin-container { max-width: 1200px; margin: 40px auto; padding: 30px; background: white; border-radius: 18px; box-shadow: 0 8px 32px rgba(60,60,120,0.08); }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .admin-header h1 { font-size: 2.2em; margin: 0; }
+        .admin-nav { display: flex; gap: 18px; }
+        .admin-nav a { background: #667eea; color: white; padding: 10px 22px; border-radius: 8px; text-decoration: none; font-weight: 500; transition: background 0.2s; }
+        .admin-nav a:hover { background: #4f5bd5; }
+        table { width: 100%; border-collapse: collapse; margin-top: 30px; background: #f8f9fa; border-radius: 12px; overflow: hidden; }
+        th, td { padding: 14px 10px; text-align: left; }
+        th { background: #e0e7ff; color: #333; font-weight: 600; }
+        tr:nth-child(even) { background: #f0f4ff; }
+        tr:hover { background: #e3eafe; }
+        .role-badge { display: inline-block; padding: 4px 12px; border-radius: 8px; background: #e3f2fd; color: #1976d2; font-size: 0.95em; font-weight: 500; }
+        .superuser-badge { background: #ffe082; color: #b28704; }
+        th.sortable { cursor: pointer; user-select: none; position: relative; }
+        th.sortable:after {
+            content: '';
+            position: absolute;
+            right: 10px;
+            font-size: 1em;
+        }
+        th.sorted-asc:after { content: '▲'; }
+        th.sorted-desc:after { content: '▼'; }
+        /* Кастомные стили для select и input (как в admin_purchases.html) */
+        .filter-block { background: #f4f6fb; border-radius: 12px; padding: 18px 24px; margin-bottom: 18px; box-shadow: 0 2px 8px rgba(102,126,234,0.07); display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; }
+        .filter-item { min-width: 180px; flex: 1 1 180px; display: flex; flex-direction: column; }
+        .filter-item label { font-size:0.95em; color:#667eea; margin-bottom:4px; }
+        .filter-item input,
+        .filter-item select { height: 44px; font-size: 1em; border-radius: 10px; border: 1.5px solid #bfc8e6; padding: 0 14px; background: #f8f9fa; box-shadow: 0 2px 8px rgba(102,126,234,0.07); transition: border 0.2s, box-shadow 0.2s; outline: none; }
+        .filter-item input:focus,
+        .filter-item select:focus { border: 1.5px solid #667eea; box-shadow: 0 4px 16px rgba(102,126,234,0.13); }
+        .filter-item select { appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill="%23667eea" height="20" viewBox="0 0 20 20" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7.293 7.293a1 1 0 011.414 0L10 8.586l1.293-1.293a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z"/></svg>'); background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; }
+        .filter-item select::-ms-expand { display: none; }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>Пользователи</h1>
+            <nav class="admin-nav">
+                <a href="/admin">Главная</a>
+                <a href="/admin/users">Пользователи</a>
+                <a href="/admin/purchases">Покупки</a>
+                <a href="/">На сайт</a>
+            </nav>
+        </div>
+        <div class="filter-block">
+            <div class="filter-item" style="flex:2; min-width:220px;">
+                <label for="search-input">Поиск</label>
+                <input type="text" id="search-input" placeholder="Поиск по всем полям...">
+            </div>
+            <div class="filter-item">
+                <label for="role-filter">Роль</label>
+                <select id="role-filter">
+                    <option value="">Все роли</option>
+                    <option value="Суперадмин">Суперадмин</option>
+                    <option value="Пользователь">Пользователь</option>
+                    <option value="Админ">Админ</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label for="date-from">Дата регистрации от</label>
+                <input type="date" id="date-from">
+            </div>
+            <div class="filter-item">
+                <label for="date-to">Дата регистрации до</label>
+                <input type="date" id="date-to">
+            </div>
+        </div>
+        <table id="users-table">
+            <thead>
+                <tr>
+                    <th class="sortable">Email</th>
+                    <th class="sortable">Имя</th>
+                    <th class="sortable">Роль</th>
+                    <th class="sortable">Дата регистрации</th>
+                    <th class="sortable">Покупок</th>
+                    <th class="sortable">Потрачено</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>{{ u.email }}</td>
+                    <td>{{ u.name or '—' }}</td>
+                    <td>
+                        <span class="role-badge{% if u.is_superuser %} superuser-badge{% endif %}">
+                            {% if u.is_superuser %}Суперадмин{% else %}{{ u.role|title }}{% endif %}
+                        </span>
+                    </td>
+                    <td>{{ u.created_at.strftime('%d.%m.%Y') if u.created_at else '—' }}</td>
+                    <td>{{ user_stats[u.id].count }}</td>
+                    <td>{{ "{:,}".format(user_stats[u.id].spent) }} ₽</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <script>
+    // JS-сортировка и фильтрация таблицы
+    document.addEventListener('DOMContentLoaded', function() {
+        const table = document.getElementById('users-table');
+        const headers = table.querySelectorAll('th.sortable');
+        let sortCol = null;
+        let sortDir = 1;
+
+        // Фильтры
+        const searchInput = document.getElementById('search-input');
+        const roleFilter = document.getElementById('role-filter');
+        const dateFrom = document.getElementById('date-from');
+        const dateTo = document.getElementById('date-to');
+
+        function filterTable() {
+            const search = searchInput.value.toLowerCase();
+            const role = roleFilter.value;
+            const from = dateFrom.value;
+            const to = dateTo.value;
+            Array.from(table.tBodies[0].rows).forEach(row => {
+                let cells = Array.from(row.cells).map(td => td.textContent.toLowerCase());
+                let show = true;
+                // Поиск по всем полям
+                if (search && !cells.some(c => c.includes(search))) show = false;
+                // Фильтр по роли
+                if (role) {
+                    let roleCell = row.cells[2].textContent.trim();
+                    if (roleCell !== role) show = false;
+                }
+                // Фильтр по дате регистрации
+                if (from) {
+                    let d = row.cells[3].textContent.split('.');
+                    let rowDate = new Date(d[2], d[1]-1, d[0]);
+                    let fromDate = new Date(from);
+                    if (rowDate < fromDate) show = false;
+                }
+                if (to) {
+                    let d = row.cells[3].textContent.split('.');
+                    let rowDate = new Date(d[2], d[1]-1, d[0]);
+                    let toDate = new Date(to);
+                    if (rowDate > toDate) show = false;
+                }
+                row.style.display = show ? '' : 'none';
+            });
+        }
+        [searchInput, roleFilter, dateFrom, dateTo].forEach(el => el && el.addEventListener('input', filterTable));
+
+        // Сортировка (оставляем как было)
+        headers.forEach((th, idx) => {
+            th.addEventListener('click', function() {
+                if (sortCol === idx) {
+                    sortDir = -sortDir;
+                } else {
+                    sortCol = idx;
+                    sortDir = 1;
+                }
+                headers.forEach(h => h.classList.remove('sorted-asc', 'sorted-desc'));
+                th.classList.add(sortDir === 1 ? 'sorted-asc' : 'sorted-desc');
+                sortTable(idx, sortDir);
+            });
+        });
+        function parseCell(cell, idx) {
+            let text = cell.textContent.trim();
+            if (idx === 3) { // дата
+                let parts = text.split('.');
+                if (parts.length === 3) return new Date(parts[2], parts[1]-1, parts[0]);
+            }
+            if (idx === 4 || idx === 5) { // числа
+                return parseInt(text.replace(/[^\d]/g, '')) || 0;
+            }
+            return text.toLowerCase();
+        }
+        function sortTable(col, dir) {
+            const tbody = table.tBodies[0];
+            const rows = Array.from(tbody.rows);
+            rows.sort((a, b) => {
+                let A = parseCell(a.cells[col], col);
+                let B = parseCell(b.cells[col], col);
+                if (A < B) return -1 * dir;
+                if (A > B) return 1 * dir;
+                return 0;
+            });
+            rows.forEach(row => tbody.appendChild(row));
+        }
+    });
+    </script>
+</body>
+</html> 

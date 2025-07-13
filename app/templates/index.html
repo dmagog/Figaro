@@ -133,6 +133,9 @@
                     <p>Привет, {{ user.name or user.email }}!</p>
                     <div class="user-actions">
                         <a href="/profile" class="btn btn-primary">Личный кабинет</a>
+                        {% if user.is_superuser %}
+                        <a href="/admin" class="btn btn-primary" style="background: #667eea; color: #fff;">Админка</a>
+                        {% endif %}
                         <a href="/logout" class="btn btn-secondary">Выйти</a>
                     </div>
                 </div>
