@@ -19,3 +19,5 @@ pytest
 httpx
 jose
 openpyxl
+bcrypt
+python-multipart

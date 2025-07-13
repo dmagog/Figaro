@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Фестиваль Фигаро</title>
+</head>
+<body>
+    <h1>Добро пожаловать на фестиваль «Безумные дни в Екатеринбурге»!</h1>
+    <div><i>Figaro - конструктор маршрутов фестиваля</i></div>
+    
+    {% if login %}
+        <p>Привет, {{ user.name }}!</p>
+        {% if user %}
+            <p>Пользователь: {{ user.email }}</p>
+        {% endif %}
+        <a href="/logout">Выйти</a>
+    {% else %}
+        <p>Пожалуйста, <a href="/login">войдите</a> или <a href="/register">зарегистрируйтесь</a></p>
+    {% endif %}
+    
+    <h2>Концерты фестиваля</h2>
+    <p>Здесь будет список концертов...</p>
+</body>
+</html> 

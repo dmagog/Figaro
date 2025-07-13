@@ -8,8 +8,8 @@ import datetime
 if __name__ == "__main__":
 
     settings = get_settings()
-    print('gfo gso = ', settings.DB_HOST)
-    print('gfo gso = =', settings.DB_NAME)
+    # print('gfo gso = ', settings.DB_HOST)
+    # print('gfo gso = =', settings.DB_NAME)
 
     init_db(demostart = True)
     print('Init db has been success')

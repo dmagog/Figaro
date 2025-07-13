@@ -4,6 +4,7 @@ from .artist import Artist, ConcertArtistLink
 from .composition import Composition, ConcertCompositionLink, Author
 from .purchase import Purchase
 from .user import User
+from .festival_day import FestivalDay
 
 __all__ = [
     "Hall",
@@ -14,5 +15,6 @@ __all__ = [
     "ConcertArtistLink",
     "ConcertCompositionLink",
     "Purchase",
-    "User"
+    "User",
+    "FestivalDay"
 ]

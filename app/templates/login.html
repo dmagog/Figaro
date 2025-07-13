@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход - Фестиваль Фигаро</title>
+</head>
+<body>
+    <h1>Вход в систему</h1>
+    
+    {% if msg %}
+        <p style="color: green;">{{ msg }}</p>
+    {% endif %}
+    
+    {% if errors %}
+        <ul style="color: red;">
+        {% for error in errors %}
+            <li>{{ error }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+    
+    <form method="POST" action="/login">
+        <div>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+        <div>
+            <label for="password">Пароль:</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <button type="submit">Войти</button>
+    </form>
+    
+    <p><a href="/register">Зарегистрироваться</a></p>
+    <p><a href="/">На главную</a></p>
+</body>
+</html> 
