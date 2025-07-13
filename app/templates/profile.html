@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет - конструктор маршрутов фестиваля «Безумные дни»</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        .profile-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .profile-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .profile-header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.5em;
+        }
+        
+        .user-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .info-card {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .info-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        
+        .info-card p {
+            margin: 0;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        
+        .concerts-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .concerts-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .concerts-count {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+        }
+        
+        .concerts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        
+        .concert-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 4px solid #667eea;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .concert-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        /* Цветные подложки карточек по дням фестиваля */
+        .concert-card-day1 { 
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(37, 99, 235, 0.08) 100%);
+            border-left: 4px solid #3b82f6;
+        }
+        .concert-card-day2 { 
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(129, 140, 248, 0.08) 100%);
+            border-left: 4px solid #6366f1;
+        }
+        .concert-card-day3 { 
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.05) 0%, rgba(167, 139, 250, 0.08) 100%);
+            border-left: 4px solid #7c3aed;
+        }
+        .concert-card-day4 { 
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.05) 0%, rgba(14, 165, 233, 0.08) 100%);
+            border-left: 4px solid #06b6d4;
+        }
+        .concert-card-day5 { 
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.05) 0%, rgba(56, 189, 248, 0.08) 100%);
+            border-left: 4px solid #0ea5e9;
+        }
+        .concert-card-day6 { 
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(99, 102, 241, 0.08) 100%);
+            border-left: 4px solid #2563eb;
+        }
+        .concert-card-day7 { 
+            background: linear-gradient(135deg, rgba(129, 140, 248, 0.05) 0%, rgba(59, 130, 246, 0.08) 100%);
+            border-left: 4px solid #818cf8;
+        }
+        
+        .tickets-badge {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            background: none;
+            color: #222;
+            display: flex;
+            align-items: center;
+            font-size: 1.15em;
+            font-weight: bold;
+            gap: 6px;
+            cursor: help;
+            z-index: 10;
+            box-shadow: none;
+            padding: 0;
+        }
+        .tickets-badge .icon {
+            font-size: 1.25em;
+            line-height: 1;
+            color: #1976d2;
+        }
+        .tickets-badge::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: 120%;
+            right: 0;
+            left: auto;
+            background: #333;
+            color: white;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            z-index: 1001;
+            margin-top: 6px;
+            pointer-events: none;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+        }
+        .tickets-badge:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+
+        
+        .concert-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .detail-label {
+            font-size: 0.85em;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .detail-value {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .concert-hall {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        
+        .no-concerts {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .no-concerts h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .status-card-superuser {
+            background: rgba(255,193,7,0.2);
+            border: 1px solid rgba(255,193,7,0.5);
+        }
+        
+        .status-card-user {
+            background: rgba(108,117,125,0.2);
+            border: 1px solid rgba(108,117,125,0.5);
+        }
+        
+        .concert-number-day1 { background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); }
+        .concert-number-day2 { background: linear-gradient(90deg, #6366f1 0%, #818cf8 100%); }
+        .concert-number-day3 { background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%); }
+        .concert-number-day4 { background: linear-gradient(90deg, #06b6d4 0%, #0ea5e9 100%); }
+        .concert-number-day5 { background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%); }
+        .concert-number-day6 { background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%); }
+        .concert-number-day7 { background: linear-gradient(90deg, #818cf8 0%, #3b82f6 100%); }
+        .concert-number {
+            position: absolute;
+            top: 18px;
+            left: 0;
+            color: #fff;
+            min-width: 48px;
+            height: 38px;
+            padding: 0 18px 0 12px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            font-size: 1.5em;
+            font-weight: bold;
+            border-radius: 0 16px 16px 0;
+            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.15);
+            z-index: 2;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.12);
+        }
+        
+        .concert-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            padding-right: 50px;
+            padding-left: 60px;
+            padding-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <a href="/" class="back-link">← Назад на главную</a>
+        
+        <div class="profile-header">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h1>Личный кабинет</h1>
+                    <p>Добро пожаловать, {{ user.name or user.email }}!</p>
+                </div>
+                <div class="header-actions">
+                    <a href="/logout" class="logout-btn">Выйти</a>
+                </div>
+            </div>
+            
+            <div class="user-info">
+                <div class="info-card">
+                    <h3>Email</h3>
+                    <p>{{ user.email }}</p>
+                </div>
+                <div class="info-card">
+                    <h3>Дата регистрации</h3>
+                    <p>{{ user.created_at.strftime('%d.%m.%Y') if user.created_at else 'Не указана' }}</p>
+                </div>
+                <div class="info-card">
+                    <h3>Всего концертов</h3>
+                    <p>{{ purchase_summary.total_concerts }}</p>
+                </div>
+                <div class="info-card">
+                    <h3>Потрачено</h3>
+                    <p>{{ "{:,}".format(purchase_summary.total_spent) }} ₽</p>
+                </div>
+                {% if user.is_superuser %}
+                <div class="info-card status-card-superuser">
+                    <h3>Статус</h3>
+                    <p>👑 Суперадмин</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="concerts-section">
+            <div class="concerts-header">
+                <h2>Мои концерты</h2>
+                <div class="concerts-count">
+                    {{ purchase_summary.total_concerts }}
+                    {% set n = purchase_summary.total_concerts %}
+                    {% if n == 1 %}
+                        концерт
+                    {% elif n >= 2 and n <= 4 %}
+                        концерта
+                    {% else %}
+                        концертов
+                    {% endif %}
+                </div>
+                        </div>
+            
+            <!-- Отладочная информация только для суперадминов -->
+            {% if user.is_superuser %}
+            <div style="background: #f0f0f0; padding: 10px; margin-bottom: 20px; border-radius: 5px; font-family: monospace; font-size: 12px;">
+                <strong>Отладка (только для суперадминов):</strong><br>
+                Пользователь: {{ user.email }}<br>
+                External ID: {{ user.external_id }}<br>
+                Всего покупок: {{ purchase_summary.total_purchases }}<br>
+                Всего концертов: {{ purchase_summary.total_concerts }}<br>
+                Потрачено: {{ purchase_summary.total_spent }} ₽<br>
+                Количество уникальных концертов: {{ concerts|length }}<br>
+                Роль: {{ user.role }}<br>
+                Суперадмин: {{ "Да" if user.is_superuser else "Нет" }}
+            </div>
+            {% endif %}
+            
+            {% if purchase_summary.total_concerts > 0 %}
+                <div class="concerts-grid">
+                    {% for concert_data in concerts %}
+                    <div class="concert-card concert-card-day{{ concert_data.concert_day_index }}">
+                        <!-- Номер концерта -->
+                        <div class="concert-number concert-number-day{{ concert_data.concert_day_index }}">{{ concert_data.concert.id }}</div>
+                        
+                        <div class="concert-name">{{ concert_data.concert.name }}</div>
+                        
+                        <!-- Бейдж с количеством билетов -->
+                        <div class="tickets-badge" data-tooltip="
+                            {% set n = concert_data.tickets_count %}
+                            {% if n == 1 %}
+                                Куплен 1 билет
+                            {% elif n >= 2 and n <= 4 %}
+                                Куплено {{ n }} билета
+                            {% else %}
+                                Куплено {{ n }} билетов
+                            {% endif %}">
+                            <span class="icon">🎫</span>
+                            {{ concert_data.tickets_count }}
+                        </div>
+                        
+                        <div class="concert-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Дата:</span>
+                                <span class="detail-value">
+                                    {% if concert_data.concert.datetime %}
+                                        {{ concert_data.concert.datetime.strftime('%d.%m.%Y %H:%M') }}
+                                    {% else %}
+                                        Не указана
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Длительность:</span>
+                                <span class="detail-value">
+                                    {% if concert_data.concert.duration %}
+                                        {% if concert_data.concert.duration.seconds %}
+                                            {{ (concert_data.concert.duration.seconds // 60) }} мин
+                                        {% else %}
+                                            {{ concert_data.concert.duration }}
+                                        {% endif %}
+                                    {% else %}
+                                        Не указана
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Жанр:</span>
+                                <span class="detail-value">{{ concert_data.concert.genre or 'Не указан' }}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Цена за билет:</span>
+                                <span class="detail-value">{{ concert_data.concert.price or 0 }} ₽</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Потрачено:</span>
+                                <span class="detail-value">{{ concert_data.total_spent }} ₽</span>
+                            </div>
+                        </div>
+                        <div class="concert-hall">
+                            🏛️ {{ concert_data.concert.hall.name if concert_data.concert.hall else 'Зал не указан' }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="no-concerts">
+                    <h3>У вас пока нет купленных концертов</h3>
+                    <p>Посетите главную страницу, чтобы выбрать концерты фестиваля</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html> 

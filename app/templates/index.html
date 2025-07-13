@@ -4,22 +4,154 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Фестиваль Фигаро</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.5em;
+        }
+        
+        .header .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+        
+        .user-section {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .user-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        
+        .btn-primary:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .auth-section {
+            text-align: center;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .auth-section h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .auth-links {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+        
+        .auth-links a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        
+        .auth-links a:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .content-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-top: 30px;
+        }
+        
+        .content-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Добро пожаловать на фестиваль «Безумные дни в Екатеринбурге»!</h1>
-    <div><i>Figaro - конструктор маршрутов фестиваля</i></div>
-    
-    {% if login %}
-        <p>Привет, {{ user.name }}!</p>
-        {% if user %}
-            <p>Пользователь: {{ user.email }}</p>
-        {% endif %}
-        <a href="/logout">Выйти</a>
-    {% else %}
-        <p>Пожалуйста, <a href="/login">войдите</a> или <a href="/register">зарегистрируйтесь</a></p>
-    {% endif %}
-    
-    <h2>Концерты фестиваля</h2>
-    <p>Здесь будет список концертов...</p>
+    <div class="container">
+        <div class="header">
+            <h1>Фестиваль «Безумные дни в Екатеринбурге»</h1>
+            <div class="subtitle">Figaro - конструктор маршрутов фестиваля</div>
+            
+            {% if login %}
+                <div class="user-section">
+                    <p>Привет, {{ user.name or user.email }}!</p>
+                    <div class="user-actions">
+                        <a href="/profile" class="btn btn-primary">Личный кабинет</a>
+                        <a href="/logout" class="btn btn-secondary">Выйти</a>
+                    </div>
+                </div>
+            {% else %}
+                <div class="auth-section">
+                    <h2>Добро пожаловать!</h2>
+                    <p>Для доступа к персонализированным рекомендациям и личному кабинету</p>
+                    <div class="auth-links">
+                        <a href="/login">Войти</a>
+                        <a href="/register">Зарегистрироваться</a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="content-section">
+            <h2>Концерты фестиваля</h2>
+            <p>Здесь будет список концертов и рекомендации...</p>
+        </div>
+    </div>
 </body>
 </html> 
