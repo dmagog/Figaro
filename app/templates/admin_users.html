@@ -39,6 +39,18 @@
         .filter-item select:focus { border: 1.5px solid #667eea; box-shadow: 0 4px 16px rgba(102,126,234,0.13); }
         .filter-item select { appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill="%23667eea" height="20" viewBox="0 0 20 20" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7.293 7.293a1 1 0 011.414 0L10 8.586l1.293-1.293a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z"/></svg>'); background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; }
         .filter-item select::-ms-expand { display: none; }
+        .user-name {
+            font-weight: 500;
+            color: #222;
+            display: block;
+        }
+        .user-email {
+            font-size: 0.97em;
+            color: #8ca0c7;
+            display: block;
+            margin-top: 2px;
+            word-break: break-all;
+        }
     </style>
 </head>
 <body>
@@ -88,10 +100,11 @@
         </div>
             <thead>
                 <tr>
-                    <th class="sortable">Email</th>
-                    <th class="sortable">Имя</th>
+                    <th class="sortable">ID</th>
+                    <th class="sortable" colspan="2">Пользователь</th>
                     <th class="sortable">Роль</th>
                     <th class="sortable">Дата регистрации</th>
+                    <th class="sortable">Уникальных концертов</th>
                     <th class="sortable">Покупок</th>
                     <th class="sortable">Потрачено</th>
                 </tr>
@@ -99,15 +112,19 @@
             <tbody>
                 {% for u in users %}
                 <tr>
-                    <td>{{ u.email }}</td>
-                    <td>{{ u.name or '—' }}</td>
+                    <td>{{ u.id }}</td>
+                    <td colspan="2">
+                        <span class="user-name">{{ u.name or '—' }}</span>
+                        <span class="user-email">{{ u.email }}</span>
+                    </td>
                     <td>
                         <span class="role-badge{% if u.is_superuser %} superuser-badge{% endif %}">
                             {% if u.is_superuser %}Суперадмин{% else %}{{ u.role|title }}{% endif %}
                         </span>
                     </td>
                     <td>{{ u.created_at.strftime('%d.%m.%Y') if u.created_at else '—' }}</td>
-                    <td>{{ user_stats[u.id].count }}</td>
+                    <td>{{ user_stats[u.id].unique_concerts }}</td>
+                    <td>{{ user_stats[u.id].tickets }}</td>
                     <td>{{ "{:,}".format(user_stats[u.id].spent) }} ₽</td>
                 </tr>
                 {% endfor %}

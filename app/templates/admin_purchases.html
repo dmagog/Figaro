@@ -32,6 +32,76 @@
         .filter-item select:focus { border: 1.5px solid #667eea; box-shadow: 0 4px 16px rgba(102,126,234,0.13); }
         .filter-item select { appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill="%23667eea" height="20" viewBox="0 0 20 20" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7.293 7.293a1 1 0 011.414 0L10 8.586l1.293-1.293a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z"/></svg>'); background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; }
         .filter-item select::-ms-expand { display: none; }
+        .detail-value {
+            font-weight: bold;
+            color: #1976d2;
+            background: #e3f2fd;
+            border-radius: 8px;
+            padding: 3px 12px;
+            font-size: 1em;
+            display: inline-block;
+        }
+        .concert-hall {
+            background: #e3f2fd;
+            color: #1976d2;
+            border-radius: 10px;
+            padding: 7px 14px;
+            font-size: 1em;
+            font-weight: 400;
+            display: inline-block;
+            letter-spacing: 0.01em;
+        }
+        .concert-number {
+            display: inline-block;
+            width: 48px;
+            height: 28px;
+            padding-left: 10px;
+            font-size: 1.08em;
+            font-weight: bold;
+            color: #fff;
+            border-radius: 0 12px 12px 0;
+            margin-right: 10px;
+            text-align: left;
+            line-height: 28px;
+            vertical-align: middle;
+        }
+        .concert-number-day1 { background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); }
+        .concert-number-day2 { background: linear-gradient(90deg, #6366f1 0%, #818cf8 100%); }
+        .concert-number-day3 { background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%); }
+        .concert-number-day4 { background: linear-gradient(90deg, #06b6d4 0%, #0ea5e9 100%); }
+        .concert-number-day5 { background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%); }
+        .concert-number-day6 { background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%); }
+        .concert-number-day7 { background: linear-gradient(90deg, #818cf8 0%, #3b82f6 100%); }
+        .concert-title-flex {
+            display: flex;
+            align-items: center;
+            min-width: 0;
+        }
+        .concert-title-text {
+            flex: 1;
+            min-width: 0;
+            word-break: break-word;
+            white-space: normal;
+            display: block;
+        }
+        .user-name {
+            font-weight: 500;
+            color: #222;
+            display: block;
+        }
+        .user-email {
+            font-size: 0.97em;
+            color: #8ca0c7;
+            display: block;
+            margin-top: 2px;
+            word-break: break-all;
+        }
+        .concert-date-text {
+            font-size: 0.97em;
+            color: #8ca0c7;
+            display: block;
+            margin-top: 2px;
+        }
     </style>
 </head>
 <body>
@@ -47,11 +117,11 @@
         </div>
         <!-- Фильтры и поиск -->
         <div class="filter-block">
-            <div class="filter-item" style="flex:2; min-width:220px;">
+            <div class="filter-item" style="flex:2; min-width:200px;">
                 <label for="search-input">Поиск</label>
                 <input type="text" id="search-input" placeholder="Поиск по всем полям...">
             </div>
-            <div class="filter-item">
+            <div class="filter-item" style="min-width:140px;">
                 <label for="user-filter">Пользователь</label>
                 <select id="user-filter">
                     <option value="">Все пользователи</option>
@@ -60,7 +130,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="filter-item">
+            <div class="filter-item" style="min-width:140px;">
                 <label for="concert-filter">Концерт</label>
                 <select id="concert-filter">
                     <option value="">Все концерты</option>
@@ -69,39 +139,69 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="filter-item">
+            <div class="filter-item" style="min-width:140px;">
                 <label for="date-from">Дата покупки от</label>
-                <input type="date" id="date-from">
+                <input type="date" id="date-from" value="{{ min_purchase_date or '' }}">
             </div>
-            <div class="filter-item">
+            <div class="filter-item" style="min-width:140px;">
                 <label for="date-to">Дата покупки до</label>
-                <input type="date" id="date-to">
+                <input type="date" id="date-to" value="{{ max_purchase_date or '' }}">
+            </div>
+            <div style="display:flex; align-items:flex-end; padding-bottom:2px; margin-left:8px;">
+                <button id="reset-filters" type="button" style="height:44px; width:44px; display:flex; align-items:center; justify-content:center; border:none; border-radius:50%; background:#e0e7ff; color:#4f5bd5; font-size:1.5em; box-shadow:0 2px 8px rgba(102,126,234,0.07); cursor:pointer; transition:background 0.2s;">
+                    <span title="Сбросить фильтры" style="display:inline-block; line-height:1;">&#8635;</span>
+                </button>
             </div>
         </div>
         <table id="purchases-table">
             <thead>
                 <tr>
                     <th class="sortable">Дата покупки</th>
-                    <th class="sortable">Пользователь</th>
-                    <th class="sortable">Email</th>
-                    <th class="sortable">Номер концерта</th>
-                    <th class="sortable">Концерт</th>
-                    <th class="sortable">Дата концерта</th>
+                    <th class="sortable" colspan="2">Пользователь</th>
+                    <th class="sortable" colspan="2">Концерт</th>
                     <th class="sortable">Цена</th>
                     <th class="sortable">Зал</th>
                 </tr>
             </thead>
             <tbody>
-                {% for purchase, concert, user, hall in purchases %}
+                {% for item in purchases %}
                 <tr>
-                    <td>{{ purchase.purchased_at.strftime('%d.%m.%Y %H:%M') if purchase.purchased_at else '—' }}</td>
-                    <td>{{ user.name or '—' }}</td>
-                    <td>{{ user.email }}</td>
-                    <td>{{ concert.id }}</td>
-                    <td>{{ concert.name }}</td>
-                    <td>{{ concert.datetime.strftime('%d.%m.%Y %H:%M') if concert.datetime else '—' }}</td>
-                    <td>{{ "{:,}".format(purchase.price or 0) }} ₽</td>
-                    <td>{{ hall.name }}</td>
+                    <td>{{ item.purchase.purchased_at.strftime('%d.%m.%Y %H:%M') if item.purchase.purchased_at else '—' }}</td>
+                    <td colspan="2">
+                        <span class="user-name">{{ item.user.name or '—' }}</span>
+                        <span class="user-email">{{ item.user.email }}</span>
+                    </td>
+                    {% set concert = item.concert %}
+                    {% set day = 1 %}
+                    {% if concert.datetime %}
+                        {% set day = concert.datetime.day %}
+                        {% if day > 7 %}{% set day = 7 %}{% endif %}
+                        {% if day < 1 %}{% set day = 1 %}{% endif %}
+                    {% endif %}
+                    <td colspan="2">
+                        <div class="concert-title-flex">
+                            <span class="concert-number concert-number-day{{ day }}">{{ concert.id }}</span>
+                            <span class="concert-title-text">
+                                {{ concert.name }}
+                                {% if concert.datetime %}
+                                    <span class="concert-date-text">
+                                        {{ concert.datetime.day }}
+                                        {% set month_names = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'] %}
+                                        {{ month_names[concert.datetime.month-1] }},
+                                        {{ concert.datetime.strftime('%H:%M') }}
+                                    </span>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        {% if item.tickets_count > 1 %}
+                            {{ item.tickets_count }}×{{ "{:,}".format(item.price or 0) }} ₽
+                        {% else %}
+                            {{ "{:,}".format(item.price or 0) }} ₽
+                        {% endif %}
+                    </td>
+                    <td><span class="concert-hall">{{ item.hall.name }}</span></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -121,6 +221,7 @@
         const concertFilter = document.getElementById('concert-filter');
         const dateFrom = document.getElementById('date-from');
         const dateTo = document.getElementById('date-to');
+        const resetBtn = document.getElementById('reset-filters');
 
         function filterTable() {
             const search = searchInput.value.toLowerCase();
@@ -155,6 +256,16 @@
         }
         [searchInput, userFilter, concertFilter, dateFrom, dateTo].forEach(el => el && el.addEventListener('input', filterTable));
 
+        // Сброс фильтров
+        resetBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            userFilter.value = '';
+            concertFilter.value = '';
+            dateFrom.value = '';
+            dateTo.value = '';
+            filterTable();
+        });
+
         // Сортировка (оставляем как было)
         headers.forEach((th, idx) => {
             th.addEventListener('click', function() {
@@ -171,6 +282,13 @@
         });
         function parseCell(cell, idx) {
             let text = cell.textContent.trim();
+            // Сортировка по номеру концерта для объединённой колонки (индекс 2)
+            if (idx === 2) {
+                let numEl = cell.querySelector && cell.querySelector('.concert-number');
+                if (numEl) {
+                    return parseInt(numEl.textContent.trim()) || 0;
+                }
+            }
             if (idx === 0 || idx === 5) {
                 let parts = text.split(/[. :]/);
                 if (parts.length >= 3) {

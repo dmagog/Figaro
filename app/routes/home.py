@@ -104,11 +104,14 @@ async def admin_users(request: Request, session=Depends(get_session)):
         print('USER:', u, getattr(u, '__dict__', None))  # DEBUG
         ext_id = getattr(u, 'external_id', None)
         if not ext_id:
-            user_stats[u.id] = {"count": 0, "spent": 0}
+            user_stats[u.id] = {"count": 0, "spent": 0, "unique_concerts": 0, "tickets": 0}
             continue
-        count = session.exec(select(func.count(Purchase.id)).where(Purchase.user_external_id == str(ext_id))).scalar_one()
-        spent = session.exec(select(func.coalesce(func.sum(Purchase.price), 0)).where(Purchase.user_external_id == str(ext_id))).scalar_one()
-        user_stats[u.id] = {"count": count, "spent": spent}
+        # Все покупки пользователя
+        purchases = session.exec(select(Purchase).where(Purchase.user_external_id == str(ext_id))).scalars().all()
+        unique_concerts = len(set(p.concert_id for p in purchases))
+        tickets = len(purchases)
+        spent = sum(p.price or 0 for p in purchases)
+        user_stats[u.id] = {"count": tickets, "spent": spent, "unique_concerts": unique_concerts, "tickets": tickets}
 
     users_with_purchases_count = sum(1 for u in users if user_stats.get(u.id, {}).get('count', 0) > 0)
 
@@ -150,17 +153,46 @@ async def admin_purchases(request: Request, session=Depends(get_session)):
     # Уникальные пользователи и концерты для фильтров
     unique_users = {}
     unique_concerts = {}
+    # Для фильтров по дате: ищем min/max дату покупки
+    from datetime import datetime
+    purchase_dates = [p.purchased_at for p, _, _, _ in purchases if p.purchased_at]
+    if purchase_dates:
+        min_purchase_date = min(purchase_dates).strftime('%Y-%m-%d')
+        max_purchase_date = max(purchase_dates).strftime('%Y-%m-%d')
+    else:
+        min_purchase_date = ''
+        max_purchase_date = ''
     for p, c, u, h in purchases:
         if u.email not in unique_users:
             unique_users[u.email] = u.name or u.email
         if c.id not in unique_concerts:
             unique_concerts[c.id] = c.name
 
+    # Группировка покупок по (user_external_id, concert_id, purchased_at)
+    from collections import defaultdict
+    purchases_grouped = []
+    grouped = defaultdict(list)
+    for p, c, u, h in purchases:
+        key = (u.external_id, c.id, p.purchased_at)
+        grouped[key].append((p, c, u, h))
+    for group in grouped.values():
+        count = len(group)
+        p, c, u, h = group[0]
+        purchases_grouped.append({
+            'purchase': p,
+            'concert': c,
+            'user': u,
+            'hall': h,
+            'tickets_count': count,
+            'price': p.price,
+        })
     context = {
         "user": user_obj,
-        "purchases": purchases,
+        "purchases": purchases_grouped,
         "unique_users": unique_users,
         "unique_concerts": unique_concerts,
+        "min_purchase_date": min_purchase_date,
+        "max_purchase_date": max_purchase_date,
         "request": request
     }
     return templates.TemplateResponse("admin_purchases.html", context)
