@@ -547,7 +547,11 @@ async def update_customer_external_id(request: Request, session=Depends(get_sess
 
 
 @home_route.get("/admin/routes", response_class=HTMLResponse)
-async def admin_routes(request: Request, session=Depends(get_session)):
+async def admin_routes_redirect():
+    return RedirectResponse(url="/admin/routes/upload", status_code=302)
+
+@home_route.get("/admin/routes/upload", response_class=HTMLResponse)
+async def admin_routes_upload(request: Request, session=Depends(get_session)):
     token = request.cookies.get(settings.COOKIE_NAME)
     if token:
         user = await authenticate_cookie(token)
@@ -562,9 +566,48 @@ async def admin_routes(request: Request, session=Depends(get_session)):
     context = {
         "user": user_obj,
         "request": request,
-        "summary": summary
+        "summary": summary,
+        "active_tab": "upload"
     }
-    return templates.TemplateResponse("admin_routes.html", context)
+    return templates.TemplateResponse("admin_routes_upload.html", context)
+
+@home_route.get("/admin/routes/view", response_class=HTMLResponse)
+async def admin_routes_view(request: Request, session=Depends(get_session)):
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return RedirectResponse(url="/login", status_code=302)
+    context = {
+        "user": user_obj,
+        "request": request,
+        "active_tab": "view"
+    }
+    return templates.TemplateResponse("admin_routes_main.html", context)
+
+@home_route.get("/admin/routes/instruction", response_class=HTMLResponse)
+async def admin_routes_instruction(request: Request, session=Depends(get_session)):
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return RedirectResponse(url="/login", status_code=302)
+    context = {
+        "user": user_obj,
+        "request": request,
+        "active_tab": "instruction"
+    }
+    return templates.TemplateResponse("admin_routes_main.html", context)
 
 @home_route.post("/admin/routes/upload")
 async def upload_routes(request: Request, file: UploadFile = File(...), session=Depends(get_session)):

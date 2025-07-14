@@ -1,0 +1,16 @@
+{% extends "admin_index.html" %}
+{% block content %}
+<h1 style="font-size:2em; font-weight:700; margin-bottom:32px;">Маршруты фестиваля</h1>
+<div style="display:flex; gap:24px;">
+    <nav style="min-width:220px;">
+        <ul style="list-style:none; padding:0;">
+            <li><a href="/admin/routes/upload" class="admin-menu-btn {% if active_tab == 'upload' %}active{% endif %}">Загрузка маршрутов</a></li>
+            <li><a href="/admin/routes/view" class="admin-menu-btn {% if active_tab == 'view' %}active{% endif %}">Просмотр маршрутов</a></li>
+            <li><a href="/admin/routes/instruction" class="admin-menu-btn {% if active_tab == 'instruction' %}active{% endif %}">Инструкция</a></li>
+        </ul>
+    </nav>
+    <div style="flex:1;">
+        {% block routes_content %}{% endblock %}
+    </div>
+</div>
+{% endblock %} 
