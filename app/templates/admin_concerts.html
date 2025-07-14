@@ -134,9 +134,7 @@
                 <tr>
                     <th class="sortable" colspan="2">Концерт</th>
                     <th class="sortable">Зал</th>
-                    <th class="sortable">Заполняемость</th>
-                    <th class="sortable">Всего мест</th>
-                    <th class="sortable">Осталось билетов</th>
+                    <th class="sortable">Доступность</th>
                     <th class="sortable">Доступно</th>
                 </tr>
             </thead>
@@ -168,36 +166,24 @@
                     </td>
                     <td><span class="hall-badge">{{ item.hall.name if item.hall else '—' }}</span></td>
                     <td>
-                        {% set fill = item.fill_percent|round(0, 'floor') %}
-                        {% if fill < 50 %}
-                            {% set fill_color = '#6ec6ff' %}
-                        {% elif fill < 70 %}
-                            {% set fill_color = '#1e88e5' %}
-                        {% elif fill < 100 %}
-                            {% set fill_color = '#43e695' %}
+                        {% set seats = item.seats or 0 %}
+                        {% set left = item.tickets_left or 0 %}
+                        {% set percent_left = (left / seats * 100) if seats > 0 else 0 %}
+                        {% if percent_left > 50 %}
+                            {% set bar_color = '#43a047' %}
+                        {% elif percent_left > 20 %}
+                            {% set bar_color = '#ffb300' %}
                         {% else %}
-                            {% set fill_color = '#43a047' %}
+                            {% set bar_color = '#e53935' %}
                         {% endif %}
-                        {% if fill < 50 %}
-                            {% set fill_gradient = 'linear-gradient(90deg, #6ec6ff 0%, #1e88e5 100%)' %}
-                        {% elif fill < 70 %}
-                            {% set fill_gradient = 'linear-gradient(90deg, #1e88e5 0%, #43e695 100%)' %}
-                        {% elif fill < 100 %}
-                            {% set fill_gradient = 'linear-gradient(90deg, #43e695 0%, #43a047 100%)' %}
-                        {% else %}
-                            {% set fill_gradient = '#43a047' %}
-                        {% endif %}
-                        <span class="fill-bar" data-tooltip="{{ tickets_text }}">
-                            <span class="fill-percent" style="color: {{ fill_color }}; font-weight:700;">{{ fill }}%</span>
+                        <span class="fill-bar" data-tooltip="Осталось {{ left }} из {{ seats }} мест ({{ percent_left|round(1) }}%)">
+                            <span class="fill-percent" style="color: {{ bar_color }}; font-weight:700;">
+                                {{ percent_left|round(1) }}%
+                                <span style="color:#8ca0c7; font-size:0.85em; font-weight:400; margin-left:6px;">({{ left }} из {{ seats }})</span>
+                            </span>
                             <div class="fill-progress">
-                                <div class="fill-progress-inner" style="width: {{ fill }}%; background: {{ fill_gradient }}; border: 1px solid #bfc8e6;"></div>
+                                <div class="fill-progress-inner" style="width: {{ percent_left }}%; background: {{ bar_color }}; border: 1px solid #bfc8e6;"></div>
                             </div>
-                        </span>
-                    </td>
-                    <td>{{ item.seats }}</td>
-                    <td>
-                        <span class="tickets-badge{% if not item.tickets_available %} no{% endif %}">
-                            {{ item.tickets_left }}
                         </span>
                     </td>
                     <td>
@@ -305,10 +291,8 @@
                     showByDay = (rowDay === activeDay);
                 }
                 // Фильтр по доступности
-                let cell = row.cells[6]; // колонка "Доступно"
-                let span = cell ? cell.querySelector('span') : null;
-                let value = span ? span.textContent.trim() : '';
-                let isAvailable = value.trim().toLowerCase() === 'да';
+                let cell = row.cells[3]; // колонка "Доступно" (после colspan=2)
+                let isAvailable = cell && cell.querySelector('.available-icon') !== null;
                 let showByAvailability = true;
                 if (availabilityFilter === 'available') showByAvailability = isAvailable;
                 if (availabilityFilter === 'unavailable') showByAvailability = !isAvailable;
