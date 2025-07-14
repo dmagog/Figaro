@@ -77,6 +77,41 @@
         th.sortable:after { content: ''; position: absolute; right: 10px; font-size: 1em; }
         th.sorted-asc:after { content: '▲'; }
         th.sorted-desc:after { content: '▼'; }
+        .fill-bar {
+            display: inline-block;
+            min-width: 60px;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-weight: 600;
+            color: #fff;
+            text-align: center;
+            position: relative;
+            cursor: help;
+        }
+        .fill-bar::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            z-index: 1001;
+            margin-top: 6px;
+            pointer-events: none;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+        }
+        .fill-bar:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
     </style>
 </head>
 <body>
@@ -88,6 +123,7 @@
                 <a href="/admin/users">Пользователи</a>
                 <a href="/admin/purchases">Покупки</a>
                 <a href="/admin/concerts">Концерты</a>
+                <a href="/admin/halls">Залы</a>
                 <a href="/">На сайт</a>
             </nav>
         </div>
@@ -105,12 +141,19 @@
         </div>
         <div id="concerts-count" style="margin: 8px 0 0 0; color: #aaa; font-size: 0.98em; text-align: right;">
             Показано концертов: <span id="concerts-count-value">{{ concerts_data|length }}</span>
+            <span id="filter-available" style="margin-left: 18px; color: #aaa; font-weight: 500; cursor:pointer; user-select:none;">
+                Доступно к продаже: <span style="color:#388e3c; font-weight: 600;">{{ available_count }}</span>
+            </span>
+            <span id="filter-unavailable" style="margin-left: 12px; color: #aaa; font-weight: 500; cursor:pointer; user-select:none;">
+                Недоступно: <span style="color:#e53935; font-weight: 600;">{{ unavailable_count }}</span>
+            </span>
         </div>
         <table id="concerts-table">
             <thead>
                 <tr>
                     <th class="sortable" colspan="2">Концерт</th>
                     <th class="sortable">Зал</th>
+                    <th class="sortable">Заполняемость</th>
                     <th class="sortable">Всего мест</th>
                     <th class="sortable">Осталось билетов</th>
                     <th class="sortable">Доступно</th>
@@ -143,6 +186,18 @@
                         </div>
                     </td>
                     <td><span class="hall-badge">{{ item.hall.name if item.hall else '—' }}</span></td>
+                    <td>
+                        {% set fill = item.fill_percent|round(0, 'floor') %}
+                        {% set r = (227 + (56-227)*fill/100)|round(0, 'floor') %}
+                        {% set g = (57 + (142-57)*fill/100)|round(0, 'floor') %}
+                        {% set b = (53 + (60-53)*fill/100)|round(0, 'floor') %}
+                        {% set fill_color = 'rgb(' ~ r ~ ',' ~ g ~ ',' ~ b ~ ')' %}
+                        {% set tickets_sold = item.tickets_sold %}
+                        {% set tickets_text = tickets_sold == 1 and 'Куплен 1 билет' or 'Куплено ' ~ tickets_sold ~ ' билетов' %}
+                        <span class="fill-bar" style="background: {{ fill_color }};" data-tooltip="{{ tickets_text }}">
+                            {{ fill }}%
+                        </span>
+                    </td>
                     <td>{{ item.seats }}</td>
                     <td>
                         <span class="tickets-badge{% if not item.tickets_available %} no{% endif %}">
@@ -203,10 +258,15 @@
                     return parseInt(numEl.textContent.trim()) || 0;
                 }
             }
-            if (idx === 2 || idx === 3 || idx === 4) {
+            if (idx === 2) {
+                // Заполняемость: процент
+                let percent = text.replace(/[^\d]/g, '');
+                return parseInt(percent) || 0;
+            }
+            if (idx === 3 || idx === 4 || idx === 5) {
                 return parseInt(text.replace(/[^\d]/g, '')) || 0;
             }
-            if (idx === 5) {
+            if (idx === 6) {
                 // Доступно: Да/Нет
                 return text === 'Да' ? 1 : 0;
             }
@@ -225,12 +285,39 @@
             rows.forEach(row => tbody.appendChild(row));
         }
     });
-    // Фильтр по дням концертов
+    // Фильтр по дням и доступности концертов
     document.addEventListener('DOMContentLoaded', function() {
+        const table = document.getElementById('concerts-table');
         const dayLinks = document.querySelectorAll('.day-filter-link');
         const resetBtn = document.getElementById('reset-day-filter');
-        const table = document.getElementById('concerts-table');
+        const filterAvailable = document.getElementById('filter-available');
+        const filterUnavailable = document.getElementById('filter-unavailable');
         let activeDay = null;
+        let availabilityFilter = null; // null, 'available', 'unavailable'
+
+        function applyFilters() {
+            Array.from(table.tBodies[0].rows).forEach(row => {
+                // Фильтр по дню
+                let dateText = row.querySelector('.concert-date-text');
+                let showByDay = true;
+                if (activeDay && dateText) {
+                    let rowDay = dateText.getAttribute('data-day');
+                    showByDay = (rowDay === activeDay);
+                }
+                // Фильтр по доступности
+                let cell = row.cells[6]; // колонка "Доступно"
+                let span = cell ? cell.querySelector('span') : null;
+                let value = span ? span.textContent.trim() : '';
+                let isAvailable = value.trim().toLowerCase() === 'да';
+                let showByAvailability = true;
+                if (availabilityFilter === 'available') showByAvailability = isAvailable;
+                if (availabilityFilter === 'unavailable') showByAvailability = !isAvailable;
+                // Итог
+                row.style.display = (showByDay && showByAvailability) ? '' : 'none';
+            });
+            updateConcertsCount();
+        }
+
         dayLinks.forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -239,31 +326,45 @@
                 this.style.background = '#4f5bd5';
                 this.style.color = '#fff';
                 activeDay = this.getAttribute('data-day');
-                filterByDay();
+                applyFilters();
             });
         });
         resetBtn.addEventListener('click', function() {
             dayLinks.forEach(l => l.style.background = '#e0e7ff');
             dayLinks.forEach(l => l.style.color = '#4f5bd5');
             activeDay = null;
-            filterByDay();
+            // Сброс фильтра по доступности
+            availabilityFilter = null;
+            filterAvailable.style.background = '';
+            filterUnavailable.style.background = '';
+            applyFilters();
         });
-        function filterByDay() {
-            Array.from(table.tBodies[0].rows).forEach(row => {
-                let dateText = row.querySelector('.concert-date-text');
-                if (!dateText) { row.style.display = ''; return; }
-                let rowDay = dateText.getAttribute('data-day');
-                if (!activeDay) { row.style.display = ''; return; }
-                if (rowDay === activeDay) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-            updateConcertsCount();
-        }
-        // Обновлять счётчик при загрузке
-        updateConcertsCount();
+        filterAvailable.addEventListener('click', function() {
+            if (availabilityFilter === 'available') {
+                availabilityFilter = null;
+                filterAvailable.style.background = '';
+                filterUnavailable.style.background = '';
+            } else {
+                availabilityFilter = 'available';
+                filterAvailable.style.background = '#e0e7ff';
+                filterUnavailable.style.background = '';
+            }
+            applyFilters();
+        });
+        filterUnavailable.addEventListener('click', function() {
+            if (availabilityFilter === 'unavailable') {
+                availabilityFilter = null;
+                filterAvailable.style.background = '';
+                filterUnavailable.style.background = '';
+            } else {
+                availabilityFilter = 'unavailable';
+                filterAvailable.style.background = '';
+                filterUnavailable.style.background = '#e0e7ff';
+            }
+            applyFilters();
+        });
+        // При загрузке применяем фильтры
+        applyFilters();
     });
     </script>
 </body>

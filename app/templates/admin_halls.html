@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Залы — Админка</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        body { background: #f6f7fb; font-family: 'Segoe UI', 'Arial', sans-serif; }
+        .admin-container { max-width: 900px; margin: 40px auto; padding: 30px; background: white; border-radius: 18px; box-shadow: 0 8px 32px rgba(60,60,120,0.08); }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .admin-header h1 { font-size: 2.2em; margin: 0; }
+        .admin-nav { display: flex; gap: 18px; }
+        .admin-nav a { background: #667eea; color: white; padding: 10px 22px; border-radius: 8px; text-decoration: none; font-weight: 500; transition: background 0.2s; }
+        .admin-nav a:hover { background: #4f5bd5; }
+        table { width: 100%; border-collapse: collapse; margin-top: 30px; background: #f8f9fa; border-radius: 12px; overflow: hidden; }
+        th, td { padding: 14px 10px; text-align: left; }
+        th { background: #e0e7ff; color: #333; font-weight: 600; }
+        tr:nth-child(even) { background: #f0f4ff; }
+        tr:hover { background: #e3eafe; }
+        .fill-bar {
+            display: inline-block;
+            min-width: 60px;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-weight: 600;
+            color: #fff;
+            text-align: center;
+            position: relative;
+            cursor: help;
+        }
+        .fill-bar::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            z-index: 1001;
+            margin-top: 6px;
+            pointer-events: none;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+        }
+        .fill-bar:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
+        .hall-badge {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            border-radius: 8px;
+            padding: 4px 14px;
+            font-size: 1em;
+            font-weight: 400;
+            margin: 0;
+        }
+        th.sortable { cursor: pointer; user-select: none; position: relative; transition: background 0.15s, color 0.15s; }
+        th.sortable:hover { background: #dbeafe; color: #4f5bd5; }
+        th.sortable:after { content: ''; position: absolute; right: 10px; font-size: 1em; }
+        th.sorted-asc:after { content: '▲'; }
+        th.sorted-desc:after { content: '▼'; }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>Залы</h1>
+            <nav class="admin-nav">
+                <a href="/admin">Главная</a>
+                <a href="/admin/users">Пользователи</a>
+                <a href="/admin/purchases">Покупки</a>
+                <a href="/admin/concerts">Концерты</a>
+                <a href="/admin/halls">Залы</a>
+                <a href="/">На сайт</a>
+            </nav>
+        </div>
+        <table id="halls-table">
+            <thead>
+                <tr>
+                    <th class="sortable">Название</th>
+                    <th class="sortable">Всего мест</th>
+                    <th class="sortable">Концертов</th>
+                    <th class="sortable">Концертов с местами</th>
+                    <th class="sortable">Куплено билетов</th>
+                    <th class="sortable">Заполняемость</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in halls_data %}
+                <tr>
+                    <td><span class="hall-badge">{{ item.hall.name }}</span></td>
+                    <td>{{ item.seats }}</td>
+                    <td>{{ item.concerts }}</td>
+                    <td>{{ item.available_concerts }}</td>
+                    <td>{{ item.tickets_sold }}</td>
+                    <td>
+                        {% set fill = item.fill_percent|round(0, 'floor') %}
+                        {% set r = (227 + (56-227)*fill/100)|round(0, 'floor') %}
+                        {% set g = (57 + (142-57)*fill/100)|round(0, 'floor') %}
+                        {% set b = (53 + (60-53)*fill/100)|round(0, 'floor') %}
+                        {% set fill_color = 'rgb(' ~ r ~ ',' ~ g ~ ',' ~ b ~ ')' %}
+                        <span class="fill-bar" style="background: {{ fill_color }};" data-tooltip="Заполняемость: {{ fill }}%">
+                            {{ fill }}%
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
+<script>
+// JS-сортировка таблицы по клику на заголовки (аналогично admin_concerts.html)
+document.addEventListener('DOMContentLoaded', function() {
+    const table = document.getElementById('halls-table');
+    const headers = table.querySelectorAll('th.sortable');
+    let sortCol = null;
+    let sortDir = 1;
+
+    headers.forEach((th, idx) => {
+        th.addEventListener('click', function() {
+            if (sortCol === idx) {
+                sortDir = -sortDir;
+            } else {
+                sortCol = idx;
+                sortDir = 1;
+            }
+            headers.forEach(h => h.classList.remove('sorted-asc', 'sorted-desc'));
+            th.classList.add(sortDir === 1 ? 'sorted-asc' : 'sorted-desc');
+            sortTable(idx, sortDir);
+        });
+    });
+    function parseCell(cell, idx) {
+        let text = cell.textContent.trim();
+        if (idx === 1 || idx === 2 || idx === 3 || idx === 4) {
+            return parseInt(text.replace(/[^\d]/g, '')) || 0;
+        }
+        if (idx === 5) {
+            // Заполняемость: процент
+            let percent = text.replace(/[^\d]/g, '');
+            return parseInt(percent) || 0;
+        }
+        return text.toLowerCase();
+    }
+    function sortTable(col, dir) {
+        const tbody = table.tBodies[0];
+        const rows = Array.from(tbody.rows);
+        rows.sort((a, b) => {
+            let A = parseCell(a.cells[col], col);
+            let B = parseCell(b.cells[col], col);
+            if (A < B) return -1 * dir;
+            if (A > B) return 1 * dir;
+            return 0;
+        });
+        rows.forEach(row => tbody.appendChild(row));
+    }
+});
+</script> 

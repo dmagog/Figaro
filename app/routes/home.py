@@ -9,7 +9,7 @@ from services.crud import user as UsersService
 from services.crud.purchase import get_festival_summary_stats
 import pandas as pd
 from typing import Dict
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 
 settings = get_settings()
@@ -213,7 +213,8 @@ async def admin_concerts(request: Request, session=Depends(get_session)):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Доступ запрещён")
 
     from models import Concert, Hall
-    from sqlalchemy import select
+    from models import Purchase
+    from sqlalchemy import select, func
     concerts = session.exec(select(Concert)).scalars().all()
     halls = {h.id: h for h in session.exec(select(Hall)).scalars().all()}
 
@@ -222,18 +223,35 @@ async def admin_concerts(request: Request, session=Depends(get_session)):
         import random
         return random.randint(0, 20)
 
+    # Получаем количество купленных билетов по каждому концерту
+    tickets_per_concert = dict(
+        session.exec(
+            select(Purchase.concert_id, func.count(Purchase.id)).group_by(Purchase.concert_id)
+        ).all()
+    )
+
     concerts_data = []
+    available_count = 0
+    unavailable_count = 0
     for c in concerts:
         hall = halls.get(c.hall_id)
         seats = hall.seats if hall else 0
         tickets_left = get_tickets_left(c.id)
         tickets_available = tickets_left > 0
+        tickets_sold = tickets_per_concert.get(c.id, 0)
+        fill_percent = (tickets_sold / seats * 100) if seats else 0
+        if tickets_available:
+            available_count += 1
+        else:
+            unavailable_count += 1
         concerts_data.append({
             'concert': c,
             'hall': hall,
             'seats': seats,
             'tickets_left': tickets_left,
-            'tickets_available': tickets_available
+            'tickets_available': tickets_available,
+            'tickets_sold': tickets_sold,
+            'fill_percent': fill_percent
         })
 
     # Формируем список уникальных дней концертов
@@ -252,6 +270,76 @@ async def admin_concerts(request: Request, session=Depends(get_session)):
         "user": user_obj,
         "concerts_data": concerts_data,
         "concert_days": concert_days,
+        "available_count": available_count,
+        "unavailable_count": unavailable_count,
         "request": request
     }
     return templates.TemplateResponse("admin_concerts.html", context)
+
+
+@home_route.get("/admin/halls", response_class=HTMLResponse)
+async def admin_halls(request: Request, session=Depends(get_session)):
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Доступ запрещён")
+
+    from models import Hall, Concert, Purchase
+    from sqlalchemy import select, func
+    halls = session.exec(select(Hall)).scalars().all()
+    concerts = session.exec(select(Concert)).scalars().all()
+
+    # Заглушка для количества оставшихся билетов (как на концертах)
+    def get_tickets_left(concert_id):
+        import random
+        return random.randint(0, 20)
+
+    # Считаем количество концертов и мест по каждому залу
+    hall_stats = {h.id: {"concerts": 0, "seats": h.seats, "tickets_sold": 0, "available_concerts": 0} for h in halls}
+    for c in concerts:
+        if c.hall_id in hall_stats:
+            hall_stats[c.hall_id]["concerts"] += 1
+            hall_stats[c.hall_id]["seats"] = hall_stats[c.hall_id]["seats"] or 0
+            tickets_left = get_tickets_left(c.id)
+            if tickets_left > 0:
+                hall_stats[c.hall_id]["available_concerts"] += 1
+
+    # Считаем количество купленных билетов по каждому залу
+    tickets_per_hall = dict(
+        session.exec(
+            select(Concert.hall_id, func.count(Purchase.id))
+            .join(Purchase, Purchase.concert_id == Concert.id)
+            .group_by(Concert.hall_id)
+        ).all()
+    )
+    for hall_id, tickets in tickets_per_hall.items():
+        if hall_id in hall_stats:
+            hall_stats[hall_id]["tickets_sold"] = tickets
+
+    # Формируем данные для шаблона
+    halls_data = []
+    for h in halls:
+        stats = hall_stats[h.id]
+        fill_percent = (stats["tickets_sold"] / (stats["seats"] * stats["concerts"]) * 100) if stats["seats"] and stats["concerts"] else 0
+        halls_data.append({
+            "hall": h,
+            "concerts": stats["concerts"],
+            "seats": stats["seats"],
+            "tickets_sold": stats["tickets_sold"],
+            "fill_percent": fill_percent,
+            "available_concerts": stats["available_concerts"]
+        })
+
+    context = {
+        "user": user_obj,
+        "halls_data": halls_data,
+        "request": request
+    }
+    return templates.TemplateResponse("admin_halls.html", context)
