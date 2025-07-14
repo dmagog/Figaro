@@ -253,7 +253,7 @@ def load_compositions(session: Session, df_details: pd.DataFrame):
                 concert_id=link_record["concert_id"],
                 composition_id=composition.id
             )
-    
+
     count = session.exec(select(Composition)).all()
     logger.info(f"В базе теперь {len(count)} композиций")
 

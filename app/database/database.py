@@ -20,45 +20,45 @@ def init_db(demostart = None):
         SQLModel.metadata.create_all(engine)
 
         with Session(engine) as session:
-            print("\nЗагружаем данные из Excel файлов...")
-            
-            # Загружаем все Excel файлы в память
-            halls_df = pd.read_excel(HALLS_LIST_PATH)
-            concerts_df = pd.read_excel(CONCERTS_PATH)
-            artists_df = pd.read_excel(ARTISTS_PATH)
-            compositions_df = pd.read_excel(PROGRAMM_PATH)
-            purchases_df = pd.read_excel(TRANSACTIONS_PATH)
-            
-            print(f"Загружено файлов:")
-            print(f"  - Залы: {len(halls_df)} записей")
-            print(f"  - Концерты: {len(concerts_df)} записей")
-            print(f"  - Артисты: {len(artists_df)} записей")
-            print(f"  - Композиции: {len(compositions_df)} записей")
-            print(f"  - Покупки: {len(purchases_df)} записей")
-            
-            # Используем оптимизированную функцию загрузки
-            data_loader.load_all_data(
-                session=session,
-                df_halls=halls_df,
-                df_concerts=concerts_df,
-                df_artists=artists_df,
-                df_details=compositions_df,
-                df_ops=purchases_df,
-                disable_fk_checks=True  # Ускоряем загрузку
-            )
+                print("\nЗагружаем данные из Excel файлов...")
+                
+                # Загружаем все Excel файлы в память
+                halls_df = pd.read_excel(HALLS_LIST_PATH)
+                concerts_df = pd.read_excel(CONCERTS_PATH)
+                artists_df = pd.read_excel(ARTISTS_PATH)
+                compositions_df = pd.read_excel(PROGRAMM_PATH)
+                purchases_df = pd.read_excel(TRANSACTIONS_PATH)
+                
+                print(f"Загружено файлов:")
+                print(f"  - Залы: {len(halls_df)} записей")
+                print(f"  - Концерты: {len(concerts_df)} записей")
+                print(f"  - Артисты: {len(artists_df)} записей")
+                print(f"  - Композиции: {len(compositions_df)} записей")
+                print(f"  - Покупки: {len(purchases_df)} записей")
+                
+                # Используем оптимизированную функцию загрузки
+                data_loader.load_all_data(
+                    session=session,
+                    df_halls=halls_df,
+                    df_concerts=concerts_df,
+                    df_artists=artists_df,
+                    df_details=compositions_df,
+                    df_ops=purchases_df,
+                    disable_fk_checks=True  # Ускоряем загрузку
+                )
 
-            print("\n✅ Data loading complete.")
+                print("\n✅ Data loading complete.")
 
-            print("Generating festival days...")
-            festival.generate_festival_days(session)
+                print("Generating festival days...")
+                festival.generate_festival_days(session)
 
-            print("Creating default users...")
-            user.create_default_users(session)
-            print("\n✅ Default users created.")
+                print("Creating default users...")
+                user.create_default_users(session)
+                print("\n✅ Default users created.")
 
-            print("\nЗагружаем маршруты...")
-            data_loader.load_routes_from_csv(session, ROUTES_PATH)
-            print("\n✅ Загрузка маршрутов завершена.")
+                print("\nЗагружаем маршруты...")
+                data_loader.load_routes_from_csv(session, ROUTES_PATH)
+                print("\n✅ Загрузка маршрутов завершена.")
 
 
     # #Если инициализация базы происходит с созданием демо параметров
