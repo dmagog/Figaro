@@ -55,11 +55,11 @@ def test_loading_performance():
         from models import Hall, Concert, Artist, Composition, Purchase
         
         from sqlmodel import select
-        halls_count = len(session.exec(select(Hall)).scalars().all())
-        concerts_count = len(session.exec(select(Concert)).scalars().all())
-        artists_count = len(session.exec(select(Artist)).scalars().all())
-        compositions_count = len(session.exec(select(Composition)).scalars().all())
-        purchases_count = len(session.exec(select(Purchase)).scalars().all())
+        halls_count = len(session.exec(select(Hall)).all())
+        concerts_count = len(session.exec(select(Concert)).all())
+        artists_count = len(session.exec(select(Artist)).all())
+        compositions_count = len(session.exec(select(Composition)).all())
+        purchases_count = len(session.exec(select(Purchase)).all())
         
         print(f"\n📋 Результаты в базе:")
         print(f"  - Залы: {halls_count}")

@@ -10,7 +10,7 @@ def generate_festival_days(session: Session):
     print("Формируем параметры фестиваля...")
     
     # Получаем все концерты одним запросом
-    concerts = session.exec(select(Concert)).scalars().all()
+    concerts = session.exec(select(Concert)).all()
     print(f"Найдено {len(concerts)} концертов для обработки")
     
     if not concerts:
@@ -18,7 +18,7 @@ def generate_festival_days(session: Session):
         return
     
     # Получаем существующие дни фестиваля одним запросом
-    existing_days = session.exec(select(FestivalDay.day)).scalars().all()
+    existing_days = session.exec(select(FestivalDay.day)).all()
     existing_days_set = set(existing_days)
     print(f"Найдено {len(existing_days_set)} существующих дней фестиваля")
     

@@ -100,6 +100,7 @@
 </head>
 <body>
     <div class="admin-container">
+        {% block content %}
         <div class="admin-header" style="display: flex; align-items: center; justify-content: space-between; gap: 24px;">
             <h1 style="font-size:2.2em; margin:0; flex-shrink:0;">Админка фестиваля</h1>
             <nav class="admin-nav-flex" id="adminNav" style="flex:1;">
@@ -109,6 +110,7 @@
                 <a href="/admin/purchases" class="admin-menu-btn">Покупки</a>
                 <a href="/admin/concerts" class="admin-menu-btn">Концерты</a>
                 <a href="/admin/halls" class="admin-menu-btn">Залы</a>
+                <a href="/admin/routes" class="admin-menu-btn">Маршруты</a>
                 <a href="/" class="admin-menu-btn"><span style="font-size:1.1em; margin-right:6px;">🌐</span>На сайт</a>
                 <div class="admin-menu-dropdown" id="adminMenuDropdown" style="display:none;">
                     <button class="admin-menu-dropdown-btn" id="dropdownBtn">Ещё <span style="font-size:1.1em;">▼</span></button>
@@ -146,6 +148,7 @@
                 <p>{{ '%.2f' % summary.avg_fill }}</p>
             </div>
         </div>
+        {% endblock %}
     </div>
     <script>
     // Бургер-меню для мобильных

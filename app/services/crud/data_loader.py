@@ -5,6 +5,11 @@ from datetime import datetime, timedelta
 import pandas as pd
 from typing import Dict, List
 import logging
+import csv
+from sqlmodel import Session
+from models.route import Route
+from sqlalchemy import and_, or_, text
+import re
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -18,7 +23,7 @@ BATCH_SIZE = int(os.getenv('DATA_LOADER_BATCH_SIZE', '1000'))
 def disable_foreign_keys(session):
     """Отключает проверку внешних ключей для ускорения загрузки"""
     try:
-        session.exec("SET session_replication_role = replica;")
+        session.exec(text("SET session_replication_role = replica;"))
         session.commit()
     except Exception as e:
         logger.warning(f"Не удалось отключить внешние ключи: {e}")
@@ -26,7 +31,7 @@ def disable_foreign_keys(session):
 def enable_foreign_keys(session):
     """Включает проверку внешних ключей"""
     try:
-        session.exec("SET session_replication_role = DEFAULT;")
+        session.exec(text("SET session_replication_role = DEFAULT;"))
         session.commit()
     except Exception as e:
         logger.warning(f"Не удалось включить внешние ключи: {e}")
@@ -61,20 +66,17 @@ def bulk_get_or_create(session, model, records: List[Dict], unique_fields: List[
         conditions = []
         for key in unique_keys:
             key_dict = dict(zip(unique_fields, key))
-            condition = True
-            for field, value in key_dict.items():
-                condition = condition & (getattr(model, field) == value)
-            conditions.append(condition)
-        
-        # Выполняем один запрос для всех записей
-        query = select(model).where(conditions[0])
-        for condition in conditions[1:]:
-            query = query.union(select(model).where(condition))
-        
-        existing_records = session.exec(query).all()
-        for record in existing_records:
-            key = tuple(getattr(record, field) for field in unique_fields)
-            existing_map[key] = record
+            subconds = [(getattr(model, field) == value) for field, value in key_dict.items()]
+            if subconds:
+                condition = and_(*subconds)
+                conditions.append(condition)
+        # Выполняем один запрос для всех записей через OR
+        if conditions:
+            query = select(model).where(or_(*conditions))
+            existing_records = session.exec(query).all()
+            for record in existing_records:
+                key = tuple(getattr(record, field) for field in unique_fields)
+                existing_map[key] = record
     
     # Создаем новые записи
     new_records = []
@@ -117,7 +119,7 @@ def load_halls(session: Session, df_halls: pd.DataFrame):
     
     bulk_get_or_create(session, Hall, records, ["name"])
     
-    count = session.exec(select(Hall)).scalars().all()
+    count = session.exec(select(Hall)).all()
     logger.info(f"В базе теперь {len(count)} залов")
 
 
@@ -125,7 +127,7 @@ def load_concerts(session: Session, df_concerts: pd.DataFrame):
     logger.info(f"Загружаем {len(df_concerts)} концертов из Excel")
     
     # Сначала загружаем все залы в память для быстрого доступа
-    halls = {hall.name: hall.id for hall in session.exec(select(Hall)).scalars().all()}
+    halls = {hall.name: hall.id for hall in session.exec(select(Hall)).all()}
     
     records = []
     for _, row in df_concerts.iterrows():
@@ -149,7 +151,7 @@ def load_concerts(session: Session, df_concerts: pd.DataFrame):
     
     bulk_get_or_create(session, Concert, records, ["external_id"])
     
-    count = session.exec(select(Concert)).scalars().all()
+    count = session.exec(select(Concert)).all()
     logger.info(f"В базе теперь {len(count)} концертов")
 
 
@@ -191,7 +193,7 @@ def load_artists(session: Session, df_artists: pd.DataFrame):
                 artist_id=artist.id
             )
     
-    count = session.exec(select(Artist)).scalars().all()
+    count = session.exec(select(Artist)).all()
     logger.info(f"В базе теперь {len(count)} артистов")
 
 
@@ -199,7 +201,7 @@ def load_compositions(session: Session, df_details: pd.DataFrame):
     logger.info(f"Загружаем {len(df_details.drop_duplicates(['ShowNum', 'Author', 'Programm']))} композиций из Excel")
     
     # Загружаем концерты в память
-    concerts = {concert.external_id: concert.id for concert in session.exec(select(Concert)).scalars().all()}
+    concerts = {concert.external_id: concert.id for concert in session.exec(select(Concert)).all()}
     
     # Группируем композиции
     author_records = []
@@ -252,7 +254,7 @@ def load_compositions(session: Session, df_details: pd.DataFrame):
                 composition_id=composition.id
             )
     
-    count = session.exec(select(Composition)).scalars().all()
+    count = session.exec(select(Composition)).all()
     logger.info(f"В базе теперь {len(count)} композиций")
 
 
@@ -260,7 +262,7 @@ def load_purchases(session: Session, df_ops: pd.DataFrame):
     logger.info(f"Загружаем {len(df_ops.drop_duplicates(['OpId']))} покупок из Excel")
     
     # Загружаем концерты в память
-    concerts = {concert.external_id: concert.id for concert in session.exec(select(Concert)).scalars().all()}
+    concerts = {concert.external_id: concert.id for concert in session.exec(select(Concert)).all()}
     
     # Группируем покупки по батчам
     total_records = len(df_ops.drop_duplicates(["OpId"]))
@@ -291,7 +293,7 @@ def load_purchases(session: Session, df_ops: pd.DataFrame):
         processed += len(records)
         logger.info(f"Обработано {processed}/{total_records} покупок ({processed/total_records*100:.1f}%)")
     
-    count = session.exec(select(Purchase)).scalars().all()
+    count = session.exec(select(Purchase)).all()
     logger.info(f"В базе теперь {len(count)} покупок")
 
 
@@ -333,3 +335,88 @@ def load_all_data(session: Session, df_halls: pd.DataFrame, df_concerts: pd.Data
         if disable_fk_checks:
             logger.info("Включаем проверку внешних ключей")
             enable_foreign_keys(session)
+
+
+def load_routes_from_csv(session: Session, path: str, batch_size: int = 1000, status_dict=None):
+    import os
+    import logging
+    logger = logging.getLogger(__name__)
+    if not os.path.exists(path):
+        logger.warning(f"[load_routes_from_csv] Файл {path} не найден — пропускаем загрузку маршрутов.")
+        if status_dict is not None:
+            status_dict["error"] = f"Файл {path} не найден"
+            status_dict["in_progress"] = False
+        return {"added": 0, "updated": 0, "skipped": 0}
+    added, updated, skipped = 0, 0, 0
+    # Считаем общее количество строк для прогресса
+    with open(path, newline='', encoding='utf-8') as csvfile:
+        import csv
+        total_lines = sum(1 for _ in csvfile) - 1  # -1 для заголовка
+    if status_dict is not None:
+        status_dict["total"] = total_lines
+        status_dict["progress"] = 0
+        status_dict["added"] = 0
+        status_dict["updated"] = 0
+        status_dict["error"] = None
+    with open(path, newline='', encoding='utf-8') as csvfile:
+        import csv
+        reader = csv.DictReader(csvfile)
+        batch = []
+        for i, row in enumerate(reader, 1):
+            sostav_raw = row.get('Sostav', '')
+            concerts_list = re.findall(r'\d+', sostav_raw)
+            concerts_sorted = ','.join(sorted(concerts_list, key=str))
+            existing_route = session.exec(select(Route).where(Route.Sostav == concerts_sorted)).first()
+            if existing_route:
+                for field in Route.__fields__:
+                    if field == 'id' or field == 'Sostav':
+                        continue
+                    value = row.get(field)
+                    if value is not None:
+                        field_type = Route.__fields__[field].annotation if hasattr(Route, '__fields__') else None
+                        if field_type in [int, float]:
+                            try:
+                                value = field_type(value)
+                            except Exception:
+                                pass
+                        setattr(existing_route, field, value)
+                session.add(existing_route)
+                updated += 1
+            else:
+                route_kwargs = {k: v for k, v in row.items()}
+                route_kwargs['Sostav'] = concerts_sorted
+                for field in Route.__fields__:
+                    if field in route_kwargs and route_kwargs[field] is not None:
+                        field_type = Route.__fields__[field].annotation if hasattr(Route, '__fields__') else None
+                        if field_type in [int, float]:
+                            try:
+                                route_kwargs[field] = field_type(route_kwargs[field])
+                            except Exception:
+                                pass
+                route = Route(**route_kwargs)
+                batch.append(route)
+            if len(batch) >= batch_size:
+                session.add_all(batch)
+                session.commit()
+                added += len(batch)
+                batch = []
+            # Логируем прогресс каждые 1000 строк
+            if i % 1000 == 0 or i == total_lines:
+                percent = (i / total_lines) * 100 if total_lines > 0 else 100
+                logger.info(f"Обработано {i}/{total_lines} маршрутов ({percent:.1f}%)")
+                if status_dict is not None:
+                    status_dict["progress"] = i
+                    status_dict["added"] = added
+                    status_dict["updated"] = updated
+        if batch:
+            session.add_all(batch)
+            session.commit()
+            added += len(batch)
+        session.commit()
+    if status_dict is not None:
+        status_dict["progress"] = total_lines
+        status_dict["added"] = added
+        status_dict["updated"] = updated
+        status_dict["in_progress"] = False
+    logger.info(f"[load_routes_from_csv] Загружено маршрутов: добавлено {added}, обновлено {updated}")
+    return {"added": added, "updated": updated, "skipped": skipped}

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status, UploadFile, File, Form
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from auth.authenticate import authenticate_cookie, authenticate
@@ -10,12 +10,45 @@ from services.crud.purchase import get_festival_summary_stats
 import pandas as pd
 from typing import Dict
 from sqlalchemy import select, func
+from services.crud.data_loader import load_routes_from_csv
+from config_data_path import ROUTES_PATH
+import shutil
+import os
+import threading
 
 
 settings = get_settings()
 home_route = APIRouter()
 hash_password = HashPassword()
 templates = Jinja2Templates(directory="templates")
+
+# Глобальный статус загрузки маршрутов
+route_upload_status = {"in_progress": False, "progress": 0, "total": 0, "added": 0, "updated": 0, "error": None}
+
+def process_routes_upload(session, path):
+    global route_upload_status
+    try:
+        route_upload_status["in_progress"] = True
+        route_upload_status["progress"] = 0
+        route_upload_status["added"] = 0
+        route_upload_status["updated"] = 0
+        route_upload_status["error"] = None
+        # Загружаем маршруты с передачей status_dict
+        from services.crud.data_loader import load_routes_from_csv
+        result = load_routes_from_csv(session, path, status_dict=route_upload_status)
+        route_upload_status["added"] = result["added"]
+        route_upload_status["updated"] = result["updated"]
+    except Exception as e:
+        route_upload_status["error"] = str(e)
+    finally:
+        route_upload_status["in_progress"] = False
+
+
+def get_user_field(u, field):
+    # Если кортеж (например, (User,)), берём первый элемент
+    if isinstance(u, tuple):
+        u = u[0]
+    return getattr(u, field, None)
 
 
 @home_route.get("/", response_class=HTMLResponse)
@@ -95,25 +128,27 @@ async def admin_users(request: Request, session=Depends(get_session)):
 
     # Получаем всех пользователей
     users = session.exec(select(UsersService.User)).scalars().all()
-
     # Для каждого пользователя считаем покупки и сумму трат
     from models import Purchase
     from sqlalchemy import func
     user_stats = {}
     for u in users:
         print('USER:', u, getattr(u, '__dict__', None))  # DEBUG
-        ext_id = getattr(u, 'external_id', None)
+        ext_id = get_user_field(u, 'external_id')
+        user_id = get_user_field(u, 'id')
+        if not user_id:
+            continue  # пропускаем пользователей без id
         if not ext_id:
-            user_stats[u.id] = {"count": 0, "spent": 0, "unique_concerts": 0, "tickets": 0}
+            user_stats[user_id] = {"count": 0, "spent": 0, "unique_concerts": 0, "tickets": 0}
             continue
         # Все покупки пользователя
         purchases = session.exec(select(Purchase).where(Purchase.user_external_id == str(ext_id))).scalars().all()
         unique_concerts = len(set(p.concert_id for p in purchases))
         tickets = len(purchases)
         spent = sum(p.price or 0 for p in purchases)
-        user_stats[u.id] = {"count": tickets, "spent": spent, "unique_concerts": unique_concerts, "tickets": tickets}
+        user_stats[user_id] = {"count": tickets, "spent": spent, "unique_concerts": unique_concerts, "tickets": tickets}
 
-    users_with_purchases_count = sum(1 for u in users if user_stats.get(u.id, {}).get('count', 0) > 0)
+    users_with_purchases_count = sum(1 for u in users if get_user_field(u, 'id') and user_stats.get(get_user_field(u, 'id'), {}).get('count', 0) > 0)
 
     context = {
         "user": user_obj,
@@ -140,20 +175,22 @@ async def admin_purchases(request: Request, session=Depends(get_session)):
         return RedirectResponse(url="/login", status_code=302)
 
     from models import Purchase, Concert, User, Hall
-    from sqlalchemy import select
-    # Получаем все покупки с деталями
-    purchases = session.exec(
-        select(Purchase, Concert, User, Hall)
+    from sqlalchemy.orm import aliased
+    from sqlalchemy import select, outerjoin
+    # LEFT OUTER JOIN между Purchase и User
+    UserAlias = aliased(User)
+    stmt = (
+        select(Purchase, Concert, UserAlias, Hall)
         .join(Concert, Purchase.concert_id == Concert.id)
-        .join(User, Purchase.user_external_id == User.external_id)
         .join(Hall, Concert.hall_id == Hall.id)
+        .outerjoin(UserAlias, Purchase.user_external_id == UserAlias.external_id)
         .order_by(Purchase.purchased_at.desc())
-    ).all()
+    )
+    purchases = session.exec(stmt).all()
 
     # Уникальные пользователи и концерты для фильтров
     unique_users = {}
     unique_concerts = {}
-    # Для фильтров по дате: ищем min/max дату покупки
     from datetime import datetime
     purchase_dates = [p.purchased_at for p, _, _, _ in purchases if p.purchased_at]
     if purchase_dates:
@@ -163,7 +200,7 @@ async def admin_purchases(request: Request, session=Depends(get_session)):
         min_purchase_date = ''
         max_purchase_date = ''
     for p, c, u, h in purchases:
-        if u.email not in unique_users:
+        if u and u.email not in unique_users:
             unique_users[u.email] = u.name or u.email
         if c.id not in unique_concerts:
             unique_concerts[c.id] = c.name
@@ -173,7 +210,7 @@ async def admin_purchases(request: Request, session=Depends(get_session)):
     purchases_grouped = []
     grouped = defaultdict(list)
     for p, c, u, h in purchases:
-        key = (u.external_id, c.id, p.purchased_at)
+        key = (p.user_external_id, c.id, p.purchased_at)
         grouped[key].append((p, c, u, h))
     for group in grouped.values():
         count = len(group)
@@ -216,6 +253,7 @@ async def admin_concerts(request: Request, session=Depends(get_session)):
     from models import Purchase
     from sqlalchemy import select, func
     concerts = session.exec(select(Concert)).scalars().all()
+    concerts_by_id = {getattr(c, 'id', None): c for c in concerts if hasattr(c, 'id') and getattr(c, 'id', None) is not None}
     halls = {h.id: h for h in session.exec(select(Hall)).scalars().all()}
 
     # Заглушка для количества оставшихся билетов
@@ -224,11 +262,10 @@ async def admin_concerts(request: Request, session=Depends(get_session)):
         return random.randint(0, 20)
 
     # Получаем количество купленных билетов по каждому концерту
-    tickets_per_concert = dict(
-        session.exec(
-            select(Purchase.concert_id, func.count(Purchase.id)).group_by(Purchase.concert_id)
-        ).all()
-    )
+    result = session.exec(
+        select(Purchase.concert_id, func.count(Purchase.id)).group_by(Purchase.concert_id)
+    ).all()
+    tickets_per_concert = {row[0]: row[1] for row in result}
 
     concerts_data = []
     available_count = 0
@@ -317,13 +354,12 @@ async def admin_halls(request: Request, session=Depends(get_session)):
                 hall_stats[c.hall_id]["available_concerts"] += 1
 
     # Считаем количество купленных билетов по каждому залу
-    tickets_per_hall = dict(
-        session.exec(
-            select(Concert.hall_id, func.count(Purchase.id))
-            .join(Purchase, Purchase.concert_id == Concert.id)
-            .group_by(Concert.hall_id)
-        ).all()
-    )
+    result = session.exec(
+        select(Concert.hall_id, func.count(Purchase.id))
+        .join(Purchase, Purchase.concert_id == Concert.id)
+        .group_by(Concert.hall_id)
+    ).all()
+    tickets_per_hall = {row[0]: row[1] for row in result}
     for hall_id, tickets in tickets_per_hall.items():
         if hall_id in hall_stats:
             hall_stats[hall_id]["tickets_sold"] = tickets
@@ -340,8 +376,8 @@ async def admin_halls(request: Request, session=Depends(get_session)):
             if seats > 0:
                 # Считаем количество купленных билетов для этого концерта
                 from models import Purchase
-                tickets_row = session.exec(select(func.count(Purchase.id)).where(Purchase.concert_id == c.id)).first()
-                tickets = tickets_row[0] if tickets_row else 0
+                tickets_row = session.exec(select(func.count(Purchase.id)).where(Purchase.concert_id == c.id)).scalars().first()
+                tickets = tickets_row or 0
                 fill_percents.append((tickets / seats) * 100)
         mean_fill_percent = round(sum(fill_percents) / len(fill_percents), 1) if fill_percents else 0
         halls_data.append({
@@ -408,41 +444,34 @@ async def admin_customers(request: Request, session=Depends(get_session)):
 
     from models import Purchase, User, Concert
     from sqlalchemy import select, func
-    # Получаем все уникальные user_external_id из покупок
-    external_ids = set(row[0] for row in session.exec(select(Purchase.user_external_id).distinct()).all())
-    # Получаем всех пользователей с этими external_id
-    users_by_external = {u.external_id: u for u in session.exec(select(User).where(User.external_id.in_(external_ids))).scalars().all()}
-    # Получаем все концерты в память для быстрого доступа по id
-    concerts_by_id = {c.id: c for c in session.exec(select(Concert)).scalars().all()}
-    # Считаем покупки по каждому external_id
+    # Получаем все уникальные user_external_id из Purchase
+    external_ids = set(str(row[0]) for row in session.exec(select(Purchase.user_external_id).distinct()).all())
+    # Получаем всех пользователей с этими external_id (и вообще всех User)
+    users_by_external = {str(u.external_id): u for u in session.exec(select(User)).scalars().all() if u.external_id is not None}
+    # Получаем все концерты для быстрого доступа по id
+    concerts = session.exec(select(Concert)).scalars().all()
+    concerts_by_id = {c.id: c for c in concerts}
     customers = []
     for ext_id in external_ids:
         purchases = session.exec(select(Purchase).where(Purchase.user_external_id == ext_id)).scalars().all()
-        unique_concerts = len(set(p.concert_id for p in purchases))
-        tickets = len(purchases)
-        spent = sum(p.price or 0 for p in purchases)
+        total_spent = sum((p.price or 0) for p in purchases)
+        unique_concerts = set(p.concert_id for p in purchases)
+        unique_days = set(
+            concerts_by_id[p.concert_id].datetime.date()
+            for p in purchases
+            if p.concert_id in concerts_by_id and concerts_by_id[p.concert_id].datetime
+        )
         user = users_by_external.get(ext_id)
-        # Считаем уникальные дни фестиваля
-        days = set()
-        for p in purchases:
-            concert = concerts_by_id.get(p.concert_id)
-            if concert and concert.datetime:
-                days.add(concert.datetime.date())
-        unique_days = len(days)
         customers.append({
             "external_id": ext_id,
             "user": user,
-            "count": tickets,
-            "spent": spent,
-            "unique_concerts": unique_concerts,
-            "unique_days": unique_days
+            "total_purchases": len(purchases),
+            "total_spent": total_spent,
+            "unique_concerts": len(unique_concerts),
+            "unique_days": len(unique_days),
         })
-    context = {
-        "user": user_obj,
-        "customers": customers,
-        "request": request
-    }
-    return templates.TemplateResponse("admin_customers.html", context)
+    # Передаём customers в шаблон
+    return templates.TemplateResponse("admin_customers.html", {"request": request, "customers": customers})
 
 
 @home_route.post("/admin/users/update_external_id")
@@ -505,3 +534,50 @@ async def update_customer_external_id(request: Request, session=Depends(get_sess
     session.add(user)
     session.commit()
     return JSONResponse({"success": True})
+
+
+@home_route.get("/admin/routes", response_class=HTMLResponse)
+async def admin_routes(request: Request, session=Depends(get_session)):
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return RedirectResponse(url="/login", status_code=302)
+    summary = get_festival_summary_stats(session)
+    context = {
+        "user": user_obj,
+        "request": request,
+        "summary": summary
+    }
+    return templates.TemplateResponse("admin_routes.html", context)
+
+@home_route.post("/admin/routes/upload")
+async def upload_routes(request: Request, file: UploadFile = File(...), session=Depends(get_session)):
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
+    # Сохраняем файл во временное место
+    temp_path = ROUTES_PATH + ".uploading"
+    with open(temp_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    os.replace(temp_path, ROUTES_PATH)
+    # Запускаем фоновую задачу через threading (чтобы не блокировать event loop)
+    thread = threading.Thread(target=process_routes_upload, args=(session, ROUTES_PATH))
+    thread.start()
+    return JSONResponse({"success": True, "message": "Загрузка маршрутов запущена"})
+
+@home_route.get("/admin/routes/upload_status")
+async def get_routes_upload_status():
+    return JSONResponse(route_upload_status)

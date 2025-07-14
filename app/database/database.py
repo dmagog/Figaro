@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel, Session, create_engine 
 from contextlib import contextmanager
 from .config import get_settings
-from config_data_path import HALLS_LIST_PATH, CONCERTS_PATH, ARTISTS_PATH, PROGRAMM_PATH, TRANSACTIONS_PATH
+from config_data_path import HALLS_LIST_PATH, CONCERTS_PATH, ARTISTS_PATH, PROGRAMM_PATH, TRANSACTIONS_PATH, ROUTES_PATH
 import pandas as pd
 
 from services.crud import data_loader, user, festival
@@ -55,6 +55,10 @@ def init_db(demostart = None):
             print("Creating default users...")
             user.create_default_users(session)
             print("\n✅ Default users created.")
+
+            print("\nЗагружаем маршруты...")
+            data_loader.load_routes_from_csv(session, ROUTES_PATH)
+            print("\n✅ Загрузка маршрутов завершена.")
 
 
     # #Если инициализация базы происходит с созданием демо параметров

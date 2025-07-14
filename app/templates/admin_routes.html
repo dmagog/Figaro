@@ -1,0 +1,99 @@
+{% extends "admin_index.html" %}
+{% block content %}
+<h1 style="font-size:2em; font-weight:700; margin-bottom:32px;">Маршруты</h1>
+<div style="display:flex; justify-content:center; margin-bottom:32px;">
+    <nav style="display:flex; gap:18px;">
+        <a href="/admin/routes" class="admin-menu-btn active">Загрузка маршрутов</a>
+        <a href="#" class="admin-menu-btn" style="background:#e0e7ff; color:#4f5bd5;">Просмотр маршрутов</a>
+        <a href="#" class="admin-menu-btn" style="background:#e0e7ff; color:#4f5bd5;">Инструкция</a>
+    </nav>
+</div>
+<form id="upload-form" enctype="multipart/form-data" style="margin-bottom:24px; max-width:420px; background:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(60,60,120,0.06); padding:32px 32px 24px 32px; margin-left:auto; margin-right:auto;">
+    <label for="routes-file" style="font-weight:500; display:block; margin-bottom:12px;">Загрузить новый файл маршрутов (.csv):</label>
+    <input type="file" id="routes-file" name="file" accept=".csv" required style="margin-bottom:18px; width:100%;">
+    <button type="submit" style="padding:10px 0; width:100%; border-radius:8px; background:#4f5bd5; color:#fff; font-weight:500; border:none; cursor:pointer; font-size:1.08em;">Загрузить</button>
+</form>
+<div id="progress" style="display:none; margin-bottom:18px; color:#4f5bd5; text-align:center;">Загрузка...</div>
+<div id="result" style="margin-top:18px; text-align:center;"></div>
+<script>
+const form = document.getElementById('upload-form');
+const fileInput = document.getElementById('routes-file');
+const progress = document.getElementById('progress');
+const result = document.getElementById('result');
+let pollInterval = null;
+
+form.onsubmit = async function(e) {
+    e.preventDefault();
+    if (!fileInput.files.length) return;
+    // Блокируем форму
+    form.querySelector('button[type="submit"]').disabled = true;
+    fileInput.disabled = true;
+    progress.style.display = 'block';
+    progress.innerHTML = 'Загрузка файла...';
+    result.innerHTML = '';
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    try {
+        const resp = await fetch('/admin/routes/upload', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await resp.json();
+        if (data.success) {
+            progress.innerHTML = 'Файл загружен, идёт обработка маршрутов...';
+            pollUploadStatus();
+        } else {
+            progress.style.display = 'none';
+            result.innerHTML = `<span style='color:red;'>Ошибка: ${data.error || 'Неизвестная ошибка'}</span>`;
+            // Разблокируем форму
+            form.querySelector('button[type="submit"]').disabled = false;
+            fileInput.disabled = false;
+        }
+    } catch (err) {
+        progress.style.display = 'none';
+        result.innerHTML = `<span style='color:red;'>Ошибка соединения с сервером</span>`;
+        // Разблокируем форму
+        form.querySelector('button[type="submit"]').disabled = false;
+        fileInput.disabled = false;
+    }
+};
+
+function pollUploadStatus() {
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(async () => {
+        try {
+            const resp = await fetch('/admin/routes/upload_status');
+            const status = await resp.json();
+            if (status.error) {
+                progress.style.display = 'none';
+                result.innerHTML = `<span style='color:red;'>Ошибка: ${status.error}</span>`;
+                clearInterval(pollInterval);
+                // Разблокируем форму
+                form.querySelector('button[type="submit"]').disabled = false;
+                fileInput.disabled = false;
+                return;
+            }
+            if (status.in_progress) {
+                let percent = status.total ? Math.round((status.progress / status.total) * 100) : 0;
+                progress.style.display = 'block';
+                progress.innerHTML = `Обработка маршрутов: ${status.progress} / ${status.total} (${percent}%)`;
+            } else {
+                progress.style.display = 'none';
+                result.innerHTML = `<b>Загрузка завершена!</b><br>Добавлено: ${status.added}, обновлено: ${status.updated}`;
+                clearInterval(pollInterval);
+                // Разблокируем форму
+                form.querySelector('button[type="submit"]').disabled = false;
+                fileInput.disabled = false;
+            }
+        } catch (err) {
+            progress.style.display = 'none';
+            result.innerHTML = `<span style='color:red;'>Ошибка соединения с сервером</span>`;
+            clearInterval(pollInterval);
+            // Разблокируем форму
+            form.querySelector('button[type="submit"]').disabled = false;
+            fileInput.disabled = false;
+        }
+    }, 1000);
+}
+</script>
+{% endblock %} 

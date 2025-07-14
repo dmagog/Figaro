@@ -304,8 +304,8 @@
                             <span class="status-badge status-guest">Гость</span>
                         {% endif %}
                     </td>
-                    <td>{{ c.count }}</td>
-                    <td>{{ "{:,}".format(c.spent) }} ₽</td>
+                    <td>{{ c.total_purchases }}</td>
+                    <td>{{ "{:,}".format(c.total_spent) }} ₽</td>
                     <td>{{ c.unique_concerts }}</td>
                     <td>{{ c.unique_days }}</td>
                 </tr>
@@ -595,12 +595,19 @@
                     const toast = document.getElementById('assign-toast');
                     if (data.success) {
                         toast.textContent = 'External ID присвоен вам';
+                        toast.classList.add('show');
+                        toast.style.opacity = 1;
+                        setTimeout(() => {
+                            toast.classList.remove('show');
+                            toast.style.opacity = 0;
+                            window.location.href = '/profile';
+                        }, 1200);
                     } else {
                         toast.textContent = data.error || 'Ошибка при присвоении external_id';
+                        toast.classList.add('show');
+                        toast.style.opacity = 1;
+                        setTimeout(() => { toast.classList.remove('show'); toast.style.opacity = 0; }, 1400);
                     }
-                    toast.classList.add('show');
-                    toast.style.opacity = 1;
-                    setTimeout(() => { toast.classList.remove('show'); toast.style.opacity = 0; }, 1400);
                 }).catch(() => {
                     const toast = document.getElementById('assign-toast');
                     toast.textContent = 'Ошибка при присвоении external_id';

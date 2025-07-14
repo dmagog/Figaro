@@ -28,16 +28,15 @@ PROGRAMM_PATH = 'data/show_details.xlsx'
 ## Список залов
 HALLS_LIST_PATH = 'data/HallList-good.xlsx'
 
-
 ############################################################################
 ####            Маршруты и перемещения                                 #####
 ############################################################################
 
-## Маршруты фестиваля
-ROUTES_PATH = 'data/Routes-good.xlsx'
+## Размеченные маршруты фестиваля
+ROUTES_PATH = 'data/RouteRange_with_GMM.csv'
 
 ## Таблица переходов между залами
-# HALLS_TRANSITIONS_PATH = 'data/HallsTime-good.xlsx'
+HALLS_TRANSITIONS_PATH = 'data/HallsTime-good.xlsx'
 
 ## Матрица не совместимости концертов
 # MATRIX_UNCOMB_PATH = 'data/MatrixUncomb.xlsx'

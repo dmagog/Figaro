@@ -229,7 +229,7 @@
                     <td>{{ u.id }}</td>
                     <td>
                         <span class="external-id-inline">
-                            <span class="external-id-value">{{ u.external_id }}</span>
+                            <span class="external-id-value">{{ u.external_id or '—' }}</span>
                             <button class="edit-external-id-btn" title="Редактировать">
                                 <svg viewBox="0 0 20 20" fill="none"><path d="M13.586 3.586a2 2 0 0 1 2.828 2.828l-8.5 8.5a2 2 0 0 1-.878.515l-3 1a1 1 0 0 1-1.263-1.263l1-3a2 2 0 0 1 .515-.878l8.5-8.5z" stroke="#4f5bd5" stroke-width="1.2"/></svg>
                             </button>
@@ -237,17 +237,21 @@
                     </td>
                     <td colspan="2">
                         <span class="user-name">{{ u.name or '—' }}</span>
-                        <span class="user-email">{{ u.email }}</span>
+                        <span class="user-email">{{ u.email or '—' }}</span>
                     </td>
                     <td>
                         <span class="role-badge{% if u.is_superuser %} superuser-badge{% endif %}">
-                            {% if u.is_superuser %}Суперадмин{% else %}{{ u.role|title }}{% endif %}
+                            {% if u.is_superuser %}Суперадмин{% else %}{{ u.role|title if u.role else '—' }}{% endif %}
                         </span>
                     </td>
                     <td>{{ u.created_at.strftime('%d.%m.%Y') if u.created_at else '—' }}</td>
-                    <td>{{ user_stats[u.id].unique_concerts }}</td>
-                    <td>{{ user_stats[u.id].tickets }}</td>
-                    <td>{{ "{:,}".format(user_stats[u.id].spent) }} ₽</td>
+                    {% if u.id in user_stats %}
+                        <td>{{ user_stats[u.id].unique_concerts }}</td>
+                        <td>{{ user_stats[u.id].tickets }}</td>
+                        <td>{{ "{:,}".format(user_stats[u.id].spent) }} ₽</td>
+                    {% else %}
+                        <td colspan="3">—</td>
+                    {% endif %}
                 </tr>
                 {% endfor %}
             </tbody>

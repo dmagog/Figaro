@@ -67,3 +67,38 @@ def create_default_users(session: Session):
     session.commit()
     print(f"📊 Создано пользователей по умолчанию: {created_count}")
     return created_count
+
+
+def fix_external_ids(session: Session):
+    """
+    Проставляет external_id = str(id) для всех пользователей, у которых external_id = None
+    """
+    users = session.exec(select(User)).scalars().all()
+    updated = 0
+    for user in users:
+        if user.external_id is None:
+            user.external_id = str(user.id)
+            session.add(user)
+            updated += 1
+    session.commit()
+    print(f"Обновлено external_id у {updated} пользователей")
+
+
+def sync_external_ids_with_ids(session: Session):
+    """
+    Проставляет external_id = str(id) для всех пользователей, у которых external_id = None,
+    либо если id есть в user_external_id в покупках, чтобы страница покупателей отображала реальные имена/email.
+    """
+    from app.models.purchase import Purchase
+    from sqlalchemy import select
+    # Собираем все user_external_id из покупок
+    purchase_ids = set(str(row[0]) for row in session.exec(select(Purchase.user_external_id).distinct()).scalars().all())
+    users = session.exec(select(User)).scalars().all()
+    updated = 0
+    for user in users:
+        if user.external_id is None and str(user.id) in purchase_ids:
+            user.external_id = str(user.id)
+            session.add(user)
+            updated += 1
+    session.commit()
+    print(f"Обновлено external_id у {updated} пользователей (теперь совпадает с user_external_id из покупок)")
