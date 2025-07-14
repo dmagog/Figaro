@@ -373,6 +373,7 @@ async def admin_halls(request: Request, session=Depends(get_session)):
 
     # Формируем данные для шаблона
     halls_data = []
+    all_fill_percents = []
     for h in halls:
         stats = hall_stats[h.id]
         fill_percent = (stats["tickets_sold"] / (stats["seats"] * stats["concerts"]) * 100) if stats["seats"] and stats["concerts"] else 0
@@ -386,6 +387,7 @@ async def admin_halls(request: Request, session=Depends(get_session)):
                 tickets_row = session.exec(select(func.count(Purchase.id)).where(Purchase.concert_id == c.id)).scalars().first()
                 tickets = tickets_row or 0
                 fill_percents.append((tickets / seats) * 100)
+                all_fill_percents.append((tickets / seats) * 100)
         mean_fill_percent = round(sum(fill_percents) / len(fill_percents), 1) if fill_percents else 0
         halls_data.append({
             "hall": h,
@@ -396,12 +398,13 @@ async def admin_halls(request: Request, session=Depends(get_session)):
             "available_concerts": stats["available_concerts"],
             "mean_fill_percent": mean_fill_percent
         })
-
+    mean_fill_percent_all_halls = round(sum(all_fill_percents) / len(all_fill_percents), 1) if all_fill_percents else 0
     hall_ids = [h["hall"].id for h in halls_data]
     context = {
         "user": user_obj,
         "halls_data": halls_data,
         "hall_ids": hall_ids,
+        "mean_fill_percent_all_halls": mean_fill_percent_all_halls,
         "request": request
     }
     return templates.TemplateResponse("admin_halls.html", context)

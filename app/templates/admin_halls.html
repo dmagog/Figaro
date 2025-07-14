@@ -183,15 +183,28 @@
                 </div>
             </nav>
         </div>
+        {% set fill = mean_fill_percent_all_halls %}
+        {% if fill < 50 %}
+            {% set fill_color = '#6ec6ff' %}
+        {% elif fill < 70 %}
+            {% set fill_color = '#1e88e5' %}
+        {% elif fill < 100 %}
+            {% set fill_color = '#43e695' %}
+        {% else %}
+            {% set fill_color = '#43a047' %}
+        {% endif %}
+        <div style="margin: 8px 0 0 0; color: #aaa; font-size: 0.98em; text-align: right;">
+            Общая средняя заполняемость: <span id="halls-mean-fill-value" style="color: {{ fill_color }}; font-weight:700;">{{ mean_fill_percent_all_halls }}%</span>
+        </div>
         <table id="halls-table">
             <thead>
                 <tr>
                     <th class="sortable">Название</th>
                     <th class="sortable">Всего мест</th>
                     <th class="sortable">Концертов</th>
-                    <th class="sortable">Концертов с местами</th>
-                    <th class="sortable">Куплено билетов</th>
-                    <th class="sortable">Средняя заполняемость</th>
+                    <th class="sortable">В продаже</th>
+                    <th class="sortable">Продано<br>билетов</th>
+                    <th class="sortable">Средняя<br>заполняемость</th>
                     <th class="sortable">Заполняемость</th>
                 </tr>
             </thead>
