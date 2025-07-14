@@ -77,6 +77,7 @@
             padding: 24px 18px;
             box-shadow: 0 2px 8px rgba(102,126,234,0.07);
             text-align: center;
+            min-height: 120px;
         }
         .summary-card h3 {
             margin: 0 0 10px 0;
@@ -101,7 +102,7 @@
             box-shadow: 0 2px 8px rgba(60,60,120,0.06);
             padding: 18px 12px 14px 12px;
             min-width: 180px;
-            min-height: 170px;
+            min-height: 120px;
         }
         .profile-avatar {
             font-size: 2.2em;
@@ -185,14 +186,18 @@
             <p>Это главная страница админки. Здесь будет сводная статистика и быстрый доступ к разделам управления.</p>
         </div>
         <div class="admin-summary">
-            <div class="summary-card">
-                <h3>Пользователей</h3>
-                <p>{{ summary.users_count }}</p>
-            </div>
-            <div class="summary-card">
-                <h3>Концертов</h3>
-                <p>{{ summary.concerts_count }}</p>
-            </div>
+            <a href="/admin/users" style="text-decoration:none; color:inherit;" title="Перейти к пользователям">
+                <div class="summary-card" style="cursor:pointer;">
+                    <h3>Пользователей</h3>
+                    <p>{{ summary.users_count }}</p>
+                </div>
+            </a>
+            <a href="/admin/concerts" style="text-decoration:none; color:inherit;" title="Перейти к концертам">
+                <div class="summary-card" style="cursor:pointer;">
+                    <h3>Концертов</h3>
+                    <p>{{ summary.concerts_count }}</p>
+                </div>
+            </a>
             <div class="summary-card">
                 <h3>Билетов куплено</h3>
                 <p>{{ summary.tickets_count }}</p>
@@ -205,10 +210,12 @@
                 <h3>Средняя заполняемость</h3>
                 <p>{{ '%.2f' % summary.avg_fill }}</p>
             </div>
-            <div class="summary-card">
-                <h3>Маршрутов</h3>
-                <p>{{ routes_count }}</p>
-            </div>
+            <a href="/admin/routes/view" style="text-decoration:none; color:inherit;" title="Перейти к маршрутам">
+                <div class="summary-card" style="cursor:pointer;">
+                    <h3>Маршрутов</h3>
+                    <p>{{ routes_count }}</p>
+                </div>
+            </a>
             <a href="/profile" style="text-decoration:none; color:inherit;" title="Перейти в профиль">
                 <div class="summary-card profile-card" style="padding:10px 6px 8px 6px; min-height:120px; min-width:140px; cursor:pointer; transition:box-shadow 0.18s, background 0.18s;">
                     <div class="profile-avatar" style="font-size:1.7em; width:40px; height:40px; margin-bottom:2px;">👑 </div>
