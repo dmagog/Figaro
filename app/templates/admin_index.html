@@ -90,6 +90,63 @@
             font-weight: bold;
             color: #222;
         }
+        .profile-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: #f4f6fb;
+            border-radius: 14px;
+            box-shadow: 0 2px 8px rgba(60,60,120,0.06);
+            padding: 18px 12px 14px 12px;
+            min-width: 180px;
+            min-height: 170px;
+        }
+        .profile-avatar {
+            font-size: 2.2em;
+            background: #e0e7ff;
+            border-radius: 50%;
+            width: 54px;
+            height: 54px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 4px;
+        }
+        .profile-info {
+            text-align: center;
+        }
+        .profile-name {
+            font-weight: 600;
+            color: #4f5bd5;
+            font-size: 1.08em;
+        }
+        .profile-role {
+            font-size: 0.95em;
+            color: #8ca0c7;
+            margin-bottom: 2px;
+        }
+        .profile-link {
+            margin-top: 6px;
+            color: #4f5bd5;
+            text-decoration: underline;
+            font-weight: 500;
+            transition: color 0.18s;
+        }
+        .profile-link:hover {
+            color: #1e88e5;
+        }
+        .profile-card:hover {
+            background: rgba(255,193,7,0.22);
+            box-shadow: 0 2px 12px rgba(255,193,7,0.13);
+            text-decoration: none;
+        }
+        .summary-card:not(.profile-card):hover {
+            background: #e0e7ff;
+            box-shadow: 0 2px 12px rgba(76, 110, 245, 0.10);
+            text-decoration: none;
+        }
         @media (max-width: 900px) {
             .admin-nav-flex { gap: 8px; }
             .admin-menu-btn, .admin-menu-dropdown-btn { padding: 10px 12px; font-size: 1em; }
@@ -148,6 +205,19 @@
                 <h3>Средняя заполняемость</h3>
                 <p>{{ '%.2f' % summary.avg_fill }}</p>
             </div>
+            <div class="summary-card">
+                <h3>Маршрутов</h3>
+                <p>{{ routes_count }}</p>
+            </div>
+            <a href="/profile" style="text-decoration:none; color:inherit;" title="Перейти в профиль">
+                <div class="summary-card profile-card" style="padding:10px 6px 8px 6px; min-height:120px; min-width:140px; cursor:pointer; transition:box-shadow 0.18s, background 0.18s;">
+                    <div class="profile-avatar" style="font-size:1.7em; width:40px; height:40px; margin-bottom:2px;">👑 </div>
+                    <div class="profile-info">
+                        <div class="profile-name">{{ user.name or user.email }}</div>
+                        <div class="profile-role">Суперадмин</div>
+                    </div>
+                </div>
+            </a>
         </div>
         {% endblock %}
     </div>

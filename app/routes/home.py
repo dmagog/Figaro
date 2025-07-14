@@ -103,11 +103,16 @@ async def admin_index(request: Request, session=Depends(get_session)):
         return RedirectResponse(url="/login", status_code=302)
 
     summary = get_festival_summary_stats(session)
+    # Получаем количество маршрутов
+    from models.route import Route
+    from sqlalchemy import select
+    routes_count = len(session.exec(select(Route)).all())
 
     context = {
         "user": user_obj,
         "request": request,
-        "summary": summary
+        "summary": summary,
+        "routes_count": routes_count
     }
     return templates.TemplateResponse("admin_index.html", context)
 
@@ -583,10 +588,15 @@ async def admin_routes_view(request: Request, session=Depends(get_session)):
         user_obj = UsersService.get_user_by_email(user, session)
     if not user_obj or not getattr(user_obj, 'is_superuser', False):
         return RedirectResponse(url="/login", status_code=302)
+    # Получаем количество маршрутов
+    from models.route import Route
+    from sqlalchemy import select
+    routes_count = len(session.exec(select(Route)).all())
     context = {
         "user": user_obj,
         "request": request,
-        "active_tab": "view"
+        "active_tab": "view",
+        "routes_count": routes_count
     }
     return templates.TemplateResponse("admin_routes_main.html", context)
 

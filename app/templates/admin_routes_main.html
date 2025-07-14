@@ -93,6 +93,15 @@
     <a href="/admin/routes/upload" class="{% if active_tab == 'upload' %}active{% endif %}">Загрузка маршрутов</a>
     <a href="/admin/routes/instruction" class="{% if active_tab == 'instruction' %}active{% endif %}">Инструкция</a>
 </nav>
+{% if active_tab == 'view' %}
+    <div style="margin-bottom:24px; font-size:1.15em; color:#4f5bd5; font-weight:500;">
+        {% if routes_count > 0 %}
+            Всего маршрутов в базе: <b>{{ routes_count }}</b>
+        {% else %}
+            <span style="color:#e53935;">Маршруты не загружены.</span> <a href="/admin/routes/upload" style="color:#4f5bd5; text-decoration:underline;">Загрузить маршруты</a>
+        {% endif %}
+    </div>
+{% endif %}
 <div class="routes-main-container">
     {% block routes_content %}{% endblock %}
 </div>
