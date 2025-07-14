@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <style>
         body { background: #f6f7fb; font-family: 'Segoe UI', 'Arial', sans-serif; }
-        .admin-container { max-width: 900px; margin: 40px auto; padding: 30px; background: white; border-radius: 18px; box-shadow: 0 8px 32px rgba(60,60,120,0.08); }
+        .admin-container { max-width: 1200px; margin: 40px auto; padding: 30px; background: white; border-radius: 18px; box-shadow: 0 8px 32px rgba(60,60,120,0.08); }
         .admin-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 30px; }
         .admin-header h1 { font-size: 2.2em; margin: 0; flex-shrink:0; }
         .admin-nav-flex { display: flex; gap: 18px; flex-wrap: nowrap; align-items: center; position: relative; overflow-x: auto; padding-bottom: 4px; flex:1; }
@@ -16,11 +16,51 @@
         /* Удалены стили выпадающего меню, теперь используется общий style.css */
         .admin-menu-dropdown-arrow { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); width: 24px; height: 12px; pointer-events: none; z-index: 1003; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: translateY(0);} }
+        table { width: 100%; border-collapse: collapse; margin-top: 30px; background: #f8f9fa; border-radius: 12px; overflow: hidden; }
         th, td { padding: 14px 10px; text-align: left; }
         th { background: #e0e7ff; color: #333; font-weight: 600; }
         tr:nth-child(even) { background: #f0f4ff; }
         tr:hover { background: #e3eafe; }
-        .fill-bar { display: inline-block; min-width: 60px; padding: 2px 8px; border-radius: 8px; font-weight: 600; color: #fff; text-align: center; position: relative; cursor: help; }
+        .fill-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            min-width: 60px;
+            padding: 2px 8px 6px 8px;
+            border-radius: 8px;
+            font-weight: 600;
+            color: #fff;
+            text-align: left;
+            position: relative;
+            background: none;
+            box-shadow: none;
+        }
+        .fill-bar .fill-percent {
+            z-index: 2;
+            font-size: 1em;
+            margin-bottom: 2px;
+            font-weight: 700;
+            transition: color 0.2s;
+            cursor: default;
+        }
+        .fill-bar .fill-percent:hover {
+            cursor: help;
+            text-decoration: underline dotted #bfc8e6 1.5px;
+        }
+        .fill-bar .fill-progress {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #e0e7ff;
+            overflow: hidden;
+            margin-top: 4px;
+            position: relative;
+        }
+        .fill-bar .fill-progress-inner {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.3s, background 0.3s;
+        }
         .fill-bar::after { content: attr(data-tooltip); position: absolute; top: 120%; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 8px 14px; border-radius: 8px; font-size: 13px; white-space: nowrap; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; z-index: 1001; margin-top: 6px; pointer-events: none; box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
         .fill-bar:hover::after { opacity: 1; visibility: visible; }
         .hall-badge { display: inline-block; background: #e3f2fd; color: #1976d2; border-radius: 8px; padding: 4px 14px; font-size: 1em; font-weight: 400; margin: 0; }
@@ -173,17 +213,33 @@
                     <td>{{ item.available_concerts }}</td>
                     <td>{{ item.tickets_sold }}</td>
                     <td>
-                        <span style="font-weight:600; color:#4f5bd5;">{{ item.mean_fill_percent }}%</span>
+                        <span>{{ item.mean_fill_percent }}%</span>
                     </td>
                     <td>
                         {% set fill = item.fill_percent|round(0, 'floor') %}
-                        {% set r = (227 + (56-227)*fill/100)|round(0, 'floor') %}
-                        {% set g = (57 + (142-57)*fill/100)|round(0, 'floor') %}
-                        {% set b = (53 + (60-53)*fill/100)|round(0, 'floor') %}
-                        {% set fill_color = 'rgb(' ~ r ~ ',' ~ g ~ ',' ~ b ~ ')' %}
-                        <span class="fill-bar" style="background: {{ fill_color }};" data-tooltip="Заполняемость: {{ fill }}%">
-                            {{ fill }}%
-                        </span>
+                        {% if fill and fill > 0 %}
+                            {% if fill < 50 %}
+                                {% set fill_color = '#6ec6ff' %}
+                                {% set fill_gradient = 'linear-gradient(90deg, #6ec6ff 0%, #1e88e5 100%)' %}
+                            {% elif fill < 70 %}
+                                {% set fill_color = '#1e88e5' %}
+                                {% set fill_gradient = 'linear-gradient(90deg, #1e88e5 0%, #43e695 100%)' %}
+                            {% elif fill < 100 %}
+                                {% set fill_color = '#43e695' %}
+                                {% set fill_gradient = 'linear-gradient(90deg, #43e695 0%, #43a047 100%)' %}
+                            {% else %}
+                                {% set fill_color = '#43a047' %}
+                                {% set fill_gradient = '#43a047' %}
+                            {% endif %}
+                            <span class="fill-bar" data-tooltip="Заполняемость: {{ fill }}%">
+                                <span class="fill-percent" style="color: {{ fill_color }}; font-weight:700;">{{ fill }}%</span>
+                                <div class="fill-progress">
+                                    <div class="fill-progress-inner" style="width: {{ fill }}%; background: {{ fill_gradient }};"></div>
+                                </div>
+                            </span>
+                        {% else %}
+                            <span style="color:#bfc8e6; font-weight:600;">—</span>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}

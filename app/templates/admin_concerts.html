@@ -17,7 +17,49 @@
         .admin-menu-dropdown-arrow { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); width: 24px; height: 12px; pointer-events: none; z-index: 1003; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: translateY(0);} }
         /* Удалены дублирующиеся стили таблицы ниже */
-        .fill-bar { display: inline-block; min-width: 60px; padding: 2px 8px; border-radius: 8px; font-weight: 600; color: #fff; text-align: center; position: relative; cursor: help; }
+        /* Градиент для .fill-bar: от красного к зелёному */
+        .fill-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            min-width: 60px;
+            padding: 2px 8px 6px 8px;
+            border-radius: 8px;
+            font-weight: 600;
+            color: #fff;
+            text-align: left;
+            position: relative;
+            background: none;
+            box-shadow: none;
+        }
+        .fill-bar .fill-percent {
+            z-index: 2;
+            font-size: 1em;
+            margin-bottom: 2px;
+        }
+        .fill-bar .fill-progress {
+            width: 100%;
+            height: 6px;
+            border-radius: 4px;
+            background: #e0e7ff;
+            overflow: hidden;
+            margin-top: 2px;
+            position: relative;
+        }
+        .fill-bar .fill-progress-inner {
+            height: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #e53935 0%, #ffeb3b 50%, #34c759 100%);
+            transition: width 0.3s;
+        }
+
+        /* Убираем старый фон fill-bar */
+
+        /* Цвет текста для тёмного фона */
+        .fill-bar .fill-percent {
+            color: #222;
+            font-weight: 700;
+        }
         .fill-bar::after { content: attr(data-tooltip); position: absolute; top: 120%; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 8px 14px; border-radius: 8px; font-size: 13px; white-space: nowrap; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; z-index: 1001; margin-top: 6px; pointer-events: none; box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
         .fill-bar:hover::after { opacity: 1; visibility: visible; }
         .hall-badge { display: inline-block; background: #e3f2fd; color: #1976d2; border-radius: 8px; padding: 4px 14px; font-size: 1em; font-weight: 400; margin: 0; }
@@ -31,6 +73,17 @@
         th.sortable:after { content: ''; position: absolute; right: 10px; font-size: 1em; }
         th.sorted-asc:after { content: '▲'; }
         th.sorted-desc:after { content: '▼'; }
+        .available-icon, .unavailable-icon {
+            display: inline-flex;
+            align-items: center;
+            vertical-align: middle;
+            margin-right: 2px;
+        }
+        .available-icon svg, .unavailable-icon svg {
+            width: 28px;
+            height: 28px;
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -116,14 +169,29 @@
                     <td><span class="hall-badge">{{ item.hall.name if item.hall else '—' }}</span></td>
                     <td>
                         {% set fill = item.fill_percent|round(0, 'floor') %}
-                        {% set r = (227 + (56-227)*fill/100)|round(0, 'floor') %}
-                        {% set g = (57 + (142-57)*fill/100)|round(0, 'floor') %}
-                        {% set b = (53 + (60-53)*fill/100)|round(0, 'floor') %}
-                        {% set fill_color = 'rgb(' ~ r ~ ',' ~ g ~ ',' ~ b ~ ')' %}
-                        {% set tickets_sold = item.tickets_sold %}
-                        {% set tickets_text = tickets_sold == 1 and 'Куплен 1 билет' or 'Куплено ' ~ tickets_sold ~ ' билетов' %}
-                        <span class="fill-bar" style="background: {{ fill_color }};" data-tooltip="{{ tickets_text }}">
-                            {{ fill }}%
+                        {% if fill < 50 %}
+                            {% set fill_color = '#6ec6ff' %}
+                        {% elif fill < 70 %}
+                            {% set fill_color = '#1e88e5' %}
+                        {% elif fill < 100 %}
+                            {% set fill_color = '#43e695' %}
+                        {% else %}
+                            {% set fill_color = '#43a047' %}
+                        {% endif %}
+                        {% if fill < 50 %}
+                            {% set fill_gradient = 'linear-gradient(90deg, #6ec6ff 0%, #1e88e5 100%)' %}
+                        {% elif fill < 70 %}
+                            {% set fill_gradient = 'linear-gradient(90deg, #1e88e5 0%, #43e695 100%)' %}
+                        {% elif fill < 100 %}
+                            {% set fill_gradient = 'linear-gradient(90deg, #43e695 0%, #43a047 100%)' %}
+                        {% else %}
+                            {% set fill_gradient = '#43a047' %}
+                        {% endif %}
+                        <span class="fill-bar" data-tooltip="{{ tickets_text }}">
+                            <span class="fill-percent" style="color: {{ fill_color }}; font-weight:700;">{{ fill }}%</span>
+                            <div class="fill-progress">
+                                <div class="fill-progress-inner" style="width: {{ fill }}%; background: {{ fill_gradient }}; border: 1px solid #bfc8e6;"></div>
+                            </div>
                         </span>
                     </td>
                     <td>{{ item.seats }}</td>
@@ -134,9 +202,13 @@
                     </td>
                     <td>
                         {% if item.tickets_available %}
-                            <span style="color:#388e3c; font-weight:600;">Да</span>
+                            <span class="available-icon" title="Доступно">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="10" fill="#e6fbe8"/><path d="M6 10.5l3 3 5-6" stroke="#34c759" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </span>
                         {% else %}
-                            <span style="color:#e53935; font-weight:600;">Нет</span>
+                            <span class="unavailable-icon" title="Нет в продаже">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="10" fill="#ffeaea"/><path d="M7 7l6 6M13 7l-6 6" stroke="#ff3b30" stroke-width="2" stroke-linecap="round"/></svg>
+                            </span>
                         {% endif %}
                     </td>
                 </tr>
