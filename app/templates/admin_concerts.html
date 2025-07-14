@@ -169,12 +169,12 @@
                         {% set seats = item.seats or 0 %}
                         {% set left = item.tickets_left or 0 %}
                         {% set percent_left = (left / seats * 100) if seats > 0 else 0 %}
-                        {% if percent_left > 50 %}
-                            {% set bar_color = '#43a047' %}
-                        {% elif percent_left > 20 %}
-                            {% set bar_color = '#ffb300' %}
+                        {% if percent_left <= 10 %}
+                            {% set bar_color = '#e53935' %} {# красный #}
+                        {% elif percent_left <= 20 %}
+                            {% set bar_color = '#ffb300' %} {# жёлтый #}
                         {% else %}
-                            {% set bar_color = '#e53935' %}
+                            {% set bar_color = '#43a047' %} {# зелёный #}
                         {% endif %}
                         <span class="fill-bar" data-tooltip="Осталось {{ left }} из {{ seats }} мест ({{ percent_left|round(1) }}%)">
                             <span class="fill-percent" style="color: {{ bar_color }}; font-weight:700;">
