@@ -1,16 +1,105 @@
 {% extends "admin_index.html" %}
 {% block content %}
-<h1 style="font-size:2em; font-weight:700; margin-bottom:32px;">Маршруты фестиваля</h1>
-<div style="display:flex; gap:24px;">
-    <nav style="min-width:220px;">
-        <ul style="list-style:none; padding:0;">
-            <li><a href="/admin/routes/upload" class="admin-menu-btn {% if active_tab == 'upload' %}active{% endif %}">Загрузка маршрутов</a></li>
-            <li><a href="/admin/routes/view" class="admin-menu-btn {% if active_tab == 'view' %}active{% endif %}">Просмотр маршрутов</a></li>
-            <li><a href="/admin/routes/instruction" class="admin-menu-btn {% if active_tab == 'instruction' %}active{% endif %}">Инструкция</a></li>
-        </ul>
-    </nav>
-    <div style="flex:1;">
-        {% block routes_content %}{% endblock %}
-    </div>
+<style>
+.routes-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    font-size: 2.1em;
+    font-weight: 700;
+    color: #4f5bd5;
+    margin-bottom: 8px;
+}
+.routes-header .icon {
+    font-size: 1.2em;
+    background: linear-gradient(90deg, #4f5bd5 60%, #6EC6FF 100%);
+    color: #fff;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(60,60,120,0.10);
+}
+.routes-divider {
+    height: 4px;
+    width: 100%;
+    background: linear-gradient(90deg, #4f5bd5 0%, #6EC6FF 100%);
+    border-radius: 2px;
+    margin-bottom: 24px;
+}
+.routes-nav {
+    display: flex;
+    gap: 0;
+    background: #f4f6fb;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 32px;
+    box-shadow: 0 2px 8px rgba(60,60,120,0.04);
+}
+.routes-nav a {
+    padding: 14px 32px;
+    font-size: 1.08em;
+    color: #4f5bd5;
+    background: none;
+    border: none;
+    outline: none;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+    cursor: pointer;
+    border-right: 1px solid #e0e7ff;
+}
+.routes-nav a:last-child { border-right: none; }
+.routes-nav a.active, .routes-nav a:focus {
+    background: #4f5bd5;
+    color: #fff;
+}
+.routes-main-container {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 2px 16px rgba(60,60,120,0.08);
+    padding: 36px 36px 28px 36px;
+    max-width: 820px;
+    margin: 0 auto;
+}
+@media (max-width: 900px) {
+    .routes-main-container { padding: 18px 6vw; }
+    .routes-header { font-size: 1.3em; }
+    .routes-nav a { padding: 12px 10px; font-size: 1em; }
+}
+.back-link {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+}
+.back-link:hover {
+    text-decoration: underline;
+}
+</style>
+{% block back_link %}
+<a href="/admin" class="back-link">← Назад в админку</a>
+{% endblock %}
+<div class="routes-header">
+    <span class="icon">🗺️</span>
+    Маршруты фестиваля
 </div>
+<div class="routes-divider"></div>
+<nav class="routes-nav">
+    <a href="/admin/routes/view" class="{% if active_tab == 'view' %}active{% endif %}">Просмотр маршрутов</a>
+    <a href="/admin/routes/upload" class="{% if active_tab == 'upload' %}active{% endif %}">Загрузка маршрутов</a>
+    <a href="/admin/routes/instruction" class="{% if active_tab == 'instruction' %}active{% endif %}">Инструкция</a>
+</nav>
+<div class="routes-main-container">
+    {% block routes_content %}{% endblock %}
+</div>
+<style>
+a[href="/admin"]:hover {
+    color: #4f5bd5 !important;
+    opacity: 1 !important;
+}
+</style>
 {% endblock %} 

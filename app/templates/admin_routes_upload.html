@@ -9,13 +9,14 @@ button[disabled] {
     box-shadow: none;
 }
 </style>
-<h1 style="font-size:2em; font-weight:700; margin-bottom:32px;">Маршруты</h1>
-<div style="display:flex; justify-content:center; margin-bottom:32px;">
-    <nav style="display:flex; gap:18px;">
-        <a href="/admin/routes/upload" class="admin-menu-btn active">Загрузка маршрутов</a>
-        <a href="/admin/routes/view" class="admin-menu-btn" style="background:#e0e7ff; color:#4f5bd5;">Просмотр маршрутов</a>
-        <a href="/admin/routes/instruction" class="admin-menu-btn" style="background:#e0e7ff; color:#4f5bd5;">Инструкция</a>
-    </nav>
+<div style="max-width:600px; margin:0 auto 32px auto; background:#f4f6fb; border-radius:12px; padding:22px 28px 18px 28px; color:#3a3a4a; font-size:1.08em; box-shadow:0 2px 8px rgba(60,60,120,0.04);">
+    <b>Инструкция:</b> На этой странице вы можете загрузить новый файл с маршрутами фестиваля в формате <b>.csv</b>.<br>
+    <ul style="margin:12px 0 0 18px;">
+        <li>Файл должен содержать актуальные маршруты для всех дней фестиваля.</li>
+        <li>После загрузки начнётся автоматическая обработка данных.</li>
+        <li>По завершении загрузки вы будете перенаправлены на страницу просмотра маршрутов.</li>
+        <li>Если возникнут ошибки, они отобразятся ниже формы.</li>
+    </ul>
 </div>
 <form id="upload-form" enctype="multipart/form-data" style="margin-bottom:24px; max-width:420px; background:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(60,60,120,0.06); padding:32px 32px 24px 32px; margin-left:auto; margin-right:auto;">
     <label for="routes-file" style="font-weight:500; display:block; margin-bottom:12px;">Загрузить новый файл маршрутов (.csv):</label>
