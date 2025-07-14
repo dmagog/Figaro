@@ -16,6 +16,12 @@
         /* Удалены стили выпадающего меню, теперь используется общий style.css */
         .admin-menu-dropdown-arrow { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); width: 24px; height: 12px; pointer-events: none; z-index: 1003; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: translateY(0);} }
+        /* Удалены дублирующиеся стили таблицы ниже */
+        .fill-bar { display: inline-block; min-width: 60px; padding: 2px 8px; border-radius: 8px; font-weight: 600; color: #fff; text-align: center; position: relative; cursor: help; }
+        .fill-bar::after { content: attr(data-tooltip); position: absolute; top: 120%; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 8px 14px; border-radius: 8px; font-size: 13px; white-space: nowrap; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; z-index: 1001; margin-top: 6px; pointer-events: none; box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
+        .fill-bar:hover::after { opacity: 1; visibility: visible; }
+        .hall-badge { display: inline-block; background: #e3f2fd; color: #1976d2; border-radius: 8px; padding: 4px 14px; font-size: 1em; font-weight: 400; margin: 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 30px; background: #f8f9fa; border-radius: 12px; overflow: hidden; }
         th, td { padding: 14px 10px; text-align: left; }
         th { background: #e0e7ff; color: #333; font-weight: 600; }
         tr:nth-child(even) { background: #f0f4ff; }
@@ -25,10 +31,6 @@
         th.sortable:after { content: ''; position: absolute; right: 10px; font-size: 1em; }
         th.sorted-asc:after { content: '▲'; }
         th.sorted-desc:after { content: '▼'; }
-        .fill-bar { display: inline-block; min-width: 60px; padding: 2px 8px; border-radius: 8px; font-weight: 600; color: #fff; text-align: center; position: relative; cursor: help; }
-        .fill-bar::after { content: attr(data-tooltip); position: absolute; top: 120%; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 8px 14px; border-radius: 8px; font-size: 13px; white-space: nowrap; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; z-index: 1001; margin-top: 6px; pointer-events: none; box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
-        .fill-bar:hover::after { opacity: 1; visibility: visible; }
-        .hall-badge { display: inline-block; background: #e3f2fd; color: #1976d2; border-radius: 8px; padding: 4px 14px; font-size: 1em; font-weight: 400; margin: 0; }
     </style>
 </head>
 <body>

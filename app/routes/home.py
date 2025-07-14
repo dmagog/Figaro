@@ -199,9 +199,16 @@ async def admin_purchases(request: Request, session=Depends(get_session)):
     else:
         min_purchase_date = ''
         max_purchase_date = ''
-    for p, c, u, h in purchases:
-        if u and u.email not in unique_users:
+    # Только зарегистрированные пользователи (User), у которых есть покупки
+    from models import User, Purchase
+    users = session.exec(select(User)).scalars().all()
+    users_with_purchases = set(
+        row[0] for row in session.exec(select(Purchase.user_external_id).distinct()).all()
+    )
+    for u in users:
+        if u.external_id and u.external_id in users_with_purchases and u.email and u.email not in unique_users:
             unique_users[u.email] = u.name or u.email
+    for p, c, u, h in purchases:
         if c.id not in unique_concerts:
             unique_concerts[c.id] = c.name
 

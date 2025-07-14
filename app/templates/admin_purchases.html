@@ -16,6 +16,7 @@
         /* Удалены стили выпадающего меню, теперь используется общий style.css */
         .admin-menu-dropdown-arrow { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); width: 24px; height: 12px; pointer-events: none; z-index: 1003; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: translateY(0);} }
+        table { width: 100%; border-collapse: collapse; margin-top: 30px; background: #f8f9fa; border-radius: 12px; overflow: hidden; }
         th, td { padding: 14px 10px; text-align: left; }
         th { background: #e0e7ff; color: #333; font-weight: 600; }
         tr:nth-child(even) { background: #f0f4ff; }
@@ -247,8 +248,13 @@
                 let show = true;
                 // Поиск по всем полям
                 if (search && !cells.some(c => c.includes(search))) show = false;
-                // Фильтр по пользователю (email)
-                if (user && cells[2] !== user.toLowerCase()) show = false;
+                // Фильтр по пользователю (только email зарегистрированных пользователей)
+                if (user) {
+                    const userCell = row.querySelector('.user-email');
+                    let match = false;
+                    if (userCell && userCell.textContent === user) match = true;
+                    if (!match) show = false;
+                }
                 // Фильтр по концерту (id)
                 if (concert && cells[3] !== concert) show = false;
                 // Фильтр по дате покупки
@@ -330,6 +336,15 @@
             });
             rows.forEach(row => tbody.appendChild(row));
         }
+
+        // Исправление схлопывания таблицы при отсутствии данных
+        const tbody = table.tBodies[0];
+        const observer = new MutationObserver(() => {
+            if (tbody.rows.length === 0 || Array.from(tbody.rows).every(r => r.style.display === 'none')) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#aaa; padding:40px 0; font-size:1.2em;">Нет данных для отображения</td></tr>';
+            }
+        });
+        observer.observe(tbody, { childList: true, subtree: true });
     });
     // Выпадающее меню для переполнения
     document.addEventListener('DOMContentLoaded', function() {
