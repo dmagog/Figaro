@@ -13,6 +13,7 @@ from auth.jwt_handler import create_access_token
 from auth.authenticate import authenticate_cookie
 from models import User
 from database.config import get_settings
+from fastapi.responses import JSONResponse
 
 logger = get_logger(logger_name=__name__)
 
@@ -304,6 +305,28 @@ async def profile_page(
         # В случае ошибки перенаправляем на главную
         return RedirectResponse(url="/", status_code=302)
     
+
+
+@user_route.post("/profile/set_external_id")
+async def set_profile_external_id(request: Request, session=Depends(get_session)):
+    token = request.cookies.get(settings.COOKIE_NAME)
+    user_email = None
+    if token:
+        user_email = await authenticate_cookie(token)
+    if not user_email:
+        return JSONResponse({"success": False, "error": "Не авторизован"}, status_code=401)
+    user = UserService.get_user_by_email(user_email, session)
+    if not user or not getattr(user, 'is_superuser', False):
+        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
+    data = await request.json()
+    new_external_id = data.get('external_id')
+    if not new_external_id:
+        return JSONResponse({"success": False, "error": "Некорректные данные"}, status_code=400)
+    user.external_id = new_external_id
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return JSONResponse({"success": True, "external_id": user.external_id})
 
 
 @user_route.get("/debug/user/{email}/external_id")

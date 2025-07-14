@@ -54,6 +54,105 @@
             margin-top: 2px;
             word-break: break-all;
         }
+        .edit-external-id-btn svg {
+            width: 14px;
+            height: 14px;
+            vertical-align: middle;
+            margin: 0;
+        }
+        .edit-external-id-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            transition: background 0.15s;
+            outline: none;
+            box-shadow: none;
+        }
+        .edit-external-id-btn:hover,
+        .edit-external-id-btn:focus {
+            background: #e0e7ff;
+        }
+        .edit-external-id-btn:hover svg path,
+        .edit-external-id-btn:focus svg path {
+            stroke: #222;
+        }
+        .edit-external-id-btn:active {
+            background: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            border: none !important;
+        }
+        .external-id-edit-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 2px;
+        }
+        .external-id-edit-row input[type="text"] {
+            width: 80px;
+            padding: 4px 8px;
+            border: 1.5px solid #bfc8e6;
+            border-radius: 7px;
+            font-size: 1em;
+            outline: none;
+            transition: border 0.18s, box-shadow 0.18s;
+        }
+        .external-id-edit-row input[type="text"]:focus {
+            border: 1.5px solid #4f5bd5;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.10);
+        }
+        .external-id-edit-row .save-btn {
+            background: #4f5bd5;
+            color: #fff;
+            border: none;
+            border-radius: 7px;
+            padding: 2px 8px;
+            font-size: 1.1em;
+            min-width: 28px;
+            min-height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .external-id-edit-row .save-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+        .external-id-edit-row .cancel-btn {
+            background: none;
+            color: #4f5bd5;
+            border: 1.5px solid #e0e7ff;
+            border-radius: 7px;
+            padding: 2px 8px;
+            font-size: 1.1em;
+            min-width: 28px;
+            min-height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.15s, border 0.15s;
+        }
+        .external-id-edit-row .cancel-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+        .external-id-inline {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .external-id-edit-row .save-btn, .external-id-edit-row .cancel-btn {
+            padding: 2px 10px;
+            font-size: 0.93em;
+            min-height: 28px;
+            line-height: 1.1;
+        }
     </style>
 </head>
 <body>
@@ -115,6 +214,7 @@
             <thead>
                 <tr>
                     <th class="sortable">ID</th>
+                    <th class="sortable">External ID</th>
                     <th class="sortable" colspan="2">Пользователь</th>
                     <th class="sortable">Роль</th>
                     <th class="sortable">Дата регистрации</th>
@@ -127,6 +227,14 @@
                 {% for u in users %}
                 <tr>
                     <td>{{ u.id }}</td>
+                    <td>
+                        <span class="external-id-inline">
+                            <span class="external-id-value">{{ u.external_id }}</span>
+                            <button class="edit-external-id-btn" title="Редактировать">
+                                <svg viewBox="0 0 20 20" fill="none"><path d="M13.586 3.586a2 2 0 0 1 2.828 2.828l-8.5 8.5a2 2 0 0 1-.878.515l-3 1a1 1 0 0 1-1.263-1.263l1-3a2 2 0 0 1 .515-.878l8.5-8.5z" stroke="#4f5bd5" stroke-width="1.2"/></svg>
+                            </button>
+                        </span>
+                    </td>
                     <td colspan="2">
                         <span class="user-name">{{ u.name or '—' }}</span>
                         <span class="user-email">{{ u.email }}</span>
@@ -245,6 +353,81 @@
             });
             rows.forEach(row => tbody.appendChild(row));
         }
+    });
+    // --- инлайн-редактирование external_id ---
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.edit-external-id-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const td = btn.closest('td');
+                const span = td.querySelector('.external-id-value');
+                const oldVal = span.textContent.trim();
+                if (td.querySelector('input')) return;
+                // Создаём контейнер
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'external-id-edit-row';
+                // Создаём input и кнопки
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = oldVal;
+                const saveBtn = document.createElement('button');
+                saveBtn.className = 'save-btn';
+                saveBtn.title = 'Сохранить';
+                saveBtn.innerHTML = '<svg viewBox="0 0 20 20" fill="none"><path d="M5 10.5l4 4 6-8" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+                const cancelBtn = document.createElement('button');
+                cancelBtn.className = 'cancel-btn';
+                cancelBtn.title = 'Отмена';
+                cancelBtn.innerHTML = '<svg viewBox="0 0 20 20" fill="none"><path d="M6 6l8 8M14 6l-8 8" stroke="#4f5bd5" stroke-width="2" stroke-linecap="round"/></svg>';
+                rowDiv.appendChild(input);
+                rowDiv.appendChild(saveBtn);
+                rowDiv.appendChild(cancelBtn);
+                // Скрываем старое
+                span.style.display = 'none';
+                btn.style.display = 'none';
+                td.appendChild(rowDiv);
+                input.focus();
+                // Отмена
+                cancelBtn.addEventListener('click', function() {
+                    rowDiv.remove();
+                    span.style.display = '';
+                    btn.style.display = '';
+                });
+                // Сохранить
+                saveBtn.addEventListener('click', function() {
+                    const newVal = input.value.trim();
+                    if (!newVal || newVal === oldVal) {
+                        rowDiv.remove();
+                        span.style.display = '';
+                        btn.style.display = '';
+                        return;
+                    }
+                    fetch('/admin/users/update_external_id', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ old_external_id: oldVal, new_external_id: newVal })
+                    }).then(resp => resp.json()).then(data => {
+                        if (data.success) {
+                            span.textContent = newVal;
+                        } else {
+                            alert(data.error || 'Ошибка при обновлении external_id');
+                        }
+                        rowDiv.remove();
+                        span.style.display = '';
+                        btn.style.display = '';
+                    }).catch(() => {
+                        alert('Ошибка при обновлении external_id');
+                        rowDiv.remove();
+                        span.style.display = '';
+                        btn.style.display = '';
+                    });
+                });
+                // Enter/ESC
+                input.addEventListener('keydown', function(ev) {
+                    if (ev.key === 'Enter') saveBtn.click();
+                    if (ev.key === 'Escape') cancelBtn.click();
+                });
+            });
+        });
     });
     // Выпадающее меню для переполнения
     document.addEventListener('DOMContentLoaded', function() {

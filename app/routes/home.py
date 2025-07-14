@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from auth.authenticate import authenticate_cookie, authenticate
 from auth.hash_password import HashPassword
@@ -67,7 +67,7 @@ async def admin_index(request: Request, session=Depends(get_session)):
     if user:
         user_obj = UsersService.get_user_by_email(user, session)
     if not user_obj or not getattr(user_obj, 'is_superuser', False):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Доступ запрещён")
+        return RedirectResponse(url="/login", status_code=302)
 
     summary = get_festival_summary_stats(session)
 
@@ -91,7 +91,7 @@ async def admin_users(request: Request, session=Depends(get_session)):
     if user:
         user_obj = UsersService.get_user_by_email(user, session)
     if not user_obj or not getattr(user_obj, 'is_superuser', False):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Доступ запрещён")
+        return RedirectResponse(url="/login", status_code=302)
 
     # Получаем всех пользователей
     users = session.exec(select(UsersService.User)).scalars().all()
@@ -137,7 +137,7 @@ async def admin_purchases(request: Request, session=Depends(get_session)):
     if user:
         user_obj = UsersService.get_user_by_email(user, session)
     if not user_obj or not getattr(user_obj, 'is_superuser', False):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Доступ запрещён")
+        return RedirectResponse(url="/login", status_code=302)
 
     from models import Purchase, Concert, User, Hall
     from sqlalchemy import select
@@ -210,7 +210,7 @@ async def admin_concerts(request: Request, session=Depends(get_session)):
     if user:
         user_obj = UsersService.get_user_by_email(user, session)
     if not user_obj or not getattr(user_obj, 'is_superuser', False):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Доступ запрещён")
+        return RedirectResponse(url="/login", status_code=302)
 
     from models import Concert, Hall
     from models import Purchase
@@ -289,12 +289,17 @@ async def admin_halls(request: Request, session=Depends(get_session)):
     if user:
         user_obj = UsersService.get_user_by_email(user, session)
     if not user_obj or not getattr(user_obj, 'is_superuser', False):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Доступ запрещён")
+        return RedirectResponse(url="/login", status_code=302)
 
     from models import Hall, Concert, Purchase
     from sqlalchemy import select, func
     halls = session.exec(select(Hall)).scalars().all()
     concerts = session.exec(select(Concert)).scalars().all()
+
+    # Для расчёта средней заполняемости по каждому залу
+    concerts_by_hall = {}
+    for c in concerts:
+        concerts_by_hall.setdefault(c.hall_id, []).append(c)
 
     # Заглушка для количества оставшихся билетов (как на концертах)
     def get_tickets_left(concert_id):
@@ -328,21 +333,63 @@ async def admin_halls(request: Request, session=Depends(get_session)):
     for h in halls:
         stats = hall_stats[h.id]
         fill_percent = (stats["tickets_sold"] / (stats["seats"] * stats["concerts"]) * 100) if stats["seats"] and stats["concerts"] else 0
+        # Средняя заполняемость по всем концертам этого зала
+        fill_percents = []
+        for c in concerts_by_hall.get(h.id, []):
+            seats = h.seats or 0
+            if seats > 0:
+                # Считаем количество купленных билетов для этого концерта
+                from models import Purchase
+                tickets_row = session.exec(select(func.count(Purchase.id)).where(Purchase.concert_id == c.id)).first()
+                tickets = tickets_row[0] if tickets_row else 0
+                fill_percents.append((tickets / seats) * 100)
+        mean_fill_percent = round(sum(fill_percents) / len(fill_percents), 1) if fill_percents else 0
         halls_data.append({
             "hall": h,
             "concerts": stats["concerts"],
             "seats": stats["seats"],
             "tickets_sold": stats["tickets_sold"],
             "fill_percent": fill_percent,
-            "available_concerts": stats["available_concerts"]
+            "available_concerts": stats["available_concerts"],
+            "mean_fill_percent": mean_fill_percent
         })
 
+    hall_ids = [h["hall"].id for h in halls_data]
     context = {
         "user": user_obj,
         "halls_data": halls_data,
+        "hall_ids": hall_ids,
         "request": request
     }
     return templates.TemplateResponse("admin_halls.html", context)
+
+
+@home_route.post("/admin/halls/update_seats")
+async def update_hall_seats(request: Request, session=Depends(get_session)):
+    token = request.cookies.get(settings.COOKIE_NAME)
+    user = None
+    if token:
+        user = await authenticate_cookie(token)
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
+    data = await request.json()
+    hall_id = data.get('hall_id')
+    new_seats = data.get('seats')
+    if not hall_id or not isinstance(new_seats, int) or new_seats < 1:
+        return JSONResponse({"success": False, "error": "Некорректные данные"}, status_code=400)
+    from models import Hall
+    from sqlalchemy import select
+    hall = session.exec(select(Hall).where(Hall.id == hall_id)).scalars().first()
+    if not hall:
+        return JSONResponse({"success": False, "error": "Зал не найден"}, status_code=404)
+    hall.seats = new_seats
+    session.add(hall)
+    session.commit()
+    session.refresh(hall)
+    return JSONResponse({"success": True, "seats": hall.seats})
 
 
 @home_route.get("/admin/customers", response_class=HTMLResponse)
@@ -357,14 +404,16 @@ async def admin_customers(request: Request, session=Depends(get_session)):
     if user:
         user_obj = UsersService.get_user_by_email(user, session)
     if not user_obj or not getattr(user_obj, 'is_superuser', False):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Доступ запрещён")
+        return RedirectResponse(url="/login", status_code=302)
 
-    from models import Purchase, User
+    from models import Purchase, User, Concert
     from sqlalchemy import select, func
     # Получаем все уникальные user_external_id из покупок
     external_ids = set(row[0] for row in session.exec(select(Purchase.user_external_id).distinct()).all())
     # Получаем всех пользователей с этими external_id
     users_by_external = {u.external_id: u for u in session.exec(select(User).where(User.external_id.in_(external_ids))).scalars().all()}
+    # Получаем все концерты в память для быстрого доступа по id
+    concerts_by_id = {c.id: c for c in session.exec(select(Concert)).scalars().all()}
     # Считаем покупки по каждому external_id
     customers = []
     for ext_id in external_ids:
@@ -373,12 +422,20 @@ async def admin_customers(request: Request, session=Depends(get_session)):
         tickets = len(purchases)
         spent = sum(p.price or 0 for p in purchases)
         user = users_by_external.get(ext_id)
+        # Считаем уникальные дни фестиваля
+        days = set()
+        for p in purchases:
+            concert = concerts_by_id.get(p.concert_id)
+            if concert and concert.datetime:
+                days.add(concert.datetime.date())
+        unique_days = len(days)
         customers.append({
             "external_id": ext_id,
             "user": user,
             "count": tickets,
             "spent": spent,
-            "unique_concerts": unique_concerts
+            "unique_concerts": unique_concerts,
+            "unique_days": unique_days
         })
     context = {
         "user": user_obj,
@@ -386,3 +443,65 @@ async def admin_customers(request: Request, session=Depends(get_session)):
         "request": request
     }
     return templates.TemplateResponse("admin_customers.html", context)
+
+
+@home_route.post("/admin/users/update_external_id")
+async def update_user_external_id(request: Request, session=Depends(get_session)):
+    token = request.cookies.get(settings.COOKIE_NAME)
+    user = None
+    if token:
+        user = await authenticate_cookie(token)
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
+    data = await request.json()
+    old_external_id = data.get('old_external_id')
+    new_external_id = data.get('new_external_id')
+    if not old_external_id or not new_external_id:
+        return JSONResponse({"success": False, "error": "Некорректные данные"}, status_code=400)
+    from models import User
+    from sqlalchemy import select
+    user = session.exec(select(User).where(User.external_id == old_external_id)).scalars().first()
+    if not user:
+        return JSONResponse({"success": False, "error": "Пользователь не найден"}, status_code=404)
+    # Проверка на уникальность нового external_id
+    exists = session.exec(select(User).where(User.external_id == new_external_id)).scalars().first()
+    if exists:
+        return JSONResponse({"success": False, "error": "Такой external_id уже существует"}, status_code=409)
+    user.external_id = new_external_id
+    session.add(user)
+    session.commit()
+    return JSONResponse({"success": True})
+
+
+@home_route.post("/admin/customers/update_external_id")
+async def update_customer_external_id(request: Request, session=Depends(get_session)):
+    token = request.cookies.get(settings.COOKIE_NAME)
+    user = None
+    if token:
+        user = await authenticate_cookie(token)
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
+    data = await request.json()
+    old_external_id = data.get('old_external_id')
+    new_external_id = data.get('new_external_id')
+    if not old_external_id or not new_external_id:
+        return JSONResponse({"success": False, "error": "Некорректные данные"}, status_code=400)
+    from models import User
+    from sqlalchemy import select
+    user = session.exec(select(User).where(User.external_id == old_external_id)).scalars().first()
+    if not user:
+        return JSONResponse({"success": False, "error": "Пользователь не найден"}, status_code=404)
+    # Проверка на уникальность нового external_id
+    exists = session.exec(select(User).where(User.external_id == new_external_id)).scalars().first()
+    if exists:
+        return JSONResponse({"success": False, "error": "Такой external_id уже существует"}, status_code=409)
+    user.external_id = new_external_id
+    session.add(user)
+    session.commit()
+    return JSONResponse({"success": True})

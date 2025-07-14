@@ -254,6 +254,16 @@
         .status-card-superuser {
             background: rgba(255,193,7,0.2);
             border: 1px solid rgba(255,193,7,0.5);
+            cursor: pointer;
+            transition: box-shadow 0.15s, background 0.15s;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .status-card-superuser:hover {
+            background: rgba(255,193,7,0.32);
+            box-shadow: 0 2px 12px rgba(255,193,7,0.10);
+            text-decoration: none;
         }
         
         .status-card-user {
@@ -332,10 +342,10 @@
                     <p>{{ "{:,}".format(purchase_summary.total_spent) }} ₽</p>
                 </div>
                 {% if user.is_superuser %}
-                <div class="info-card status-card-superuser">
+                <a href="/admin" class="info-card status-card-superuser" title="Перейти в админку">
                     <h3>Статус</h3>
                     <p>👑 Суперадмин</p>
-                </div>
+                </a>
                 {% endif %}
             </div>
         </div>

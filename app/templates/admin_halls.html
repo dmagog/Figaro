@@ -29,6 +29,96 @@
         th.sortable:after { content: ''; position: absolute; right: 10px; font-size: 1em; }
         th.sorted-asc:after { content: '▲'; }
         th.sorted-desc:after { content: '▼'; }
+        .edit-seats-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0 0 0 4px;
+            display: inline-flex;
+            align-items: center;
+            transition: background 0.15s;
+            outline: none;
+            box-shadow: none;
+        }
+        .edit-seats-btn:hover,
+        .edit-seats-btn:focus {
+            background: #e0e7ff;
+            border-radius: 7px;
+        }
+        .edit-seats-btn svg {
+            width: 16px;
+            height: 16px;
+            vertical-align: middle;
+            margin: 0;
+        }
+        .seats-edit-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 2px;
+        }
+        .seats-edit-row input[type="number"] {
+            width: 70px;
+            padding: 4px 8px;
+            border: 1.5px solid #bfc8e6;
+            border-radius: 7px;
+            font-size: 1em;
+            outline: none;
+            transition: border 0.18s, box-shadow 0.18s;
+        }
+        .seats-edit-row input[type="number"]:focus {
+            border: 1.5px solid #4f5bd5;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.10);
+        }
+        .seats-edit-row .save-btn {
+            background: #4f5bd5;
+            color: #fff;
+            border: none;
+            border-radius: 7px;
+            padding: 2px 8px;
+            font-size: 1.1em;
+            min-width: 28px;
+            min-height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .seats-edit-row .save-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+        .seats-edit-row .cancel-btn {
+            background: none;
+            color: #4f5bd5;
+            border: 1.5px solid #e0e7ff;
+            border-radius: 7px;
+            padding: 2px 8px;
+            font-size: 1.1em;
+            min-width: 28px;
+            min-height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.15s, border 0.15s;
+        }
+        .seats-edit-row .cancel-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+        .seats-inline {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .seats-value {
+            font-size: 1em;
+            margin: 0;
+            padding: 0;
+            line-height: 1.2;
+        }
     </style>
 </head>
 <body>
@@ -42,7 +132,7 @@
                 <a href="/admin/purchases" class="admin-menu-btn">Покупки</a>
                 <a href="/admin/concerts" class="admin-menu-btn">Концерты</a>
                 <a href="/admin/halls" class="admin-menu-btn">Залы</a>
-                <a href="/" class="admin-menu-btn"><span style="font-size:1.1em; margin-right:6px;">��</span>На сайт</a>
+                <a href="/" class="admin-menu-btn"><span style="font-size:1.1em; margin-right:6px;">🌐</span>На сайт</a>
                 <div class="admin-menu-dropdown" id="adminMenuDropdown" style="display:none;">
                     <button class="admin-menu-dropdown-btn" id="dropdownBtn">Ещё <span style="font-size:1.1em;">▼</span></button>
                     <div class="admin-menu-dropdown-content" id="dropdownContent">
@@ -61,6 +151,7 @@
                     <th class="sortable">Концертов</th>
                     <th class="sortable">Концертов с местами</th>
                     <th class="sortable">Куплено билетов</th>
+                    <th class="sortable">Средняя заполняемость</th>
                     <th class="sortable">Заполняемость</th>
                 </tr>
             </thead>
@@ -68,10 +159,22 @@
                 {% for item in halls_data %}
                 <tr>
                     <td><span class="hall-badge">{{ item.hall.name }}</span></td>
-                    <td>{{ item.seats }}</td>
+                    <td>
+                        <span class="seats-inline">
+                            <span class="seats-value">{{ item.seats }}</span>
+                            {% if user.is_superuser %}
+                            <button class="edit-seats-btn" title="Редактировать">
+                                <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.586 3.586a2 2 0 0 1 2.828 2.828l-8.5 8.5a2 2 0 0 1-.878.515l-3 1a1 1 0 0 1-1.263-1.263l1-3a2 2 0 0 1 .515-.878l8.5-8.5z" stroke="#4f5bd5" stroke-width="1.2"/></svg>
+                            </button>
+                            {% endif %}
+                        </span>
+                    </td>
                     <td>{{ item.concerts }}</td>
                     <td>{{ item.available_concerts }}</td>
                     <td>{{ item.tickets_sold }}</td>
+                    <td>
+                        <span style="font-weight:600; color:#4f5bd5;">{{ item.mean_fill_percent }}%</span>
+                    </td>
                     <td>
                         {% set fill = item.fill_percent|round(0, 'floor') %}
                         {% set r = (227 + (56-227)*fill/100)|round(0, 'floor') %}
@@ -184,6 +287,75 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     document.body.addEventListener('click', function() {
         dropdown.classList.remove('open');
+    });
+
+    // --- Инлайн-редактирование количества мест ---
+    document.querySelectorAll('.edit-seats-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const span = btn.closest('.seats-inline');
+            const valueSpan = span.querySelector('.seats-value');
+            const oldValue = valueSpan.textContent.trim();
+            // Скрываем value и кнопку
+            valueSpan.style.display = 'none';
+            btn.style.display = 'none';
+            // Создаём input и кнопки
+            const row = document.createElement('span');
+            row.className = 'seats-edit-row';
+            row.innerHTML = `
+                <input type="number" min="1" value="${oldValue}" />
+                <button class="save-btn" title="Сохранить"><svg viewBox="0 0 20 20" fill="none"><path d="M5 10l4 4 6-8" stroke="#fff" stroke-width="2.2"/></svg></button>
+                <button class="cancel-btn" title="Отмена"><svg viewBox="0 0 20 20" fill="none"><path d="M6 6l8 8M6 14L14 6" stroke="#4f5bd5" stroke-width="2.2"/></svg></button>
+            `;
+            span.appendChild(row);
+            const input = row.querySelector('input');
+            input.focus();
+            // Сохранить
+            row.querySelector('.save-btn').onclick = async function(ev) {
+                ev.preventDefault();
+                const newSeats = parseInt(input.value);
+                if (!newSeats || newSeats < 1) {
+                  input.classList.add('error');
+                  input.focus();
+                  return;
+                }
+                // Получаем hall_id (по индексу строки)
+                const tr = btn.closest('tr');
+                const table = tr.closest('table');
+                const rowIndex = Array.from(table.tBodies[0].rows).indexOf(tr);
+                const hallId = {{ hall_ids|tojson }}[rowIndex];
+                try {
+                  const resp = await fetch('/admin/halls/update_seats', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ hall_id: hallId, seats: newSeats })
+                  });
+                  const data = await resp.json();
+                  if (data.success) {
+                    valueSpan.textContent = data.seats;
+                    valueSpan.style.display = '';
+                    btn.style.display = '';
+                    row.remove();
+                  } else {
+                    alert(data.error || 'Ошибка сохранения');
+                  }
+                } catch (e) {
+                  alert('Ошибка соединения с сервером');
+                }
+            };
+            // Отмена
+            row.querySelector('.cancel-btn').onclick = function(ev) {
+                ev.preventDefault();
+                valueSpan.style.display = '';
+                btn.style.display = '';
+                row.remove();
+            };
+            // Enter/ESC
+            input.onkeydown = function(ev) {
+                if (ev.key === 'Enter') row.querySelector('.save-btn').click();
+                if (ev.key === 'Escape') row.querySelector('.cancel-btn').click();
+            };
+        });
     });
 });
 </script> 

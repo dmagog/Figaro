@@ -188,3 +188,43 @@ a:hover {
     min-width: 140px !important;
     max-width: 260px !important;
 } 
+
+.concert-title-flex {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+.concert-number {
+    display: inline-block;
+    width: 48px;
+    height: 28px;
+    padding-left: 10px;
+    font-size: 1.08em;
+    font-weight: bold;
+    color: #fff;
+    border-radius: 0 12px 12px 0;
+    margin-right: 10px;
+    text-align: left;
+    line-height: 28px;
+    vertical-align: middle;
+}
+.concert-number-day1 { background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); }
+.concert-number-day2 { background: linear-gradient(90deg, #6366f1 0%, #818cf8 100%); }
+.concert-number-day3 { background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%); }
+.concert-number-day4 { background: linear-gradient(90deg, #06b6d4 0%, #0ea5e9 100%); }
+.concert-number-day5 { background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%); }
+.concert-number-day6 { background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%); }
+.concert-number-day7 { background: linear-gradient(90deg, #818cf8 0%, #3b82f6 100%); }
+.concert-title-text {
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+    white-space: normal;
+    display: block;
+}
+.concert-date-text {
+    font-size: 0.97em;
+    color: #8ca0c7;
+    display: block;
+    margin-top: 2px;
+} 
