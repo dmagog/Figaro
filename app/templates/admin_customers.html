@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Покупатели — Админка</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body { background: #f6f7fb; font-family: 'Segoe UI', 'Arial', sans-serif; }
+        .admin-container { max-width: 1200px; margin: 40px auto; padding: 30px; background: white; border-radius: 18px; box-shadow: 0 8px 32px rgba(60,60,120,0.08); }
+        .admin-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 30px; }
+        .admin-header h1 { font-size: 2.2em; margin: 0; flex-shrink:0; }
+        .admin-nav-flex { display: flex; gap: 18px; flex-wrap: nowrap; align-items: center; position: relative; overflow-x: auto; padding-bottom: 4px; flex:1; }
+        .admin-menu-btn { background: #667eea; color: white; padding: 10px 28px; border-radius: 10px; text-decoration: none; font-weight: 500; font-size: 1.08em; border: none; transition: background 0.18s, color 0.18s; display: inline-block; text-align: center; cursor: pointer; white-space: nowrap; }
+        .admin-menu-btn:hover, .admin-menu-btn.active { background: #4f5bd5; color: #fff; }
+        /* Удалены стили выпадающего меню, теперь используется общий style.css */
+        .admin-menu-dropdown-arrow { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); width: 24px; height: 12px; pointer-events: none; z-index: 1003; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: translateY(0);} }
+        table { width: 100%; border-collapse: collapse; margin-top: 30px; background: #f8f9fa; border-radius: 12px; overflow: hidden; }
+        th, td { padding: 14px 10px; text-align: left; }
+        th { background: #e0e7ff; color: #333; font-weight: 600; }
+        tr:nth-child(even) { background: #f0f4ff; }
+        tr:hover { background: #e3eafe; }
+        .user-name { font-weight: 500; color: #222; display: block; }
+        .user-email { font-size: 0.97em; color: #8ca0c7; display: block; margin-top: 2px; word-break: break-all; }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 8px; font-size: 0.95em; font-weight: 500; }
+        .status-registered { background: #e3f2fd; color: #1976d2; }
+        .status-guest { background: #ffe082; color: #b28704; }
+        th.sortable { cursor: pointer; user-select: none; position: relative; }
+        th.sortable:after { content: ''; position: absolute; right: 10px; font-size: 1em; }
+        th.sorted-asc:after { content: '▲'; }
+        th.sorted-desc:after { content: '▼'; }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>Покупатели</h1>
+            <nav class="admin-nav-flex" id="adminNav" style="flex:1;">
+                <a href="/admin" class="admin-menu-btn">Главная</a>
+                <a href="/admin/users" class="admin-menu-btn">Пользователи</a>
+                <a href="/admin/customers" class="admin-menu-btn">Покупатели</a>
+                <a href="/admin/purchases" class="admin-menu-btn">Покупки</a>
+                <a href="/admin/concerts" class="admin-menu-btn">Концерты</a>
+                <a href="/admin/halls" class="admin-menu-btn">Залы</a>
+                <a href="/" class="admin-menu-btn"><span style="font-size:1.1em; margin-right:6px;">��</span>На сайт</a>
+                <div class="admin-menu-dropdown" id="adminMenuDropdown" style="display:none;">
+                    <button class="admin-menu-dropdown-btn" id="dropdownBtn">Ещё <span style="font-size:1.1em;">▼</span></button>
+                    <div class="admin-menu-dropdown-content" id="dropdownContent">
+                        <div class="admin-menu-dropdown-arrow">
+                            <svg width="24" height="12"><polygon points="12,12 0,0 24,0" fill="#f0f4ff"/></svg>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <table id="customers-table">
+            <thead>
+                <tr>
+                    <th class="sortable">Внешний ID</th>
+                    <th class="sortable">Имя</th>
+                    <th class="sortable">Email</th>
+                    <th class="sortable">Статус</th>
+                    <th class="sortable">Покупок</th>
+                    <th class="sortable">Потрачено</th>
+                    <th class="sortable">Уникальных концертов</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in customers %}
+                <tr>
+                    <td>{{ c.external_id }}</td>
+                    <td><span class="user-name">{{ c.user.name if c.user else '—' }}</span></td>
+                    <td><span class="user-email">{{ c.user.email if c.user else '—' }}</span></td>
+                    <td>
+                        {% if c.user %}
+                            <span class="status-badge status-registered">Зарегистрирован</span>
+                        {% else %}
+                            <span class="status-badge status-guest">Гость</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ c.count }}</td>
+                    <td>{{ "{:,}".format(c.spent) }} ₽</td>
+                    <td>{{ c.unique_concerts }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <script>
+    // JS-сортировка таблицы по клику на заголовки (аналогично admin_users.html)
+    document.addEventListener('DOMContentLoaded', function() {
+        const table = document.getElementById('customers-table');
+        const headers = table.querySelectorAll('th.sortable');
+        let sortCol = null;
+        let sortDir = 1;
+
+        headers.forEach((th, idx) => {
+            th.addEventListener('click', function() {
+                if (sortCol === idx) {
+                    sortDir = -sortDir;
+                } else {
+                    sortCol = idx;
+                    sortDir = 1;
+                }
+                headers.forEach(h => h.classList.remove('sorted-asc', 'sorted-desc'));
+                th.classList.add(sortDir === 1 ? 'sorted-asc' : 'sorted-desc');
+                sortTable(idx, sortDir);
+            });
+        });
+        function parseCell(cell, idx) {
+            let text = cell.textContent.trim();
+            if (idx === 4 || idx === 5 || idx === 6) {
+                return parseInt(text.replace(/[^\d]/g, '')) || 0;
+            }
+            return text.toLowerCase();
+        }
+        function sortTable(col, dir) {
+            const tbody = table.tBodies[0];
+            const rows = Array.from(tbody.rows);
+            rows.sort((a, b) => {
+                let A = parseCell(a.cells[col], col);
+                let B = parseCell(b.cells[col], col);
+                if (A < B) return -1 * dir;
+                if (A > B) return 1 * dir;
+                return 0;
+            });
+            rows.forEach(row => tbody.appendChild(row));
+        }
+    });
+    // Выпадающее меню для переполнения
+    document.addEventListener('DOMContentLoaded', function() {
+        const nav = document.getElementById('adminNav');
+        const dropdown = document.getElementById('adminMenuDropdown');
+        const dropdownBtn = document.getElementById('dropdownBtn');
+        const dropdownContent = document.getElementById('dropdownContent');
+        function updateDropdown() {
+            dropdownContent.innerHTML = '<div class="admin-menu-dropdown-arrow">\n<svg width="24" height="12"><polygon points="12,12 0,0 24,0" fill="#f0f4ff"/></svg>\n</div>';
+            let linksWrapper = document.createElement('div');
+            linksWrapper.className = 'admin-menu-dropdown-links';
+            let navWidth = nav.offsetWidth;
+            let overflowed = [];
+            const children = Array.from(nav.children).filter(el => el.classList.contains('admin-menu-btn'));
+            children.forEach(el => { el.style.display = ''; });
+            children.forEach(el => {
+                const rect = el.getBoundingClientRect();
+                const navRect = nav.getBoundingClientRect();
+                if (rect.right > navRect.right - 120) { overflowed.push(el); }
+            });
+            if (overflowed.length > 0) {
+                overflowed.forEach(el => {
+                    let clone = el.cloneNode(true);
+                    clone.classList.remove('admin-menu-btn');
+                    if (clone.getAttribute('href') === '/') {
+                        clone.innerHTML = '<span style="font-size:1.1em; margin-right:6px;">🌐</span>На сайт';
+                    } else {
+                        clone.innerHTML = clone.textContent.trim();
+                    }
+                    linksWrapper.appendChild(clone);
+                    el.style.display = 'none';
+                });
+                dropdownContent.appendChild(linksWrapper);
+                dropdown.style.display = 'inline-block';
+            } else {
+                dropdown.style.display = 'none';
+            }
+        }
+        window.addEventListener('resize', updateDropdown);
+        updateDropdown();
+        dropdownBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dropdown.classList.toggle('open');
+            if (dropdown.classList.contains('open')) {
+                const btnRect = dropdownBtn.getBoundingClientRect();
+                dropdownContent.style.left = btnRect.left + 'px';
+                dropdownContent.style.top = (btnRect.bottom + 6) + 'px';
+            }
+        });
+        document.body.addEventListener('click', function() {
+            dropdown.classList.remove('open');
+        });
+    });
+    </script>
+</body>
+</html> 

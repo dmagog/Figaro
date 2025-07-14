@@ -343,3 +343,46 @@ async def admin_halls(request: Request, session=Depends(get_session)):
         "request": request
     }
     return templates.TemplateResponse("admin_halls.html", context)
+
+
+@home_route.get("/admin/customers", response_class=HTMLResponse)
+async def admin_customers(request: Request, session=Depends(get_session)):
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Доступ запрещён")
+
+    from models import Purchase, User
+    from sqlalchemy import select, func
+    # Получаем все уникальные user_external_id из покупок
+    external_ids = set(row[0] for row in session.exec(select(Purchase.user_external_id).distinct()).all())
+    # Получаем всех пользователей с этими external_id
+    users_by_external = {u.external_id: u for u in session.exec(select(User).where(User.external_id.in_(external_ids))).scalars().all()}
+    # Считаем покупки по каждому external_id
+    customers = []
+    for ext_id in external_ids:
+        purchases = session.exec(select(Purchase).where(Purchase.user_external_id == ext_id)).scalars().all()
+        unique_concerts = len(set(p.concert_id for p in purchases))
+        tickets = len(purchases)
+        spent = sum(p.price or 0 for p in purchases)
+        user = users_by_external.get(ext_id)
+        customers.append({
+            "external_id": ext_id,
+            "user": user,
+            "count": tickets,
+            "spent": spent,
+            "unique_concerts": unique_concerts
+        })
+    context = {
+        "user": user_obj,
+        "customers": customers,
+        "request": request
+    }
+    return templates.TemplateResponse("admin_customers.html", context)

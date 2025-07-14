@@ -60,3 +60,131 @@ a {
 a:hover {
     text-decoration: underline;
 } 
+
+/* Выпадающее меню админки */
+.admin-menu-dropdown {
+    position: relative;
+    display: inline-block;
+}
+.admin-menu-dropdown-content {
+    display: none;
+    position: fixed;
+    background: #fff;
+    box-shadow: 0 4px 16px rgba(60,60,120,0.13);
+    border-radius: 10px;
+    min-width: 140px;
+    z-index: 1002;
+    padding: 8px 0;
+    text-align: left;
+    /* Убираю любые ограничения по высоте и overflow */
+}
+.admin-menu-dropdown.open .admin-menu-dropdown-content {
+    display: block;
+}
+.admin-menu-dropdown-content a,
+.admin-menu-dropdown-content .admin-menu-btn {
+    background: none !important;
+    color: #222 !important;
+    border-radius: 8px !important;
+    margin: 0 !important;
+    padding: 10px 22px !important;
+    text-align: left !important;
+    font-size: 1.05em !important;
+    font-weight: 500 !important;
+    box-shadow: none !important;
+    display: block !important;
+}
+.admin-menu-dropdown-content a:hover,
+.admin-menu-dropdown-content .admin-menu-btn:hover {
+    background: #e0e7ff !important;
+    color: #4f5bd5 !important;
+} 
+
+.admin-menu-dropdown-links {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(60,60,120,0.13);
+    padding: 8px 0;
+}
+.admin-menu-dropdown-links a {
+    color: #222 !important;
+    background: none !important;
+    border-radius: 8px !important;
+    margin: 0 !important;
+    padding: 10px 22px !important;
+    text-align: left !important;
+    font-size: 1.05em !important;
+    font-weight: 500 !important;
+    box-shadow: none !important;
+    display: block !important;
+    text-decoration: none !important;
+    transition: background 0.15s, color 0.15s;
+}
+.admin-menu-dropdown-links a:hover {
+    background: #e0e7ff !important;
+    color: #4f5bd5 !important;
+} 
+
+.admin-menu-dropdown-content .admin-menu-dropdown-links {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(60,60,120,0.13);
+    padding: 8px 0;
+    /* border: 2px dashed #4f5bd5;  убираем временную рамку для отладки */
+    width: 100%;
+}
+.admin-menu-dropdown-content .admin-menu-dropdown-links a {
+    color: #222 !important;
+    background: none !important;
+    border-radius: 8px !important;
+    margin: 0 !important;
+    padding: 10px 22px !important;
+    text-align: left !important;
+    font-size: 1.05em !important;
+    font-weight: 500 !important;
+    box-shadow: none !important;
+    display: block !important;
+    text-decoration: none !important;
+    transition: background 0.15s, color 0.15s;
+    /* border: 1px solid #e0e7ff !important;  убираем временную рамку для отладки */
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center !important;
+}
+.admin-menu-dropdown-content .admin-menu-dropdown-links a:hover {
+    background: #e0e7ff !important;
+    color: #4f5bd5 !important;
+} 
+
+.admin-menu-dropdown-btn {
+    background: #667eea;
+    color: white;
+    padding: 10px 28px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 500;
+    font-size: 1.08em;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.admin-menu-dropdown-btn:hover, .admin-menu-dropdown-btn.active {
+    background: #4f5bd5;
+    color: #fff;
+}
+.admin-nav-flex {
+    overflow-x: auto;
+}
+.admin-menu-dropdown-content,
+.admin-menu-dropdown-links {
+    min-width: 140px !important;
+    max-width: 260px !important;
+} 

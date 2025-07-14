@@ -4,65 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Залы — Админка</title>
-    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/css/style.css">
     <style>
         body { background: #f6f7fb; font-family: 'Segoe UI', 'Arial', sans-serif; }
         .admin-container { max-width: 900px; margin: 40px auto; padding: 30px; background: white; border-radius: 18px; box-shadow: 0 8px 32px rgba(60,60,120,0.08); }
-        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .admin-header h1 { font-size: 2.2em; margin: 0; }
-        .admin-nav { display: flex; gap: 18px; }
-        .admin-nav a { background: #667eea; color: white; padding: 10px 22px; border-radius: 8px; text-decoration: none; font-weight: 500; transition: background 0.2s; }
-        .admin-nav a:hover { background: #4f5bd5; }
-        table { width: 100%; border-collapse: collapse; margin-top: 30px; background: #f8f9fa; border-radius: 12px; overflow: hidden; }
+        .admin-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 30px; }
+        .admin-header h1 { font-size: 2.2em; margin: 0; flex-shrink:0; }
+        .admin-nav-flex { display: flex; gap: 18px; flex-wrap: nowrap; align-items: center; position: relative; overflow-x: auto; padding-bottom: 4px; flex:1; }
+        .admin-menu-btn { background: #667eea; color: white; padding: 10px 28px; border-radius: 10px; text-decoration: none; font-weight: 500; font-size: 1.08em; border: none; transition: background 0.18s, color 0.18s; display: inline-block; text-align: center; cursor: pointer; white-space: nowrap; }
+        .admin-menu-btn:hover, .admin-menu-btn.active { background: #4f5bd5; color: #fff; }
+        /* Удалены стили выпадающего меню, теперь используется общий style.css */
+        .admin-menu-dropdown-arrow { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); width: 24px; height: 12px; pointer-events: none; z-index: 1003; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: translateY(0);} }
         th, td { padding: 14px 10px; text-align: left; }
         th { background: #e0e7ff; color: #333; font-weight: 600; }
         tr:nth-child(even) { background: #f0f4ff; }
         tr:hover { background: #e3eafe; }
-        .fill-bar {
-            display: inline-block;
-            min-width: 60px;
-            padding: 2px 8px;
-            border-radius: 8px;
-            font-weight: 600;
-            color: #fff;
-            text-align: center;
-            position: relative;
-            cursor: help;
-        }
-        .fill-bar::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            top: 120%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #333;
-            color: white;
-            padding: 8px 14px;
-            border-radius: 8px;
-            font-size: 13px;
-            white-space: nowrap;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s, visibility 0.3s;
-            z-index: 1001;
-            margin-top: 6px;
-            pointer-events: none;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.18);
-        }
-        .fill-bar:hover::after {
-            opacity: 1;
-            visibility: visible;
-        }
-        .hall-badge {
-            display: inline-block;
-            background: #e3f2fd;
-            color: #1976d2;
-            border-radius: 8px;
-            padding: 4px 14px;
-            font-size: 1em;
-            font-weight: 400;
-            margin: 0;
-        }
+        .fill-bar { display: inline-block; min-width: 60px; padding: 2px 8px; border-radius: 8px; font-weight: 600; color: #fff; text-align: center; position: relative; cursor: help; }
+        .fill-bar::after { content: attr(data-tooltip); position: absolute; top: 120%; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 8px 14px; border-radius: 8px; font-size: 13px; white-space: nowrap; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; z-index: 1001; margin-top: 6px; pointer-events: none; box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
+        .fill-bar:hover::after { opacity: 1; visibility: visible; }
+        .hall-badge { display: inline-block; background: #e3f2fd; color: #1976d2; border-radius: 8px; padding: 4px 14px; font-size: 1em; font-weight: 400; margin: 0; }
         th.sortable { cursor: pointer; user-select: none; position: relative; transition: background 0.15s, color 0.15s; }
         th.sortable:hover { background: #dbeafe; color: #4f5bd5; }
         th.sortable:after { content: ''; position: absolute; right: 10px; font-size: 1em; }
@@ -74,13 +35,22 @@
     <div class="admin-container">
         <div class="admin-header">
             <h1>Залы</h1>
-            <nav class="admin-nav">
-                <a href="/admin">Главная</a>
-                <a href="/admin/users">Пользователи</a>
-                <a href="/admin/purchases">Покупки</a>
-                <a href="/admin/concerts">Концерты</a>
-                <a href="/admin/halls">Залы</a>
-                <a href="/">На сайт</a>
+            <nav class="admin-nav-flex" id="adminNav" style="flex:1;">
+                <a href="/admin" class="admin-menu-btn">Главная</a>
+                <a href="/admin/users" class="admin-menu-btn">Пользователи</a>
+                <a href="/admin/customers" class="admin-menu-btn">Покупатели</a>
+                <a href="/admin/purchases" class="admin-menu-btn">Покупки</a>
+                <a href="/admin/concerts" class="admin-menu-btn">Концерты</a>
+                <a href="/admin/halls" class="admin-menu-btn">Залы</a>
+                <a href="/" class="admin-menu-btn"><span style="font-size:1.1em; margin-right:6px;">��</span>На сайт</a>
+                <div class="admin-menu-dropdown" id="adminMenuDropdown" style="display:none;">
+                    <button class="admin-menu-dropdown-btn" id="dropdownBtn">Ещё <span style="font-size:1.1em;">▼</span></button>
+                    <div class="admin-menu-dropdown-content" id="dropdownContent">
+                        <div class="admin-menu-dropdown-arrow">
+                            <svg width="24" height="12"><polygon points="12,12 0,0 24,0" fill="#f0f4ff"/></svg>
+                        </div>
+                    </div>
+                </div>
             </nav>
         </div>
         <table id="halls-table">
@@ -164,5 +134,56 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         rows.forEach(row => tbody.appendChild(row));
     }
+
+    // Выпадающее меню для переполнения
+    const nav = document.getElementById('adminNav');
+    const dropdown = document.getElementById('adminMenuDropdown');
+    const dropdownBtn = document.getElementById('dropdownBtn');
+    const dropdownContent = document.getElementById('dropdownContent');
+    function updateDropdown() {
+        dropdownContent.innerHTML = '<div class="admin-menu-dropdown-arrow">\n<svg width="24" height="12"><polygon points="12,12 0,0 24,0" fill="#f0f4ff"/></svg>\n</div>';
+        let linksWrapper = document.createElement('div');
+        linksWrapper.className = 'admin-menu-dropdown-links';
+        let navWidth = nav.offsetWidth;
+        let overflowed = [];
+        const children = Array.from(nav.children).filter(el => el.classList.contains('admin-menu-btn'));
+        children.forEach(el => { el.style.display = ''; });
+        children.forEach(el => {
+            const rect = el.getBoundingClientRect();
+            const navRect = nav.getBoundingClientRect();
+            if (rect.right > navRect.right - 120) { overflowed.push(el); }
+        });
+        if (overflowed.length > 0) {
+            overflowed.forEach(el => {
+                let clone = el.cloneNode(true);
+                clone.classList.remove('admin-menu-btn');
+                if (clone.getAttribute('href') === '/') {
+                    clone.innerHTML = '<span style="font-size:1.1em; margin-right:6px;">🌐</span>На сайт';
+                } else {
+                    clone.innerHTML = clone.textContent.trim();
+                }
+                linksWrapper.appendChild(clone);
+                el.style.display = 'none';
+            });
+            dropdownContent.appendChild(linksWrapper);
+            dropdown.style.display = 'inline-block';
+        } else {
+            dropdown.style.display = 'none';
+        }
+    }
+    window.addEventListener('resize', updateDropdown);
+    updateDropdown();
+    dropdownBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+        if (dropdown.classList.contains('open')) {
+            const btnRect = dropdownBtn.getBoundingClientRect();
+            dropdownContent.style.left = btnRect.left + 'px';
+            dropdownContent.style.top = (btnRect.bottom + 6) + 'px';
+        }
+    });
+    document.body.addEventListener('click', function() {
+        dropdown.classList.remove('open');
+    });
 });
 </script> 
