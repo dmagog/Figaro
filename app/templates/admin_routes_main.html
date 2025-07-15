@@ -96,7 +96,22 @@
 {% if active_tab == 'view' %}
     <div style="margin-bottom:24px; font-size:1.15em; color:#4f5bd5; font-weight:500;">
         {% if routes_count > 0 %}
-            Всего маршрутов в базе: <b>{{ routes_count }}</b>
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+                <div>
+                    Всего маршрутов в базе: <b>{{ routes_count }}</b>
+                    {% if available_routes_count is defined and available_routes_count is not none %}
+                        <br>Доступных маршрутов: <b style="color:#43A047;">{{ available_routes_count }}</b>
+                        {% if routes_count > 0 %}
+                            <span style="color:#666; font-size:0.9em;">({{ "%.1f"|format(available_routes_count / routes_count * 100) }}%)</span>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                {% if last_check_date %}
+                    <div style="font-size:0.9em; color:#666; font-weight:400;">
+                        Последняя проверка: <b>{{ last_check_date.strftime('%d.%m.%Y %H:%M') }}</b>
+                    </div>
+                {% endif %}
+            </div>
         {% else %}
             <span style="color:#e53935;">Маршруты не загружены.</span> <a href="/admin/routes/upload" style="color:#4f5bd5; text-decoration:underline;">Загрузить маршруты</a>
         {% endif %}

@@ -618,12 +618,32 @@ async def admin_routes_upload(request: Request, session=Depends(get_session)):
         user_obj = UsersService.get_user_by_email(user, session)
     if not user_obj or not getattr(user_obj, 'is_superuser', False):
         return RedirectResponse(url="/login", status_code=302)
+    
     summary = get_festival_summary_stats(session)
+    
+    # Получаем данные о доступных маршрутах из Statistics
+    from services.crud.route_service import get_cached_available_routes_count
+    from models import Statistics
+    from sqlmodel import select
+    
+    available_routes_count = get_cached_available_routes_count(session)
+    
+    # Получаем дату последней проверки доступных маршрутов
+    available_routes_stats = session.exec(
+        select(Statistics).where(Statistics.key == "available_routes_count")
+    ).first()
+    
+    last_check_date = None
+    if available_routes_stats and available_routes_stats.updated_at:
+        last_check_date = available_routes_stats.updated_at
+    
     context = {
         "user": user_obj,
         "request": request,
         "summary": summary,
-        "active_tab": "upload"
+        "active_tab": "upload",
+        "available_routes_count": available_routes_count,
+        "last_check_date": last_check_date
     }
     return templates.TemplateResponse("admin_routes_upload.html", context)
 
@@ -639,14 +659,34 @@ async def admin_routes_view(request: Request, session=Depends(get_session)):
         user_obj = UsersService.get_user_by_email(user, session)
     if not user_obj or not getattr(user_obj, 'is_superuser', False):
         return RedirectResponse(url="/login", status_code=302)
+    
     # Получаем количество маршрутов из кэша
     from services.crud.purchase import get_cached_routes_count
     routes_count = get_cached_routes_count(session)
+    
+    # Получаем данные о доступных маршрутах из Statistics
+    from services.crud.route_service import get_cached_available_routes_count
+    from models import Statistics
+    from sqlmodel import select
+    
+    available_routes_count = get_cached_available_routes_count(session)
+    
+    # Получаем дату последней проверки доступных маршрутов
+    available_routes_stats = session.exec(
+        select(Statistics).where(Statistics.key == "available_routes_count")
+    ).first()
+    
+    last_check_date = None
+    if available_routes_stats and available_routes_stats.updated_at:
+        last_check_date = available_routes_stats.updated_at
+    
     context = {
         "user": user_obj,
         "request": request,
         "active_tab": "view",
-        "routes_count": routes_count
+        "routes_count": routes_count,
+        "available_routes_count": available_routes_count,
+        "last_check_date": last_check_date
     }
     return templates.TemplateResponse("admin_routes_main.html", context)
 

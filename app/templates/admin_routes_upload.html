@@ -9,6 +9,24 @@ button[disabled] {
     box-shadow: none;
 }
 </style>
+{% if available_routes_count is defined and available_routes_count is not none %}
+<div style="max-width:600px; margin:0 auto 24px auto; background: #f8f9ff; border-radius:12px; padding:18px 24px; color:#4f5bd5; font-size:1em; box-shadow:0 2px 8px rgba(60,60,120,0.04); border-left:4px solid #4f5bd5;">
+    <div style="font-weight:500; margin-bottom:8px;">Текущее состояние маршрутов:</div>
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div>
+            Доступных маршрутов: <b style="color:#43A047;">{{ available_routes_count }}</b>
+            {% if summary.routes_count and summary.routes_count > 0 %}
+                <span style="color:#666; font-size:0.9em;">({{ "%.1f"|format(available_routes_count / summary.routes_count * 100) }}% от общего количества)</span>
+            {% endif %}
+        </div>
+        {% if last_check_date %}
+            <div style="font-size:0.9em; color:#666;">
+                Обновлено: <b>{{ last_check_date.strftime('%d.%m.%Y %H:%M') }}</b>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
 <div style="max-width:600px; margin:0 auto 32px auto; background: #fff;; border-radius:12px; padding:22px 28px 18px 28px; color:#3a3a4a; font-size:1.08em; box-shadow:0 2px 8px rgba(60,60,120,0.04);">
     <b>Инструкция:</b> На этой странице вы можете загрузить новый файл с маршрутами фестиваля в формате <b>.csv</b>.<br>
     <ul style="margin:12px 0 0 18px;">
