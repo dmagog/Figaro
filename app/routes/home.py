@@ -760,9 +760,11 @@ async def admin_routes_view(request: Request, session=Depends(get_session)):
     if not user_obj or not getattr(user_obj, 'is_superuser', False):
         return RedirectResponse(url="/login", status_code=302)
     
-    # Получаем параметры пагинации
+    # Получаем параметры пагинации и сортировки
     page = int(request.query_params.get("page", 1))
     per_page = int(request.query_params.get("per_page", 15))
+    sort_by = request.query_params.get("sort_by", "composition_count")
+    sort_order = request.query_params.get("sort_order", "desc")
     
     # Получаем количество маршрутов из кэша
     from services.crud.purchase import get_cached_routes_count
@@ -803,26 +805,57 @@ async def admin_routes_view(request: Request, session=Depends(get_session)):
     # Подготавливаем данные для таблицы
     routes_data = []
     for route in available_routes:
-        # Парсим состав маршрута для отображения
-        concert_ids = [x.strip() for x in route.Sostav.split(',') if x.strip()]
+        # Парсим состав маршрута для отображения и сортируем номера
+        concert_ids = sorted([int(x.strip()) for x in route.Sostav.split(',') if x.strip()])
+        concert_ids_str = [str(x) for x in concert_ids]
         
         routes_data.append({
             'id': route.id,
-            'composition': f"{len(concert_ids)} концертов",
+            'composition': ', '.join(concert_ids_str),  # Отображаем отсортированные номера концертов
+            'composition_count': len(concert_ids),  # Количество концертов для сортировки
             'days': route.Days,
             'concerts': route.Concerts,
             'halls': route.Halls,
             'genre': route.Genre or 'Не указан',
-            'show_time': f"{route.ShowTime:.1f}ч",
-            'trans_time': f"{route.TransTime:.1f}ч",
-            'wait_time': f"{route.WaitTime:.1f}ч",
-            'costs': f"{route.Costs:.0f}₽",
-            'comfort_score': f"{route.ComfortScore:.1f}" if route.ComfortScore else 'Н/Д',
+            'show_time': route.ShowTime,  # Числовое значение для сортировки
+            'show_time_display': f"{route.ShowTime:.1f}ч",
+            'trans_time': route.TransTime,  # Числовое значение для сортировки
+            'trans_time_display': f"{route.TransTime:.1f}ч",
+            'wait_time': route.WaitTime,  # Числовое значение для сортировки
+            'wait_time_display': f"{route.WaitTime:.1f}ч",
+            'costs': route.Costs,  # Числовое значение для сортировки
+            'costs_display': f"{route.Costs:.0f}₽",
+            'comfort_score': route.ComfortScore,  # Числовое значение для сортировки
+            'comfort_score_display': f"{route.ComfortScore:.1f}" if route.ComfortScore else 'Н/Д',
             'comfort_level': route.ComfortLevel or 'Н/Д',
-            'intellect_score': f"{route.IntellectScore:.1f}" if route.IntellectScore else 'Н/Д',
-            'intellect_category': route.IntellectCategory or 'Н/Д',
-            'last_check': route.last_availability_check.strftime('%d.%m.%Y %H:%M') if route.last_availability_check else 'Н/Д'
+            'intellect_score': route.IntellectScore,  # Числовое значение для сортировки
+            'intellect_score_display': f"{route.IntellectScore:.1f}" if route.IntellectScore else 'Н/Д',
+            'intellect_category': route.IntellectCategory or 'Н/Д'
         })
+    
+    # Сортируем данные согласно параметрам
+    reverse_sort = sort_order == "desc"
+    
+    # Определяем поле для сортировки
+    sort_field_map = {
+        'id': 'id',
+        'composition': 'composition_count',
+        'days': 'days',
+        'concerts': 'concerts',
+        'halls': 'halls',
+        'genre': 'genre',
+        'show_time': 'show_time',
+        'trans_time': 'trans_time',
+        'wait_time': 'wait_time',
+        'costs': 'costs',
+        'comfort_score': 'comfort_score',
+        'comfort_level': 'comfort_level',
+        'intellect_score': 'intellect_score',
+        'intellect_category': 'intellect_category'
+    }
+    
+    sort_field = sort_field_map.get(sort_by, 'composition_count')
+    routes_data.sort(key=lambda x: x[sort_field], reverse=reverse_sort)
     
     # Генерируем данные для пагинации
     pagination_data = {
@@ -843,7 +876,9 @@ async def admin_routes_view(request: Request, session=Depends(get_session)):
         "available_concerts_count": available_concerts_count,
         "last_check_date": last_check_date,
         "routes_data": routes_data,
-        "pagination": pagination_data
+        "pagination": pagination_data,
+        "sort_by": sort_by,
+        "sort_order": sort_order
     }
     return templates.TemplateResponse("admin_routes_view.html", context)
 

@@ -33,12 +33,14 @@
     background: #fff;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(60,60,120,0.04);
-    overflow: hidden;
+    overflow-x: auto;
     margin-bottom: 16px;
+    max-width: 100%;
 }
 
 .routes-table {
     width: 100%;
+    min-width: 1400px;
     border-collapse: collapse;
     font-size: 0.9em;
 }
@@ -53,6 +55,34 @@
     font-size: 0.85em;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    position: relative;
+    white-space: nowrap;
+}
+
+.routes-table th:hover {
+    background: #e8f0ff;
+}
+
+.routes-table th.sortable::after {
+    content: '↕';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.8em;
+    opacity: 0.5;
+}
+
+.routes-table th.sort-asc::after {
+    content: '↑';
+    opacity: 1;
+}
+
+.routes-table th.sort-desc::after {
+    content: '↓';
+    opacity: 1;
 }
 
 .routes-table td {
@@ -201,38 +231,37 @@
     <table class="routes-table">
         <thead>
             <tr>
-                <th>ID</th>
-                <th>Состав</th>
-                <th>Дни</th>
-                <th>Концерты</th>
-                <th>Залы</th>
-                <th>Жанр</th>
-                <th>Время показа</th>
-                <th>Переходы</th>
-                <th>Ожидание</th>
-                <th>Стоимость</th>
-                <th>Комфорт</th>
-                <th>Уровень</th>
-                <th>Интеллект</th>
-                <th>Категория</th>
-                <th>Проверка</th>
+                <th class="sortable" data-sort="id">ID</th>
+                <th class="sortable" data-sort="composition">Состав</th>
+                <th class="sortable" data-sort="days" title="Количество дней">📅</th>
+                <th class="sortable" data-sort="concerts" title="Количество концертов">🎵</th>
+                <th class="sortable" data-sort="halls" title="Количество залов">🏛️</th>
+                <th class="sortable" data-sort="genre" title="Жанр">🎭</th>
+                <th class="sortable" data-sort="show_time" title="Длительность концерта">⏱️</th>
+                <th class="sortable" data-sort="trans_time" title="Время переходов">🚶</th>
+                <th class="sortable" data-sort="wait_time" title="Время ожидания">⏳</th>
+                <th class="sortable" data-sort="costs" title="Стоимость">💰</th>
+                <th class="sortable" data-sort="comfort_score" title="Оценка комфорта">😌</th>
+                <th class="sortable" data-sort="comfort_level" title="Уровень комфорта">Уровень</th>
+                <th class="sortable" data-sort="intellect_score" title="Интеллектуальная оценка">🧠</th>
+                <th class="sortable" data-sort="intellect_category" title="Интеллектуальная категория">Категория</th>
             </tr>
         </thead>
         <tbody>
             {% for route in routes_data %}
             <tr>
                 <td class="route-id">{{ route.id }}</td>
-                <td class="route-composition">{{ route.composition }}</td>
-                <td>{{ route.days }}</td>
-                <td>{{ route.concerts }}</td>
-                <td>{{ route.halls }}</td>
-                <td>{{ route.genre }}</td>
-                <td class="route-time">{{ route.show_time }}</td>
-                <td class="route-time">{{ route.trans_time }}</td>
-                <td class="route-time">{{ route.wait_time }}</td>
-                <td class="route-costs">{{ route.costs }}</td>
-                <td class="route-score">{{ route.comfort_score }}</td>
-                <td>
+                <td class="route-composition" data-sort="{{ route.composition_count }}">{{ route.composition }}</td>
+                <td data-sort="{{ route.days }}">{{ route.days }}</td>
+                <td data-sort="{{ route.concerts }}">{{ route.concerts }}</td>
+                <td data-sort="{{ route.halls }}">{{ route.halls }}</td>
+                <td data-sort="{{ route.genre }}">{{ route.genre }}</td>
+                <td class="route-time" data-sort="{{ route.show_time }}">{{ route.show_time_display }}</td>
+                <td class="route-time" data-sort="{{ route.trans_time }}">{{ route.trans_time_display }}</td>
+                <td class="route-time" data-sort="{{ route.wait_time }}">{{ route.wait_time_display }}</td>
+                <td class="route-costs" data-sort="{{ route.costs }}">{{ route.costs_display }}</td>
+                <td class="route-score" data-sort="{{ route.comfort_score }}">{{ route.comfort_score_display }}</td>
+                <td data-sort="{{ route.comfort_level }}">
                     {% if route.comfort_level == 'High' %}
                         <span class="route-level route-level-high">Высокий</span>
                     {% elif route.comfort_level == 'Medium' %}
@@ -243,9 +272,8 @@
                         <span class="route-level">{{ route.comfort_level }}</span>
                     {% endif %}
                 </td>
-                <td class="route-score">{{ route.intellect_score }}</td>
-                <td>{{ route.intellect_category }}</td>
-                <td class="route-last-check">{{ route.last_check }}</td>
+                <td class="route-score" data-sort="{{ route.intellect_score }}">{{ route.intellect_score_display }}</td>
+                <td data-sort="{{ route.intellect_category }}">{{ route.intellect_category }}</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -325,41 +353,58 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Добавляем функциональность поиска и фильтрации
+    // Инициализируем текущую сортировку из URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentSortBy = urlParams.get('sort_by') || 'composition_count';
+    const currentSortOrder = urlParams.get('sort_order') || 'desc';
+    
+    // Устанавливаем индикатор сортировки для текущей колонки
+    updateSortIndicators(currentSortBy, currentSortOrder);
+    
+    // Добавляем функциональность сортировки
     const table = document.querySelector('.routes-table');
     if (table) {
         // Добавляем возможность сортировки по клику на заголовки
-        const headers = table.querySelectorAll('th');
-        headers.forEach((header, index) => {
-            header.style.cursor = 'pointer';
+        const headers = table.querySelectorAll('th.sortable');
+        headers.forEach((header) => {
             header.addEventListener('click', function() {
-                sortTable(index);
+                const sortField = this.getAttribute('data-sort');
+                changeSort(sortField);
             });
         });
     }
     
-    function sortTable(columnIndex) {
-        const table = document.querySelector('.routes-table');
-        const tbody = table.querySelector('tbody');
-        const rows = Array.from(tbody.querySelectorAll('tr'));
+    function changeSort(sortField) {
+        const currentUrl = new URL(window.location);
+        const currentSortBy = currentUrl.searchParams.get('sort_by');
+        const currentSortOrder = currentUrl.searchParams.get('sort_order');
         
-        // Определяем тип данных в колонке
-        const sampleValue = rows[0].cells[columnIndex].textContent.trim();
-        const isNumeric = !isNaN(parseFloat(sampleValue)) && isFinite(sampleValue);
+        let newSortOrder = 'asc';
+        if (currentSortBy === sortField) {
+            newSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+        }
         
-        rows.sort((a, b) => {
-            const aValue = a.cells[columnIndex].textContent.trim();
-            const bValue = b.cells[columnIndex].textContent.trim();
-            
-            if (isNumeric) {
-                return parseFloat(aValue) - parseFloat(bValue);
-            } else {
-                return aValue.localeCompare(bValue, 'ru');
-            }
+        // Обновляем параметры URL
+        currentUrl.searchParams.set('sort_by', sortField);
+        currentUrl.searchParams.set('sort_order', newSortOrder);
+        currentUrl.searchParams.set('page', '1'); // Сбрасываем на первую страницу при смене сортировки
+        
+        // Переходим на новую страницу
+        window.location.href = currentUrl.toString();
+    }
+    
+    function updateSortIndicators(sortBy, sortOrder) {
+        // Убираем все индикаторы сортировки
+        const headers = table.querySelectorAll('th.sortable');
+        headers.forEach(header => {
+            header.classList.remove('sort-asc', 'sort-desc');
         });
         
-        // Перестраиваем таблицу
-        rows.forEach(row => tbody.appendChild(row));
+        // Добавляем индикатор для текущей колонки
+        const currentHeader = table.querySelector(`th[data-sort="${sortBy}"]`);
+        if (currentHeader) {
+            currentHeader.classList.add(sortOrder === 'asc' ? 'sort-asc' : 'sort-desc');
+        }
     }
 });
 
