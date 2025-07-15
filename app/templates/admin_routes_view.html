@@ -21,10 +21,10 @@
 }
 
 .routes-description {
-    color: #666;
+    color: #787878;
     margin: 0;
-    font-size: 0.9em;
-    line-height: 1.4;
+    font-size: 0.5em;
+    line-height: 1.3;
 }
 
 
@@ -36,6 +36,8 @@
     overflow-x: auto;
     margin-bottom: 16px;
     max-width: 100%;
+    height: 600px; /* Фиксированная высота для виртуализации */
+    position: relative;
 }
 
 .routes-table {
@@ -213,14 +215,63 @@
     border-color: #f0f0f0;
 }
 
+/* Стили для виртуализации */
+.virtual-table {
+    height: 100%;
+    overflow-y: auto;
+    position: relative;
+}
+
+.virtual-table tbody {
+    position: relative;
+}
+
+.virtual-row {
+    position: absolute;
+    width: 100%;
+    left: 0;
+}
+
+.loading-indicator {
+    display: none;
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-size: 0.9em;
+}
+
+.loading-indicator.show {
+    display: block;
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #4f5bd5;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.scroll-sentinel {
+    height: 20px;
+    width: 100%;
+}
+
 
 </style>
 
 <div class="routes-header">
     <div class="routes-header-content">
         <div>
-            <h2 class="routes-title">Доступные маршруты фестиваля</h2>
-            <p class="routes-description">Таблица всех маршрутов, доступных для покупки на основе текущего статуса билетов концертов.</p>
+            <p class="routes-description">Таблица всех фестивальных маршрутов, доступных для покупки на основе текущего статуса билетов концертов.</p>
         </div>
     </div>
 </div>
@@ -228,7 +279,7 @@
 {% if routes_count and routes_count > 0 %}
     {% if routes_data and routes_data|length > 0 %}
 <div class="routes-table-container">
-    <table class="routes-table">
+    <table class="routes-table virtual-table">
         <thead>
             <tr>
                 <th class="sortable" data-sort="id">ID</th>
@@ -247,83 +298,20 @@
                 <th class="sortable" data-sort="intellect_category" title="Интеллектуальная категория">Категория</th>
             </tr>
         </thead>
-        <tbody>
-            {% for route in routes_data %}
-            <tr>
-                <td class="route-id">{{ route.id }}</td>
-                <td class="route-composition" data-sort="{{ route.composition_count }}">{{ route.composition }}</td>
-                <td data-sort="{{ route.days }}">{{ route.days }}</td>
-                <td data-sort="{{ route.concerts }}">{{ route.concerts }}</td>
-                <td data-sort="{{ route.halls }}">{{ route.halls }}</td>
-                <td data-sort="{{ route.genre }}">{{ route.genre }}</td>
-                <td class="route-time" data-sort="{{ route.show_time }}">{{ route.show_time_display }}</td>
-                <td class="route-time" data-sort="{{ route.trans_time }}">{{ route.trans_time_display }}</td>
-                <td class="route-time" data-sort="{{ route.wait_time }}">{{ route.wait_time_display }}</td>
-                <td class="route-costs" data-sort="{{ route.costs }}">{{ route.costs_display }}</td>
-                <td class="route-score" data-sort="{{ route.comfort_score }}">{{ route.comfort_score_display }}</td>
-                <td data-sort="{{ route.comfort_level }}">
-                    {% if route.comfort_level == 'High' %}
-                        <span class="route-level route-level-high">Высокий</span>
-                    {% elif route.comfort_level == 'Medium' %}
-                        <span class="route-level route-level-medium">Средний</span>
-                    {% elif route.comfort_level == 'Low' %}
-                        <span class="route-level route-level-low">Низкий</span>
-                    {% else %}
-                        <span class="route-level">{{ route.comfort_level }}</span>
-                    {% endif %}
-                </td>
-                <td class="route-score" data-sort="{{ route.intellect_score }}">{{ route.intellect_score_display }}</td>
-                <td data-sort="{{ route.intellect_category }}">{{ route.intellect_category }}</td>
-            </tr>
-            {% endfor %}
+        <tbody id="virtual-tbody">
+            <!-- Данные будут загружаться динамически -->
         </tbody>
     </table>
+    <div class="loading-indicator" id="loading-indicator">
+        <div class="loading-spinner"></div>
+        Загрузка данных...
+    </div>
+    <div class="scroll-sentinel" id="scroll-sentinel"></div>
 </div>
 
-{% if pagination and pagination.total_pages > 1 %}
-<div class="pagination">
-    <div class="pagination-info">
-        Показано {{ pagination.start_item }}-{{ pagination.end_item }} из {{ pagination.total_count }} доступных маршрутов
-    </div>
-    <div class="pagination-controls">
-        <button class="pagination-btn" onclick="changePage({{ pagination.current_page - 1 }})" 
-                {% if pagination.current_page <= 1 %}disabled{% endif %}>
-            ← Предыдущая
-        </button>
-        
-        {% set start_page = [1, pagination.current_page - 2] | max %}
-        {% set end_page = [pagination.total_pages, pagination.current_page + 2] | min %}
-        
-        {% if start_page > 1 %}
-            <button class="pagination-btn" onclick="changePage(1)">1</button>
-            {% if start_page > 2 %}
-                <span class="pagination-dots">...</span>
-            {% endif %}
-        {% endif %}
-        
-        {% for page_num in range(start_page, end_page + 1) %}
-            <button class="pagination-btn {% if page_num == pagination.current_page %}active{% endif %}" 
-                    onclick="changePage({{ page_num }})">
-                {{ page_num }}
-            </button>
-        {% endfor %}
-        
-        {% if end_page < pagination.total_pages %}
-            {% if end_page < pagination.total_pages - 1 %}
-                <span class="pagination-dots">...</span>
-            {% endif %}
-            <button class="pagination-btn" onclick="changePage({{ pagination.total_pages }})">
-                {{ pagination.total_pages }}
-            </button>
-        {% endif %}
-        
-        <button class="pagination-btn" onclick="changePage({{ pagination.current_page + 1 }})" 
-                {% if pagination.current_page >= pagination.total_pages %}disabled{% endif %}>
-            Следующая →
-        </button>
-    </div>
+<div class="pagination-info" style="text-align: center; margin-top: 16px; color: #666; font-size: 0.9em;">
+    Загружено <span id="loaded-count">0</span> из <span id="total-count">0</span> доступных маршрутов
 </div>
-{% endif %}
 
     {% else %}
     <div class="no-routes">
@@ -352,100 +340,198 @@
 {% endif %}
 
 <script>
+// Глобальные переменные для виртуализации
+let loadedData = [];
+let currentOffset = 0;
+let isLoading = false;
+let hasMoreData = true;
+let currentSortBy = 'concerts';
+let currentSortOrder = 'desc';
+let totalCount = 0;
+const BATCH_SIZE = 100; // Размер порции данных
+
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM загружен, инициализируем сортировку...');
+    console.log('DOM загружен, инициализируем виртуализацию...');
     
-    // Получаем таблицу в самом начале
+    // Получаем элементы
     const table = document.querySelector('.routes-table');
-    console.log('Таблица найдена:', !!table);
+    const tbody = document.getElementById('virtual-tbody');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const scrollSentinel = document.getElementById('scroll-sentinel');
     
-    if (!table) {
-        console.error('Таблица не найдена!');
+    if (!table || !tbody) {
+        console.error('Необходимые элементы не найдены!');
         return;
     }
     
-    // Инициализируем текущую сортировку из URL
+    // Инициализируем сортировку из URL
     const urlParams = new URLSearchParams(window.location.search);
-    const currentSortBy = urlParams.get('sort_by') || 'concerts';
-    const currentSortOrder = urlParams.get('sort_order') || 'desc'; // По умолчанию сортируем по убыванию
+    currentSortBy = urlParams.get('sort_by') || 'concerts';
+    currentSortOrder = urlParams.get('sort_order') || 'desc';
     
     console.log('Текущая сортировка:', { sortBy: currentSortBy, sortOrder: currentSortOrder });
     
-    // Устанавливаем индикатор сортировки для текущей колонки
+    // Устанавливаем индикатор сортировки
     updateSortIndicators(currentSortBy, currentSortOrder);
     
-    // Добавляем функциональность сортировки
+    // Добавляем обработчики сортировки
     const headers = table.querySelectorAll('th.sortable');
-    console.log('Найдено заголовков для сортировки:', headers.length);
-    
-    headers.forEach((header, index) => {
+    headers.forEach(header => {
         const sortField = header.getAttribute('data-sort');
-        console.log(`Заголовок ${index}: data-sort="${sortField}"`);
-        
         header.addEventListener('click', function() {
             console.log('Клик по заголовку:', sortField);
             changeSort(sortField);
         });
     });
     
+    // Наблюдатель для бесконечного скролла
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting && hasMoreData && !isLoading) {
+                loadMoreData();
+            }
+        });
+    });
+    
+    observer.observe(scrollSentinel);
+    
+    // Загружаем первую порцию данных
+    loadMoreData();
+    
+    // Функция загрузки данных
+    async function loadMoreData() {
+        if (isLoading || !hasMoreData) return;
+        
+        isLoading = true;
+        showLoadingIndicator();
+        
+        try {
+            const response = await fetch(`/api/routes?offset=${currentOffset}&limit=${BATCH_SIZE}&sort_by=${currentSortBy}&sort_order=${currentSortOrder}`);
+            const result = await response.json();
+            
+            if (result.success) {
+                loadedData.push(...result.data);
+                appendRowsToTable(result.data);
+                
+                currentOffset += result.data.length;
+                totalCount = result.total_count;
+                hasMoreData = result.has_more;
+                
+                updateCounters();
+                console.log(`Загружено ${result.data.length} строк, всего: ${loadedData.length}/${totalCount}`);
+            } else {
+                console.error('Ошибка загрузки данных:', result.error);
+            }
+        } catch (error) {
+            console.error('Ошибка при загрузке данных:', error);
+        } finally {
+            isLoading = false;
+            hideLoadingIndicator();
+        }
+    }
+    
+    // Функция добавления строк в таблицу
+    function appendRowsToTable(data) {
+        data.forEach(route => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="route-id">${route.id}</td>
+                <td class="route-composition" data-sort="${route.composition_count}">${route.composition}</td>
+                <td data-sort="${route.days}">${route.days}</td>
+                <td data-sort="${route.concerts}">${route.concerts}</td>
+                <td data-sort="${route.halls}">${route.halls}</td>
+                <td data-sort="${route.genre}">${route.genre}</td>
+                <td class="route-time" data-sort="${route.show_time}">${route.show_time_display}</td>
+                <td class="route-time" data-sort="${route.trans_time}">${route.trans_time_display}</td>
+                <td class="route-time" data-sort="${route.wait_time}">${route.wait_time_display}</td>
+                <td class="route-costs" data-sort="${route.costs}">${route.costs_display}</td>
+                <td class="route-score" data-sort="${route.comfort_score}">${route.comfort_score_display}</td>
+                <td data-sort="${route.comfort_level}">
+                    ${getComfortLevelHtml(route.comfort_level)}
+                </td>
+                <td class="route-score" data-sort="${route.intellect_score}">${route.intellect_score_display}</td>
+                <td data-sort="${route.intellect_category}">${route.intellect_category}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+    
+    // Функция для HTML уровня комфорта
+    function getComfortLevelHtml(level) {
+        if (level === 'High') {
+            return '<span class="route-level route-level-high">Высокий</span>';
+        } else if (level === 'Medium') {
+            return '<span class="route-level route-level-medium">Средний</span>';
+        } else if (level === 'Low') {
+            return '<span class="route-level route-level-low">Низкий</span>';
+        } else {
+            return `<span class="route-level">${level}</span>`;
+        }
+    }
+    
+    // Функция смены сортировки
     function changeSort(sortField) {
-        console.log('Функция changeSort вызвана с параметром:', sortField);
+        console.log('Смена сортировки на:', sortField);
         
-        const currentUrl = new URL(window.location);
-        const currentSortBy = currentUrl.searchParams.get('sort_by');
-        const currentSortOrder = currentUrl.searchParams.get('sort_order');
-        
-        console.log('Текущие параметры URL:', { sortBy: currentSortBy, sortOrder: currentSortOrder });
-        
-        let newSortOrder = 'desc'; // По умолчанию сортируем по убыванию
+        let newSortOrder = 'desc';
         if (currentSortBy === sortField) {
-            // Если кликаем по той же колонке, меняем порядок
             newSortOrder = currentSortOrder === 'desc' ? 'asc' : 'desc';
         }
         
-        console.log('Новые параметры сортировки:', { sortBy: sortField, sortOrder: newSortOrder });
+        // Сбрасываем состояние
+        loadedData = [];
+        currentOffset = 0;
+        hasMoreData = true;
+        currentSortBy = sortField;
+        currentSortOrder = newSortOrder;
         
-        // Обновляем параметры URL
+        // Очищаем таблицу
+        tbody.innerHTML = '';
+        
+        // Обновляем URL
+        const currentUrl = new URL(window.location);
         currentUrl.searchParams.set('sort_by', sortField);
         currentUrl.searchParams.set('sort_order', newSortOrder);
-        currentUrl.searchParams.set('page', '1'); // Сбрасываем на первую страницу при смене сортировки
+        window.history.replaceState({}, '', currentUrl.toString());
         
-        const newUrl = currentUrl.toString();
-        console.log('Переходим по URL:', newUrl);
+        // Обновляем индикаторы
+        updateSortIndicators(sortField, newSortOrder);
         
-        // Переходим на новую страницу
-        window.location.href = newUrl;
+        // Загружаем данные заново
+        loadMoreData();
     }
     
+    // Функция обновления индикаторов сортировки
     function updateSortIndicators(sortBy, sortOrder) {
-        console.log('Обновляем индикаторы сортировки:', { sortBy, sortOrder });
-        
-        // Убираем все индикаторы сортировки
         const headers = table.querySelectorAll('th.sortable');
         headers.forEach(header => {
             header.classList.remove('sort-asc', 'sort-desc');
         });
         
-        // Добавляем индикатор для текущей колонки
         const currentHeader = table.querySelector(`th[data-sort="${sortBy}"]`);
         if (currentHeader) {
             currentHeader.classList.add(sortOrder === 'asc' ? 'sort-asc' : 'sort-desc');
-            console.log('Индикатор сортировки установлен для колонки:', sortBy);
-        } else {
-            console.warn('Заголовок для сортировки не найден:', sortBy);
         }
     }
-});
-
-// Функция для смены страницы пагинации
-function changePage(page) {
-    console.log('Смена страницы на:', page);
-    if (page < 1) return;
     
-    const currentUrl = new URL(window.location);
-    currentUrl.searchParams.set('page', page);
-    window.location.href = currentUrl.toString();
-}
+    // Функции для индикатора загрузки
+    function showLoadingIndicator() {
+        loadingIndicator.classList.add('show');
+    }
+    
+    function hideLoadingIndicator() {
+        loadingIndicator.classList.remove('show');
+    }
+    
+    // Функция обновления счетчиков
+    function updateCounters() {
+        const loadedCountElement = document.getElementById('loaded-count');
+        const totalCountElement = document.getElementById('total-count');
+        
+        if (loadedCountElement) loadedCountElement.textContent = loadedData.length;
+        if (totalCountElement) totalCountElement.textContent = totalCount;
+    }
+});
 </script>
 
 {% endblock %} 

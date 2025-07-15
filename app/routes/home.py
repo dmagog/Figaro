@@ -993,3 +993,116 @@ async def get_routes_upload_status():
 @home_route.get("/admin/routes/available_routes_status")
 async def get_available_routes_status():
     return JSONResponse(available_routes_status)
+
+@home_route.get("/api/routes")
+async def get_routes_api(request: Request, session=Depends(get_session)):
+    """
+    API endpoint для ленивой загрузки маршрутов с виртуализацией.
+    """
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
+    
+    # Получаем параметры
+    offset = int(request.query_params.get("offset", 0))
+    limit = int(request.query_params.get("limit", 100))  # Размер порции
+    sort_by = request.query_params.get("sort_by", "concerts")
+    sort_order = request.query_params.get("sort_order", "desc")
+    
+    print(f"API DEBUG: offset={offset}, limit={limit}, sort_by={sort_by}, sort_order={sort_order}")
+    
+    # Получаем все маршруты
+    from models import AvailableRoute
+    from sqlmodel import select
+    
+    total_routes = session.exec(select(AvailableRoute)).all()
+    total_count = len(total_routes)
+    
+    # Сортируем все маршруты
+    reverse_sort = sort_order == "desc"
+    
+    def get_sort_value(route):
+        if sort_by == 'composition':
+            return route.Concerts
+        elif sort_by == 'id':
+            return route.id
+        elif sort_by == 'days':
+            return route.Days
+        elif sort_by == 'concerts':
+            return route.Concerts
+        elif sort_by == 'halls':
+            return route.Halls
+        elif sort_by == 'genre':
+            return route.Genre or ''
+        elif sort_by == 'show_time':
+            return route.ShowTime
+        elif sort_by == 'trans_time':
+            return route.TransTime
+        elif sort_by == 'wait_time':
+            return route.WaitTime
+        elif sort_by == 'costs':
+            return route.Costs
+        elif sort_by == 'comfort_score':
+            return route.ComfortScore or 0
+        elif sort_by == 'comfort_level':
+            return route.ComfortLevel or ''
+        elif sort_by == 'intellect_score':
+            return route.IntellectScore or 0
+        elif sort_by == 'intellect_category':
+            return route.IntellectCategory or ''
+        else:
+            return route.Concerts
+    
+    total_routes.sort(key=get_sort_value, reverse=reverse_sort)
+    
+    # Получаем срез данных
+    end_offset = min(offset + limit, total_count)
+    available_routes = total_routes[offset:end_offset]
+    
+    # Подготавливаем данные
+    routes_data = []
+    for route in available_routes:
+        concert_ids = sorted([int(x.strip()) for x in route.Sostav.split(',') if x.strip()])
+        concert_ids_str = [str(x) for x in concert_ids]
+        
+        routes_data.append({
+            'id': route.id,
+            'composition': ', '.join(concert_ids_str),
+            'composition_count': len(concert_ids),
+            'days': route.Days,
+            'concerts': route.Concerts,
+            'halls': route.Halls,
+            'genre': route.Genre or 'Не указан',
+            'show_time': route.ShowTime,
+            'show_time_display': format_time_minutes(route.ShowTime),
+            'trans_time': route.TransTime,
+            'trans_time_display': format_time_minutes(route.TransTime),
+            'wait_time': route.WaitTime,
+            'wait_time_display': format_time_minutes(route.WaitTime),
+            'costs': route.Costs,
+            'costs_display': f"{route.Costs:.0f}₽",
+            'comfort_score': route.ComfortScore,
+            'comfort_score_display': f"{route.ComfortScore:.1f}" if route.ComfortScore else 'Н/Д',
+            'comfort_level': route.ComfortLevel or 'Н/Д',
+            'intellect_score': route.IntellectScore,
+            'intellect_score_display': f"{route.IntellectScore:.1f}" if route.IntellectScore else 'Н/Д',
+            'intellect_category': route.IntellectCategory or 'Н/Д'
+        })
+    
+    return JSONResponse({
+        "success": True,
+        "data": routes_data,
+        "total_count": total_count,
+        "offset": offset,
+        "limit": limit,
+        "has_more": end_offset < total_count,
+        "sort_by": sort_by,
+        "sort_order": sort_order
+    })
