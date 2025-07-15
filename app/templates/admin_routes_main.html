@@ -116,11 +116,17 @@
                     {% endif %}
                 </div>
                 <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
-                    <div>
+                    <div style="display:flex; gap:8px; align-items:center;">
                         <button id="refresh-tickets-btn" style="padding: 8px 16px; background: #4f5bd5; color: white; border: none; border-radius: 8px; font-size: 0.9em; cursor: pointer; transition: background 0.2s;" title="Обновить данные о билетах">
                             🔄 Обновить билеты
                         </button>
-                        <span id="refresh-status" style="margin-left: 12px; font-size: 0.9em; color: #666;"></span>
+                        <button id="update-routes-btn" style="padding: 8px 16px; background: #43A047; color: white; border: none; border-radius: 8px; font-size: 0.9em; cursor: pointer; transition: background 0.2s;" title="Обновить доступные маршруты">
+                            🗺️ Обновить маршруты
+                        </button>
+                    </div>
+                    <div style="display:flex; gap:12px; align-items:center;">
+                        <span id="refresh-status" style="font-size: 0.9em; color: #666;"></span>
+                        <span id="routes-update-status" style="font-size: 0.9em; color: #666;"></span>
                     </div>
                     {% if last_check_date %}
                         <div style="font-size:0.9em; color:#666; font-weight:400;">
@@ -408,12 +414,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Обработка кнопки обновления маршрутов
     const updateRoutesBtn = document.getElementById('update-routes-btn');
+    const routesUpdateStatus = document.getElementById('routes-update-status');
+    
     if (updateRoutesBtn) {
         updateRoutesBtn.addEventListener('click', async function() {
             // Блокируем кнопку
             updateRoutesBtn.disabled = true;
             updateRoutesBtn.style.background = '#bfc6e0';
             updateRoutesBtn.textContent = '🔄 Обновление...';
+            routesUpdateStatus.textContent = 'Проверка маршрутов...';
             
             try {
                 const response = await fetch('/api/routes/update-availability', {
@@ -434,11 +443,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 const result = data.result;
-                refreshStatus.textContent = `✅ Маршруты обновлены: удалено ${result.deleted_count}, добавлено ${result.added_count}, всего доступно ${result.current_count}`;
+                routesUpdateStatus.textContent = `✅ Обновлено: удалено ${result.deleted_count}, добавлено ${result.added_count}, всего доступно ${result.current_count}`;
                 
                 // Показываем результат 5 секунд
                 setTimeout(() => {
-                    refreshStatus.textContent = '';
+                    routesUpdateStatus.textContent = '';
                 }, 5000);
                 
                 // Перезагружаем страницу для обновления статистики
@@ -448,11 +457,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 
             } catch (error) {
                 console.error('Ошибка при обновлении маршрутов:', error);
-                refreshStatus.textContent = `❌ Ошибка: ${error.message}`;
+                routesUpdateStatus.textContent = `❌ Ошибка: ${error.message}`;
                 
                 // Показываем ошибку 5 секунд
                 setTimeout(() => {
-                    refreshStatus.textContent = '';
+                    routesUpdateStatus.textContent = '';
                 }, 5000);
             } finally {
                 // Разблокируем кнопку

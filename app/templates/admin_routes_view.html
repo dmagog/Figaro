@@ -1,0 +1,376 @@
+{% extends "admin_routes_main.html" %}
+{% block routes_content %}
+
+<style>
+.routes-header {
+    margin-bottom: 12px;
+}
+
+.routes-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.routes-title {
+    font-size: 1.2em;
+    color: #4f5bd5;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.routes-description {
+    color: #666;
+    margin: 0;
+    font-size: 0.9em;
+    line-height: 1.4;
+}
+
+
+
+.routes-table-container {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(60,60,120,0.04);
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+.routes-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+
+.routes-table th {
+    background: #f8f9ff;
+    color: #4f5bd5;
+    font-weight: 600;
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 2px solid #e0e7ff;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.routes-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    color: #3a3a4a;
+}
+
+.routes-table tr:hover {
+    background: #f8f9ff;
+}
+
+.route-id {
+    font-weight: 600;
+    color: #4f5bd5;
+    font-family: 'Courier New', monospace;
+}
+
+.route-composition {
+    font-weight: 500;
+    color: #43A047;
+}
+
+.route-time {
+    font-family: 'Courier New', monospace;
+    color: #666;
+}
+
+.route-costs {
+    font-weight: 600;
+    color: #e53935;
+}
+
+.route-score {
+    font-weight: 500;
+    color: #4f5bd5;
+}
+
+.route-level {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.8em;
+    font-weight: 500;
+    text-align: center;
+}
+
+.route-level-high {
+    background: #e8f5e8;
+    color: #43A047;
+}
+
+.route-level-medium {
+    background: #fff3e0;
+    color: #ff9800;
+}
+
+.route-level-low {
+    background: #ffebee;
+    color: #e53935;
+}
+
+.route-last-check {
+    font-size: 0.8em;
+    color: #999;
+    font-style: italic;
+}
+
+.no-routes {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.no-routes-icon {
+    font-size: 2em;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.pagination {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.pagination-info {
+    font-size: 0.9em;
+    color: #666;
+}
+
+.pagination-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.pagination-dots {
+    padding: 8px 12px;
+    color: #666;
+}
+
+.pagination-btn {
+    padding: 8px 12px;
+    border: 1px solid #e0e7ff;
+    background: #fff;
+    color: #4f5bd5;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.pagination-btn:hover {
+    background: #f8f9ff;
+}
+
+.pagination-btn.active {
+    background: #4f5bd5;
+    color: #fff;
+    border-color: #4f5bd5;
+}
+
+.pagination-btn:disabled {
+    background: #f5f5f5;
+    color: #ccc;
+    cursor: not-allowed;
+    border-color: #f0f0f0;
+}
+
+
+</style>
+
+<div class="routes-header">
+    <div class="routes-header-content">
+        <div>
+            <h2 class="routes-title">Доступные маршруты фестиваля</h2>
+            <p class="routes-description">Таблица всех маршрутов, доступных для покупки на основе текущего статуса билетов концертов.</p>
+        </div>
+    </div>
+</div>
+
+{% if routes_count and routes_count > 0 %}
+    {% if routes_data and routes_data|length > 0 %}
+<div class="routes-table-container">
+    <table class="routes-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Состав</th>
+                <th>Дни</th>
+                <th>Концерты</th>
+                <th>Залы</th>
+                <th>Жанр</th>
+                <th>Время показа</th>
+                <th>Переходы</th>
+                <th>Ожидание</th>
+                <th>Стоимость</th>
+                <th>Комфорт</th>
+                <th>Уровень</th>
+                <th>Интеллект</th>
+                <th>Категория</th>
+                <th>Проверка</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for route in routes_data %}
+            <tr>
+                <td class="route-id">{{ route.id }}</td>
+                <td class="route-composition">{{ route.composition }}</td>
+                <td>{{ route.days }}</td>
+                <td>{{ route.concerts }}</td>
+                <td>{{ route.halls }}</td>
+                <td>{{ route.genre }}</td>
+                <td class="route-time">{{ route.show_time }}</td>
+                <td class="route-time">{{ route.trans_time }}</td>
+                <td class="route-time">{{ route.wait_time }}</td>
+                <td class="route-costs">{{ route.costs }}</td>
+                <td class="route-score">{{ route.comfort_score }}</td>
+                <td>
+                    {% if route.comfort_level == 'High' %}
+                        <span class="route-level route-level-high">Высокий</span>
+                    {% elif route.comfort_level == 'Medium' %}
+                        <span class="route-level route-level-medium">Средний</span>
+                    {% elif route.comfort_level == 'Low' %}
+                        <span class="route-level route-level-low">Низкий</span>
+                    {% else %}
+                        <span class="route-level">{{ route.comfort_level }}</span>
+                    {% endif %}
+                </td>
+                <td class="route-score">{{ route.intellect_score }}</td>
+                <td>{{ route.intellect_category }}</td>
+                <td class="route-last-check">{{ route.last_check }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if pagination and pagination.total_pages > 1 %}
+<div class="pagination">
+    <div class="pagination-info">
+        Показано {{ pagination.start_item }}-{{ pagination.end_item }} из {{ pagination.total_count }} доступных маршрутов
+    </div>
+    <div class="pagination-controls">
+        <button class="pagination-btn" onclick="changePage({{ pagination.current_page - 1 }})" 
+                {% if pagination.current_page <= 1 %}disabled{% endif %}>
+            ← Предыдущая
+        </button>
+        
+        {% set start_page = [1, pagination.current_page - 2] | max %}
+        {% set end_page = [pagination.total_pages, pagination.current_page + 2] | min %}
+        
+        {% if start_page > 1 %}
+            <button class="pagination-btn" onclick="changePage(1)">1</button>
+            {% if start_page > 2 %}
+                <span class="pagination-dots">...</span>
+            {% endif %}
+        {% endif %}
+        
+        {% for page_num in range(start_page, end_page + 1) %}
+            <button class="pagination-btn {% if page_num == pagination.current_page %}active{% endif %}" 
+                    onclick="changePage({{ page_num }})">
+                {{ page_num }}
+            </button>
+        {% endfor %}
+        
+        {% if end_page < pagination.total_pages %}
+            {% if end_page < pagination.total_pages - 1 %}
+                <span class="pagination-dots">...</span>
+            {% endif %}
+            <button class="pagination-btn" onclick="changePage({{ pagination.total_pages }})">
+                {{ pagination.total_pages }}
+            </button>
+        {% endif %}
+        
+        <button class="pagination-btn" onclick="changePage({{ pagination.current_page + 1 }})" 
+                {% if pagination.current_page >= pagination.total_pages %}disabled{% endif %}>
+            Следующая →
+        </button>
+    </div>
+</div>
+{% endif %}
+
+    {% else %}
+    <div class="no-routes">
+        <div class="no-routes-icon">🗺️</div>
+        <div style="font-size: 1.2em; margin-bottom: 8px;">Доступные маршруты не найдены</div>
+        <div style="color: #999; margin-bottom: 16px;">
+            Возможно, все концерты в маршрутах недоступны для продажи или маршруты не были загружены.
+        </div>
+        <div style="font-size: 0.9em; color: #666;">
+            <a href="/admin/routes/upload" style="color: #4f5bd5; text-decoration: none;">Загрузить маршруты</a> | 
+            <a href="/admin/routes/concerts" style="color: #4f5bd5; text-decoration: none;">Проверить статус концертов</a>
+        </div>
+    </div>
+    {% endif %}
+{% else %}
+<div class="no-routes">
+    <div class="no-routes-icon">🗺️</div>
+    <div style="font-size: 1.2em; margin-bottom: 8px; color: #e53935;">Маршруты не загружены</div>
+    <div style="color: #999; margin-bottom: 16px;">
+        Для отображения доступных маршрутов необходимо сначала загрузить файл с маршрутами.
+    </div>
+    <div style="font-size: 0.9em; color: #666;">
+        <a href="/admin/routes/upload" style="color: #4f5bd5; text-decoration: none;">Загрузить маршруты</a>
+    </div>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Добавляем функциональность поиска и фильтрации
+    const table = document.querySelector('.routes-table');
+    if (table) {
+        // Добавляем возможность сортировки по клику на заголовки
+        const headers = table.querySelectorAll('th');
+        headers.forEach((header, index) => {
+            header.style.cursor = 'pointer';
+            header.addEventListener('click', function() {
+                sortTable(index);
+            });
+        });
+    }
+    
+    function sortTable(columnIndex) {
+        const table = document.querySelector('.routes-table');
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        
+        // Определяем тип данных в колонке
+        const sampleValue = rows[0].cells[columnIndex].textContent.trim();
+        const isNumeric = !isNaN(parseFloat(sampleValue)) && isFinite(sampleValue);
+        
+        rows.sort((a, b) => {
+            const aValue = a.cells[columnIndex].textContent.trim();
+            const bValue = b.cells[columnIndex].textContent.trim();
+            
+            if (isNumeric) {
+                return parseFloat(aValue) - parseFloat(bValue);
+            } else {
+                return aValue.localeCompare(bValue, 'ru');
+            }
+        });
+        
+        // Перестраиваем таблицу
+        rows.forEach(row => tbody.appendChild(row));
+    }
+});
+
+// Функция для смены страницы пагинации
+function changePage(page) {
+    if (page < 1) return;
+    
+    const currentUrl = new URL(window.location);
+    currentUrl.searchParams.set('page', page);
+    window.location.href = currentUrl.toString();
+}
+</script>
+
+{% endblock %} 

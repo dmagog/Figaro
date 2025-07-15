@@ -760,13 +760,17 @@ async def admin_routes_view(request: Request, session=Depends(get_session)):
     if not user_obj or not getattr(user_obj, 'is_superuser', False):
         return RedirectResponse(url="/login", status_code=302)
     
+    # Получаем параметры пагинации
+    page = int(request.query_params.get("page", 1))
+    per_page = int(request.query_params.get("per_page", 15))
+    
     # Получаем количество маршрутов из кэша
     from services.crud.purchase import get_cached_routes_count
     routes_count = get_cached_routes_count(session)
     
     # Получаем данные о доступных маршрутах из Statistics
     from services.crud.route_service import get_cached_available_routes_count, get_cached_available_concerts_count
-    from models import Statistics
+    from models import Statistics, AvailableRoute
     from sqlmodel import select
     
     available_routes_count = get_cached_available_routes_count(session)
@@ -781,6 +785,55 @@ async def admin_routes_view(request: Request, session=Depends(get_session)):
     if available_routes_stats and available_routes_stats.updated_at:
         last_check_date = available_routes_stats.updated_at
     
+    # Получаем общее количество доступных маршрутов
+    total_routes = session.exec(
+        select(AvailableRoute)
+    ).all()
+    total_count = len(total_routes)
+    
+    # Вычисляем параметры пагинации
+    total_pages = (total_count + per_page - 1) // per_page
+    offset = (page - 1) * per_page
+    
+    # Получаем доступные маршруты для отображения в таблице с пагинацией
+    available_routes = session.exec(
+        select(AvailableRoute).order_by(AvailableRoute.id.asc()).offset(offset).limit(per_page)
+    ).all()
+    
+    # Подготавливаем данные для таблицы
+    routes_data = []
+    for route in available_routes:
+        # Парсим состав маршрута для отображения
+        concert_ids = [x.strip() for x in route.Sostav.split(',') if x.strip()]
+        
+        routes_data.append({
+            'id': route.id,
+            'composition': f"{len(concert_ids)} концертов",
+            'days': route.Days,
+            'concerts': route.Concerts,
+            'halls': route.Halls,
+            'genre': route.Genre or 'Не указан',
+            'show_time': f"{route.ShowTime:.1f}ч",
+            'trans_time': f"{route.TransTime:.1f}ч",
+            'wait_time': f"{route.WaitTime:.1f}ч",
+            'costs': f"{route.Costs:.0f}₽",
+            'comfort_score': f"{route.ComfortScore:.1f}" if route.ComfortScore else 'Н/Д',
+            'comfort_level': route.ComfortLevel or 'Н/Д',
+            'intellect_score': f"{route.IntellectScore:.1f}" if route.IntellectScore else 'Н/Д',
+            'intellect_category': route.IntellectCategory or 'Н/Д',
+            'last_check': route.last_availability_check.strftime('%d.%m.%Y %H:%M') if route.last_availability_check else 'Н/Д'
+        })
+    
+    # Генерируем данные для пагинации
+    pagination_data = {
+        'current_page': page,
+        'total_pages': total_pages,
+        'per_page': per_page,
+        'total_count': total_count,
+        'start_item': offset + 1,
+        'end_item': min(offset + per_page, total_count)
+    }
+    
     context = {
         "user": user_obj,
         "request": request,
@@ -788,9 +841,11 @@ async def admin_routes_view(request: Request, session=Depends(get_session)):
         "routes_count": routes_count,
         "available_routes_count": available_routes_count,
         "available_concerts_count": available_concerts_count,
-        "last_check_date": last_check_date
+        "last_check_date": last_check_date,
+        "routes_data": routes_data,
+        "pagination": pagination_data
     }
-    return templates.TemplateResponse("admin_routes_main.html", context)
+    return templates.TemplateResponse("admin_routes_view.html", context)
 
 @home_route.get("/admin/routes/instruction", response_class=HTMLResponse)
 async def admin_routes_instruction(request: Request, session=Depends(get_session)):
