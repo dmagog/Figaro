@@ -85,8 +85,28 @@ class TicketsService:
             
             result = {}
             
-            # Определяем, сколько концертов сделать недоступными (20-40% от общего количества)
+            # Определяем общее количество концертов
             total_concerts = len(concerts)
+            
+            # Проверяем, сколько концертов уже недоступны
+            currently_unavailable = sum(1 for c in concerts if not c.tickets_available or (c.tickets_left is not None and c.tickets_left == 0))
+            currently_available = total_concerts - currently_unavailable
+            
+            # Если все концерты недоступны, восстанавливаем их до максимальной вместимости
+            if currently_unavailable >= total_concerts:
+                logger.info(f"Все концерты недоступны! Восстанавливаем {total_concerts} концертов до максимальной вместимости")
+                
+                for concert in concerts:
+                    hall = concert.hall
+                    max_seats = hall.seats if hall else 100
+                    concert.tickets_left = max_seats
+                    concert.tickets_available = True
+                    session.add(concert)
+                
+                session.commit()
+                logger.info(f"Все {total_concerts} концертов восстановлены и доступны для продажи")
+            
+            # Определяем, сколько концертов сделать недоступными (20-40% от общего количества)
             unavailable_count = max(1, int(total_concerts * random.uniform(0.2, 0.4)))
             
             # Выбираем случайные концерты для "закрытия"
