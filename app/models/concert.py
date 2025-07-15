@@ -17,6 +17,7 @@ class Concert(SQLModel, table=True):
     price: Optional[int]
     is_family_friendly: bool = Field(default=False)
     tickets_available: bool = Field(default=True)
+    tickets_left: Optional[int] = Field(default=None)  # Количество оставшихся билетов
     link: Optional[str]
 
     hall_id: int = Field(foreign_key="hall.id")

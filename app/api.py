@@ -11,6 +11,7 @@ from routes.home import home_route
 from routes.auth import auth_route
 from routes.user import user_route
 from routes.purchase import purchase_route
+from routes.tickets import tickets_route
 
 logger = get_logger(logger_name=__name__)
 settings = get_settings()
@@ -50,6 +51,7 @@ def create_application() -> FastAPI:
     app.include_router(auth_route, tags=['Auth'])
     app.include_router(user_route, tags=['User'])
     app.include_router(purchase_route, tags=['Purchase'])
+    app.include_router(tickets_route, tags=['Tickets'])
     # app.include_router(admin_route, tags=['Admin'])
     
 

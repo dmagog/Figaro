@@ -129,14 +129,21 @@ def load_concerts(session: Session, df_concerts: pd.DataFrame):
     logger.info(f"Загружаем {len(df_concerts)} концертов из Excel")
     
     # Сначала загружаем все залы в память для быстрого доступа
-    halls = {hall.name: hall.id for hall in session.exec(select(Hall)).all()}
+    halls = {hall.name: hall for hall in session.exec(select(Hall)).all()}
     
     records = []
     for _, row in df_concerts.iterrows():
-        hall_id = halls.get(row["HallName"])
-        if not hall_id:
+        hall = halls.get(row["HallName"])
+        if not hall:
             logger.warning(f"Зал {row['HallName']} не найден, пропускаем концерт {row['ShowId']}")
             continue
+            
+        # Инициализируем tickets_left количеством мест в зале, если не передано конкретное значение
+        tickets_left = None
+        if not pd.isna(row.get("TicketsLeft")):
+            tickets_left = int(row.get("TicketsLeft"))
+        elif hall.seats > 0:
+            tickets_left = hall.seats
             
         records.append({
             "external_id": row["ShowId"],
@@ -147,8 +154,9 @@ def load_concerts(session: Session, df_concerts: pd.DataFrame):
             "price": None if pd.isna(row.get("Price")) else row.get("Price"),
             "is_family_friendly": bool(row.get("Family", False)),
             "tickets_available": bool(row.get("Tickets", False)),
+            "tickets_left": tickets_left,
             "link": None if pd.isna(row.get("link")) else row.get("link"),
-            "hall_id": hall_id,
+            "hall_id": hall.id,
         })
     
     bulk_get_or_create(session, Concert, records, ["external_id"])

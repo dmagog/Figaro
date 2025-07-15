@@ -105,6 +105,9 @@
                             <span style="color:#666; font-size:0.9em;">({{ "%.1f"|format(available_routes_count / routes_count * 100) }}%)</span>
                         {% endif %}
                     {% endif %}
+                    {% if available_concerts_count is defined and available_concerts_count is not none %}
+                        <br>Концертов в продаже: <b style="color:#FF9800;">{{ available_concerts_count }}</b>
+                    {% endif %}
                 </div>
                 {% if last_check_date %}
                     <div style="font-size:0.9em; color:#666; font-weight:400;">

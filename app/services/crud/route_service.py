@@ -104,6 +104,11 @@ def init_available_routes(session: Session, status_dict: Dict = None) -> Dict[st
         # Обновляем кэш количества доступных маршрутов
         update_available_routes_cache(session, available_count)
         
+        # Обновляем кэш количества концертов в продаже
+        from services.crud.tickets import get_available_concerts_count
+        available_concerts_count = get_available_concerts_count(session)
+        update_available_concerts_cache(session, available_concerts_count)
+        
         logger.info(f"Инициализация завершена: {available_count} доступных, {unavailable_count} недоступных из {total_routes} маршрутов")
         
         return {
@@ -200,6 +205,10 @@ def update_available_routes(session: Session, status_dict: Dict = None) -> Dict[
         # Обновляем кэш количества доступных маршрутов
         update_available_routes_cache(session, final_count)
         
+        # Обновляем кэш количества концертов в продаже
+        available_concerts_count = len(session.exec(select(Concert).where(Concert.tickets_available == True)).all())
+        update_available_concerts_cache(session, available_concerts_count)
+        
         logger.info(f"Обновление завершено: удалено {deleted_count}, добавлено {added_count}, всего доступно {final_count}")
         
         return {
@@ -269,8 +278,9 @@ def ensure_available_routes_exist(session: Session, status_dict: Dict = None) ->
             return True
         else:
             logger.info(f"Найдено {existing_count} AvailableRoute, инициализация не требуется")
-            # Инициализируем кэш, если его нет
+            # Инициализируем кэши, если их нет
             init_available_routes_cache(session)
+            init_available_concerts_cache(session)
             return False
             
     except Exception as e:
@@ -360,4 +370,89 @@ def init_available_routes_cache(session: Session):
             
     except Exception as e:
         logger.error(f"Ошибка при инициализации кэша доступных маршрутов: {e}")
+        session.rollback()
+
+
+def update_available_concerts_cache(session: Session, available_count: int):
+    """
+    Обновляет кэшированное количество концертов в продаже в таблице Statistics
+    
+    Args:
+        session: Сессия базы данных
+        available_count: Количество концертов в продаже
+    """
+    try:
+        # Ищем существующую запись или создаём новую
+        stats_record = session.exec(
+            select(Statistics).where(Statistics.key == "available_concerts_count")
+        ).first()
+        
+        if stats_record:
+            stats_record.value = available_count
+            stats_record.updated_at = datetime.now(timezone.utc)
+        else:
+            stats_record = Statistics(
+                key="available_concerts_count",
+                value=available_count,
+                updated_at=datetime.now(timezone.utc)
+            )
+            session.add(stats_record)
+        
+        session.commit()
+        logger.info(f"Кэш количества концертов в продаже обновлён: {available_count}")
+        
+    except Exception as e:
+        logger.error(f"Ошибка при обновлении кэша концертов в продаже: {e}")
+        session.rollback()
+
+
+def get_cached_available_concerts_count(session: Session) -> int:
+    """
+    Возвращает кэшированное количество концертов в продаже
+    
+    Args:
+        session: Сессия базы данных
+        
+    Returns:
+        int: Количество концертов в продаже из кэша
+    """
+    try:
+        stats_record = session.exec(
+            select(Statistics).where(Statistics.key == "available_concerts_count")
+        ).first()
+        
+        if stats_record:
+            return stats_record.value
+        else:
+            # Если кэша нет, подсчитываем и создаём
+            available_count = len(session.exec(select(Concert).where(Concert.tickets_available == True)).all())
+            update_available_concerts_cache(session, available_count)
+            return available_count
+            
+    except Exception as e:
+        logger.error(f"Ошибка при получении кэшированного количества концертов в продаже: {e}")
+        # В случае ошибки возвращаем 0
+        return 0
+
+
+def init_available_concerts_cache(session: Session):
+    """
+    Инициализирует кэш количества концертов в продаже, если его нет
+    """
+    try:
+        # Проверяем, есть ли уже запись в кэше
+        stats_record = session.exec(
+            select(Statistics).where(Statistics.key == "available_concerts_count")
+        ).first()
+        
+        if not stats_record:
+            # Если кэша нет, создаём его
+            available_count = len(session.exec(select(Concert).where(Concert.tickets_available == True)).all())
+            update_available_concerts_cache(session, available_count)
+            logger.info("Кэш количества концертов в продаже инициализирован")
+        else:
+            logger.info("Кэш количества концертов в продаже уже существует")
+            
+    except Exception as e:
+        logger.error(f"Ошибка при инициализации кэша концертов в продаже: {e}")
         session.rollback() 

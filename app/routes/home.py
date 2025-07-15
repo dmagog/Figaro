@@ -319,11 +319,6 @@ async def admin_concerts(request: Request, session=Depends(get_session)):
     concerts_by_id = {getattr(c, 'id', None): c for c in concerts if hasattr(c, 'id') and getattr(c, 'id', None) is not None}
     halls = {h.id: h for h in session.exec(select(Hall)).scalars().all()}
 
-    # Заглушка для количества оставшихся билетов
-    def get_tickets_left(concert_id):
-        import random
-        return random.randint(0, 20)
-
     # Получаем количество купленных билетов по каждому концерту
     result = session.exec(
         select(Purchase.concert_id, func.count(Purchase.id)).group_by(Purchase.concert_id)
@@ -336,8 +331,9 @@ async def admin_concerts(request: Request, session=Depends(get_session)):
     for c in concerts:
         hall = halls.get(c.hall_id)
         seats = hall.seats if hall else 0
-        tickets_left = get_tickets_left(c.id)
-        tickets_available = tickets_left > 0
+        # Используем данные напрямую из базы данных
+        tickets_left = c.tickets_left if c.tickets_left is not None else seats
+        tickets_available = c.tickets_available and tickets_left > 0
         tickets_sold = tickets_per_concert.get(c.id, 0)
         fill_percent = (tickets_sold / seats * 100) if seats else 0
         if tickets_available:
@@ -401,10 +397,8 @@ async def admin_halls(request: Request, session=Depends(get_session)):
     for c in concerts:
         concerts_by_hall.setdefault(c.hall_id, []).append(c)
 
-    # Заглушка для количества оставшихся билетов (как на концертах)
-    def get_tickets_left(concert_id):
-        import random
-        return random.randint(0, 20)
+    # Используем новый сервис билетов
+    from services.crud.tickets import get_tickets_left
 
     # Считаем количество концертов и мест по каждому залу
     hall_stats = {h.id: {"concerts": 0, "seats": h.seats, "tickets_sold": 0, "available_concerts": 0} for h in halls}
@@ -622,11 +616,12 @@ async def admin_routes_upload(request: Request, session=Depends(get_session)):
     summary = get_festival_summary_stats(session)
     
     # Получаем данные о доступных маршрутах из Statistics
-    from services.crud.route_service import get_cached_available_routes_count
+    from services.crud.route_service import get_cached_available_routes_count, get_cached_available_concerts_count
     from models import Statistics
     from sqlmodel import select
     
     available_routes_count = get_cached_available_routes_count(session)
+    available_concerts_count = get_cached_available_concerts_count(session)
     
     # Получаем дату последней проверки доступных маршрутов
     available_routes_stats = session.exec(
@@ -643,6 +638,7 @@ async def admin_routes_upload(request: Request, session=Depends(get_session)):
         "summary": summary,
         "active_tab": "upload",
         "available_routes_count": available_routes_count,
+        "available_concerts_count": available_concerts_count,
         "last_check_date": last_check_date
     }
     return templates.TemplateResponse("admin_routes_upload.html", context)
@@ -665,11 +661,12 @@ async def admin_routes_view(request: Request, session=Depends(get_session)):
     routes_count = get_cached_routes_count(session)
     
     # Получаем данные о доступных маршрутах из Statistics
-    from services.crud.route_service import get_cached_available_routes_count
+    from services.crud.route_service import get_cached_available_routes_count, get_cached_available_concerts_count
     from models import Statistics
     from sqlmodel import select
     
     available_routes_count = get_cached_available_routes_count(session)
+    available_concerts_count = get_cached_available_concerts_count(session)
     
     # Получаем дату последней проверки доступных маршрутов
     available_routes_stats = session.exec(
@@ -686,6 +683,7 @@ async def admin_routes_view(request: Request, session=Depends(get_session)):
         "active_tab": "view",
         "routes_count": routes_count,
         "available_routes_count": available_routes_count,
+        "available_concerts_count": available_concerts_count,
         "last_check_date": last_check_date
     }
     return templates.TemplateResponse("admin_routes_main.html", context)
