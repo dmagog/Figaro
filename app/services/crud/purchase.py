@@ -191,4 +191,260 @@ def get_cached_routes_count(session: Session) -> int:
     except Exception as e:
         logger.error(f"Ошибка при получении кэшированного количества маршрутов: {e}")
         # В случае ошибки возвращаем 0
-        return 0 
+        return 0
+
+
+def find_customer_route_match(session: Session, user_external_id: str) -> dict:
+    """
+    Находит соответствие между покупками покупателя и маршрутами.
+    
+    Args:
+        session: Сессия базы данных
+        user_external_id: Внешний ID пользователя (ClientId)
+        
+    Returns:
+        Словарь с информацией о найденном маршруте или причинах отсутствия соответствия
+    """
+    # Получаем все купленные концерты покупателя
+    concerts = get_user_purchased_concerts(session, user_external_id)
+    
+    if not concerts:
+        return {
+            "found": False,
+            "reason": "У покупателя нет покупок",
+            "customer_concerts": [],
+            "matched_routes": []
+        }
+    
+    # Сортируем концерты по дате и получаем их ID
+    customer_concert_ids = sorted([c.id for c in concerts])
+    customer_concert_ids_str = ",".join(map(str, customer_concert_ids))
+    
+    # Получаем все маршруты
+    all_routes = session.exec(select(Route)).all()
+    
+    # Ищем точные совпадения
+    exact_matches = []
+    partial_matches = []
+    
+    for route in all_routes:
+        try:
+            # Парсим состав маршрута
+            route_concert_ids = sorted([int(x.strip()) for x in route.Sostav.split(',') if x.strip()])
+            
+            # Проверяем точное совпадение
+            if route_concert_ids == customer_concert_ids:
+                exact_matches.append({
+                    "route_id": route.id,
+                    "route_composition": route.Sostav,
+                    "route_days": route.Days,
+                    "route_concerts": route.Concerts,
+                    "route_halls": route.Halls,
+                    "route_genre": route.Genre,
+                    "route_show_time": route.ShowTime,
+                    "route_trans_time": route.TransTime,
+                    "route_wait_time": route.WaitTime,
+                    "route_costs": route.Costs,
+                    "route_comfort_score": route.ComfortScore,
+                    "route_comfort_level": route.ComfortLevel,
+                    "route_intellect_score": route.IntellectScore,
+                    "route_intellect_category": route.IntellectCategory,
+                    "match_type": "exact",
+                    "match_percentage": 100.0
+                })
+            
+            # Проверяем частичное совпадение (если покупатель купил подмножество концертов маршрута)
+            elif set(customer_concert_ids).issubset(set(route_concert_ids)):
+                match_percentage = (len(customer_concert_ids) / len(route_concert_ids)) * 100
+                partial_matches.append({
+                    "route_id": route.id,
+                    "route_composition": route.Sostav,
+                    "route_days": route.Days,
+                    "route_concerts": route.Concerts,
+                    "route_halls": route.Halls,
+                    "route_genre": route.Genre,
+                    "route_show_time": route.ShowTime,
+                    "route_trans_time": route.TransTime,
+                    "route_wait_time": route.WaitTime,
+                    "route_costs": route.Costs,
+                    "route_comfort_score": route.ComfortScore,
+                    "route_comfort_level": route.ComfortLevel,
+                    "route_intellect_score": route.IntellectScore,
+                    "route_intellect_category": route.IntellectCategory,
+                    "match_type": "partial",
+                    "match_percentage": match_percentage,
+                    "missing_concerts": list(set(route_concert_ids) - set(customer_concert_ids))
+                })
+                
+        except (ValueError, AttributeError) as e:
+            logger.warning(f"Ошибка при парсинге маршрута {route.id}: {e}")
+            continue
+    
+    # Сортируем частичные совпадения по проценту совпадения
+    partial_matches.sort(key=lambda x: x["match_percentage"], reverse=True)
+    
+    # Формируем результат
+    if exact_matches:
+        return {
+            "found": True,
+            "match_type": "exact",
+            "customer_concerts": customer_concert_ids,
+            "customer_concerts_str": customer_concert_ids_str,
+            "matched_routes": exact_matches,
+            "best_match": exact_matches[0]
+        }
+    elif partial_matches:
+        return {
+            "found": True,
+            "match_type": "partial",
+            "customer_concerts": customer_concert_ids,
+            "customer_concerts_str": customer_concert_ids_str,
+            "matched_routes": partial_matches,
+            "best_match": partial_matches[0]
+        }
+    else:
+        return {
+            "found": False,
+            "reason": "Не найдено подходящих маршрутов",
+            "customer_concerts": customer_concert_ids,
+            "customer_concerts_str": customer_concert_ids_str,
+            "matched_routes": [],
+            "total_routes_checked": len(all_routes)
+        }
+
+
+def get_all_customers_route_matches(session: Session) -> dict:
+    """
+    Оптимизированная функция для получения соответствий маршрутов для всех покупателей.
+    Загружает все маршруты один раз и обрабатывает всех покупателей.
+    
+    Returns:
+        Словарь {external_id: route_match_data}
+    """
+    # Получаем все маршруты один раз
+    all_routes = session.exec(select(Route)).all()
+    
+    # Создаем индекс маршрутов для быстрого поиска
+    routes_by_composition = {}
+    for route in all_routes:
+        try:
+            route_concert_ids = tuple(sorted([int(x.strip()) for x in route.Sostav.split(',') if x.strip()]))
+            routes_by_composition[route_concert_ids] = route
+        except (ValueError, AttributeError) as e:
+            logger.warning(f"Ошибка при парсинге маршрута {route.id}: {e}")
+            continue
+    
+    # Получаем всех покупателей с их концертами
+    from sqlalchemy import func
+    customer_concerts = session.exec(
+        select(
+            Purchase.user_external_id,
+            func.array_agg(Purchase.concert_id).label('concert_ids')
+        )
+        .group_by(Purchase.user_external_id)
+    ).all()
+    
+    results = {}
+    
+    for customer_data in customer_concerts:
+        external_id = str(customer_data[0])
+        concert_ids = customer_data[1] if customer_data[1] else []
+        
+        if not concert_ids:
+            results[external_id] = {
+                "found": False,
+                "reason": "У покупателя нет покупок",
+                "customer_concerts": [],
+                "customer_concerts_str": "",
+                "matched_routes": []
+            }
+            continue
+        
+        # Сортируем концерты
+        customer_concert_ids = sorted(concert_ids)
+        customer_concert_ids_str = ",".join(map(str, customer_concert_ids))
+        customer_concert_ids_tuple = tuple(customer_concert_ids)
+        
+        # Ищем точные совпадения
+        exact_matches = []
+        partial_matches = []
+        
+        # Проверяем точное совпадение
+        if customer_concert_ids_tuple in routes_by_composition:
+            route = routes_by_composition[customer_concert_ids_tuple]
+            exact_matches.append({
+                "route_id": route.id,
+                "route_composition": route.Sostav,
+                "route_days": route.Days,
+                "route_concerts": route.Concerts,
+                "route_halls": route.Halls,
+                "route_genre": route.Genre,
+                "route_show_time": route.ShowTime,
+                "route_trans_time": route.TransTime,
+                "route_wait_time": route.WaitTime,
+                "route_costs": route.Costs,
+                "route_comfort_score": route.ComfortScore,
+                "route_comfort_level": route.ComfortLevel,
+                "route_intellect_score": route.IntellectScore,
+                "route_intellect_category": route.IntellectCategory,
+                "match_type": "exact",
+                "match_percentage": 100.0
+            })
+        
+        # Проверяем частичные совпадения
+        for route_concert_ids_tuple, route in routes_by_composition.items():
+            if set(customer_concert_ids).issubset(set(route_concert_ids_tuple)):
+                match_percentage = (len(customer_concert_ids) / len(route_concert_ids_tuple)) * 100
+                partial_matches.append({
+                    "route_id": route.id,
+                    "route_composition": route.Sostav,
+                    "route_days": route.Days,
+                    "route_concerts": route.Concerts,
+                    "route_halls": route.Halls,
+                    "route_genre": route.Genre,
+                    "route_show_time": route.ShowTime,
+                    "route_trans_time": route.TransTime,
+                    "route_wait_time": route.WaitTime,
+                    "route_costs": route.Costs,
+                    "route_comfort_score": route.ComfortScore,
+                    "route_comfort_level": route.ComfortLevel,
+                    "route_intellect_score": route.IntellectScore,
+                    "route_intellect_category": route.IntellectCategory,
+                    "match_type": "partial",
+                    "match_percentage": match_percentage,
+                    "missing_concerts": list(set(route_concert_ids_tuple) - set(customer_concert_ids))
+                })
+        
+        # Сортируем частичные совпадения
+        partial_matches.sort(key=lambda x: x["match_percentage"], reverse=True)
+        
+        # Формируем результат
+        if exact_matches:
+            results[external_id] = {
+                "found": True,
+                "match_type": "exact",
+                "customer_concerts": customer_concert_ids,
+                "customer_concerts_str": customer_concert_ids_str,
+                "matched_routes": exact_matches,
+                "best_match": exact_matches[0]
+            }
+        elif partial_matches:
+            results[external_id] = {
+                "found": True,
+                "match_type": "partial",
+                "customer_concerts": customer_concert_ids,
+                "customer_concerts_str": customer_concert_ids_str,
+                "matched_routes": partial_matches,
+                "best_match": partial_matches[0]
+            }
+        else:
+            results[external_id] = {
+                "found": False,
+                "reason": "Не найдено подходящих маршрутов",
+                "customer_concerts": customer_concert_ids,
+                "customer_concerts_str": customer_concert_ids_str,
+                "matched_routes": [],
+                "total_routes_checked": len(all_routes)
+            }
+    
+    return results 

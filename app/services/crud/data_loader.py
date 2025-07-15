@@ -1,5 +1,5 @@
 # data_loader.py
-from sqlmodel import Session, select
+from sqlmodel import Session, select, delete
 from models import Hall, Concert, Artist, Author, Composition, ConcertArtistLink, ConcertCompositionLink, Purchase, AvailableRoute
 from models.statistics import Statistics
 from datetime import datetime, timedelta, timezone
@@ -307,6 +307,139 @@ def load_purchases(session: Session, df_ops: pd.DataFrame):
     logger.info(f"В базе теперь {len(count)} покупок")
 
 
+def update_customer_route_matches(session: Session):
+    """
+    Обновляет сопоставления покупателей с маршрутами.
+    Эта функция должна вызываться после загрузки маршрутов.
+    """
+    from models import CustomerRouteMatch
+    from datetime import datetime
+    
+    logger.info("Начинаем обновление сопоставлений покупателей с маршрутами...")
+    
+    # Получаем все маршруты
+    all_routes = session.exec(select(Route)).all()
+    logger.info(f"Загружено {len(all_routes)} маршрутов")
+    
+    # Создаем индекс маршрутов для быстрого поиска
+    routes_by_composition = {}
+    for route in all_routes:
+        try:
+            route_concert_ids = tuple(sorted([int(x.strip()) for x in route.Sostav.split(',') if x.strip()]))
+            routes_by_composition[route_concert_ids] = route
+        except (ValueError, AttributeError) as e:
+            logger.warning(f"Ошибка при парсинге маршрута {route.id}: {e}")
+            continue
+    
+    # Получаем всех покупателей с их уникальными концертами
+    from sqlalchemy import func
+    customer_concerts = session.exec(
+        select(
+            Purchase.user_external_id,
+            func.array_agg(func.distinct(Purchase.concert_id)).label('unique_concert_ids')
+        )
+        .group_by(Purchase.user_external_id)
+    ).all()
+    
+    logger.info(f"Найдено {len(customer_concerts)} покупателей для сопоставления")
+    
+    # Очищаем старые сопоставления
+    session.exec(delete(CustomerRouteMatch))
+    session.commit()
+    logger.info("Очищены старые сопоставления")
+    
+    # Обрабатываем каждого покупателя
+    processed = 0
+    for customer_data in customer_concerts:
+        external_id = str(customer_data[0])
+        unique_concert_ids = customer_data[1] if customer_data[1] else []
+        
+        if not unique_concert_ids:
+            # Создаем запись для покупателя без покупок
+            match_record = CustomerRouteMatch(
+                user_external_id=external_id,
+                found=False,
+                match_type="none",
+                reason="У покупателя нет покупок",
+                customer_concerts="",
+                customer_concerts_count=0,
+                total_routes_checked=len(all_routes),
+                updated_at=datetime.utcnow()
+            )
+            session.add(match_record)
+            processed += 1
+            continue
+        
+        # Сортируем уникальные концерты
+        customer_concert_ids = sorted(unique_concert_ids)
+        customer_concert_ids_str = ",".join(map(str, customer_concert_ids))
+        customer_concert_ids_tuple = tuple(customer_concert_ids)
+        
+        # Ищем точные совпадения
+        exact_matches = []
+        partial_matches = []
+        
+        # Проверяем точное совпадение
+        if customer_concert_ids_tuple in routes_by_composition:
+            route = routes_by_composition[customer_concert_ids_tuple]
+            exact_matches.append({
+                "route_id": route.id,
+                "match_type": "exact",
+                "match_percentage": 100.0
+            })
+        
+        # Проверяем частичные совпадения
+        for route_concert_ids_tuple, route in routes_by_composition.items():
+            if set(customer_concert_ids).issubset(set(route_concert_ids_tuple)):
+                match_percentage = (len(customer_concert_ids) / len(route_concert_ids_tuple)) * 100
+                partial_matches.append({
+                    "route_id": route.id,
+                    "match_type": "partial",
+                    "match_percentage": match_percentage
+                })
+        
+        # Сортируем частичные совпадения
+        partial_matches.sort(key=lambda x: x["match_percentage"], reverse=True)
+        
+        # Определяем лучший маршрут
+        best_match = None
+        match_type = "none"
+        reason = "Не найдено подходящих маршрутов"
+        
+        if exact_matches:
+            best_match = exact_matches[0]
+            match_type = "exact"
+            reason = None
+        elif partial_matches:
+            best_match = partial_matches[0]
+            match_type = "partial"
+            reason = None
+        
+        # Создаем запись
+        match_record = CustomerRouteMatch(
+            user_external_id=external_id,
+            found=best_match is not None,
+            match_type=match_type,
+            reason=reason,
+            customer_concerts=customer_concert_ids_str,
+            customer_concerts_count=len(customer_concert_ids),
+            best_route_id=best_match["route_id"] if best_match else None,
+            match_percentage=best_match["match_percentage"] if best_match else None,
+            total_routes_checked=len(all_routes),
+            updated_at=datetime.utcnow()
+        )
+        
+        session.add(match_record)
+        processed += 1
+        
+        if processed % 100 == 0:
+            logger.info(f"Обработано {processed}/{len(customer_concerts)} покупателей")
+    
+    # Сохраняем все изменения
+    session.commit()
+    logger.info(f"Завершено обновление сопоставлений. Обработано {processed} покупателей")
+
+
 def load_all_data(session: Session, df_halls: pd.DataFrame, df_concerts: pd.DataFrame, 
                   df_artists: pd.DataFrame, df_details: pd.DataFrame, df_ops: pd.DataFrame,
                   disable_fk_checks: bool = True):
@@ -438,6 +571,14 @@ def load_routes_from_csv(session: Session, path: str, batch_size: int = 1000, st
             route_service.init_available_routes_cache(session)
         except Exception as e:
             logger.error(f"Ошибка при обновлении AvailableRoute: {e}")
+        
+        # Обновляем сопоставления покупателей с маршрутами
+        logger.info("Обновляем сопоставления покупателей с маршрутами...")
+        try:
+            update_customer_route_matches(session)
+            logger.info("Сопоставления покупателей с маршрутами обновлены успешно")
+        except Exception as e:
+            logger.error(f"Ошибка при обновлении сопоставлений покупателей: {e}")
         
     if status_dict is not None:
         status_dict["progress"] = total_lines

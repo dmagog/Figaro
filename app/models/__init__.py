@@ -7,6 +7,7 @@ from .purchase import Purchase
 from .route import Route, AvailableRoute
 from .statistics import Statistics
 from .festival_day import FestivalDay
+from .customer_route_match import CustomerRouteMatch
 
 __all__ = [
     "Hall",
@@ -21,5 +22,6 @@ __all__ = [
     "Route",
     "AvailableRoute",
     "Statistics",
-    "FestivalDay"
+    "FestivalDay",
+    "CustomerRouteMatch"
 ]

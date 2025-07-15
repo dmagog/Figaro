@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status, UploadFile, File, Form, Query
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+import logging
 from auth.authenticate import authenticate_cookie, authenticate
 from auth.hash_password import HashPassword
 from database.config import get_settings
@@ -514,7 +515,7 @@ async def update_hall_seats(request: Request, session=Depends(get_session)):
 
 
 @home_route.get("/admin/customers", response_class=HTMLResponse)
-async def admin_customers(request: Request, session=Depends(get_session)):
+async def admin_customers(request: Request, session=Depends(get_session), load_routes: bool = Query(True, description="Загружать ли маршруты")):
     token = request.cookies.get(settings.COOKIE_NAME)
     if token:
         user = await authenticate_cookie(token)
@@ -527,8 +528,9 @@ async def admin_customers(request: Request, session=Depends(get_session)):
     if not user_obj or not getattr(user_obj, 'is_superuser', False):
         return RedirectResponse(url="/login", status_code=302)
 
-    from models import Purchase, User, Concert
+    from models import Purchase, User, Concert, CustomerRouteMatch
     from sqlalchemy import select, func
+    
     # Получаем все уникальные user_external_id из Purchase
     external_ids = set(str(row[0]) for row in session.exec(select(Purchase.user_external_id).distinct()).all())
     # Получаем всех пользователей с этими external_id (и вообще всех User)
@@ -536,7 +538,78 @@ async def admin_customers(request: Request, session=Depends(get_session)):
     # Получаем все концерты для быстрого доступа по id
     concerts = session.exec(select(Concert)).scalars().all()
     concerts_by_id = {c.id: c for c in concerts}
+    
+    # Получаем все соответствия маршрутов из таблицы CustomerRouteMatch
+    route_matches = {}
+    if load_routes:
+        try:
+            from models import Route
+            # Получаем все маршруты для быстрого доступа
+            routes = session.exec(select(Route)).all()
+            routes_by_id = {}
+            for route in routes:
+                if hasattr(route, 'id') and route.id is not None:
+                    routes_by_id[route.id] = route
+            
+            matches = session.exec(select(CustomerRouteMatch)).all()
+            logging.info(f"Найдено {len(matches)} записей в CustomerRouteMatch")
+            
+
+            
+            found_matches = 0
+            for match in matches:
+                # Получаем объект модели из Row
+                match_obj = match._mapping['CustomerRouteMatch']
+                
+                best_route = None
+                if match_obj.found and match_obj.best_route_id:
+                    try:
+                        best_route = routes_by_id.get(match_obj.best_route_id)
+                        if best_route:
+                            found_matches += 1
+                    except Exception as e:
+                        logging.warning(f"Ошибка при получении маршрута {match_obj.best_route_id}: {e}")
+                        best_route = None
+                
+                # Используем user_external_id как ключ для поиска
+                route_matches[str(match_obj.user_external_id)] = {
+                    "found": match_obj.found,
+                    "match_type": match_obj.match_type,
+                    "reason": match_obj.reason,
+                    "customer_concerts": match_obj.customer_concerts.split(',') if match_obj.customer_concerts else [],
+                    "customer_concerts_str": match_obj.customer_concerts,
+                    "matched_routes": [],
+                    "best_match": {
+                        "route_id": match_obj.best_route_id,
+                        "route_composition": getattr(best_route, 'Sostav', None) if best_route else None,
+                        "route_days": getattr(best_route, 'Days', None) if best_route else None,
+                        "route_concerts": getattr(best_route, 'Concerts', None) if best_route else None,
+                        "route_halls": getattr(best_route, 'Halls', None) if best_route else None,
+                        "route_genre": getattr(best_route, 'Genre', None) if best_route else None,
+                        "route_show_time": getattr(best_route, 'ShowTime', None) if best_route else None,
+                        "route_trans_time": getattr(best_route, 'TransTime', None) if best_route else None,
+                        "route_wait_time": getattr(best_route, 'WaitTime', None) if best_route else None,
+                        "route_costs": getattr(best_route, 'Costs', None) if best_route else None,
+                        "route_comfort_score": getattr(best_route, 'ComfortScore', None) if best_route else None,
+                        "route_comfort_level": getattr(best_route, 'ComfortLevel', None) if best_route else None,
+                        "route_intellect_score": getattr(best_route, 'IntellectScore', None) if best_route else None,
+                        "route_intellect_category": getattr(best_route, 'IntellectCategory', None) if best_route else None,
+                        "match_type": match_obj.match_type,
+                        "match_percentage": match_obj.match_percentage
+                    } if match_obj.found else None,
+                    "total_routes_checked": match_obj.total_routes_checked
+                }
+            
+            logging.info(f"Из них найдено совпадений: {found_matches}")
+            
+        except Exception as e:
+            logging.warning(f"Ошибка при получении маршрутов из базы: {e}")
+            import traceback
+            logging.warning(f"Полный traceback: {traceback.format_exc()}")
+            route_matches = {}
+    
     customers = []
+    customers_with_matches = 0
     for ext_id in external_ids:
         purchases = session.exec(select(Purchase).where(Purchase.user_external_id == ext_id)).scalars().all()
         total_spent = sum((p.price or 0) for p in purchases)
@@ -547,6 +620,18 @@ async def admin_customers(request: Request, session=Depends(get_session)):
             if p.concert_id in concerts_by_id and concerts_by_id[p.concert_id].datetime
         )
         user = users_by_external.get(ext_id)
+        
+        # Получаем соответствие с маршрутами из кэша
+        route_match = route_matches.get(ext_id, {
+            "found": False,
+            "reason": "Ошибка при получении данных",
+            "customer_concerts": [],
+            "matched_routes": []
+        })
+        
+        if route_match["found"]:
+            customers_with_matches += 1
+        
         customers.append({
             "external_id": ext_id,
             "user": user,
@@ -554,9 +639,91 @@ async def admin_customers(request: Request, session=Depends(get_session)):
             "total_spent": total_spent,
             "unique_concerts": len(unique_concerts),
             "unique_days": len(unique_days),
+            "route_match": route_match
         })
+    
     # Передаём customers в шаблон
     return templates.TemplateResponse("admin_customers.html", {"request": request, "customers": customers})
+
+
+
+@home_route.get("/api/customers/{external_id}/route-details")
+async def get_customer_route_details(external_id: str, request: Request, session=Depends(get_session)):
+    """
+    API endpoint для получения детальной информации о маршруте покупателя
+    """
+    token = request.cookies.get(settings.COOKIE_NAME)
+    user = None
+    if token:
+        user = await authenticate_cookie(token)
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
+    
+    try:
+        from models import CustomerRouteMatch, Route
+        match = session.exec(select(CustomerRouteMatch).where(CustomerRouteMatch.user_external_id == external_id)).first()
+        
+        if match:
+            # Получаем объект модели из Row
+            match_obj = match._mapping['CustomerRouteMatch']
+            
+            best_route = None
+            if match_obj.found and match_obj.best_route_id:
+                try:
+                    best_route = session.exec(select(Route).where(Route.id == match_obj.best_route_id)).first()
+                    if not best_route or not hasattr(best_route, 'id'):
+                        best_route = None
+                except Exception as e:
+                    logging.warning(f"Ошибка при получении маршрута {match_obj.best_route_id}: {e}")
+                    best_route = None
+            
+            route_match = {
+                "found": match_obj.found,
+                "match_type": match_obj.match_type,
+                "reason": match_obj.reason,
+                "customer_concerts": match_obj.customer_concerts.split(',') if match_obj.customer_concerts else [],
+                "customer_concerts_str": match_obj.customer_concerts,
+                "matched_routes": [],
+                "best_match": {
+                    "route_id": match_obj.best_route_id,
+                    "route_composition": getattr(best_route, 'Sostav', None) if best_route else None,
+                    "route_days": getattr(best_route, 'Days', None) if best_route else None,
+                    "route_concerts": getattr(best_route, 'Concerts', None) if best_route else None,
+                    "route_halls": getattr(best_route, 'Halls', None) if best_route else None,
+                    "route_genre": getattr(best_route, 'Genre', None) if best_route else None,
+                    "route_show_time": getattr(best_route, 'ShowTime', None) if best_route else None,
+                    "route_trans_time": getattr(best_route, 'TransTime', None) if best_route else None,
+                    "route_wait_time": getattr(best_route, 'WaitTime', None) if best_route else None,
+                    "route_costs": getattr(best_route, 'Costs', None) if best_route else None,
+                    "route_comfort_score": getattr(best_route, 'ComfortScore', None) if best_route else None,
+                    "route_comfort_level": getattr(best_route, 'ComfortLevel', None) if best_route else None,
+                    "route_intellect_score": getattr(best_route, 'IntellectScore', None) if best_route else None,
+                    "route_intellect_category": getattr(best_route, 'IntellectCategory', None) if best_route else None,
+                    "match_type": match_obj.match_type,
+                    "match_percentage": match_obj.match_percentage
+                } if match_obj.found else None,
+                "total_routes_checked": match_obj.total_routes_checked
+            }
+        else:
+            route_match = {
+                "found": False,
+                "reason": "Покупатель не найден",
+                "customer_concerts": [],
+                "matched_routes": []
+            }
+        
+        return JSONResponse({
+            "success": True,
+            "route_match": route_match
+        })
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "error": f"Ошибка при получении данных о маршруте: {str(e)}"
+        }, status_code=500)
 
 
 @home_route.post("/admin/users/update_external_id")
