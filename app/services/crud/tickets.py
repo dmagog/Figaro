@@ -159,6 +159,15 @@ class TicketsService:
             # Если были изменения, коммитим сессию
             if updated:
                 session.commit()
+                
+                # Обновляем кэш количества доступных концертов
+                try:
+                    from services.crud.route_service import update_available_concerts_cache
+                    available_count = sum(1 for r in result.values() if r['available'])
+                    update_available_concerts_cache(session, available_count)
+                    logger.info(f"Кэш количества доступных концертов обновлён: {available_count}")
+                except Exception as e:
+                    logger.error(f"Ошибка при обновлении кэша концертов: {e}")
             
             logger.info(f"Получена информация о билетах для {len(result)} концертов (доступно: {sum(1 for r in result.values() if r['available'])})")
             return result

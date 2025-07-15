@@ -244,7 +244,25 @@ document.addEventListener('DOMContentLoaded', function() {
             
             try {
                 // Получаем список всех концертов через API
-                const response = await fetch('/api/tickets/availability');
+                // Сначала получаем все ID концертов из данных на странице
+                const concertsContainer = document.querySelector('.concerts-status-container');
+                let concertIds = [];
+                
+                if (concertsContainer) {
+                    // Если мы на странице статуса концертов, берем ID из блоков концертов
+                    const concertBlocks = concertsContainer.querySelectorAll('.concert-status-block');
+                    concertIds = Array.from(concertBlocks).map(block => {
+                        const idElement = block.querySelector('.concert-id');
+                        return idElement ? parseInt(idElement.textContent) : null;
+                    }).filter(id => id !== null);
+                }
+                
+                // Если не удалось получить ID концертов, используем диапазон 1-100
+                if (concertIds.length === 0) {
+                    concertIds = Array.from({length: 100}, (_, i) => i + 1);
+                }
+                
+                const response = await fetch(`/api/tickets/availability?concert_ids=${concertIds.join(',')}`);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -285,6 +303,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Обновляем блок концертов без перезагрузки страницы
                 updateConcertsBlock(data.data);
+                
+                // Обновляем бейдж в меню с количеством доступных концертов
+                const availableCount = Object.values(data.data).filter(concert => concert.available).length;
+                const menuBadge = document.querySelector('a[href="/admin/routes/concerts"] span');
+                if (menuBadge) {
+                    menuBadge.textContent = availableCount;
+                }
                 
                 // Перезагружаем страницу для обновления статистики
                 setTimeout(() => {
