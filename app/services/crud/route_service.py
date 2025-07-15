@@ -2,7 +2,7 @@
 Сервис для работы с маршрутами и их доступностью
 """
 from sqlmodel import Session, select, delete
-from models import Route, AvailableRoute, Concert
+from models import Route, AvailableRoute, Concert, Statistics
 from datetime import datetime, timezone
 import logging
 from typing import List, Dict, Tuple
@@ -45,7 +45,7 @@ def is_route_available(session: Session, route: Route) -> bool:
         return False
 
 
-def init_available_routes(session: Session) -> Dict[str, int]:
+def init_available_routes(session: Session, status_dict: Dict = None) -> Dict[str, int]:
     """
     Инициализирует AvailableRoute, копируя все доступные маршруты
     
@@ -88,6 +88,11 @@ def init_available_routes(session: Session) -> Dict[str, int]:
             if i % 1000 == 0 or i == total_routes:
                 percent = (i / total_routes) * 100 if total_routes > 0 else 100
                 logger.info(f"Проверено {i}/{total_routes} маршрутов ({percent:.1f}%) - найдено доступных: {len(available_routes)}")
+                
+                # Обновляем глобальный статус, если передан
+                if status_dict is not None:
+                    status_dict["progress"] = i
+                    status_dict["available_count"] = len(available_routes)
         
         # Сохраняем доступные маршруты
         if available_routes:
@@ -95,6 +100,9 @@ def init_available_routes(session: Session) -> Dict[str, int]:
             session.commit()
         
         available_count = len(available_routes)
+        
+        # Обновляем кэш количества доступных маршрутов
+        update_available_routes_cache(session, available_count)
         
         logger.info(f"Инициализация завершена: {available_count} доступных, {unavailable_count} недоступных из {total_routes} маршрутов")
         
@@ -110,7 +118,7 @@ def init_available_routes(session: Session) -> Dict[str, int]:
         raise
 
 
-def update_available_routes(session: Session) -> Dict[str, int]:
+def update_available_routes(session: Session, status_dict: Dict = None) -> Dict[str, int]:
     """
     Обновляет AvailableRoute, удаляя маршруты с недоступными концертами
     и добавляя маршруты, которые снова стали доступными
@@ -171,6 +179,12 @@ def update_available_routes(session: Session) -> Dict[str, int]:
             if i % 1000 == 0 or i == total_routes:
                 percent = (i / total_routes) * 100 if total_routes > 0 else 100
                 logger.info(f"Проверено {i}/{total_routes} маршрутов ({percent:.1f}%) - найдено новых доступных: {len(routes_to_add)}")
+                
+                # Обновляем глобальный статус, если передан
+                if status_dict is not None:
+                    status_dict["progress"] = i
+                    # Общее количество доступных маршрутов = текущие - удалённые + новые
+                    status_dict["available_count"] = current_count - deleted_count + len(routes_to_add)
         
         # Добавляем новые доступные маршруты
         added_count = 0
@@ -182,6 +196,9 @@ def update_available_routes(session: Session) -> Dict[str, int]:
         
         # Получаем финальное количество
         final_count = len(session.exec(select(AvailableRoute)).all())
+        
+        # Обновляем кэш количества доступных маршрутов
+        update_available_routes_cache(session, final_count)
         
         logger.info(f"Обновление завершено: удалено {deleted_count}, добавлено {added_count}, всего доступно {final_count}")
         
@@ -211,7 +228,7 @@ def get_available_routes_stats(session: Session) -> Dict[str, int]:
     """
     try:
         total_routes = len(session.exec(select(Route)).all())
-        available_routes = len(session.exec(select(AvailableRoute)).all())
+        available_routes = get_cached_available_routes_count(session)
         unavailable_routes = total_routes - available_routes
         
         return {
@@ -231,7 +248,7 @@ def get_available_routes_stats(session: Session) -> Dict[str, int]:
         }
 
 
-def ensure_available_routes_exist(session: Session) -> bool:
+def ensure_available_routes_exist(session: Session, status_dict: Dict = None) -> bool:
     """
     Проверяет, существуют ли AvailableRoute, если нет - создаёт их
     
@@ -243,17 +260,104 @@ def ensure_available_routes_exist(session: Session) -> bool:
     """
     try:
         logger.info("Проверяем наличие AvailableRoute в базе данных...")
-        existing_count = len(session.exec(select(AvailableRoute)).all())
+        existing_count = get_cached_available_routes_count(session)
         
         if existing_count == 0:
             logger.info("AvailableRoute не найдены, начинаем инициализацию...")
-            result = init_available_routes(session)
+            result = init_available_routes(session, status_dict=status_dict)
             logger.info(f"Инициализация AvailableRoute завершена: {result['available_routes']} доступных из {result['total_routes']} маршрутов")
             return True
         else:
             logger.info(f"Найдено {existing_count} AvailableRoute, инициализация не требуется")
+            # Инициализируем кэш, если его нет
+            init_available_routes_cache(session)
             return False
             
     except Exception as e:
         logger.error(f"Ошибка при проверке AvailableRoute: {e}")
-        raise 
+        raise
+
+
+def update_available_routes_cache(session: Session, available_count: int):
+    """
+    Обновляет кэшированное количество доступных маршрутов в таблице Statistics
+    
+    Args:
+        session: Сессия базы данных
+        available_count: Количество доступных маршрутов
+    """
+    try:
+        # Ищем существующую запись или создаём новую
+        stats_record = session.exec(
+            select(Statistics).where(Statistics.key == "available_routes_count")
+        ).first()
+        
+        if stats_record:
+            stats_record.value = available_count
+            stats_record.updated_at = datetime.now(timezone.utc)
+        else:
+            stats_record = Statistics(
+                key="available_routes_count",
+                value=available_count,
+                updated_at=datetime.now(timezone.utc)
+            )
+            session.add(stats_record)
+        
+        session.commit()
+        logger.info(f"Кэш количества доступных маршрутов обновлён: {available_count}")
+        
+    except Exception as e:
+        logger.error(f"Ошибка при обновлении кэша доступных маршрутов: {e}")
+        session.rollback()
+
+
+def get_cached_available_routes_count(session: Session) -> int:
+    """
+    Возвращает кэшированное количество доступных маршрутов
+    
+    Args:
+        session: Сессия базы данных
+        
+    Returns:
+        int: Количество доступных маршрутов из кэша
+    """
+    try:
+        stats_record = session.exec(
+            select(Statistics).where(Statistics.key == "available_routes_count")
+        ).first()
+        
+        if stats_record:
+            return stats_record.value
+        else:
+            # Если кэша нет, подсчитываем и создаём
+            available_count = len(session.exec(select(AvailableRoute)).all())
+            update_available_routes_cache(session, available_count)
+            return available_count
+            
+    except Exception as e:
+        logger.error(f"Ошибка при получении кэшированного количества доступных маршрутов: {e}")
+        # В случае ошибки возвращаем 0
+        return 0
+
+
+def init_available_routes_cache(session: Session):
+    """
+    Инициализирует кэш количества доступных маршрутов, если его нет
+    """
+    try:
+        # Проверяем, есть ли уже запись в кэше
+        stats_record = session.exec(
+            select(Statistics).where(Statistics.key == "available_routes_count")
+        ).first()
+        
+        if not stats_record:
+            # Если кэша нет, создаём его
+            available_count = len(session.exec(select(AvailableRoute)).all())
+            update_available_routes_cache(session, available_count)
+            logger.info("Кэш количества доступных маршрутов инициализирован")
+        else:
+            logger.info("Кэш количества доступных маршрутов уже существует")
+            
+    except Exception as e:
+        logger.error(f"Ошибка при инициализации кэша доступных маршрутов: {e}")
+        session.rollback() 

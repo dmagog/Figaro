@@ -88,22 +88,62 @@ function pollUploadStatus() {
                 progress.style.display = 'block';
                 progress.innerHTML = `Обработка маршрутов: ${status.progress} / ${status.total} (${percent}%)`;
             } else {
+                // Загрузка маршрутов завершена, начинаем проверку AvailableRoute
+                progress.style.display = 'block';
+                progress.innerHTML = 'Загрузка маршрутов завершена. Проверяем доступность маршрутов...';
+                result.innerHTML = `<b>Маршруты загружены!</b><br>Добавлено: ${status.added}, обновлено: ${status.updated}`;
+                clearInterval(pollInterval);
+                
+                // Начинаем опрос статуса проверки AvailableRoute
+                pollAvailableRoutesStatus();
+            }
+        } catch (err) {
+            progress.style.display = 'none';
+            result.innerHTML = `<span style='color:red;'>Ошибка соединения с сервером</span>`;
+            clearInterval(pollInterval);
+            // Разблокируем форму
+            form.querySelector('button[type="submit"]').disabled = false;
+            fileInput.disabled = false;
+        }
+    }, 1000);
+}
+
+function pollAvailableRoutesStatus() {
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(async () => {
+        try {
+            const resp = await fetch('/admin/routes/available_routes_status');
+            const status = await resp.json();
+            if (status.error) {
                 progress.style.display = 'none';
-                result.innerHTML = `<b>Загрузка завершена!</b><br>Добавлено: ${status.added}, обновлено: ${status.updated}`;
+                result.innerHTML += `<br><span style='color:red;'>Ошибка проверки доступности: ${status.error}</span>`;
+                clearInterval(pollInterval);
+                // Разблокируем форму
+                form.querySelector('button[type="submit"]').disabled = false;
+                fileInput.disabled = false;
+                return;
+            }
+            if (status.in_progress) {
+                let percent = status.total ? Math.round((status.progress / status.total) * 100) : 0;
+                progress.style.display = 'block';
+                progress.innerHTML = `Проверка доступности маршрутов: ${status.progress} / ${status.total} (${percent}%) - найдено доступных: ${status.available_count || 0}`;
+            } else {
+                progress.style.display = 'none';
+                result.innerHTML += `<br><b>Проверка доступности завершена!</b><br>Доступных маршрутов: ${status.available_count || 0} из ${status.total_routes || 0} (${status.availability_percentage || 0}%)`;
                 clearInterval(pollInterval);
                 // Очищаем форму
                 form.reset();
                 // Разблокируем форму
                 form.querySelector('button[type="submit"]').disabled = false;
                 fileInput.disabled = false;
-                // Редиректим на страницу просмотра маршрутов через 1.5 секунды
+                // Редиректим на страницу просмотра маршрутов через 2 секунды
                 setTimeout(() => {
                     window.location.href = '/admin/routes/view';
-                }, 1500);
+                }, 2000);
             }
         } catch (err) {
             progress.style.display = 'none';
-            result.innerHTML = `<span style='color:red;'>Ошибка соединения с сервером</span>`;
+            result.innerHTML += `<br><span style='color:red;'>Ошибка соединения с сервером при проверке доступности</span>`;
             clearInterval(pollInterval);
             // Разблокируем форму
             form.querySelector('button[type="submit"]').disabled = false;

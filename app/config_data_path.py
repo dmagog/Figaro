@@ -33,7 +33,7 @@ HALLS_LIST_PATH = 'data/HallList-good.xlsx'
 ############################################################################
 
 ## Размеченные маршруты фестиваля
-ROUTES_PATH = 'data/RouteRange_with_GMM.csv'
+ROUTES_PATH = 'data/RouteRange_with_GMM-.csv'
 
 ## Таблица переходов между залами
 HALLS_TRANSITIONS_PATH = 'data/HallsTime-good.xlsx'

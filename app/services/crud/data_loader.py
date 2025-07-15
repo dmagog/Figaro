@@ -425,6 +425,9 @@ def load_routes_from_csv(session: Session, path: str, batch_size: int = 1000, st
             route_service.ensure_available_routes_exist(session)
             stats = route_service.get_available_routes_stats(session)
             logger.info(f"AvailableRoute обновлены: {stats['available_routes']} доступных из {stats['total_routes']} маршрутов ({stats['availability_percentage']}%)")
+            
+            # Инициализируем кэш доступных маршрутов
+            route_service.init_available_routes_cache(session)
         except Exception as e:
             logger.error(f"Ошибка при обновлении AvailableRoute: {e}")
         

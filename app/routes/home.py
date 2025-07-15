@@ -15,6 +15,7 @@ from config_data_path import ROUTES_PATH
 import shutil
 import os
 import threading
+import logging
 
 
 settings = get_settings()
@@ -25,8 +26,11 @@ templates = Jinja2Templates(directory="templates")
 # Глобальный статус загрузки маршрутов
 route_upload_status = {"in_progress": False, "progress": 0, "total": 0, "added": 0, "updated": 0, "error": None}
 
+# Глобальный статус проверки AvailableRoute
+available_routes_status = {"in_progress": False, "progress": 0, "total": 0, "available_count": 0, "total_routes": 0, "availability_percentage": 0, "error": None}
+
 def process_routes_upload(session, path):
-    global route_upload_status
+    global route_upload_status, available_routes_status
     try:
         route_upload_status["in_progress"] = True
         route_upload_status["progress"] = 0
@@ -38,10 +42,59 @@ def process_routes_upload(session, path):
         result = load_routes_from_csv(session, path, status_dict=route_upload_status)
         route_upload_status["added"] = result["added"]
         route_upload_status["updated"] = result["updated"]
+        
+        # После загрузки маршрутов запускаем проверку AvailableRoute
+        process_available_routes_check(session)
+        
     except Exception as e:
         route_upload_status["error"] = str(e)
     finally:
         route_upload_status["in_progress"] = False
+
+
+def process_available_routes_check(session):
+    global available_routes_status
+    try:
+        available_routes_status["in_progress"] = True
+        available_routes_status["progress"] = 0
+        available_routes_status["available_count"] = 0
+        available_routes_status["total_routes"] = 0
+        available_routes_status["availability_percentage"] = 0
+        available_routes_status["error"] = None
+        
+        # Импортируем необходимые модули
+        from services.crud import route_service
+        from models import Route, AvailableRoute
+        from sqlmodel import select
+        
+        # Получаем общее количество маршрутов
+        total_routes = len(session.exec(select(Route)).all())
+        available_routes_status["total_routes"] = total_routes
+        available_routes_status["total"] = total_routes
+        
+        # Проверяем, есть ли уже AvailableRoute
+        existing_count = len(session.exec(select(AvailableRoute)).all())
+        
+        if existing_count == 0:
+            # Если AvailableRoute нет, инициализируем их
+            logging.info("AvailableRoute не найдены, начинаем инициализацию...")
+            result = route_service.init_available_routes(session, status_dict=available_routes_status)
+            available_routes_status["available_count"] = result["available_routes"]
+            available_routes_status["availability_percentage"] = result["availability_percentage"] if "availability_percentage" in result else 0
+        else:
+            # Если AvailableRoute есть, обновляем их
+            logging.info(f"Найдено {existing_count} AvailableRoute, обновляем...")
+            result = route_service.update_available_routes(session, status_dict=available_routes_status)
+            available_routes_status["available_count"] = result["current_count"]
+            available_routes_status["availability_percentage"] = round((result["current_count"] / total_routes * 100), 2) if total_routes > 0 else 0
+        
+        available_routes_status["progress"] = total_routes
+        
+    except Exception as e:
+        available_routes_status["error"] = str(e)
+        logging.error(f"Ошибка при проверке AvailableRoute: {e}")
+    finally:
+        available_routes_status["in_progress"] = False
 
 
 def get_user_field(u, field):
@@ -641,3 +694,7 @@ async def upload_routes(request: Request, file: UploadFile = File(...), session=
 @home_route.get("/admin/routes/upload_status")
 async def get_routes_upload_status():
     return JSONResponse(route_upload_status)
+
+@home_route.get("/admin/routes/available_routes_status")
+async def get_available_routes_status():
+    return JSONResponse(available_routes_status)
