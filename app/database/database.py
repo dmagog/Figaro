@@ -59,7 +59,7 @@ def init_db(demostart = None):
                 print("\nЗагружаем маршруты...")
                 data_loader.load_routes_from_csv(session, ROUTES_PATH)
                 print("\n✅ Загрузка маршрутов завершена.")
-                
+
                 # Обновляем кэш количества маршрутов
                 from services.crud.data_loader import update_routes_count_cache
                 update_routes_count_cache(session)

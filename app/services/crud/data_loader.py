@@ -431,7 +431,8 @@ def update_routes_count_cache(session: Session):
     """Обновляет кэшированное количество маршрутов в таблице Statistics"""
     try:
         # Подсчитываем актуальное количество маршрутов
-        routes_count = session.exec(select(Route)).count()
+        routes = session.exec(select(Route)).all()
+        routes_count = len(routes)
         
         # Ищем существующую запись или создаём новую
         stats_record = session.exec(
