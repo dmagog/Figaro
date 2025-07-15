@@ -109,11 +109,19 @@
                         <br>Концертов в продаже: <b style="color:#FF9800;">{{ available_concerts_count }}</b>
                     {% endif %}
                 </div>
-                {% if last_check_date %}
-                    <div style="font-size:0.9em; color:#666; font-weight:400;">
-                        Последняя проверка: <b>{{ last_check_date.strftime('%d.%m.%Y %H:%M') }}</b>
+                <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+                    <div>
+                        <button id="refresh-tickets-btn" style="padding: 8px 16px; background: #4f5bd5; color: white; border: none; border-radius: 8px; font-size: 0.9em; cursor: pointer; transition: background 0.2s;" title="Обновить данные о билетах">
+                            🔄 Обновить билеты
+                        </button>
+                        <span id="refresh-status" style="margin-left: 12px; font-size: 0.9em; color: #666;"></span>
                     </div>
-                {% endif %}
+                    {% if last_check_date %}
+                        <div style="font-size:0.9em; color:#666; font-weight:400;">
+                            Последняя проверка: <b>{{ last_check_date.strftime('%d.%m.%Y %H:%M') }}</b>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         {% else %}
             <span style="color:#e53935;">Маршруты не загружены.</span> <a href="/admin/routes/upload" style="color:#4f5bd5; text-decoration:underline;">Загрузить маршруты</a>
@@ -129,4 +137,83 @@ a[href="/admin"]:hover {
     opacity: 1 !important;
 }
 </style>
+
+<script>
+// Обработка кнопки обновления билетов
+document.addEventListener('DOMContentLoaded', function() {
+    const refreshBtn = document.getElementById('refresh-tickets-btn');
+    const refreshStatus = document.getElementById('refresh-status');
+    
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', async function() {
+            // Блокируем кнопку
+            refreshBtn.disabled = true;
+            refreshBtn.style.background = '#bfc6e0';
+            refreshBtn.textContent = '🔄 Обновление...';
+            refreshStatus.textContent = 'Запрос данных...';
+            
+            try {
+                // Получаем список всех концертов через API
+                const response = await fetch('/api/tickets/availability');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Ошибка получения данных');
+                }
+                
+                const concertsCount = Object.keys(data.data).length;
+                refreshStatus.textContent = `Обновлено ${concertsCount} концертов`;
+                
+                // Получаем статистику сервиса
+                try {
+                    const statsResponse = await fetch('/api/tickets/stats');
+                    if (statsResponse.ok) {
+                        const statsData = await statsResponse.json();
+                        if (statsData.success && statsData.cache_stats) {
+                            const requestCount = statsData.cache_stats.request_counter || 0;
+                            refreshStatus.textContent = `✅ Обновлено ${concertsCount} концертов (запрос #${requestCount})`;
+                        } else {
+                            refreshStatus.textContent = `✅ Обновлено ${concertsCount} концертов`;
+                        }
+                    } else {
+                        refreshStatus.textContent = `✅ Обновлено ${concertsCount} концертов`;
+                    }
+                } catch (statsError) {
+                    console.warn('Не удалось получить статистику:', statsError);
+                    refreshStatus.textContent = `✅ Обновлено ${concertsCount} концертов`;
+                }
+                
+                // Показываем уведомление об успехе
+                setTimeout(() => {
+                    refreshStatus.textContent = '';
+                }, 3000);
+                
+                // Перезагружаем страницу для обновления статистики
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Ошибка при обновлении билетов:', error);
+                refreshStatus.textContent = `❌ Ошибка: ${error.message}`;
+                
+                // Показываем ошибку 3 секунды
+                setTimeout(() => {
+                    refreshStatus.textContent = '';
+                }, 3000);
+            } finally {
+                // Разблокируем кнопку
+                refreshBtn.disabled = false;
+                refreshBtn.style.background = '#4f5bd5';
+                refreshBtn.textContent = '🔄 Обновить билеты';
+            }
+        });
+    }
+});
+</script>
 {% endblock %} 
