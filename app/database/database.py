@@ -59,10 +59,13 @@ def init_db(demostart = None):
                 print("\nЗагружаем маршруты...")
                 data_loader.load_routes_from_csv(session, ROUTES_PATH)
                 print("\n✅ Загрузка маршрутов завершена.")
+                
+                # Обновляем кэш количества маршрутов
+                from services.crud.data_loader import update_routes_count_cache
+                update_routes_count_cache(session)
+                print("✅ Кэш количества маршрутов обновлён.")
 
-
-    # #Если инициализация базы происходит с созданием демо параметров
-    # if demostart:
-    #     create_demo_user(Session(engine)) # Создадим демо юзеров
-    #     create_demo_operations_list(Session(engine)) # Прогоним случайные операции оплаты-пополнения
-    #     create_demo_model(Session(engine))  #создадим тестовые модели
+    # Инициализируем кэш количества маршрутов, если его нет
+    with Session(engine) as session:
+        from services.crud.data_loader import init_routes_count_cache
+        init_routes_count_cache(session)

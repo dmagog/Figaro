@@ -1,6 +1,7 @@
 # data_loader.py
 from sqlmodel import Session, select
 from models import Hall, Concert, Artist, Author, Composition, ConcertArtistLink, ConcertCompositionLink, Purchase
+from models.statistics import Statistics
 from datetime import datetime, timedelta
 import pandas as pd
 from typing import Dict, List
@@ -413,6 +414,10 @@ def load_routes_from_csv(session: Session, path: str, batch_size: int = 1000, st
             session.commit()
             added += len(batch)
         session.commit()
+        
+        # Обновляем кэш количества маршрутов
+        update_routes_count_cache(session)
+        
     if status_dict is not None:
         status_dict["progress"] = total_lines
         status_dict["added"] = added
@@ -420,3 +425,53 @@ def load_routes_from_csv(session: Session, path: str, batch_size: int = 1000, st
         status_dict["in_progress"] = False
     logger.info(f"[load_routes_from_csv] Загружено маршрутов: добавлено {added}, обновлено {updated}")
     return {"added": added, "updated": updated, "skipped": skipped}
+
+
+def update_routes_count_cache(session: Session):
+    """Обновляет кэшированное количество маршрутов в таблице Statistics"""
+    try:
+        # Подсчитываем актуальное количество маршрутов
+        routes_count = session.exec(select(Route)).count()
+        
+        # Ищем существующую запись или создаём новую
+        stats_record = session.exec(
+            select(Statistics).where(Statistics.key == "routes_count")
+        ).first()
+        
+        if stats_record:
+            stats_record.value = routes_count
+            stats_record.updated_at = datetime.utcnow()
+        else:
+            stats_record = Statistics(
+                key="routes_count",
+                value=routes_count,
+                updated_at=datetime.utcnow()
+            )
+            session.add(stats_record)
+        
+        session.commit()
+        logger.info(f"Кэш количества маршрутов обновлён: {routes_count}")
+        
+    except Exception as e:
+        logger.error(f"Ошибка при обновлении кэша количества маршрутов: {e}")
+        session.rollback()
+
+
+def init_routes_count_cache(session: Session):
+    """Инициализирует кэш количества маршрутов, если его нет"""
+    try:
+        # Проверяем, есть ли уже запись в кэше
+        stats_record = session.exec(
+            select(Statistics).where(Statistics.key == "routes_count")
+        ).first()
+        
+        if not stats_record:
+            # Если кэша нет, создаём его
+            update_routes_count_cache(session)
+            logger.info("Кэш количества маршрутов инициализирован")
+        else:
+            logger.info("Кэш количества маршрутов уже существует")
+            
+    except Exception as e:
+        logger.error(f"Ошибка при инициализации кэша количества маршрутов: {e}")
+        session.rollback()

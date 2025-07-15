@@ -6,6 +6,11 @@ from datetime import datetime
 from models import User
 from sqlalchemy import func
 from models.hall import Hall
+from models.statistics import Statistics
+from models import Route
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def get_user_purchased_concerts(session: Session, user_external_id: str) -> List[Concert]:
@@ -141,6 +146,7 @@ def get_festival_summary_stats(session: Session) -> dict:
     - Сумма покупок
     - Средняя заполняемость концертов (купленных билетов / концертов)
     - Количество залов
+    - Количество маршрутов (из кэша)
     """
     users_count = session.exec(select(func.count(User.id))).one()
     concerts_count = session.exec(select(func.count(Concert.id))).one()
@@ -148,11 +154,41 @@ def get_festival_summary_stats(session: Session) -> dict:
     total_spent = session.exec(select(func.coalesce(func.sum(Purchase.price), 0))).one()
     avg_fill = (tickets_count / concerts_count) if concerts_count else 0
     halls_count = session.exec(select(func.count(Hall.id))).one()
+    routes_count = get_cached_routes_count(session)
+    
     return {
         "users_count": users_count,
         "concerts_count": concerts_count,
         "tickets_count": tickets_count,
         "total_spent": total_spent,
         "avg_fill": avg_fill,
-        "halls_count": halls_count
+        "halls_count": halls_count,
+        "routes_count": routes_count
     } 
+
+
+def get_cached_routes_count(session: Session) -> int:
+    """Возвращает кэшированное количество маршрутов"""
+    try:
+        stats_record = session.exec(
+            select(Statistics).where(Statistics.key == "routes_count")
+        ).first()
+        
+        if stats_record:
+            return stats_record.value
+        else:
+            # Если кэша нет, подсчитываем и создаём
+            routes_count = session.exec(select(Route)).count()
+            stats_record = Statistics(
+                key="routes_count",
+                value=routes_count,
+                updated_at=datetime.utcnow()
+            )
+            session.add(stats_record)
+            session.commit()
+            return routes_count
+            
+    except Exception as e:
+        logger.error(f"Ошибка при получении кэшированного количества маршрутов: {e}")
+        # В случае ошибки возвращаем 0
+        return 0 

@@ -103,10 +103,8 @@ async def admin_index(request: Request, session=Depends(get_session)):
         return RedirectResponse(url="/login", status_code=302)
 
     summary = get_festival_summary_stats(session)
-    # Получаем количество маршрутов
-    from models.route import Route
-    from sqlalchemy import select
-    routes_count = len(session.exec(select(Route)).all())
+    # Получаем количество маршрутов из кэша
+    routes_count = summary.get("routes_count", 0)
 
     context = {
         "user": user_obj,
@@ -588,10 +586,9 @@ async def admin_routes_view(request: Request, session=Depends(get_session)):
         user_obj = UsersService.get_user_by_email(user, session)
     if not user_obj or not getattr(user_obj, 'is_superuser', False):
         return RedirectResponse(url="/login", status_code=302)
-    # Получаем количество маршрутов
-    from models.route import Route
-    from sqlalchemy import select
-    routes_count = len(session.exec(select(Route)).all())
+    # Получаем количество маршрутов из кэша
+    from services.crud.purchase import get_cached_routes_count
+    routes_count = get_cached_routes_count(session)
     context = {
         "user": user_obj,
         "request": request,
