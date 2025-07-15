@@ -675,21 +675,12 @@ async def get_customer_route_details(external_id: str, request: Request, session
                 try:
                     # Получаем полную информацию о маршруте
                     best_route = session.exec(select(Route).where(Route.id == match_obj.best_route_id)).first()
-                    logging.info(f"Тип best_route: {type(best_route)}")
-                    if best_route:
-                        logging.info(f"Успешно загружен маршрут {match_obj.best_route_id}")
-                        # Получаем данные из Row объекта
-                        route_data = best_route._mapping['Route']
-                        logging.info(f"Маршрут данные: ID={route_data.id}, Sostav={route_data.Sostav}")
-                    else:
+                    if not best_route:
                         logging.warning(f"Маршрут {match_obj.best_route_id} не найден в базе данных")
                 except Exception as e:
                     logging.warning(f"Ошибка при получении маршрута {match_obj.best_route_id}: {e}")
-                    import traceback
-                    logging.warning(f"Traceback: {traceback.format_exc()}")
                     best_route = None
             
-            logging.info("Формируем route_match...")
             route_match = {
                 "found": match_obj.found,
                 "match_type": match_obj.match_type,
@@ -717,7 +708,6 @@ async def get_customer_route_details(external_id: str, request: Request, session
                 } if match_obj.found else None,
                 "total_routes_checked": match_obj.total_routes_checked
             }
-            logging.info("route_match сформирован успешно")
         else:
             route_match = {
                 "found": False,
@@ -726,18 +716,10 @@ async def get_customer_route_details(external_id: str, request: Request, session
                 "matched_routes": []
             }
         
-        logging.info("Формируем JSONResponse...")
-        response_data = {
+        return JSONResponse({
             "success": True,
-            "route_match": route_match,
-            "debug": {
-                "match_found": match is not None,
-                "best_route_found": best_route is not None if match else False,
-                "route_id": match_obj.best_route_id if match else None
-            }
-        }
-        logging.info("JSONResponse сформирован успешно")
-        return JSONResponse(response_data)
+            "route_match": route_match
+        })
     except Exception as e:
         return JSONResponse({
             "success": False,
