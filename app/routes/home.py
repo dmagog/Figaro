@@ -558,7 +558,7 @@ async def admin_customers(request: Request, session=Depends(get_session), load_r
             
             found_matches = 0
             for match in matches:
-                # Получаем объект модели из Row
+                # Получаем данные из Row объекта
                 match_obj = match._mapping['CustomerRouteMatch']
                 
                 best_route = None
@@ -581,19 +581,19 @@ async def admin_customers(request: Request, session=Depends(get_session), load_r
                     "matched_routes": [],
                     "best_match": {
                         "route_id": match_obj.best_route_id,
-                        "route_composition": getattr(best_route, 'Sostav', None) if best_route else None,
-                        "route_days": getattr(best_route, 'Days', None) if best_route else None,
-                        "route_concerts": getattr(best_route, 'Concerts', None) if best_route else None,
-                        "route_halls": getattr(best_route, 'Halls', None) if best_route else None,
-                        "route_genre": getattr(best_route, 'Genre', None) if best_route else None,
-                        "route_show_time": getattr(best_route, 'ShowTime', None) if best_route else None,
-                        "route_trans_time": getattr(best_route, 'TransTime', None) if best_route else None,
-                        "route_wait_time": getattr(best_route, 'WaitTime', None) if best_route else None,
-                        "route_costs": getattr(best_route, 'Costs', None) if best_route else None,
-                        "route_comfort_score": getattr(best_route, 'ComfortScore', None) if best_route else None,
-                        "route_comfort_level": getattr(best_route, 'ComfortLevel', None) if best_route else None,
-                        "route_intellect_score": getattr(best_route, 'IntellectScore', None) if best_route else None,
-                        "route_intellect_category": getattr(best_route, 'IntellectCategory', None) if best_route else None,
+                        "route_composition": best_route.Sostav if best_route else None,
+                        "route_days": best_route.Days if best_route else None,
+                        "route_concerts": best_route.Concerts if best_route else None,
+                        "route_halls": best_route.Halls if best_route else None,
+                        "route_genre": best_route.Genre if best_route else None,
+                        "route_show_time": best_route.ShowTime if best_route else None,
+                        "route_trans_time": best_route.TransTime if best_route else None,
+                        "route_wait_time": best_route.WaitTime if best_route else None,
+                        "route_costs": best_route.Costs if best_route else None,
+                        "route_comfort_score": best_route.ComfortScore if best_route else None,
+                        "route_comfort_level": best_route.ComfortLevel if best_route else None,
+                        "route_intellect_score": best_route.IntellectScore if best_route else None,
+                        "route_intellect_category": best_route.IntellectCategory if best_route else None,
                         "match_type": match_obj.match_type,
                         "match_percentage": match_obj.match_percentage
                     } if match_obj.found else None,
@@ -667,19 +667,29 @@ async def get_customer_route_details(external_id: str, request: Request, session
         match = session.exec(select(CustomerRouteMatch).where(CustomerRouteMatch.user_external_id == external_id)).first()
         
         if match:
-            # Получаем объект модели из Row
+            # Получаем данные из Row объекта
             match_obj = match._mapping['CustomerRouteMatch']
             
             best_route = None
             if match_obj.found and match_obj.best_route_id:
                 try:
+                    # Получаем полную информацию о маршруте
                     best_route = session.exec(select(Route).where(Route.id == match_obj.best_route_id)).first()
-                    if not best_route or not hasattr(best_route, 'id'):
-                        best_route = None
+                    logging.info(f"Тип best_route: {type(best_route)}")
+                    if best_route:
+                        logging.info(f"Успешно загружен маршрут {match_obj.best_route_id}")
+                        # Получаем данные из Row объекта
+                        route_data = best_route._mapping['Route']
+                        logging.info(f"Маршрут данные: ID={route_data.id}, Sostav={route_data.Sostav}")
+                    else:
+                        logging.warning(f"Маршрут {match_obj.best_route_id} не найден в базе данных")
                 except Exception as e:
                     logging.warning(f"Ошибка при получении маршрута {match_obj.best_route_id}: {e}")
+                    import traceback
+                    logging.warning(f"Traceback: {traceback.format_exc()}")
                     best_route = None
             
+            logging.info("Формируем route_match...")
             route_match = {
                 "found": match_obj.found,
                 "match_type": match_obj.match_type,
@@ -689,24 +699,25 @@ async def get_customer_route_details(external_id: str, request: Request, session
                 "matched_routes": [],
                 "best_match": {
                     "route_id": match_obj.best_route_id,
-                    "route_composition": getattr(best_route, 'Sostav', None) if best_route else None,
-                    "route_days": getattr(best_route, 'Days', None) if best_route else None,
-                    "route_concerts": getattr(best_route, 'Concerts', None) if best_route else None,
-                    "route_halls": getattr(best_route, 'Halls', None) if best_route else None,
-                    "route_genre": getattr(best_route, 'Genre', None) if best_route else None,
-                    "route_show_time": getattr(best_route, 'ShowTime', None) if best_route else None,
-                    "route_trans_time": getattr(best_route, 'TransTime', None) if best_route else None,
-                    "route_wait_time": getattr(best_route, 'WaitTime', None) if best_route else None,
-                    "route_costs": getattr(best_route, 'Costs', None) if best_route else None,
-                    "route_comfort_score": getattr(best_route, 'ComfortScore', None) if best_route else None,
-                    "route_comfort_level": getattr(best_route, 'ComfortLevel', None) if best_route else None,
-                    "route_intellect_score": getattr(best_route, 'IntellectScore', None) if best_route else None,
-                    "route_intellect_category": getattr(best_route, 'IntellectCategory', None) if best_route else None,
+                    "route_composition": best_route._mapping['Route'].Sostav if best_route else None,
+                    "route_days": best_route._mapping['Route'].Days if best_route else None,
+                    "route_concerts": best_route._mapping['Route'].Concerts if best_route else None,
+                    "route_halls": best_route._mapping['Route'].Halls if best_route else None,
+                    "route_genre": best_route._mapping['Route'].Genre if best_route else None,
+                    "route_show_time": best_route._mapping['Route'].ShowTime if best_route else None,
+                    "route_trans_time": best_route._mapping['Route'].TransTime if best_route else None,
+                    "route_wait_time": best_route._mapping['Route'].WaitTime if best_route else None,
+                    "route_costs": best_route._mapping['Route'].Costs if best_route else None,
+                    "route_comfort_score": best_route._mapping['Route'].ComfortScore if best_route else None,
+                    "route_comfort_level": best_route._mapping['Route'].ComfortLevel if best_route else None,
+                    "route_intellect_score": best_route._mapping['Route'].IntellectScore if best_route else None,
+                    "route_intellect_category": best_route._mapping['Route'].IntellectCategory if best_route else None,
                     "match_type": match_obj.match_type,
                     "match_percentage": match_obj.match_percentage
                 } if match_obj.found else None,
                 "total_routes_checked": match_obj.total_routes_checked
             }
+            logging.info("route_match сформирован успешно")
         else:
             route_match = {
                 "found": False,
@@ -715,10 +726,18 @@ async def get_customer_route_details(external_id: str, request: Request, session
                 "matched_routes": []
             }
         
-        return JSONResponse({
+        logging.info("Формируем JSONResponse...")
+        response_data = {
             "success": True,
-            "route_match": route_match
-        })
+            "route_match": route_match,
+            "debug": {
+                "match_found": match is not None,
+                "best_route_found": best_route is not None if match else False,
+                "route_id": match_obj.best_route_id if match else None
+            }
+        }
+        logging.info("JSONResponse сформирован успешно")
+        return JSONResponse(response_data)
     except Exception as e:
         return JSONResponse({
             "success": False,

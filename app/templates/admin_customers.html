@@ -252,6 +252,36 @@
             font-weight: 500;
             display: inline-block;
         }
+        
+        /* Стили для кликабельных маршрутов */
+        .clickable-route {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .clickable-route:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
+        .route-number {
+            font-weight: 700;
+            text-decoration: underline;
+            color: inherit;
+        }
+        
+        .clickable-route:hover .route-number {
+            color: #1a237e;
+        }
+        
+        .route-match-exact.clickable-route:hover {
+            background: #c8e6c9;
+        }
+        
+        .route-match-partial.clickable-route:hover {
+            background: #ffe0b2;
+        }
     </style>
 </head>
 <body>
@@ -352,17 +382,17 @@
                     <td>
                         {% if c.route_match.found %}
                             {% if c.route_match.match_type == 'exact' %}
-                                <span class="route-match-exact" title="Точное совпадение с маршрутом #{{ c.route_match.best_match.route_id }}">
-                                    ✅ Маршрут #{{ c.route_match.best_match.route_id }}
+                                <span class="route-match-exact clickable-route" title="Точное совпадение. Нажмите для подробной информации о маршруте #{{ c.route_match.best_match.route_id }}">
+                                    ✅ <span class="route-number">#{{ c.route_match.best_match.route_id }}</span>
                                 </span>
                             {% else %}
-                                <span class="route-match-partial" title="Частичное совпадение с маршрутом #{{ c.route_match.best_match.route_id }} ({{ "%.1f"|format(c.route_match.best_match.match_percentage) }}%)">
-                                    ⚠️ Маршрут #{{ c.route_match.best_match.route_id }} ({{ "%.1f"|format(c.route_match.best_match.match_percentage) }}%)
+                                <span class="route-match-partial clickable-route" title="Частичное совпадение ({{ "%.1f"|format(c.route_match.best_match.match_percentage) }}%). Нажмите для подробной информации о маршруте #{{ c.route_match.best_match.route_id }}">
+                                    ⚠️ <span class="route-number">#{{ c.route_match.best_match.route_id }}</span>
                                 </span>
                             {% endif %}
                         {% else %}
                             <span class="route-match-none" title="{{ c.route_match.reason }}">
-                                ❌ Нет совпадений
+                                ❌
                             </span>
                         {% endif %}
                     </td>
@@ -764,30 +794,41 @@
         
         // Обработка клика по статусу маршрута
         document.addEventListener('click', function(e) {
-            if (e.target.closest('.route-match-exact, .route-match-partial')) {
+            if (e.target.closest('.clickable-route')) {
                 e.preventDefault();
-                const span = e.target.closest('.route-match-exact, .route-match-partial');
+                console.log('Клик по маршруту обнаружен');
+                
+                const span = e.target.closest('.clickable-route');
                 const row = span.closest('tr');
                 const externalId = row.querySelector('.external-id-value').textContent.trim();
                 
+                console.log('External ID:', externalId);
+                console.log('Отправляем запрос к API...');
+                
                 // Получаем данные о маршруте через API
                 fetch(`/api/customers/${externalId}/route-details`)
-                    .then(response => response.json())
+                    .then(response => {
+                        console.log('Ответ получен:', response.status);
+                        return response.json();
+                    })
                     .then(data => {
+                        console.log('Данные получены:', data);
                         if (data.success) {
                             showRouteDetails(data.route_match, externalId);
                         } else {
+                            console.error('Ошибка в данных:', data);
                             alert('Ошибка при получении данных о маршруте');
                         }
                     })
                     .catch(error => {
-                        console.error('Ошибка:', error);
+                        console.error('Ошибка при запросе:', error);
                         alert('Ошибка при получении данных о маршруте');
                     });
             }
         });
         
         function showRouteDetails(routeMatch, externalId) {
+            console.log('showRouteDetails вызвана с:', { routeMatch, externalId });
             let content = '';
             
             if (routeMatch.found) {
@@ -803,24 +844,24 @@
                             ${routeMatch.match_type === 'exact' ? '✅ Точное совпадение' : '⚠️ Частичное совпадение'}
                         </h4>
                         <p><strong>Маршрут #${bestMatch.route_id}</strong></p>
-                        <p><strong>Состав маршрута:</strong> ${bestMatch.route_composition}</p>
+                        <p><strong>Состав маршрута:</strong> ${bestMatch.route_composition || '—'}</p>
                         ${routeMatch.match_type === 'partial' ? `<p><strong>Совпадение:</strong> ${bestMatch.match_percentage.toFixed(1)}%</p>` : ''}
                     </div>
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                         <div>
                             <h5 style="color: #667eea; margin-bottom: 8px;">Основные характеристики</h5>
-                            <p><strong>Дней:</strong> ${bestMatch.route_days}</p>
-                            <p><strong>Концертов:</strong> ${bestMatch.route_concerts}</p>
-                            <p><strong>Залов:</strong> ${bestMatch.route_halls}</p>
+                            <p><strong>Дней:</strong> ${bestMatch.route_days || '—'}</p>
+                            <p><strong>Концертов:</strong> ${bestMatch.route_concerts || '—'}</p>
+                            <p><strong>Залов:</strong> ${bestMatch.route_halls || '—'}</p>
                             <p><strong>Жанр:</strong> ${bestMatch.route_genre || '—'}</p>
                         </div>
                         <div>
                             <h5 style="color: #667eea; margin-bottom: 8px;">Время и стоимость</h5>
-                            <p><strong>Время концертов:</strong> ${bestMatch.route_show_time}ч</p>
-                            <p><strong>Время переходов:</strong> ${bestMatch.route_trans_time}ч</p>
-                            <p><strong>Время ожидания:</strong> ${bestMatch.route_wait_time}ч</p>
-                            <p><strong>Стоимость:</strong> ${bestMatch.route_costs} ₽</p>
+                            <p><strong>Время концертов:</strong> ${bestMatch.route_show_time ? bestMatch.route_show_time + 'ч' : '—'}</p>
+                            <p><strong>Время переходов:</strong> ${bestMatch.route_trans_time ? bestMatch.route_trans_time + 'ч' : '—'}</p>
+                            <p><strong>Время ожидания:</strong> ${bestMatch.route_wait_time ? bestMatch.route_wait_time + 'ч' : '—'}</p>
+                            <p><strong>Стоимость:</strong> ${bestMatch.route_costs ? bestMatch.route_costs + ' ₽' : '—'}</p>
                         </div>
                     </div>
                     
