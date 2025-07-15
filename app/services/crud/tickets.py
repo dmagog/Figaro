@@ -168,6 +168,14 @@ class TicketsService:
                     logger.info(f"Кэш количества доступных концертов обновлён: {available_count}")
                 except Exception as e:
                     logger.error(f"Ошибка при обновлении кэша концертов: {e}")
+                
+                # Обновляем доступные маршруты после изменения данных о билетах
+                try:
+                    from services.crud.route_service import update_available_routes
+                    routes_update_result = update_available_routes(session)
+                    logger.info(f"Доступные маршруты обновлены: {routes_update_result}")
+                except Exception as e:
+                    logger.error(f"Ошибка при обновлении доступных маршрутов: {e}")
             
             logger.info(f"Получена информация о билетах для {len(result)} концертов (доступно: {sum(1 for r in result.values() if r['available'])})")
             return result

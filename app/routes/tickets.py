@@ -199,4 +199,40 @@ async def get_tickets_service_stats() -> JSONResponse:
             "status": "error",
             "error": str(e),
             "timestamp": datetime.now(timezone.utc).isoformat()
+        }, status_code=500)
+
+
+@tickets_route.post("/api/routes/update-availability")
+async def update_routes_availability(session: Session = Depends(get_session)) -> JSONResponse:
+    """
+    Обновляет доступные маршруты на основе текущего статуса билетов концертов
+    
+    Returns:
+        JSONResponse с результатом обновления
+    """
+    try:
+        logger.info("Запрос на обновление доступных маршрутов...")
+        
+        # Импортируем функцию обновления маршрутов
+        from services.crud.route_service import update_available_routes
+        
+        # Обновляем доступные маршруты
+        result = update_available_routes(session)
+        
+        logger.info(f"Обновление доступных маршрутов завершено: {result}")
+        
+        return JSONResponse({
+            "success": True,
+            "message": "Доступные маршруты успешно обновлены",
+            "result": result,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Ошибка при обновлении доступных маршрутов: {e}")
+        return JSONResponse({
+            "success": False,
+            "message": "Ошибка при обновлении доступных маршрутов",
+            "error": str(e),
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }, status_code=500) 

@@ -137,9 +137,22 @@
 <div class="routes-main-container">
     {% if active_tab == 'concerts' %}
         <!-- Страница статуса концертов -->
-        <div style="margin-bottom:24px;">
-            <h2 style="font-size:1.4em; color:#4f5bd5; margin-bottom:16px;">Статус концертов в продаже</h2>
-            <p style="color:#666; margin-bottom:20px;">Отображение текущего статуса доступности билетов для всех концертов фестиваля.</p>
+        <div class="concerts-header">
+            <div class="concerts-header-content">
+                <div>
+                    <h2 class="concerts-title">Статус концертов в продаже</h2>
+                    <p class="concerts-description">Отображение текущего статуса доступности билетов для всех концертов фестиваля.</p>
+                </div>
+                <div class="action-buttons">
+                    <button id="refresh-tickets-btn" class="btn btn-primary">
+                        🔄 Обновить билеты
+                    </button>
+                    <button id="update-routes-btn" class="btn btn-success">
+                        🗺️ Обновить маршруты
+                    </button>
+                </div>
+            </div>
+            <div id="refresh-status" class="refresh-status"></div>
         </div>
         
         {% if concerts_data %}
@@ -225,6 +238,66 @@
 a[href="/admin"]:hover {
     color: #4f5bd5 !important;
     opacity: 1 !important;
+}
+
+.concerts-header {
+    margin-bottom: 24px;
+}
+
+.concerts-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.concerts-title {
+    font-size: 1.4em;
+    color: #4f5bd5;
+    margin-bottom: 8px;
+}
+
+.concerts-description {
+    color: #666;
+    margin: 0;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.btn {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.btn-primary {
+    background: #4f5bd5;
+    color: #fff;
+}
+
+.btn-success {
+    background: #43A047;
+    color: #fff;
+}
+
+.btn:disabled {
+    background: #bfc6e0 !important;
+    color: #fff !important;
+    cursor: not-allowed !important;
+    opacity: 0.7;
+}
+
+.refresh-status {
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 8px;
 }
 </style>
 
@@ -329,6 +402,63 @@ document.addEventListener('DOMContentLoaded', function() {
                 refreshBtn.disabled = false;
                 refreshBtn.style.background = '#4f5bd5';
                 refreshBtn.textContent = '🔄 Обновить билеты';
+            }
+        });
+    }
+    
+    // Обработка кнопки обновления маршрутов
+    const updateRoutesBtn = document.getElementById('update-routes-btn');
+    if (updateRoutesBtn) {
+        updateRoutesBtn.addEventListener('click', async function() {
+            // Блокируем кнопку
+            updateRoutesBtn.disabled = true;
+            updateRoutesBtn.style.background = '#bfc6e0';
+            updateRoutesBtn.textContent = '🔄 Обновление...';
+            
+            try {
+                const response = await fetch('/api/routes/update-availability', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Ошибка обновления маршрутов');
+                }
+                
+                const result = data.result;
+                refreshStatus.textContent = `✅ Маршруты обновлены: удалено ${result.deleted_count}, добавлено ${result.added_count}, всего доступно ${result.current_count}`;
+                
+                // Показываем результат 5 секунд
+                setTimeout(() => {
+                    refreshStatus.textContent = '';
+                }, 5000);
+                
+                // Перезагружаем страницу для обновления статистики
+                setTimeout(() => {
+                    window.location.reload();
+                }, 5000);
+                
+            } catch (error) {
+                console.error('Ошибка при обновлении маршрутов:', error);
+                refreshStatus.textContent = `❌ Ошибка: ${error.message}`;
+                
+                // Показываем ошибку 5 секунд
+                setTimeout(() => {
+                    refreshStatus.textContent = '';
+                }, 5000);
+            } finally {
+                // Разблокируем кнопку
+                updateRoutesBtn.disabled = false;
+                updateRoutesBtn.style.background = '#43A047';
+                updateRoutesBtn.textContent = '🗺️ Обновить маршруты';
             }
         });
     }
