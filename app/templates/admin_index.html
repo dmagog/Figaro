@@ -207,13 +207,15 @@
                     <p>{{ summary.halls_count }}</p>
                 </div>
             </a>
-            <div class="summary-card">
-                <h3>Билетов куплено</h3>
-                <p>{{ summary.tickets_count }}</p>
-            </div>
+            <a href="/admin/purchases" style="text-decoration:none; color:inherit;" title="Перейти к истории покупок">
+                <div class="summary-card">
+                    <h3>Билетов куплено</h3>
+                    <p>{{ summary.tickets_count }}</p>
+                </div>
+            </a>    
             <div class="summary-card">
                 <h3>Сумма покупок</h3>
-                <p>{{ "{:,}".format(summary.total_spent) }} ₽</p>
+                <p>{{ "{: }".format(summary.total_spent) }} ₽</p>
             </div>
             <div class="summary-card">
                 <h3>Средняя заполняемость</h3>
