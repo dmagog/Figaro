@@ -643,6 +643,83 @@ async def admin_routes_upload(request: Request, session=Depends(get_session)):
     }
     return templates.TemplateResponse("admin_routes_upload.html", context)
 
+@home_route.get("/admin/routes/concerts", response_class=HTMLResponse)
+async def admin_routes_concerts(request: Request, session=Depends(get_session)):
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return RedirectResponse(url="/login", status_code=302)
+    
+    # Получаем количество маршрутов из кэша
+    from services.crud.purchase import get_cached_routes_count
+    routes_count = get_cached_routes_count(session)
+    
+    # Получаем данные о доступных маршрутах из Statistics
+    from services.crud.route_service import get_cached_available_routes_count, get_cached_available_concerts_count
+    from models import Statistics, Concert
+    from sqlmodel import select
+    
+    available_routes_count = get_cached_available_routes_count(session)
+    available_concerts_count = get_cached_available_concerts_count(session)
+    
+    # Получаем дату последней проверки доступных маршрутов
+    available_routes_stats = session.exec(
+        select(Statistics).where(Statistics.key == "available_routes_count")
+    ).first()
+    
+    last_check_date = None
+    if available_routes_stats and available_routes_stats.updated_at:
+        last_check_date = available_routes_stats.updated_at
+    
+    # Получаем данные о всех концертах для отображения статуса
+    concerts = session.exec(select(Concert)).all()
+    concerts_data = []
+    
+    for concert in concerts:
+        # Получаем информацию о зале
+        hall = concert.hall
+        seats = hall.seats if hall else 100
+        tickets_left = concert.tickets_left if concert.tickets_left is not None else seats
+        
+        # Вычисляем процент доступности
+        percent_left = (tickets_left / seats * 100) if seats > 0 else 0
+        
+        # Определяем цвет статуса
+        if percent_left <= 10:
+            status_color = '#e53935'  # красный
+        elif percent_left <= 20:
+            status_color = '#ffb300'  # жёлтый
+        else:
+            status_color = '#43a047'  # зелёный
+        
+        concerts_data.append({
+            'id': concert.id,
+            'name': concert.name,
+            'tickets_available': concert.tickets_available,
+            'tickets_left': tickets_left,
+            'seats': seats,
+            'percent_left': percent_left,
+            'status_color': status_color
+        })
+    
+    context = {
+        "user": user_obj,
+        "request": request,
+        "active_tab": "concerts",
+        "routes_count": routes_count,
+        "available_routes_count": available_routes_count,
+        "available_concerts_count": available_concerts_count,
+        "last_check_date": last_check_date,
+        "concerts_data": concerts_data
+    }
+    return templates.TemplateResponse("admin_routes_main.html", context)
+
 @home_route.get("/admin/routes/view", response_class=HTMLResponse)
 async def admin_routes_view(request: Request, session=Depends(get_session)):
     token = request.cookies.get(settings.COOKIE_NAME)
