@@ -91,7 +91,12 @@
 <nav class="routes-nav">
     <a href="/admin/routes/view" class="{% if active_tab == 'view' %}active{% endif %}">Просмотр маршрутов</a>
     <a href="/admin/routes/upload" class="{% if active_tab == 'upload' %}active{% endif %}">Загрузка маршрутов</a>
-    <a href="/admin/routes/concerts" class="{% if active_tab == 'concerts' %}active{% endif %}">Статус концертов</a>
+    <a href="/admin/routes/concerts" class="{% if active_tab == 'concerts' %}active{% endif %}">
+        Статус концертов
+        {% if available_concerts_count is defined and available_concerts_count is not none %}
+            <span style="background: #43A047; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.8em; margin-left: 6px; font-weight: 500;">{{ available_concerts_count }}</span>
+        {% endif %}
+    </a>
     <a href="/admin/routes/instruction" class="{% if active_tab == 'instruction' %}active{% endif %}">Инструкция</a>
 </nav>
 {% if active_tab == 'view' %}
