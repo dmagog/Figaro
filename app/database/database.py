@@ -4,7 +4,7 @@ from .config import get_settings
 from config_data_path import HALLS_LIST_PATH, CONCERTS_PATH, ARTISTS_PATH, PROGRAMM_PATH, TRANSACTIONS_PATH, ROUTES_PATH
 import pandas as pd
 
-from services.crud import data_loader, user, festival
+from services.crud import data_loader, user, festival, route_service
 
 engine = create_engine(url=get_settings().DATABASE_URL_psycopg, 
                        echo=False, pool_size=5, max_overflow=10)  # Отключили SQL логирование для производительности
@@ -65,7 +65,19 @@ def init_db(demostart = None):
                 update_routes_count_cache(session)
                 print("✅ Кэш количества маршрутов обновлён.")
 
+                # Инициализируем AvailableRoute
+                print("Инициализируем AvailableRoute...")
+                stats = route_service.init_available_routes(session)
+                print(f"✅ AvailableRoute инициализированы: {stats['available_routes']} доступных из {stats['total_routes']} маршрутов")
+
+
     # Инициализируем кэш количества маршрутов, если его нет
     with Session(engine) as session:
         from services.crud.data_loader import init_routes_count_cache
         init_routes_count_cache(session)
+        
+        # Проверяем и инициализируем AvailableRoute, если нужно
+        try:
+            route_service.ensure_available_routes_exist(session)
+        except Exception as e:
+            print(f"⚠️ Ошибка при инициализации AvailableRoute: {e}")

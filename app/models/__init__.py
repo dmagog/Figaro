@@ -4,7 +4,7 @@ from .hall import Hall
 from .artist import Artist, ConcertArtistLink
 from .composition import Composition, Author, ConcertCompositionLink
 from .purchase import Purchase
-from .route import Route
+from .route import Route, AvailableRoute
 from .statistics import Statistics
 from .festival_day import FestivalDay
 
@@ -19,6 +19,7 @@ __all__ = [
     "Purchase",
     "User",
     "Route",
+    "AvailableRoute",
     "Statistics",
     "FestivalDay"
 ]

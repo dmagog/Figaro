@@ -2,7 +2,7 @@
 from sqlmodel import Session, select
 from models import Purchase, Concert, Hall
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from models import User
 from sqlalchemy import func
 from models.hall import Hall
@@ -178,11 +178,11 @@ def get_cached_routes_count(session: Session) -> int:
             return stats_record.value
         else:
             # Если кэша нет, подсчитываем и создаём
-            routes_count = session.exec(select(Route)).count()
+            routes_count = len(session.exec(select(Route)).all())
             stats_record = Statistics(
                 key="routes_count",
                 value=routes_count,
-                updated_at=datetime.utcnow()
+                updated_at=datetime.now(timezone.utc)
             )
             session.add(stats_record)
             session.commit()

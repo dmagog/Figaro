@@ -1,8 +1,8 @@
 # data_loader.py
 from sqlmodel import Session, select
-from models import Hall, Concert, Artist, Author, Composition, ConcertArtistLink, ConcertCompositionLink, Purchase
+from models import Hall, Concert, Artist, Author, Composition, ConcertArtistLink, ConcertCompositionLink, Purchase, AvailableRoute
 from models.statistics import Statistics
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import pandas as pd
 from typing import Dict, List
 import logging
@@ -11,6 +11,7 @@ from sqlmodel import Session
 from models.route import Route
 from sqlalchemy import and_, or_, text
 import re
+from . import route_service
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -418,6 +419,15 @@ def load_routes_from_csv(session: Session, path: str, batch_size: int = 1000, st
         # Обновляем кэш количества маршрутов
         update_routes_count_cache(session)
         
+        # Инициализируем или обновляем AvailableRoute
+        logger.info("Обновляем AvailableRoute после загрузки маршрутов...")
+        try:
+            route_service.ensure_available_routes_exist(session)
+            stats = route_service.get_available_routes_stats(session)
+            logger.info(f"AvailableRoute обновлены: {stats['available_routes']} доступных из {stats['total_routes']} маршрутов ({stats['availability_percentage']}%)")
+        except Exception as e:
+            logger.error(f"Ошибка при обновлении AvailableRoute: {e}")
+        
     if status_dict is not None:
         status_dict["progress"] = total_lines
         status_dict["added"] = added
@@ -441,12 +451,12 @@ def update_routes_count_cache(session: Session):
         
         if stats_record:
             stats_record.value = routes_count
-            stats_record.updated_at = datetime.utcnow()
+            stats_record.updated_at = datetime.now(timezone.utc)
         else:
             stats_record = Statistics(
                 key="routes_count",
                 value=routes_count,
-                updated_at=datetime.utcnow()
+                updated_at=datetime.now(timezone.utc)
             )
             session.add(stats_record)
         
