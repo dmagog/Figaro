@@ -5,6 +5,7 @@ from typing import List, Optional
 from datetime import datetime
 from models import User
 from sqlalchemy import func
+from models.hall import Hall
 
 
 def get_user_purchased_concerts(session: Session, user_external_id: str) -> List[Concert]:
@@ -139,16 +140,19 @@ def get_festival_summary_stats(session: Session) -> dict:
     - Количество купленных билетов
     - Сумма покупок
     - Средняя заполняемость концертов (купленных билетов / концертов)
+    - Количество залов
     """
     users_count = session.exec(select(func.count(User.id))).one()
     concerts_count = session.exec(select(func.count(Concert.id))).one()
     tickets_count = session.exec(select(func.count(Purchase.id))).one()
     total_spent = session.exec(select(func.coalesce(func.sum(Purchase.price), 0))).one()
     avg_fill = (tickets_count / concerts_count) if concerts_count else 0
+    halls_count = session.exec(select(func.count(Hall.id))).one()
     return {
         "users_count": users_count,
         "concerts_count": concerts_count,
         "tickets_count": tickets_count,
         "total_spent": total_spent,
-        "avg_fill": avg_fill
+        "avg_fill": avg_fill,
+        "halls_count": halls_count
     } 
