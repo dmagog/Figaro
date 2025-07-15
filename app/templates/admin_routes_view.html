@@ -353,47 +353,73 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM загружен, инициализируем сортировку...');
+    
+    // Получаем таблицу в самом начале
+    const table = document.querySelector('.routes-table');
+    console.log('Таблица найдена:', !!table);
+    
+    if (!table) {
+        console.error('Таблица не найдена!');
+        return;
+    }
+    
     // Инициализируем текущую сортировку из URL
     const urlParams = new URLSearchParams(window.location.search);
-    const currentSortBy = urlParams.get('sort_by') || 'composition_count';
-    const currentSortOrder = urlParams.get('sort_order') || 'desc';
+    const currentSortBy = urlParams.get('sort_by') || 'concerts';
+    const currentSortOrder = urlParams.get('sort_order') || 'desc'; // По умолчанию сортируем по убыванию
+    
+    console.log('Текущая сортировка:', { sortBy: currentSortBy, sortOrder: currentSortOrder });
     
     // Устанавливаем индикатор сортировки для текущей колонки
     updateSortIndicators(currentSortBy, currentSortOrder);
     
     // Добавляем функциональность сортировки
-    const table = document.querySelector('.routes-table');
-    if (table) {
-        // Добавляем возможность сортировки по клику на заголовки
-        const headers = table.querySelectorAll('th.sortable');
-        headers.forEach((header) => {
-            header.addEventListener('click', function() {
-                const sortField = this.getAttribute('data-sort');
-                changeSort(sortField);
-            });
+    const headers = table.querySelectorAll('th.sortable');
+    console.log('Найдено заголовков для сортировки:', headers.length);
+    
+    headers.forEach((header, index) => {
+        const sortField = header.getAttribute('data-sort');
+        console.log(`Заголовок ${index}: data-sort="${sortField}"`);
+        
+        header.addEventListener('click', function() {
+            console.log('Клик по заголовку:', sortField);
+            changeSort(sortField);
         });
-    }
+    });
     
     function changeSort(sortField) {
+        console.log('Функция changeSort вызвана с параметром:', sortField);
+        
         const currentUrl = new URL(window.location);
         const currentSortBy = currentUrl.searchParams.get('sort_by');
         const currentSortOrder = currentUrl.searchParams.get('sort_order');
         
-        let newSortOrder = 'asc';
+        console.log('Текущие параметры URL:', { sortBy: currentSortBy, sortOrder: currentSortOrder });
+        
+        let newSortOrder = 'desc'; // По умолчанию сортируем по убыванию
         if (currentSortBy === sortField) {
-            newSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+            // Если кликаем по той же колонке, меняем порядок
+            newSortOrder = currentSortOrder === 'desc' ? 'asc' : 'desc';
         }
+        
+        console.log('Новые параметры сортировки:', { sortBy: sortField, sortOrder: newSortOrder });
         
         // Обновляем параметры URL
         currentUrl.searchParams.set('sort_by', sortField);
         currentUrl.searchParams.set('sort_order', newSortOrder);
         currentUrl.searchParams.set('page', '1'); // Сбрасываем на первую страницу при смене сортировки
         
+        const newUrl = currentUrl.toString();
+        console.log('Переходим по URL:', newUrl);
+        
         // Переходим на новую страницу
-        window.location.href = currentUrl.toString();
+        window.location.href = newUrl;
     }
     
     function updateSortIndicators(sortBy, sortOrder) {
+        console.log('Обновляем индикаторы сортировки:', { sortBy, sortOrder });
+        
         // Убираем все индикаторы сортировки
         const headers = table.querySelectorAll('th.sortable');
         headers.forEach(header => {
@@ -404,12 +430,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const currentHeader = table.querySelector(`th[data-sort="${sortBy}"]`);
         if (currentHeader) {
             currentHeader.classList.add(sortOrder === 'asc' ? 'sort-asc' : 'sort-desc');
+            console.log('Индикатор сортировки установлен для колонки:', sortBy);
+        } else {
+            console.warn('Заголовок для сортировки не найден:', sortBy);
         }
     }
 });
 
 // Функция для смены страницы пагинации
 function changePage(page) {
+    console.log('Смена страницы на:', page);
     if (page < 1) return;
     
     const currentUrl = new URL(window.location);
