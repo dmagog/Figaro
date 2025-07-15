@@ -69,25 +69,28 @@
             margin-top: 30px;
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 24px;
+            gap: 32px;
         }
         .summary-card {
             background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 100%);
             border-radius: 12px;
-            padding: 24px 18px;
+            padding: 14px 10px;
             box-shadow: 0 2px 8px rgba(102,126,234,0.07);
             text-align: center;
-            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 110px;
         }
         .summary-card h3 {
-            margin: 0 0 10px 0;
-            font-size: 1.1em;
+            margin: 0 0 8px 0;
+            font-size: 1em;
             color: #667eea;
             font-weight: 600;
         }
         .summary-card p {
             margin: 0;
-            font-size: 2em;
+            font-size: 1.5em;
             font-weight: bold;
             color: #222;
         }
@@ -96,24 +99,24 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
             background: #f4f6fb;
             border-radius: 14px;
             box-shadow: 0 2px 8px rgba(60,60,120,0.06);
-            padding: 18px 12px 14px 12px;
-            min-width: 180px;
-            min-height: 120px;
+            padding: 10px 6px 8px 6px;
+            min-width: 140px;
+            min-height: 110px;
         }
         .profile-avatar {
-            font-size: 2.2em;
+            font-size: 1.3em;
             background: #e0e7ff;
             border-radius: 50%;
-            width: 54px;
-            height: 54px;
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
         .profile-info {
             text-align: center;
@@ -121,10 +124,10 @@
         .profile-name {
             font-weight: 600;
             color: #4f5bd5;
-            font-size: 1.08em;
+            font-size: 1em;
         }
         .profile-role {
-            font-size: 0.95em;
+            font-size: 0.9em;
             color: #8ca0c7;
             margin-bottom: 2px;
         }
@@ -188,15 +191,15 @@
         <div class="admin-summary">
             <a href="/admin/users" style="text-decoration:none; color:inherit;" title="Перейти к пользователям">
                 <div class="summary-card" style="cursor:pointer;">
-                    <h3>Пользователей</h3>
-                    <p>{{ summary.users_count }}</p>
-                </div>
+                <h3>Пользователей</h3>
+                <p>{{ summary.users_count }}</p>
+            </div>
             </a>
             <a href="/admin/concerts" style="text-decoration:none; color:inherit;" title="Перейти к концертам">
                 <div class="summary-card" style="cursor:pointer;">
-                    <h3>Концертов</h3>
-                    <p>{{ summary.concerts_count }}</p>
-                </div>
+                <h3>Концертов</h3>
+                <p>{{ summary.concerts_count }}</p>
+            </div>
             </a>
             <div class="summary-card">
                 <h3>Билетов куплено</h3>
@@ -217,8 +220,8 @@
                 </div>
             </a>
             <a href="/profile" style="text-decoration:none; color:inherit;" title="Перейти в профиль">
-                <div class="summary-card profile-card" style="padding:10px 6px 8px 6px; min-height:120px; min-width:140px; cursor:pointer; transition:box-shadow 0.18s, background 0.18s;">
-                    <div class="profile-avatar" style="font-size:1.7em; width:40px; height:40px; margin-bottom:2px;">👑 </div>
+                <div class="summary-card profile-card" style="cursor:pointer; transition:box-shadow 0.18s, background 0.18s;">
+                    <div class="profile-avatar">👑 </div>
                     <div class="profile-info">
                         <div class="profile-name">{{ user.name or user.email }}</div>
                         <div class="profile-role">Суперадмин</div>
