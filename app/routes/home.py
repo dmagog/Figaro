@@ -678,8 +678,11 @@ async def admin_routes_concerts(request: Request, session=Depends(get_session)):
         last_check_date = available_routes_stats.updated_at
     
     # Получаем данные о всех концертах для отображения статуса
-    concerts = session.exec(select(Concert)).all()
+    concerts = session.exec(select(Concert).order_by(Concert.id.asc())).all()
     concerts_data = []
+    
+    # Группируем концерты по дням
+    concerts_by_day = {}
     
     for concert in concerts:
         # Получаем информацию о зале
@@ -698,15 +701,38 @@ async def admin_routes_concerts(request: Request, session=Depends(get_session)):
         else:
             status_color = '#43a047'  # зелёный
         
-        concerts_data.append({
+        concert_data = {
             'id': concert.id,
             'name': concert.name,
             'tickets_available': concert.tickets_available,
             'tickets_left': tickets_left,
             'seats': seats,
             'percent_left': percent_left,
-            'status_color': status_color
-        })
+            'status_color': status_color,
+            'datetime': concert.datetime
+        }
+        
+        # Группируем по дню
+        if concert.datetime:
+            day_key = concert.datetime.date()
+            if day_key not in concerts_by_day:
+                concerts_by_day[day_key] = []
+            concerts_by_day[day_key].append(concert_data)
+        else:
+            # Если нет даты, добавляем в общий список
+            concerts_data.append(concert_data)
+    
+    # Создаем структуру данных, сгруппированную по дням
+    concerts_by_day_sorted = {}
+    sorted_days = sorted(concerts_by_day.keys())
+    for day in sorted_days:
+        # Сортируем концерты в дне по времени
+        day_concerts = sorted(concerts_by_day[day], key=lambda x: x['datetime'])
+        concerts_by_day_sorted[day] = day_concerts
+    
+    # Оставляем старый формат для обратной совместимости
+    for day in sorted_days:
+        concerts_data.extend(concerts_by_day_sorted[day])
     
     context = {
         "user": user_obj,
@@ -716,7 +742,8 @@ async def admin_routes_concerts(request: Request, session=Depends(get_session)):
         "available_routes_count": available_routes_count,
         "available_concerts_count": available_concerts_count,
         "last_check_date": last_check_date,
-        "concerts_data": concerts_data
+        "concerts_data": concerts_data,
+        "concerts_by_day": concerts_by_day_sorted
     }
     return templates.TemplateResponse("admin_routes_main.html", context)
 
