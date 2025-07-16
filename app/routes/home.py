@@ -1399,6 +1399,9 @@ async def admin_offprogram(request: Request, session=Depends(get_session)):
             except:
                 duration_display = event_long
         
+        # Отладочная информация
+        print(f"DEBUG: Event {event_data.id} - recommend: {event_data.recommend} (type: {type(event_data.recommend)})")
+        
         events_data.append({
             'id': event_data.id,
             'event_num': event_data.event_num,
@@ -1410,7 +1413,7 @@ async def admin_offprogram(request: Request, session=Depends(get_session)):
             'duration_display': duration_display,
             'hall_name': event_data.hall_name,
             'format': event_format.value if event_format else 'Не указан',
-            'recommend': event_data.recommend,
+            'recommend': str(event_data.recommend).lower() in ('1', 'true', 'yes', 'да'),
             'link': event_data.link
         })
     

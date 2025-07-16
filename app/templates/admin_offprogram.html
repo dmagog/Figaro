@@ -53,14 +53,6 @@
         .btn-secondary { background: #6c757d; color: white; }
         .btn-secondary:hover { background: #5a6268; }
         .table-responsive { overflow-x: auto; }
-        .modal { display: none; position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-        .modal.show { display: block; }
-        .modal-dialog { margin: 1.75rem auto; max-width: 800px; }
-        .modal-content { background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
-        .modal-header { padding: 18px 24px; border-bottom: 1px solid #e0e7ff; }
-        .modal-body { padding: 24px; }
-        .modal-footer { padding: 18px 24px; border-top: 1px solid #e0e7ff; }
-        .btn-close { background: none; border: none; font-size: 1.5em; cursor: pointer; }
         .fs-6 { font-size: 1rem; }
         .fs-5 { font-size: 1.25rem; }
         .mb-0 { margin-bottom: 0; }
@@ -120,12 +112,7 @@
 
             <!-- Таблица мероприятий -->
             <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-list text-primary"></i>
-                        Список мероприятий
-                    </h5>
-                </div>
+
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">
@@ -138,7 +125,6 @@
                                     <th style="width: 120px;">Зал</th>
                                     <th style="width: 120px;">Формат</th>
                                     <th class="text-center" style="width: 100px;">Рекомендуется</th>
-                                    <th class="text-center" style="width: 80px;">Действия</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -167,17 +153,10 @@
                                     </td>
                                     <td class="text-center">
                                         {% if event.recommend %}
-                                        <i class="fas fa-star text-warning" title="Рекомендуется"></i>
+                                        <span class="text-warning" title="Рекомендуется">⭐️</span>
                                         {% else %}
-                                        <i class="fas fa-minus text-muted"></i>
+                                        <span class="text-muted">—</span>
                                         {% endif %}
-                                    </td>
-                                    <td class="text-center">
-                                        <button class="btn btn-sm btn-outline-primary" 
-                                                onclick="showEventDetails({{ event.id }})"
-                                                title="Подробности">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -190,98 +169,7 @@
     </div>
 </div>
 
-<!-- Модальное окно с подробностями -->
-<div class="modal fade" id="eventDetailsModal" tabindex="-1" aria-labelledby="eventDetailsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="eventDetailsModalLabel">Подробности мероприятия</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="eventDetailsContent">
-                <!-- Контент будет загружен динамически -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
-function showEventDetails(eventId) {
-    // Находим данные мероприятия
-    const events = {{ events | tojson }};
-    const event = events.find(e => e.id === eventId);
-    
-    if (!event) {
-        alert('Мероприятие не найдено');
-        return;
-    }
-    
-    // Формируем HTML для модального окна
-    let content = `
-        <div class="row">
-            <div class="col-12">
-                <h4 class="text-primary mb-3">${event.event_name}</h4>
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Номер мероприятия:</strong><br>
-                        <span class="badge bg-secondary fs-6">${event.event_num}</span>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Дата и время:</strong><br>
-                        <span class="fw-semibold">${event.event_date_display}</span>
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Длительность:</strong><br>
-                        <span class="badge bg-light text-dark">${event.duration_display}</span>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Зал:</strong><br>
-                        <span class="badge bg-outline-primary">${event.hall_name}</span>
-                    </div>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Формат:</strong><br>
-                        <span class="badge bg-outline-secondary">${event.format}</span>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Рекомендуется:</strong><br>
-                        ${event.recommend ? '<i class="fas fa-star text-warning fs-5"></i> Да' : '<i class="fas fa-minus text-muted"></i> Нет'}
-                    </div>
-                </div>
-                
-                <div class="mb-3">
-                    <strong>Описание:</strong><br>
-                    <div class="mt-2 p-3 bg-light rounded">
-                        ${event.description}
-                    </div>
-                </div>
-                
-                ${event.link ? `
-                <div class="mb-3">
-                    <strong>Ссылка:</strong><br>
-                    <a href="${event.link}" target="_blank" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-external-link-alt"></i> Открыть ссылку
-                    </a>
-                </div>
-                ` : ''}
-            </div>
-        </div>
-    `;
-    
-    // Показываем модальное окно
-    document.getElementById('eventDetailsContent').innerHTML = content;
-    new bootstrap.Modal(document.getElementById('eventDetailsModal')).show();
-}
-
 // Выпадающее меню для переполнения
 document.addEventListener('DOMContentLoaded', function() {
     const nav = document.getElementById('adminNav');
