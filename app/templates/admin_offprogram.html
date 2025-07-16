@@ -362,7 +362,7 @@
                             <thead class="table-light">
                                 <tr>
                                     <th class="sortable">Название</th>
-                                    <th class="sortable" style="width: 150px;">Дата и время</th>
+                                    <th class="sortable" style="width: 100px;">Начало</th>
                                     <th class="sortable" style="width: 100px;">Длительность</th>
                                     <th class="sortable" style="width: 120px;">Зал</th>
                                     <th class="sortable" style="width: 120px;">Формат</th>
@@ -386,12 +386,12 @@
                                         <td>
                                             <div class="fw-bold">{{ event.event_name }}</div>
                                             {% if event.description and event.description != 'Описание отсутствует' %}
-                                            <small class="text-muted">{{ event.description[:100] }}{% if event.description|length > 100 %}...{% endif %}</small>
+                                            <small class="text-muted">{{ event.description[:300] }}{% if event.description|length > 300 %}...{% endif %}</small>
                                             {% endif %}
                                         </td>
                                         <td>
                                             <div>
-                                                {{ event.event_date_display }}
+                                                {{ event.event_date_display.split(' ')[1] if event.event_date_display and ' ' in event.event_date_display else event.event_date_display }}
                                             </div>
                                             <span class="concert-date-text" data-day="{{ event.event_date_display.split(' ')[0] if event.event_date_display else '' }}" style="display: none;">
                                             </span>
@@ -535,13 +535,13 @@ document.addEventListener('DOMContentLoaded', function() {
             return text.toLowerCase();
         }
         if (idx === 1) {
-            // Дата и время
-            const dateMatch = text.match(/(\d{2})\.(\d{2})\.(\d{4})/);
-            if (dateMatch) {
-                const [, day, month, year] = dateMatch;
-                return new Date(year, month - 1, day);
+            // Время (формат HH:MM)
+            const timeMatch = text.match(/(\d{1,2}):(\d{2})/);
+            if (timeMatch) {
+                const [, hours, minutes] = timeMatch;
+                return parseInt(hours) * 60 + parseInt(minutes); // конвертируем в минуты для сортировки
             }
-            return new Date(0);
+            return 0;
         }
         if (idx === 2) {
             // Длительность
@@ -631,6 +631,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (dayIndex > 7) dayIndex = 7;
                 if (dayIndex < 1) dayIndex = 1;
                 dayHeader.className = `day-header day-header-day${dayIndex}`;
+                dayHeader.setAttribute('data-day', dayKey);
                 dayHeader.innerHTML = `<td style="border-bottom: 2px solid #dee2e6; padding: 12px 10px; font-weight: 600; font-size: 1.1em; background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, rgba(102,126,234,0.05) 50%, transparent 100%);">${dayObj.day} ${month_names[dayObj.month-1]}</td><td colspan="5" style="border-bottom: 2px solid #dee2e6; padding: 12px 10px; background: linear-gradient(90deg, rgba(102,126,234,0.05) 0%, rgba(102,126,234,0.02) 50%, transparent 100%);"></td>`;
                 
                 tbody.appendChild(dayHeader);
@@ -699,6 +700,7 @@ function restoreOriginalTableStructure() {
             if (dayIndex > 7) dayIndex = 7;
             if (dayIndex < 1) dayIndex = 1;
             dayHeader.className = `day-header day-header-day${dayIndex}`;
+            dayHeader.setAttribute('data-day', dayKey);
             dayHeader.innerHTML = `<td style="border-bottom: 2px solid #dee2e6; padding: 12px 10px; font-weight: 600; font-size: 1.1em; background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, rgba(102,126,234,0.05) 50%, transparent 100%);">${dayObj.day} ${month_names[dayObj.month-1]}</td><td colspan="5" style="border-bottom: 2px solid #dee2e6; padding: 12px 10px; background: linear-gradient(90deg, rgba(102,126,234,0.05) 0%, rgba(102,126,234,0.02) 50%, transparent 100%);"></td>`;
             
             tbody.appendChild(dayHeader);
@@ -748,7 +750,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Получаем значения из ячеек
                 const eventName = cells[0].textContent.trim();
-                const eventDate = cells[1].textContent.trim();
+                const eventTime = cells[1].textContent.trim();
                 const duration = cells[2].textContent.trim();
                 const hall = cells[3].textContent.trim();
                 const format = cells[4].textContent.trim();
@@ -758,7 +760,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const searchTerm = universalSearch.value.toLowerCase();
                 const searchMatch = !searchTerm || 
                     eventName.toLowerCase().includes(searchTerm) ||
-                    eventDate.toLowerCase().includes(searchTerm) ||
+                    eventTime.toLowerCase().includes(searchTerm) ||
                     duration.toLowerCase().includes(searchTerm) ||
                     hall.toLowerCase().includes(searchTerm) ||
                     format.toLowerCase().includes(searchTerm);
