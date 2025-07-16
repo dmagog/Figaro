@@ -122,6 +122,36 @@
             font-size: 1.1em !important;
         }
         
+        /* Цветовая схема для заголовков дней (как на странице концертов) */
+        .day-header-day1 td {
+            background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%) !important;
+            color: white !important;
+        }
+        .day-header-day2 td {
+            background: linear-gradient(90deg, #6366f1 0%, #818cf8 100%) !important;
+            color: white !important;
+        }
+        .day-header-day3 td {
+            background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%) !important;
+            color: white !important;
+        }
+        .day-header-day4 td {
+            background: linear-gradient(90deg, #06b6d4 0%, #0ea5e9 100%) !important;
+            color: white !important;
+        }
+        .day-header-day5 td {
+            background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%) !important;
+            color: white !important;
+        }
+        .day-header-day6 td {
+            background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%) !important;
+            color: white !important;
+        }
+        .day-header-day7 td {
+            background: linear-gradient(90deg, #818cf8 0%, #3b82f6 100%) !important;
+            color: white !important;
+        }
+        
         .day-group {
             border-bottom: 1px solid #e9ecef;
         }
@@ -255,8 +285,11 @@
                             <tbody>
                                 {% set month_names = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'] %}
                                 {% for day in sorted_days %}
-                                    <tr class="day-header" data-day="{{ day.isoformat() }}">
-                                        <td colspan="6" style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; padding: 12px 10px; font-weight: 600; color: #495057; font-size: 1.1em;">
+                                    {% set day_index = day.day %}
+                                    {% if day_index > 7 %}{% set day_index = 7 %}{% endif %}
+                                    {% if day_index < 1 %}{% set day_index = 1 %}{% endif %}
+                                    <tr class="day-header day-header-day{{ day_index }}" data-day="{{ day.isoformat() }}">
+                                        <td colspan="6" style="border-bottom: 2px solid #dee2e6; padding: 12px 10px; font-weight: 600; font-size: 1.1em;">
                                             {{ day.day }} {{ month_names[day.month-1] }} {{ day.year }}
                                         </td>
                                     </tr>
@@ -506,8 +539,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Создаем заголовок дня
                 const dayHeader = document.createElement('tr');
-                dayHeader.className = 'day-header';
-                dayHeader.innerHTML = `<td colspan="6" style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; padding: 12px 10px; font-weight: 600; color: #495057; font-size: 1.1em;">${dayObj.day} ${month_names[dayObj.month-1]} ${dayObj.year}</td>`;
+                let dayIndex = dayObj.day;
+                if (dayIndex > 7) dayIndex = 7;
+                if (dayIndex < 1) dayIndex = 1;
+                dayHeader.className = `day-header day-header-day${dayIndex}`;
+                dayHeader.innerHTML = `<td colspan="6" style="border-bottom: 2px solid #dee2e6; padding: 12px 10px; font-weight: 600; font-size: 1.1em;">${dayObj.day} ${month_names[dayObj.month-1]} ${dayObj.year}</td>`;
                 
                 tbody.appendChild(dayHeader);
                 
@@ -571,8 +607,11 @@ function restoreOriginalTableStructure() {
             
             // Создаем заголовок дня
             const dayHeader = document.createElement('tr');
-            dayHeader.className = 'day-header';
-            dayHeader.innerHTML = `<td colspan="6" style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; padding: 12px 10px; font-weight: 600; color: #495057; font-size: 1.1em;">${dayObj.day} ${month_names[dayObj.month-1]} ${dayObj.year}</td>`;
+            let dayIndex = dayObj.day;
+            if (dayIndex > 7) dayIndex = 7;
+            if (dayIndex < 1) dayIndex = 1;
+            dayHeader.className = `day-header day-header-day${dayIndex}`;
+            dayHeader.innerHTML = `<td colspan="6" style="border-bottom: 2px solid #dee2e6; padding: 12px 10px; font-weight: 600; font-size: 1.1em;">${dayObj.day} ${month_names[dayObj.month-1]} ${dayObj.year}</td>`;
             
             tbody.appendChild(dayHeader);
             
