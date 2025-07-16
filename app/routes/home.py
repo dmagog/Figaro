@@ -17,6 +17,7 @@ import shutil
 import os
 import threading
 import logging
+from models import OffProgram, EventFormat
 
 
 def format_time_minutes(minutes):
@@ -1341,3 +1342,101 @@ async def get_routes_api(request: Request, session=Depends(get_session)):
         "sort_by": sort_by,
         "sort_order": sort_order
     })
+
+@home_route.get("/admin/offprogram", response_class=HTMLResponse)
+async def admin_offprogram(request: Request, session=Depends(get_session)):
+    """
+    Страница Офф-программы в админке. Доступ только для суперадмина.
+    """
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    # Получаем полноценного пользователя из БД
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return RedirectResponse(url="/login", status_code=302)
+
+    # Получаем все мероприятия Офф-программы
+    events = session.exec(select(OffProgram).order_by(OffProgram.event_date)).all()
+    
+    # Подготавливаем данные для отображения
+    events_data = []
+    for event in events:
+        # Получаем данные из Row объекта SQLAlchemy
+        if hasattr(event, '_mapping'):
+            # Это Row объект, получаем данные через _mapping
+            event_data = event._mapping['OffProgram']
+            event_long = event_data.event_long
+            event_date = event_data.event_date
+            event_format = event_data.format
+        else:
+            # Это обычный объект модели
+            event_data = event
+            event_long = event.event_long
+            event_date = event.event_date
+            event_format = event.format
+        
+        # Форматируем продолжительность
+        duration_display = event_long
+        if event_long and event_long != "00:00:00":
+            try:
+                # Парсим время в формате HH:MM:SS
+                time_parts = event_long.split(':')
+                if len(time_parts) >= 2:
+                    hours = int(time_parts[0])
+                    minutes = int(time_parts[1])
+                    if hours > 0 and minutes > 0:
+                        duration_display = f"{hours}ч {minutes}м"
+                    elif hours > 0:
+                        duration_display = f"{hours}ч"
+                    else:
+                        duration_display = f"{minutes}м"
+            except:
+                duration_display = event_long
+        
+        events_data.append({
+            'id': event_data.id,
+            'event_num': event_data.event_num,
+            'event_name': event_data.event_name,
+            'description': event_data.description or 'Описание отсутствует',
+            'event_date': event_date.isoformat() if event_date else None,
+            'event_date_display': event_date.strftime('%d.%m.%Y %H:%M') if event_date else 'Н/Д',
+            'event_long': event_long,
+            'duration_display': duration_display,
+            'hall_name': event_data.hall_name,
+            'format': event_format.value if event_format else 'Не указан',
+            'recommend': event_data.recommend,
+            'link': event_data.link
+        })
+    
+    # Статистика
+    total_events = len(events_data)
+    recommended_events = sum(1 for event in events_data if event['recommend'])
+    
+    # Группировка по форматам
+    formats_stats = {}
+    for event in events_data:
+        format_name = event['format']
+        formats_stats[format_name] = formats_stats.get(format_name, 0) + 1
+    
+    # Группировка по залам
+    halls_stats = {}
+    for event in events_data:
+        hall_name = event['hall_name']
+        halls_stats[hall_name] = halls_stats.get(hall_name, 0) + 1
+
+    context = {
+        "user": user_obj,
+        "request": request,
+        "events": events_data,
+        "total_events": total_events,
+        "recommended_events": recommended_events,
+        "formats_stats": formats_stats,
+        "halls_stats": halls_stats
+    }
+    return templates.TemplateResponse("admin_offprogram.html", context)

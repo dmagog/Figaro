@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Офф-программа — Админка</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body { background: #f6f7fb; font-family: 'Segoe UI', 'Arial', sans-serif; }
+        .admin-container { max-width: 1200px; margin: 40px auto; padding: 30px; background: white; border-radius: 18px; box-shadow: 0 8px 32px rgba(60,60,120,0.08); }
+        .admin-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 30px; }
+        .admin-header h1 { font-size: 2.2em; margin: 0; flex-shrink:0; }
+        .admin-nav-flex { display: flex; gap: 18px; flex-wrap: nowrap; align-items: center; position: relative; overflow-x: auto; padding-bottom: 4px; flex:1; }
+        .admin-menu-btn { background: #667eea; color: white; padding: 10px 28px; border-radius: 10px; text-decoration: none; font-weight: 500; font-size: 1.08em; border: none; transition: background 0.18s, color 0.18s; display: inline-block; text-align: center; cursor: pointer; white-space: nowrap; }
+        .admin-menu-btn:hover, .admin-menu-btn.active { background: #4f5bd5; color: #fff; }
+        .admin-menu-dropdown-arrow { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); width: 24px; height: 12px; pointer-events: none; z-index: 1003; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: translateY(0);} }
+        table { width: 100%; border-collapse: collapse; margin-top: 30px; background: #f8f9fa; border-radius: 12px; overflow: hidden; }
+        th, td { padding: 14px 10px; text-align: left; }
+        th { background: #e0e7ff; color: #333; font-weight: 600; }
+        tr:nth-child(even) { background: #f0f4ff; }
+        tr:hover { background: #e3eafe; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(102,126,234,0.07); margin-bottom: 20px; }
+        .card-header { padding: 18px 24px; border-bottom: 1px solid #e0e7ff; background: #f8f9fa; border-radius: 12px 12px 0 0; }
+        .card-body { padding: 24px; }
+        .card-title { margin: 0; font-size: 1.1em; font-weight: 600; color: #333; }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 0.9em; font-weight: 500; }
+        .bg-primary { background: #667eea; color: white; }
+        .bg-success { background: #28a745; color: white; }
+        .bg-info { background: #17a2b8; color: white; }
+        .bg-warning { background: #ffc107; color: #212529; }
+        .bg-secondary { background: #6c757d; color: white; }
+        .bg-light { background: #f8f9fa; color: #212529; }
+        .bg-outline-primary { background: transparent; color: #667eea; border: 1px solid #667eea; }
+        .bg-outline-secondary { background: transparent; color: #6c757d; border: 1px solid #6c757d; }
+        .text-primary { color: #667eea; }
+        .text-muted { color: #6c757d; }
+        .fw-bold { font-weight: bold; }
+        .fw-semibold { font-weight: 600; }
+        .text-center { text-align: center; }
+        .btn { display: inline-block; padding: 8px 16px; border-radius: 6px; text-decoration: none; border: none; cursor: pointer; transition: all 0.2s; }
+        .btn-sm { padding: 4px 8px; font-size: 0.9em; }
+        .btn-outline-primary { background: transparent; color: #667eea; border: 1px solid #667eea; }
+        .btn-outline-primary:hover { background: #667eea; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-secondary:hover { background: #5a6268; }
+        .table-responsive { overflow-x: auto; }
+        .modal { display: none; position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .modal.show { display: block; }
+        .modal-dialog { margin: 1.75rem auto; max-width: 800px; }
+        .modal-content { background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+        .modal-header { padding: 18px 24px; border-bottom: 1px solid #e0e7ff; }
+        .modal-body { padding: 24px; }
+        .modal-footer { padding: 18px 24px; border-top: 1px solid #e0e7ff; }
+        .btn-close { background: none; border: none; font-size: 1.5em; cursor: pointer; }
+        .fs-6 { font-size: 1rem; }
+        .fs-5 { font-size: 1.25rem; }
+        .mb-0 { margin-bottom: 0; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-3 { margin-bottom: 1rem; }
+        .mb-4 { margin-bottom: 1.5rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-3 { margin-top: 1rem; }
+        .p-0 { padding: 0; }
+        .p-3 { padding: 1rem; }
+        .rounded { border-radius: 0.375rem; }
+        .d-flex { display: flex; }
+        .justify-content-between { justify-content: center; }
+        .align-items-center { align-items: center; }
+        .gap-2 { gap: 0.5rem; }
+        .row { display: flex; flex-wrap: wrap; margin: 0 -0.75rem; }
+        .col-12 { flex: 0 0 100%; max-width: 100%; padding: 0 0.75rem; }
+        .col-md-6 { flex: 0 0 50%; max-width: 50%; padding: 0 0.75rem; }
+        @media (max-width: 768px) {
+            .col-md-6 { flex: 0 0 100%; max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>Офф-программа фестиваля</h1>
+        <nav class="admin-nav-flex" id="adminNav">
+            <a href="/admin" class="admin-menu-btn">Главная</a>
+            <a href="/admin/users" class="admin-menu-btn">Пользователи</a>
+            <a href="/admin/customers" class="admin-menu-btn">Покупатели</a>
+            <a href="/admin/purchases" class="admin-menu-btn">Покупки</a>
+            <a href="/admin/concerts" class="admin-menu-btn">Концерты</a>
+            <a href="/admin/halls" class="admin-menu-btn">Залы</a>
+            <a href="/admin/routes" class="admin-menu-btn">Маршруты</a>
+            <a href="/admin/offprogram" class="admin-menu-btn active">Офф-программа</a>
+            <a href="/" class="admin-menu-btn"><span style="font-size:1.1em; margin-right:6px;">🌐</span>На сайт</a>
+        </nav>
+    </div>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+
+
+
+
+            <!-- Таблица мероприятий -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list text-primary"></i>
+                        Список мероприятий
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center" style="width: 60px;">№</th>
+                                    <th>Название</th>
+                                    <th style="width: 150px;">Дата и время</th>
+                                    <th style="width: 100px;">Длительность</th>
+                                    <th style="width: 120px;">Зал</th>
+                                    <th style="width: 120px;">Формат</th>
+                                    <th class="text-center" style="width: 100px;">Рекомендуется</th>
+                                    <th class="text-center" style="width: 80px;">Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for event in events %}
+                                <tr>
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary">{{ event.event_num }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">{{ event.event_name }}</div>
+                                        {% if event.description and event.description != 'Описание отсутствует' %}
+                                        <small class="text-muted">{{ event.description[:100] }}{% if event.description|length > 100 %}...{% endif %}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold">{{ event.event_date_display }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">{{ event.duration_display }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-outline-primary">{{ event.hall_name }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-outline-secondary">{{ event.format }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if event.recommend %}
+                                        <i class="fas fa-star text-warning" title="Рекомендуется"></i>
+                                        {% else %}
+                                        <i class="fas fa-minus text-muted"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-outline-primary" 
+                                                onclick="showEventDetails({{ event.id }})"
+                                                title="Подробности">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно с подробностями -->
+<div class="modal fade" id="eventDetailsModal" tabindex="-1" aria-labelledby="eventDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventDetailsModalLabel">Подробности мероприятия</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="eventDetailsContent">
+                <!-- Контент будет загружен динамически -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showEventDetails(eventId) {
+    // Находим данные мероприятия
+    const events = {{ events | tojson }};
+    const event = events.find(e => e.id === eventId);
+    
+    if (!event) {
+        alert('Мероприятие не найдено');
+        return;
+    }
+    
+    // Формируем HTML для модального окна
+    let content = `
+        <div class="row">
+            <div class="col-12">
+                <h4 class="text-primary mb-3">${event.event_name}</h4>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Номер мероприятия:</strong><br>
+                        <span class="badge bg-secondary fs-6">${event.event_num}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Дата и время:</strong><br>
+                        <span class="fw-semibold">${event.event_date_display}</span>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Длительность:</strong><br>
+                        <span class="badge bg-light text-dark">${event.duration_display}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Зал:</strong><br>
+                        <span class="badge bg-outline-primary">${event.hall_name}</span>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Формат:</strong><br>
+                        <span class="badge bg-outline-secondary">${event.format}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Рекомендуется:</strong><br>
+                        ${event.recommend ? '<i class="fas fa-star text-warning fs-5"></i> Да' : '<i class="fas fa-minus text-muted"></i> Нет'}
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Описание:</strong><br>
+                    <div class="mt-2 p-3 bg-light rounded">
+                        ${event.description}
+                    </div>
+                </div>
+                
+                ${event.link ? `
+                <div class="mb-3">
+                    <strong>Ссылка:</strong><br>
+                    <a href="${event.link}" target="_blank" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-external-link-alt"></i> Открыть ссылку
+                    </a>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+    
+    // Показываем модальное окно
+    document.getElementById('eventDetailsContent').innerHTML = content;
+    new bootstrap.Modal(document.getElementById('eventDetailsModal')).show();
+}
+</script>
+</div>
+</body>
+</html> 
