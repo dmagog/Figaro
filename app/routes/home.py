@@ -17,6 +17,7 @@ import shutil
 import os
 import threading
 import logging
+from datetime import datetime
 from models import OffProgram, EventFormat
 
 
@@ -216,7 +217,19 @@ async def admin_users(request: Request, session=Depends(get_session)):
     from sqlalchemy import func
     user_stats = {}
     for u in users:
-        print('USER:', u, getattr(u, '__dict__', None))  # DEBUG
+        # Безопасное логирование без чувствительных данных
+        user_info = {
+            'id': getattr(u, 'id', None),
+            'name': getattr(u, 'name', None),
+            'email': getattr(u, 'email', None),
+            'role': getattr(u, 'role', None),
+            'is_active': getattr(u, 'is_active', None),
+            'is_superuser': getattr(u, 'is_superuser', None),
+            'external_id': getattr(u, 'external_id', None),
+            'created_at': getattr(u, 'created_at', None),
+            'updated_at': getattr(u, 'updated_at', None)
+        }
+        print('USER:', user_info)  # DEBUG
         ext_id = get_user_field(u, 'external_id')
         user_id = get_user_field(u, 'id')
         if not user_id:
@@ -341,7 +354,6 @@ async def admin_purchases(request: Request, session=Depends(get_session)):
     # Уникальные пользователи и концерты для фильтров
     unique_users = {}
     unique_concerts = {}
-    from datetime import datetime
     purchase_dates = [p.purchased_at for p, _, _, _ in purchases if p.purchased_at]
     if purchase_dates:
         min_purchase_date = min(purchase_dates).strftime('%Y-%m-%d')
@@ -1399,9 +1411,6 @@ async def admin_offprogram(request: Request, session=Depends(get_session)):
             except:
                 duration_display = event_long
         
-        # Отладочная информация
-        print(f"DEBUG: Event {event_data.id} - recommend: {event_data.recommend} (type: {type(event_data.recommend)})")
-        
         events_data.append({
             'id': event_data.id,
             'event_num': event_data.event_num,
@@ -1437,15 +1446,38 @@ async def admin_offprogram(request: Request, session=Depends(get_session)):
     halls = sorted(list(set(event['hall_name'] for event in events_data if event['hall_name'])))
     formats = sorted(list(set(event['format'] for event in events_data if event['format'])))
 
+    # Группируем события по дням
+    events_by_day = {}
+    for event in events_data:
+        if event['event_date']:
+            try:
+                day = datetime.fromisoformat(event['event_date']).date()
+                if day not in events_by_day:
+                    events_by_day[day] = []
+                events_by_day[day].append(event)
+            except Exception as e:
+                continue
+    
+    # Сортируем дни и события внутри дней
+    sorted_days = sorted(events_by_day.keys())
+    for day in sorted_days:
+        events_by_day[day].sort(key=lambda x: x['event_date'])
+
+    # Формируем список уникальных дней мероприятий
+    event_days = sorted_days
+
     context = {
         "user": user_obj,
         "request": request,
         "events": events_data,
+        "events_by_day": events_by_day,
+        "sorted_days": sorted_days,
         "total_events": total_events,
         "recommended_events": recommended_events,
         "formats_stats": formats_stats,
         "halls_stats": halls_stats,
         "halls": halls,
-        "formats": formats
+        "formats": formats,
+        "event_days": event_days
     }
     return templates.TemplateResponse("admin_offprogram.html", context)

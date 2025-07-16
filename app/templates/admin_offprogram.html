@@ -82,6 +82,12 @@
         .filter-item select:focus { border: 1.5px solid #667eea; box-shadow: 0 4px 16px rgba(102,126,234,0.13); }
         .filter-item select { appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill="%23667eea" height="20" viewBox="0 0 20 20" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7.293 7.293a1 1 0 011.414 0L10 8.586l1.293-1.293a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z"/></svg>'); background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; }
         .filter-item select::-ms-expand { display: none; }
+        .concert-date-text {
+            font-size: 0.97em;
+            color: #8ca0c7;
+            display: block;
+            margin-top: 2px;
+        }
         /* Стили для сортируемых заголовков */
         th.sortable {
             cursor: pointer;
@@ -104,6 +110,24 @@
         }
         th.sorted-desc:after {
             content: '▼';
+        }
+        
+        /* Стили для заголовков дней */
+        .day-header td {
+            background: #f8f9fa !important;
+            border-bottom: 2px solid #dee2e6 !important;
+            padding: 12px 10px !important;
+            font-weight: 600 !important;
+            color: #495057 !important;
+            font-size: 1.1em !important;
+        }
+        
+        .day-group {
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .day-group:last-child {
+            border-bottom: none;
         }
         
         @media (max-width: 900px) {
@@ -181,11 +205,28 @@
         </div>
     </div>
     
-    <!-- Счетчик результатов -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin: 8px 0 0 0;">
-        <div style="color: #aaa; font-size: 0.98em;">
-            Показано мероприятий: <span id="events-count-value">{{ events|length }}</span>
+    <!-- Фильтры по дням -->
+    <div class="filter-block" id="day-filters" style="margin-bottom: 18px; display: flex; align-items: center; gap: 18px; background: #f4f6fb; border-radius: 12px; padding: 14px 24px;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            {% set month_names = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'] %}
+            <!-- Отладка: {{ event_days|length if event_days else 'Нет данных' }} дней -->
+            {% if event_days %}
+                {% for day in event_days %}
+                    <a href="#" class="day-filter-link" data-day="{{ day.isoformat() }}" style="display:inline-block; padding:7px 18px; border-radius:8px; background:#e0e7ff; color:#4f5bd5; font-weight:500; text-decoration:none; font-size:1.05em; transition:background 0.15s, color 0.15s;">{{ day.day }} {{ month_names[day.month-1] }}</a>
+                {% endfor %}
+            {% else %}
+                <span style="color: #666; font-style: italic;">Нет данных о днях мероприятий</span>
+            {% endif %}
         </div>
+        <button id="reset-day-filter" type="button" style="height:38px; width:38px; display:flex; align-items:center; justify-content:center; border:none; border-radius:50%; background:#e0e7ff; color:#4f5bd5; font-size:1.3em; margin-left:10px; box-shadow:0 2px 8px rgba(102,126,234,0.07); cursor:pointer; transition:background 0.2s;" title="Сбросить фильтр по дню">
+            &#8635;
+        </button>
+    </div>
+    
+    <!-- Счетчик результатов -->
+    <div style="margin: 8px 0 0 0; color: #aaa; font-size: 0.98em; text-align: right;">
+        Показано мероприятий: <span id="events-count-value">{{ events|length }}</span>, 
+        рекомендовано: <span id="recommended-count-value">{{ recommended_events }}</span>
     </div>
 
 <div class="container-fluid">
@@ -203,49 +244,57 @@
                         <table class="table table-hover mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th class="sortable text-center" style="width: 60px;">№</th>
                                     <th class="sortable">Название</th>
                                     <th class="sortable" style="width: 150px;">Дата и время</th>
                                     <th class="sortable" style="width: 100px;">Длительность</th>
                                     <th class="sortable" style="width: 120px;">Зал</th>
                                     <th class="sortable" style="width: 120px;">Формат</th>
-                                    <th class="sortable text-center" style="width: 100px;">Рекомендуется</th>
+                                    <th class="sortable text-center" style="width: 100px;" title="Мероприятия, которые будут предлагаться в дополнение к маршруту пользователя">Рекомендуется</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for event in events %}
-                                <tr>
-                                    <td class="text-center">
-                                        <span class="badge bg-secondary">{{ event.event_num }}</span>
-                                    </td>
-                                    <td>
-                                        <div class="fw-bold">{{ event.event_name }}</div>
-                                        {% if event.description and event.description != 'Описание отсутствует' %}
-                                        <small class="text-muted">{{ event.description[:100] }}{% if event.description|length > 100 %}...{% endif %}</small>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <div class="fw-semibold">{{ event.event_date_display }}</div>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-light text-dark">{{ event.duration_display }}</span>
-                                    </td>
-                                    <td>
-                                        <span class="hall-badge">{{ event.hall_name }}</span>
-                                    </td>
-                                    <td>
-                                        {% if event.format and event.format != 'Не указан' %}
-                                        <span class="badge bg-outline-secondary">{{ event.format }}</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-center">
-                                        {% if event.recommend %}
-                                        <span class="text-warning" title="Рекомендуется">🟩</span>
-                                        {% else %}
-                                        <span class="text-muted">⬜️</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
+                                {% set month_names = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'] %}
+                                {% for day in sorted_days %}
+                                    <tr class="day-header" data-day="{{ day.isoformat() }}">
+                                        <td colspan="6" style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; padding: 12px 10px; font-weight: 600; color: #495057; font-size: 1.1em;">
+                                            {{ day.day }} {{ month_names[day.month-1] }} {{ day.year }}
+                                        </td>
+                                    </tr>
+                                    {% for event in events_by_day[day] %}
+                                    <tr class="event-row" data-day="{{ day.isoformat() }}">
+                                        <td>
+                                            <div class="fw-bold">{{ event.event_name }}</div>
+                                            {% if event.description and event.description != 'Описание отсутствует' %}
+                                            <small class="text-muted">{{ event.description[:100] }}{% if event.description|length > 100 %}...{% endif %}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div>
+                                                {{ event.event_date_display }}
+                                            </div>
+                                            <span class="concert-date-text" data-day="{{ event.event_date_display.split(' ')[0] if event.event_date_display else '' }}" style="display: none;">
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark">{{ event.duration_display }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="hall-badge">{{ event.hall_name }}</span>
+                                        </td>
+                                        <td>
+                                            {% if event.format and event.format != 'Не указан' %}
+                                            <span class="badge bg-outline-secondary">{{ event.format }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            {% if event.recommend %}
+                                            <span class="text-warning" title="Рекомендуется">🟩</span>
+                                            {% else %}
+                                            <span class="text-muted">⬜️</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -338,6 +387,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const headers = table.querySelectorAll('th.sortable');
     let sortCol = null;
     let sortDir = 1;
+    const month_names = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 
     headers.forEach((th, idx) => {
         th.addEventListener('click', function() {
@@ -353,24 +403,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Сортировка по умолчанию по номеру мероприятия (колонка 0) в возрастающем порядке
-    sortCol = 0;
-    sortDir = 1;
-    headers[0].classList.add('sorted-asc');
-    sortTable(0, 1);
+    // Убираем сортировку по умолчанию, так как теперь у нас есть группировка по дням
+    // События уже отсортированы по дате в шаблоне
     
     function parseCell(cell, idx) {
         let text = cell.textContent.trim();
         
         if (idx === 0) {
-            // Номер мероприятия
-            return parseInt(text) || 0;
-        }
-        if (idx === 1) {
             // Название
             return text.toLowerCase();
         }
-        if (idx === 2) {
+        if (idx === 1) {
             // Дата и время
             const dateMatch = text.match(/(\d{2})\.(\d{2})\.(\d{4})/);
             if (dateMatch) {
@@ -379,7 +422,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             return new Date(0);
         }
-        if (idx === 3) {
+        if (idx === 2) {
             // Длительность
             const hoursMatch = text.match(/(\d+)ч/);
             const minutesMatch = text.match(/(\d+)м/);
@@ -392,15 +435,15 @@ document.addEventListener('DOMContentLoaded', function() {
             
             return hours + minutes / 60;
         }
-        if (idx === 4) {
+        if (idx === 3) {
             // Зал
             return text.toLowerCase();
         }
-        if (idx === 5) {
+        if (idx === 4) {
             // Формат
             return text.toLowerCase();
         }
-        if (idx === 6) {
+        if (idx === 5) {
             // Рекомендуется (🟩 = 1, ⬜️ = 0)
             return text.includes('🟩') ? 1 : 0;
         }
@@ -410,16 +453,137 @@ document.addEventListener('DOMContentLoaded', function() {
     function sortTable(col, dir) {
         const tbody = table.tBodies[0];
         const rows = Array.from(tbody.rows);
-        rows.sort((a, b) => {
+        
+        // Собираем заголовки дней и строки событий
+        const dayHeaders = [];
+        const eventRows = [];
+        
+        rows.forEach(row => {
+            if (row.classList.contains('day-header')) {
+                dayHeaders.push(row);
+            } else if (row.classList.contains('event-row')) {
+                eventRows.push(row);
+            }
+        });
+        
+        // Сортируем строки событий
+        eventRows.sort((a, b) => {
             let A = parseCell(a.cells[col], col);
             let B = parseCell(b.cells[col], col);
             if (A < B) return -1 * dir;
             if (A > B) return 1 * dir;
             return 0;
         });
-        rows.forEach(row => tbody.appendChild(row));
+        
+        // Перегруппировываем события по дням
+        const newDayGroups = {};
+        eventRows.forEach(row => {
+            const eventDate = row.querySelector('.concert-date-text').getAttribute('data-day');
+            if (eventDate) {
+                const parts = eventDate.split('.');
+                if (parts.length === 3) {
+                    const dayKey = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                    if (!newDayGroups[dayKey]) {
+                        newDayGroups[dayKey] = [];
+                    }
+                    newDayGroups[dayKey].push(row);
+                }
+            }
+        });
+        
+        // Очищаем tbody и добавляем отсортированные группы
+        tbody.innerHTML = '';
+        const month_names = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+        Object.keys(newDayGroups).sort().forEach(dayKey => {
+            const eventRows = newDayGroups[dayKey];
+            if (eventRows.length > 0) {
+                const dayDate = dayKey.split('-');
+                const dayObj = {
+                    year: dayDate[0],
+                    month: parseInt(dayDate[1]),
+                    day: parseInt(dayDate[2])
+                };
+                
+                // Создаем заголовок дня
+                const dayHeader = document.createElement('tr');
+                dayHeader.className = 'day-header';
+                dayHeader.innerHTML = `<td colspan="6" style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; padding: 12px 10px; font-weight: 600; color: #495057; font-size: 1.1em;">${dayObj.day} ${month_names[dayObj.month-1]} ${dayObj.year}</td>`;
+                
+                tbody.appendChild(dayHeader);
+                
+                // Добавляем отсортированные строки событий
+                eventRows.forEach(row => {
+                    row.className = 'event-row';
+                    tbody.appendChild(row);
+                });
+            }
+        });
     }
 });
+
+// Глобальная функция для восстановления исходной структуры таблицы
+function restoreOriginalTableStructure() {
+    const table = document.querySelector('table');
+    const tbody = table.tBodies[0];
+    const rows = Array.from(tbody.rows);
+    
+    // Показываем все строки
+    rows.forEach(row => {
+        row.style.display = '';
+    });
+    
+    // Сбрасываем сортировку
+    const headers = table.querySelectorAll('th.sortable');
+    headers.forEach(h => h.classList.remove('sorted-asc', 'sorted-desc'));
+    
+    // Восстанавливаем исходную группировку по дням
+    // Собираем все события и перегруппировываем их по дням
+    const eventRows = rows.filter(row => row.classList.contains('event-row'));
+    
+    // Создаем группы по дням
+    const dayGroups = {};
+    eventRows.forEach(row => {
+        const eventDate = row.querySelector('.concert-date-text').getAttribute('data-day');
+        if (eventDate) {
+            const parts = eventDate.split('.');
+            if (parts.length === 3) {
+                const dayKey = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                if (!dayGroups[dayKey]) {
+                    dayGroups[dayKey] = [];
+                }
+                dayGroups[dayKey].push(row);
+            }
+        }
+    });
+    
+    // Очищаем tbody и добавляем отсортированные группы
+    tbody.innerHTML = '';
+    const month_names = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+    Object.keys(dayGroups).sort().forEach(dayKey => {
+        const eventRows = dayGroups[dayKey];
+        if (eventRows.length > 0) {
+            const dayDate = dayKey.split('-');
+            const dayObj = {
+                year: dayDate[0],
+                month: parseInt(dayDate[1]),
+                day: parseInt(dayDate[2])
+            };
+            
+            // Создаем заголовок дня
+            const dayHeader = document.createElement('tr');
+            dayHeader.className = 'day-header';
+            dayHeader.innerHTML = `<td colspan="6" style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; padding: 12px 10px; font-weight: 600; color: #495057; font-size: 1.1em;">${dayObj.day} ${month_names[dayObj.month-1]} ${dayObj.year}</td>`;
+            
+            tbody.appendChild(dayHeader);
+            
+            // Добавляем отсортированные строки событий
+            eventRows.forEach(row => {
+                row.className = 'event-row';
+                tbody.appendChild(row);
+            });
+        }
+    });
+}
 
 // Фильтры для таблицы мероприятий
 document.addEventListener('DOMContentLoaded', function() {
@@ -432,65 +596,89 @@ document.addEventListener('DOMContentLoaded', function() {
     const eventsCount = document.getElementById('events-count-value');
     
     function applyFilters() {
-        const rows = Array.from(table.tBodies[0].rows);
+        const tbody = table.tBodies[0];
+        const rows = Array.from(tbody.rows);
         let visibleCount = 0;
+        let recommendedCount = 0;
+        let currentDayHeader = null;
+        let dayHasVisibleEvents = false;
         
         rows.forEach(row => {
-            const cells = row.cells;
-            
-            // Получаем значения из ячеек
-            const eventNum = cells[0].textContent.trim();
-            const eventName = cells[1].textContent.trim();
-            const eventDate = cells[2].textContent.trim();
-            const duration = cells[3].textContent.trim();
-            const hall = cells[4].textContent.trim();
-            const format = cells[5].textContent.trim();
-            const recommend = cells[6].textContent.trim();
-            
-            // Универсальный поиск
-            const searchTerm = universalSearch.value.toLowerCase();
-            const searchMatch = !searchTerm || 
-                eventNum.toLowerCase().includes(searchTerm) ||
-                eventName.toLowerCase().includes(searchTerm) ||
-                eventDate.toLowerCase().includes(searchTerm) ||
-                duration.toLowerCase().includes(searchTerm) ||
-                hall.toLowerCase().includes(searchTerm) ||
-                format.toLowerCase().includes(searchTerm);
-            
-            // Фильтр по залу
-            const hallMatch = !hallFilter.value || hall === hallFilter.value;
-            
-            // Фильтр по формату
-            let formatMatch = true;
-            if (formatFilter.value) {
-                if (formatFilter.value === 'Не указан') {
-                    // Для "Не указан" ищем строки с пустым форматом
-                    formatMatch = !format || format === 'Не указан';
-                } else {
-                    // Для остальных значений ищем точное совпадение
-                    formatMatch = format === formatFilter.value;
+            if (row.classList.contains('day-header')) {
+                // Если это заголовок дня, проверяем предыдущий день
+                if (currentDayHeader && !dayHasVisibleEvents) {
+                    currentDayHeader.style.display = 'none';
                 }
+                currentDayHeader = row;
+                dayHasVisibleEvents = false;
+                return;
             }
             
-            // Фильтр по рекомендуемости
-            let recommendMatch = true;
-            if (recommendFilter.value === 'recommended') {
-                recommendMatch = recommend.includes('🟩');
-            } else if (recommendFilter.value === 'not-recommended') {
-                recommendMatch = recommend.includes('⬜️');
-            }
-            
-            // Применяем все фильтры
-            const shouldShow = searchMatch && hallMatch && formatMatch && recommendMatch;
-            row.style.display = shouldShow ? '' : 'none';
-            
-            if (shouldShow) {
-                visibleCount++;
+            if (row.classList.contains('event-row')) {
+                const cells = row.cells;
+                
+                // Получаем значения из ячеек
+                const eventName = cells[0].textContent.trim();
+                const eventDate = cells[1].textContent.trim();
+                const duration = cells[2].textContent.trim();
+                const hall = cells[3].textContent.trim();
+                const format = cells[4].textContent.trim();
+                const recommend = cells[5].textContent.trim();
+                
+                // Универсальный поиск
+                const searchTerm = universalSearch.value.toLowerCase();
+                const searchMatch = !searchTerm || 
+                    eventName.toLowerCase().includes(searchTerm) ||
+                    eventDate.toLowerCase().includes(searchTerm) ||
+                    duration.toLowerCase().includes(searchTerm) ||
+                    hall.toLowerCase().includes(searchTerm) ||
+                    format.toLowerCase().includes(searchTerm);
+                
+                // Фильтр по залу
+                const hallMatch = !hallFilter.value || hall === hallFilter.value;
+                
+                // Фильтр по формату
+                let formatMatch = true;
+                if (formatFilter.value) {
+                    if (formatFilter.value === 'Не указан') {
+                        // Для "Не указан" ищем строки с пустым форматом
+                        formatMatch = !format || format === 'Не указан';
+                    } else {
+                        // Для остальных значений ищем точное совпадение
+                        formatMatch = format === formatFilter.value;
+                    }
+                }
+                
+                // Фильтр по рекомендуемости
+                let recommendMatch = true;
+                if (recommendFilter.value === 'recommended') {
+                    recommendMatch = recommend.includes('🟩');
+                } else if (recommendFilter.value === 'not-recommended') {
+                    recommendMatch = recommend.includes('⬜️');
+                }
+                
+                // Применяем все фильтры
+                const shouldShow = searchMatch && hallMatch && formatMatch && recommendMatch;
+                row.style.display = shouldShow ? '' : 'none';
+                
+                if (shouldShow) {
+                    visibleCount++;
+                    if (recommend.includes('🟩')) {
+                        recommendedCount++;
+                    }
+                    dayHasVisibleEvents = true;
+                }
             }
         });
         
-        // Обновляем счетчик
+        // Проверяем последний день
+        if (currentDayHeader && !dayHasVisibleEvents) {
+            currentDayHeader.style.display = 'none';
+        }
+        
+        // Обновляем счетчики
         eventsCount.textContent = visibleCount;
+        document.getElementById('recommended-count-value').textContent = recommendedCount;
     }
     
     // Обработчики событий для фильтров
@@ -505,11 +693,168 @@ document.addEventListener('DOMContentLoaded', function() {
         hallFilter.value = '';
         formatFilter.value = '';
         recommendFilter.value = '';
-        applyFilters();
+        
+        // Просто показываем все строки и обновляем счетчики
+        const tbody = table.tBodies[0];
+        const rows = Array.from(tbody.rows);
+        let visibleCount = 0;
+        let recommendedCount = 0;
+        
+        rows.forEach(row => {
+            row.style.display = '';
+            if (row.classList.contains('event-row')) {
+                visibleCount++;
+                const recommend = row.cells[5].textContent.trim();
+                if (recommend.includes('🟩')) {
+                    recommendedCount++;
+                }
+            }
+        });
+        
+        // Обновляем счетчики
+        eventsCount.textContent = visibleCount;
+        document.getElementById('recommended-count-value').textContent = recommendedCount;
+        
+        // Сбрасываем сортировку
+        const headers = table.querySelectorAll('th.sortable');
+        headers.forEach(h => h.classList.remove('sorted-asc', 'sorted-desc'));
     });
+    
+
     
     // Применяем фильтры при загрузке страницы
     applyFilters();
+});
+
+// Фильтр по дням мероприятий
+document.addEventListener('DOMContentLoaded', function() {
+    const table = document.querySelector('table');
+    const dayLinks = document.querySelectorAll('.day-filter-link');
+    const resetBtn = document.getElementById('reset-day-filter');
+    let activeDay = null;
+
+    function applyDayFilter() {
+        const tbody = table.tBodies[0];
+        const rows = Array.from(tbody.rows);
+        let visibleCount = 0;
+        let recommendedCount = 0;
+        
+        rows.forEach(row => {
+            if (row.classList.contains('day-header')) {
+                // Для заголовков дней определяем, нужно ли их показывать
+                let shouldShowHeader = true;
+                
+                if (activeDay) {
+                    // Если выбран конкретный день, проверяем атрибут data-day
+                    const headerDay = row.getAttribute('data-day');
+                    shouldShowHeader = (headerDay === activeDay);
+                }
+                
+                row.style.display = shouldShowHeader ? '' : 'none';
+                return;
+            }
+            
+            if (row.classList.contains('event-row')) {
+                // Фильтр по дню
+                let showByDay = true;
+                if (activeDay) {
+                    const eventDay = row.getAttribute('data-day');
+                    showByDay = (eventDay === activeDay);
+                }
+                
+                // Применяем фильтр по дню
+                if (!showByDay) {
+                    row.style.display = 'none';
+                } else {
+                    row.style.display = '';
+                    visibleCount++;
+                    
+                    // Считаем рекомендуемые мероприятия
+                    const recommend = row.cells[5].textContent.trim();
+                    if (recommend.includes('🟩')) {
+                        recommendedCount++;
+                    }
+                }
+            }
+        });
+        
+        // Обновляем счетчики
+        const countSpan = document.getElementById('events-count-value');
+        const recommendedSpan = document.getElementById('recommended-count-value');
+        if (countSpan) {
+            countSpan.textContent = visibleCount;
+        }
+        if (recommendedSpan) {
+            recommendedSpan.textContent = recommendedCount;
+        }
+    }
+
+    dayLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            dayLinks.forEach(l => l.style.background = '#e0e7ff');
+            dayLinks.forEach(l => l.style.color = '#4f5bd5');
+            this.style.background = '#4f5bd5';
+            this.style.color = '#fff';
+            activeDay = this.getAttribute('data-day');
+            applyDayFilter();
+        });
+    });
+    
+    resetBtn.addEventListener('click', function() {
+        dayLinks.forEach(l => l.style.background = '#e0e7ff');
+        dayLinks.forEach(l => l.style.color = '#4f5bd5');
+        activeDay = null;
+        
+        // Просто показываем все строки и обновляем счетчики
+        const tbody = table.tBodies[0];
+        const rows = Array.from(tbody.rows);
+        let visibleCount = 0;
+        let recommendedCount = 0;
+        
+        rows.forEach(row => {
+            row.style.display = '';
+            if (row.classList.contains('event-row')) {
+                visibleCount++;
+                const recommend = row.cells[5].textContent.trim();
+                if (recommend.includes('🟩')) {
+                    recommendedCount++;
+                }
+            }
+        });
+        
+        // Обновляем счетчики
+        const countSpan = document.getElementById('events-count-value');
+        const recommendedSpan = document.getElementById('recommended-count-value');
+        if (countSpan) {
+            countSpan.textContent = visibleCount;
+        }
+        if (recommendedSpan) {
+            recommendedSpan.textContent = recommendedCount;
+        }
+    });
+    
+    function updateEventsCount() {
+        const table = document.querySelector('table');
+        const countSpan = document.getElementById('events-count-value');
+        const recommendedSpan = document.getElementById('recommended-count-value');
+        if (!table || !countSpan || !recommendedSpan) return;
+        let visible = 0;
+        let recommended = 0;
+        const tbody = table.tBodies[0];
+        const rows = Array.from(tbody.rows);
+        rows.forEach(row => {
+            if (row.classList.contains('event-row') && row.style.display !== 'none') {
+                visible++;
+                const recommend = row.cells[5].textContent.trim();
+                if (recommend.includes('🟩')) {
+                    recommended++;
+                }
+            }
+        });
+        countSpan.textContent = visible;
+        recommendedSpan.textContent = recommended;
+    }
 });
 </script>
 </div>
