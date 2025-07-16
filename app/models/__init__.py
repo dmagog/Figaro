@@ -8,6 +8,7 @@ from .route import Route, AvailableRoute
 from .statistics import Statistics
 from .festival_day import FestivalDay
 from .customer_route_match import CustomerRouteMatch
+from .off_program import OffProgram, EventFormat
 
 __all__ = [
     "Hall",
@@ -23,5 +24,7 @@ __all__ = [
     "AvailableRoute",
     "Statistics",
     "FestivalDay",
-    "CustomerRouteMatch"
+    "CustomerRouteMatch",
+    "OffProgram",
+    "EventFormat"
 ]

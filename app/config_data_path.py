@@ -38,6 +38,9 @@ ROUTES_PATH = 'data/RouteRange_with_GMM-.csv'
 ## Таблица переходов между залами
 HALLS_TRANSITIONS_PATH = 'data/HallsTime-good.xlsx'
 
+## Офф-программа 
+OFF_PROGRAM_PATH = 'data/OffProgram-good.xlsx'
+
 ## Матрица не совместимости концертов
 # MATRIX_UNCOMB_PATH = 'data/MatrixUncomb.xlsx'
 

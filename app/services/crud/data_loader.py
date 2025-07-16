@@ -1,6 +1,6 @@
 # data_loader.py
 from sqlmodel import Session, select, delete
-from models import Hall, Concert, Artist, Author, Composition, ConcertArtistLink, ConcertCompositionLink, Purchase, AvailableRoute
+from models import Hall, Concert, Artist, Author, Composition, ConcertArtistLink, ConcertCompositionLink, Purchase, AvailableRoute, OffProgram, EventFormat
 from models.statistics import Statistics
 from datetime import datetime, timedelta, timezone
 import pandas as pd
@@ -478,7 +478,7 @@ def update_customer_route_matches(session: Session):
 
 def load_all_data(session: Session, df_halls: pd.DataFrame, df_concerts: pd.DataFrame, 
                   df_artists: pd.DataFrame, df_details: pd.DataFrame, df_ops: pd.DataFrame,
-                  disable_fk_checks: bool = True):
+                  df_off_program: pd.DataFrame = None, disable_fk_checks: bool = True):
     """
     Загружает все данные с оптимизациями для больших файлов
     
@@ -489,6 +489,7 @@ def load_all_data(session: Session, df_halls: pd.DataFrame, df_concerts: pd.Data
         df_artists: DataFrame с артистами
         df_details: DataFrame с деталями программ
         df_ops: DataFrame с покупками
+        df_off_program: DataFrame с Офф-программой (опционально)
         disable_fk_checks: Отключить проверку внешних ключей для ускорения
     """
     logger.info("Начинаем загрузку всех данных...")
@@ -500,6 +501,11 @@ def load_all_data(session: Session, df_halls: pd.DataFrame, df_concerts: pd.Data
     try:
         # Загружаем данные в правильном порядке (зависимости)
         load_halls(session, df_halls)
+        
+        # Загружаем Офф-программу после залов (если передана)
+        if df_off_program is not None:
+            load_off_program(session, df_off_program)
+        
         load_concerts(session, df_concerts)
         load_artists(session, df_artists)
         load_compositions(session, df_details)
@@ -679,3 +685,55 @@ def init_routes_count_cache(session: Session):
     except Exception as e:
         logger.error(f"Ошибка при инициализации кэша количества маршрутов: {e}")
         session.rollback()
+
+
+def load_off_program(session: Session, df_off_program: pd.DataFrame):
+    """
+    Загружает данные Офф-программы фестиваля
+    
+    Args:
+        session: Сессия базы данных
+        df_off_program: DataFrame с данными Офф-программы
+    """
+    logger.info(f"Загружаем {len(df_off_program)} мероприятий Офф-программы из Excel")
+    
+    records = []
+    for _, row in df_off_program.iterrows():
+        # Обрабатываем формат мероприятия
+        format_value = None
+        if not pd.isna(row.get("Format")):
+            format_str = str(row.get("Format")).strip()
+            try:
+                format_value = EventFormat(format_str)
+            except ValueError:
+                logger.warning(f"Неизвестный формат мероприятия: {format_str}")
+        
+        # Обрабатываем продолжительность
+        event_long = str(row.get("EventLong", "00:00:00"))
+        if not event_long or event_long == "nan":
+            event_long = "00:00:00"
+        
+        # Обрабатываем ссылку
+        link_value = None
+        if not pd.isna(row.get("link")):
+            link_value = str(row.get("link")).strip()
+            if link_value == "nan":
+                link_value = None
+        
+        records.append({
+            "event_num": int(row["EventNum"]),
+            "event_name": str(row["EventName"]),
+            "description": None if pd.isna(row.get("Description")) else str(row.get("Description")),
+            "event_date": pd.to_datetime(row["EventDate"]),
+            "event_long": event_long,
+            "hall_name": str(row["HallName"]),
+            "format": format_value,
+            "recommend": bool(row.get("Recommend", False)),
+            "link": link_value
+        })
+    
+    # Используем bulk_get_or_create для эффективной загрузки
+    bulk_get_or_create(session, OffProgram, records, ["event_num"])
+    
+    count = session.exec(select(OffProgram)).all()
+    logger.info(f"В базе теперь {len(count)} мероприятий Офф-программы")
