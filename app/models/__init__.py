@@ -1,6 +1,6 @@
 from .user import User
 from .concert import Concert
-from .hall import Hall
+from .hall import Hall, HallTransition
 from .artist import Artist, ConcertArtistLink
 from .composition import Composition, Author, ConcertCompositionLink
 from .purchase import Purchase
@@ -26,5 +26,6 @@ __all__ = [
     "FestivalDay",
     "CustomerRouteMatch",
     "OffProgram",
-    "EventFormat"
+    "EventFormat",
+    "HallTransition"
 ]

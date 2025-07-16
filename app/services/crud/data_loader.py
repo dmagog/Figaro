@@ -1,6 +1,6 @@
 # data_loader.py
 from sqlmodel import Session, select, delete
-from models import Hall, Concert, Artist, Author, Composition, ConcertArtistLink, ConcertCompositionLink, Purchase, AvailableRoute, OffProgram, EventFormat
+from models import Hall, HallTransition, Concert, Artist, Author, Composition, ConcertArtistLink, ConcertCompositionLink, Purchase, AvailableRoute, OffProgram, EventFormat
 from models.statistics import Statistics
 from datetime import datetime, timedelta, timezone
 import pandas as pd
@@ -478,7 +478,8 @@ def update_customer_route_matches(session: Session):
 
 def load_all_data(session: Session, df_halls: pd.DataFrame, df_concerts: pd.DataFrame, 
                   df_artists: pd.DataFrame, df_details: pd.DataFrame, df_ops: pd.DataFrame,
-                  df_off_program: pd.DataFrame = None, disable_fk_checks: bool = True):
+                  df_off_program: pd.DataFrame = None, df_hall_transitions: pd.DataFrame = None, 
+                  disable_fk_checks: bool = True):
     """
     Загружает все данные с оптимизациями для больших файлов
     
@@ -490,6 +491,7 @@ def load_all_data(session: Session, df_halls: pd.DataFrame, df_concerts: pd.Data
         df_details: DataFrame с деталями программ
         df_ops: DataFrame с покупками
         df_off_program: DataFrame с Офф-программой (опционально)
+        df_hall_transitions: DataFrame с матрицей переходов между залами (опционально)
         disable_fk_checks: Отключить проверку внешних ключей для ускорения
     """
     logger.info("Начинаем загрузку всех данных...")
@@ -501,6 +503,10 @@ def load_all_data(session: Session, df_halls: pd.DataFrame, df_concerts: pd.Data
     try:
         # Загружаем данные в правильном порядке (зависимости)
         load_halls(session, df_halls)
+        
+        # Загружаем данные о переходах между залами после залов (если переданы)
+        if df_hall_transitions is not None:
+            load_hall_transitions(session, df_hall_transitions)
         
         # Загружаем Офф-программу после залов (если передана)
         if df_off_program is not None:
@@ -737,3 +743,75 @@ def load_off_program(session: Session, df_off_program: pd.DataFrame):
     
     count = session.exec(select(OffProgram)).all()
     logger.info(f"В базе теперь {len(count)} мероприятий Офф-программы")
+
+
+def load_hall_transitions(session: Session, df_transitions: pd.DataFrame):
+    """
+    Загружает данные о времени переходов между залами
+    
+    Args:
+        session: Сессия базы данных
+        df_transitions: DataFrame с матрицей переходов между залами
+    """
+    logger.info(f"Загружаем данные о переходах между залами из матрицы {df_transitions.shape}")
+    
+    # Получаем все залы в память для быстрого доступа
+    halls = {hall.name: hall for hall in session.exec(select(Hall)).all()}
+    
+    # Очищаем существующие данные о переходах
+    session.exec(delete(HallTransition))
+    session.commit()
+    
+    records = []
+    transition_count = 0
+    
+    # Обрабатываем матрицу переходов
+    for _, row in df_transitions.iterrows():
+        from_hall_name = row.iloc[0]  # Первая колонка содержит название зала отправления
+        
+        # Проверяем, что зал отправления существует
+        from_hall = halls.get(from_hall_name)
+        if not from_hall:
+            logger.warning(f"Зал отправления '{from_hall_name}' не найден в базе данных")
+            continue
+        
+        # Обрабатываем каждую колонку (кроме первой, которая содержит названия залов)
+        for col_name, transition_time in row.iloc[1:].items():
+            # Пропускаем пустые значения и NaN
+            if pd.isna(transition_time) or transition_time == '':
+                continue
+            
+            # Проверяем, что зал назначения существует
+            to_hall = halls.get(col_name)
+            if not to_hall:
+                logger.warning(f"Зал назначения '{col_name}' не найден в базе данных")
+                continue
+            
+            # Пропускаем переход к самому себе (диагональ матрицы)
+            if from_hall.id == to_hall.id:
+                continue
+            
+            # Преобразуем время перехода в целое число
+            try:
+                transition_time_int = int(transition_time)
+            except (ValueError, TypeError):
+                logger.warning(f"Некорректное значение времени перехода: {transition_time} для {from_hall_name} -> {col_name}")
+                continue
+            
+            records.append({
+                "from_hall_id": from_hall.id,
+                "to_hall_id": to_hall.id,
+                "transition_time": transition_time_int
+            })
+            transition_count += 1
+    
+    # Массовое создание записей
+    if records:
+        session.add_all([HallTransition(**record) for record in records])
+        session.commit()
+    
+    logger.info(f"Загружено {transition_count} записей о переходах между залами")
+    
+    # Проверяем результат
+    total_transitions = session.exec(select(HallTransition)).all()
+    logger.info(f"В базе теперь {len(total_transitions)} записей о переходах между залами")

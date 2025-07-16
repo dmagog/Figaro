@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel, Session, create_engine 
 from contextlib import contextmanager
 from .config import get_settings
-from config_data_path import HALLS_LIST_PATH, CONCERTS_PATH, ARTISTS_PATH, PROGRAMM_PATH, TRANSACTIONS_PATH, ROUTES_PATH, OFF_PROGRAM_PATH
+from config_data_path import HALLS_LIST_PATH, CONCERTS_PATH, ARTISTS_PATH, PROGRAMM_PATH, TRANSACTIONS_PATH, ROUTES_PATH, OFF_PROGRAM_PATH, HALLS_TRANSITIONS_PATH
 import pandas as pd
 
 from services.crud import data_loader, user, festival, route_service
@@ -37,6 +37,14 @@ def init_db(demostart = None):
                     print(f"⚠️ Ошибка загрузки Офф-программы: {e}")
                     off_program_df = None
                 
+                # Загружаем данные о переходах между залами
+                try:
+                    hall_transitions_df = pd.read_excel(HALLS_TRANSITIONS_PATH)
+                    print(f"  - Переходы между залами: матрица {hall_transitions_df.shape}")
+                except Exception as e:
+                    print(f"⚠️ Ошибка загрузки переходов между залами: {e}")
+                    hall_transitions_df = None
+                
                 print(f"Загружено файлов:")
                 print(f"  - Залы: {len(halls_df)} записей")
                 print(f"  - Концерты: {len(concerts_df)} записей")
@@ -53,6 +61,7 @@ def init_db(demostart = None):
                     df_details=compositions_df,
                     df_ops=purchases_df,
                     df_off_program=off_program_df,
+                    df_hall_transitions=hall_transitions_df,
                     disable_fk_checks=True  # Ускоряем загрузку
                 )
 
