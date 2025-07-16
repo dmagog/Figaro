@@ -153,6 +153,67 @@
             min-height: 28px;
             line-height: 1.1;
         }
+        
+        /* Стили для статусов маршрутов */
+        .route-match-exact {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 500;
+            display: inline-block;
+        }
+        
+        .route-match-partial {
+            background: #fff3e0;
+            color: #f57c00;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 500;
+            display: inline-block;
+        }
+        
+        .route-match-none {
+            background: #ffebee;
+            color: #c62828;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 500;
+            display: inline-block;
+        }
+        
+        /* Стили для кликабельных маршрутов */
+        .clickable-route {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .clickable-route:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
+        .route-number {
+            font-weight: 700;
+            text-decoration: underline;
+            color: inherit;
+        }
+        
+        .clickable-route:hover .route-number {
+            color: #1a237e;
+        }
+        
+        .route-match-exact.clickable-route:hover {
+            background: #c8e6c9;
+        }
+        
+        .route-match-partial.clickable-route:hover {
+            background: #ffe0b2;
+        }
     </style>
 </head>
 <body>
@@ -207,10 +268,10 @@
                 </button>
             </div>
         </div>
-        <table id="users-table">
         <div style="margin: 8px 0 0 0; color: #aaa; font-size: 0.98em; text-align: right;">
             Всего пользователей: {{ users|length }}, с покупками: {{ users_with_purchases_count }}
         </div>
+        <table id="users-table">
             <thead>
                 <tr>
                     <th class="sortable">ID</th>
@@ -221,6 +282,7 @@
                     <th class="sortable">Уникальных концертов</th>
                     <th class="sortable">Покупок</th>
                     <th class="sortable">Потрачено</th>
+                    <th class="sortable">Маршрут</th>
                 </tr>
             </thead>
             <tbody>
@@ -252,11 +314,50 @@
                     {% else %}
                         <td colspan="3">—</td>
                     {% endif %}
+                    <td>
+                        {% set ext_id = u.external_id or '' %}
+                        {% if ext_id and ext_id in route_matches %}
+                            {% set route_match = route_matches[ext_id] %}
+                            {% if route_match.found %}
+                                {% if route_match.match_type == 'exact' %}
+                                    <span class="route-match-exact clickable-route" title="Точное совпадение. Нажмите для подробной информации о маршруте #{{ route_match.best_match.route_id }}">
+                                        ✅ <span class="route-number">#{{ route_match.best_match.route_id }}</span>
+                                    </span>
+                                {% else %}
+                                    <span class="route-match-partial clickable-route" title="Частичное совпадение ({{ "%.1f"|format(route_match.best_match.match_percentage) }}%). Нажмите для подробной информации о маршруте #{{ route_match.best_match.route_id }}">
+                                        ⚠️ <span class="route-number">#{{ route_match.best_match.route_id }}</span>
+                                    </span>
+                                {% endif %}
+                            {% else %}
+                                <span class="route-match-none" title="{{ route_match.reason }}">
+                                    ❌
+                                </span>
+                            {% endif %}
+                        {% else %}
+                            <span class="route-match-none" title="Нет данных о покупках">
+                                —
+                            </span>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+    
+    <!-- Модальное окно для детальной информации о маршруте -->
+    <div id="route-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center;">
+        <div style="background:white; border-radius:12px; padding:30px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="margin:0; color:#333; font-size:1.4em;">Информация о маршруте</h3>
+                <button id="close-route-modal" style="background:none; border:none; font-size:1.5em; cursor:pointer; color:#666;">&times;</button>
+            </div>
+            <div id="route-modal-content">
+                <!-- Содержимое будет заполнено JavaScript -->
+            </div>
+        </div>
+    </div>
+    
     <script>
     // JS-сортировка и фильтрация таблицы
     document.addEventListener('DOMContentLoaded', function() {
@@ -484,6 +585,135 @@
         document.body.addEventListener('click', function() {
             dropdown.classList.remove('open');
         });
+    });
+    
+    // --- Модальное окно для маршрутов ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const routeModal = document.getElementById('route-modal');
+        const closeRouteModal = document.getElementById('close-route-modal');
+        const routeModalContent = document.getElementById('route-modal-content');
+        
+        // Закрытие модального окна
+        function closeModal() {
+            routeModal.style.display = 'none';
+        }
+        
+        // Открытие модального окна
+        function openModal() {
+            routeModal.style.display = 'flex';
+        }
+        
+        closeRouteModal.addEventListener('click', closeModal);
+        routeModal.addEventListener('click', function(e) {
+            if (e.target === routeModal) {
+                closeModal();
+            }
+        });
+        
+        // Обработка клика по статусу маршрута
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.clickable-route')) {
+                e.preventDefault();
+                console.log('Клик по маршруту обнаружен');
+                
+                const span = e.target.closest('.clickable-route');
+                const row = span.closest('tr');
+                const externalId = row.querySelector('.external-id-value').textContent.trim();
+                
+                console.log('External ID:', externalId);
+                console.log('Отправляем запрос к API...');
+                
+                // Получаем данные о маршруте через API
+                fetch(`/api/customers/${externalId}/route-details`)
+                    .then(response => {
+                        console.log('Ответ получен:', response.status);
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Данные получены:', data);
+                        if (data.success) {
+                            showRouteDetails(data.route_match, externalId);
+                        } else {
+                            console.error('Ошибка в данных:', data);
+                            alert('Ошибка при получении данных о маршруте');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Ошибка при запросе:', error);
+                        alert('Ошибка при получении данных о маршруте');
+                    });
+            }
+        });
+        
+        function showRouteDetails(routeMatch, externalId) {
+            console.log('showRouteDetails вызвана с:', { routeMatch, externalId });
+            let content = '';
+            
+            if (routeMatch.found) {
+                const bestMatch = routeMatch.best_match;
+                content = `
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="color: #4f5bd5; margin-bottom: 10px;">Пользователь: ${externalId}</h4>
+                        <p><strong>Концерты пользователя:</strong> ${routeMatch.customer_concerts_str}</p>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="color: #2e7d32; margin-bottom: 10px;">
+                            ${routeMatch.match_type === 'exact' ? '✅ Точное совпадение' : '⚠️ Частичное совпадение'}
+                        </h4>
+                        <p><strong>Маршрут #${bestMatch.route_id}</strong></p>
+                        <p><strong>Состав маршрута:</strong> ${bestMatch.route_composition || '—'}</p>
+                        ${routeMatch.match_type === 'partial' ? `<p><strong>Совпадение:</strong> ${bestMatch.match_percentage.toFixed(1)}%</p>` : ''}
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                        <div>
+                            <h5 style="color: #667eea; margin-bottom: 8px;">Основные характеристики</h5>
+                            <p><strong>Дней:</strong> ${bestMatch.route_days || '—'}</p>
+                            <p><strong>Концертов:</strong> ${bestMatch.route_concerts || '—'}</p>
+                            <p><strong>Залов:</strong> ${bestMatch.route_halls || '—'}</p>
+                            <p><strong>Жанр:</strong> ${bestMatch.route_genre || '—'}</p>
+                        </div>
+                        <div>
+                            <h5 style="color: #667eea; margin-bottom: 8px;">Время и стоимость</h5>
+                            <p><strong>Время концертов:</strong> ${bestMatch.route_show_time ? bestMatch.route_show_time + 'ч' : '—'}</p>
+                            <p><strong>Время переходов:</strong> ${bestMatch.route_trans_time ? bestMatch.route_trans_time + 'ч' : '—'}</p>
+                            <p><strong>Время ожидания:</strong> ${bestMatch.route_wait_time ? bestMatch.route_wait_time + 'ч' : '—'}</p>
+                            <p><strong>Стоимость:</strong> ${bestMatch.route_costs ? bestMatch.route_costs + ' ₽' : '—'}</p>
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <h5 style="color: #667eea; margin-bottom: 8px;">Оценки комфорта</h5>
+                            <p><strong>Уровень комфорта:</strong> ${bestMatch.route_comfort_level || '—'}</p>
+                            <p><strong>Оценка комфорта:</strong> ${bestMatch.route_comfort_score || '—'}</p>
+                        </div>
+                        <div>
+                            <h5 style="color: #667eea; margin-bottom: 8px;">Интеллектуальная оценка</h5>
+                            <p><strong>Категория:</strong> ${bestMatch.route_intellect_category || '—'}</p>
+                            <p><strong>Оценка:</strong> ${bestMatch.route_intellect_score || '—'}</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                content = `
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="color: #4f5bd5; margin-bottom: 10px;">Пользователь: ${externalId}</h4>
+                        <p><strong>Концерты пользователя:</strong> ${routeMatch.customer_concerts_str}</p>
+                    </div>
+                    
+                    <div style="background: #ffebee; padding: 15px; border-radius: 8px;">
+                        <h4 style="color: #c62828; margin-bottom: 10px;">❌ Совпадений не найдено</h4>
+                        <p><strong>Причина:</strong> ${routeMatch.reason}</p>
+                        <p><strong>Проверено маршрутов:</strong> ${routeMatch.total_routes_checked}</p>
+                    </div>
+                `;
+            }
+            
+            routeModalContent.innerHTML = content;
+            openModal();
+        }
     });
     </script>
 </body>

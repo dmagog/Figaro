@@ -232,11 +232,78 @@ async def admin_users(request: Request, session=Depends(get_session)):
 
     users_with_purchases_count = sum(1 for u in users if get_user_field(u, 'id') and user_stats.get(get_user_field(u, 'id'), {}).get('count', 0) > 0)
 
+    # Загружаем информацию о маршрутах пользователей
+    route_matches = {}
+    try:
+        from models import CustomerRouteMatch, Route
+        # Получаем все маршруты для быстрого доступа
+        routes = session.exec(select(Route)).all()
+        routes_by_id = {}
+        for route in routes:
+            if hasattr(route, 'id') and route.id is not None:
+                routes_by_id[route.id] = route
+        
+        matches = session.exec(select(CustomerRouteMatch)).all()
+        logging.info(f"Найдено {len(matches)} записей в CustomerRouteMatch")
+        
+        found_matches = 0
+        for match in matches:
+            # Получаем данные из Row объекта
+            match_obj = match._mapping['CustomerRouteMatch']
+            
+            best_route = None
+            if match_obj.found and match_obj.best_route_id:
+                try:
+                    best_route = routes_by_id.get(match_obj.best_route_id)
+                    if best_route:
+                        found_matches += 1
+                except Exception as e:
+                    logging.warning(f"Ошибка при получении маршрута {match_obj.best_route_id}: {e}")
+                    best_route = None
+            
+            # Используем user_external_id как ключ для поиска
+            route_matches[str(match_obj.user_external_id)] = {
+                "found": match_obj.found,
+                "match_type": match_obj.match_type,
+                "reason": match_obj.reason,
+                "customer_concerts": match_obj.customer_concerts.split(',') if match_obj.customer_concerts else [],
+                "customer_concerts_str": match_obj.customer_concerts,
+                "matched_routes": [],
+                "best_match": {
+                    "route_id": match_obj.best_route_id,
+                    "route_composition": best_route.Sostav if best_route else None,
+                    "route_days": best_route.Days if best_route else None,
+                    "route_concerts": best_route.Concerts if best_route else None,
+                    "route_halls": best_route.Halls if best_route else None,
+                    "route_genre": best_route.Genre if best_route else None,
+                    "route_show_time": best_route.ShowTime if best_route else None,
+                    "route_trans_time": best_route.TransTime if best_route else None,
+                    "route_wait_time": best_route.WaitTime if best_route else None,
+                    "route_costs": best_route.Costs if best_route else None,
+                    "route_comfort_score": best_route.ComfortScore if best_route else None,
+                    "route_comfort_level": best_route.ComfortLevel if best_route else None,
+                    "route_intellect_score": best_route.IntellectScore if best_route else None,
+                    "route_intellect_category": best_route.IntellectCategory if best_route else None,
+                    "match_type": match_obj.match_type,
+                    "match_percentage": match_obj.match_percentage
+                } if match_obj.found else None,
+                "total_routes_checked": match_obj.total_routes_checked
+            }
+        
+        logging.info(f"Из них найдено совпадений: {found_matches}")
+        
+    except Exception as e:
+        logging.warning(f"Ошибка при получении маршрутов из базы: {e}")
+        import traceback
+        logging.warning(f"Полный traceback: {traceback.format_exc()}")
+        route_matches = {}
+
     context = {
         "user": user_obj,
         "users": users,
         "user_stats": user_stats,
         "users_with_purchases_count": users_with_purchases_count,
+        "route_matches": route_matches,
         "request": request
     }
     return templates.TemplateResponse("admin_users.html", context)
