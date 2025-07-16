@@ -256,7 +256,7 @@
 
 <div class="admin-container">
     <div class="admin-header">
-        <h1>Офф-программа фестиваля</h1>
+        <h1>Офф-программа</h1>
                     <nav class="admin-nav-flex" id="adminNav">
                 <a href="/admin" class="admin-menu-btn">Главная</a>
                 <a href="/admin/users" class="admin-menu-btn">Пользователи</a>
@@ -409,9 +409,9 @@
                                         </td>
                                         <td class="text-center">
                                             {% if event.recommend %}
-                                            <span class="text-warning" title="Рекомендуется">🟩</span>
+                                            <span class="recommend-toggle text-warning" data-event-id="{{ event.id }}" data-current-state="true" title="Рекомендуется (кликните для изменения)" style="cursor: pointer;">🟩</span>
                                             {% else %}
-                                            <span class="text-muted">⬜️</span>
+                                            <span class="recommend-toggle text-muted" data-event-id="{{ event.id }}" data-current-state="false" title="Не рекомендуется (кликните для изменения)" style="cursor: pointer;">⬜️</span>
                                             {% endif %}
                                         </td>
                                     </tr>
@@ -816,7 +816,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Обновляем счетчики
         eventsCount.textContent = visibleCount;
-        document.getElementById('recommended-count-value').textContent = recommendedCount;
+        document.getElementById('filter-recommended').querySelector('span').textContent = recommendedCount;
     }
     
     // Обработчики событий для фильтров
@@ -858,8 +858,9 @@ document.addEventListener('DOMContentLoaded', function() {
             row.style.display = '';
             if (row.classList.contains('event-row')) {
                 visibleCount++;
-                const recommend = row.cells[5].textContent.trim();
-                if (recommend.includes('🟩')) {
+                const recommendCell = row.cells[5];
+                const recommendToggle = recommendCell.querySelector('.recommend-toggle');
+                if (recommendToggle && recommendToggle.getAttribute('data-current-state') === 'true') {
                     recommendedCount++;
                 }
             }
@@ -867,7 +868,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Обновляем счетчики
         eventsCount.textContent = visibleCount;
-        document.getElementById('recommended-count-value').textContent = recommendedCount;
+        document.getElementById('filter-recommended').querySelector('span').textContent = recommendedCount;
         
         // Сбрасываем сортировку
         const headers = table.querySelectorAll('th.sortable');
@@ -878,6 +879,161 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Применяем фильтры при загрузке страницы
     applyFilters();
+    
+    // Обработчик клика для изменения состояния рекомендации
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('recommend-toggle')) {
+            const eventId = e.target.getAttribute('data-event-id');
+            const currentState = e.target.getAttribute('data-current-state') === 'true';
+            const newState = !currentState;
+            
+            // Показываем индикатор загрузки
+            e.target.style.opacity = '0.5';
+            e.target.style.pointerEvents = 'none';
+            
+            // Отправляем запрос на сервер
+            fetch('/api/offprogram/toggle-recommend', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    event_id: eventId,
+                    recommend: newState
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Обновляем отображение
+                    e.target.setAttribute('data-current-state', newState.toString());
+                    if (newState) {
+                        e.target.textContent = '🟩';
+                        e.target.className = 'recommend-toggle text-warning';
+                        e.target.title = 'Рекомендуется (кликните для изменения)';
+                    } else {
+                        e.target.textContent = '⬜️';
+                        e.target.className = 'recommend-toggle text-muted';
+                        e.target.title = 'Не рекомендуется (кликните для изменения)';
+                    }
+                    
+                    // Обновляем счетчики
+                    updateRecommendationCounters();
+                    
+                    // Показываем уведомление об успехе
+                    showNotification('Состояние рекомендации обновлено', 'success');
+                } else {
+                    // Возвращаем исходное состояние при ошибке
+                    e.target.setAttribute('data-current-state', currentState.toString());
+                    if (currentState) {
+                        e.target.textContent = '🟩';
+                        e.target.className = 'recommend-toggle text-warning';
+                        e.target.title = 'Рекомендуется (кликните для изменения)';
+                    } else {
+                        e.target.textContent = '⬜️';
+                        e.target.className = 'recommend-toggle text-muted';
+                        e.target.title = 'Не рекомендуется (кликните для изменения)';
+                    }
+                    
+                    showNotification('Ошибка при обновлении: ' + (data.error || 'Неизвестная ошибка'), 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при обновлении рекомендации:', error);
+                
+                // Возвращаем исходное состояние при ошибке
+                e.target.setAttribute('data-current-state', currentState.toString());
+                if (currentState) {
+                    e.target.textContent = '🟩';
+                    e.target.className = 'recommend-toggle text-warning';
+                    e.target.title = 'Рекомендуется (кликните для изменения)';
+                } else {
+                    e.target.textContent = '⬜️';
+                    e.target.className = 'recommend-toggle text-muted';
+                    e.target.title = 'Не рекомендуется (кликните для изменения)';
+                }
+                
+                showNotification('Ошибка сети при обновлении', 'error');
+            })
+            .finally(() => {
+                // Восстанавливаем отображение
+                e.target.style.opacity = '1';
+                e.target.style.pointerEvents = 'auto';
+            });
+        }
+    });
+    
+    // Функция для обновления счетчиков рекомендаций
+    function updateRecommendationCounters() {
+        const table = document.querySelector('table');
+        const rows = Array.from(table.tBodies[0].rows);
+        let totalCount = 0;
+        let recommendedCount = 0;
+        
+        rows.forEach(row => {
+            if (row.classList.contains('event-row') && row.style.display !== 'none') {
+                totalCount++;
+                const recommendCell = row.cells[5];
+                const recommendToggle = recommendCell.querySelector('.recommend-toggle');
+                if (recommendToggle && recommendToggle.getAttribute('data-current-state') === 'true') {
+                    recommendedCount++;
+                }
+            }
+        });
+        
+        // Обновляем счетчики
+        const eventsCount = document.getElementById('events-count-value');
+        const recommendedSpan = document.getElementById('filter-recommended').querySelector('span');
+        
+        if (eventsCount) {
+            eventsCount.textContent = totalCount;
+        }
+        if (recommendedSpan) {
+            recommendedSpan.textContent = recommendedCount;
+        }
+    }
+    
+    // Функция для показа уведомлений
+    function showNotification(message, type = 'info') {
+        // Создаем элемент уведомления
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 10000;
+            max-width: 300px;
+            word-wrap: break-word;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: opacity 0.3s, transform 0.3s;
+        `;
+        
+        if (type === 'success') {
+            notification.style.background = '#4caf50';
+        } else if (type === 'error') {
+            notification.style.background = '#f44336';
+        } else {
+            notification.style.background = '#2196f3';
+        }
+        
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        // Удаляем уведомление через 3 секунды
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
+    }
 });
 
 // Фильтр по дням мероприятий
@@ -924,8 +1080,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     visibleCount++;
                     
                     // Считаем рекомендуемые мероприятия
-                    const recommend = row.cells[5].textContent.trim();
-                    if (recommend.includes('🟩')) {
+                    const recommendCell = row.cells[5];
+                    const recommendToggle = recommendCell.querySelector('.recommend-toggle');
+                    if (recommendToggle && recommendToggle.getAttribute('data-current-state') === 'true') {
                         recommendedCount++;
                     }
                 }
@@ -934,7 +1091,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Обновляем счетчики
         const countSpan = document.getElementById('events-count-value');
-        const recommendedSpan = document.getElementById('recommended-count-value');
+        const recommendedSpan = document.getElementById('filter-recommended').querySelector('span');
         if (countSpan) {
             countSpan.textContent = visibleCount;
         }
@@ -979,8 +1136,9 @@ document.addEventListener('DOMContentLoaded', function() {
             row.style.display = '';
             if (row.classList.contains('event-row')) {
                 visibleCount++;
-                const recommend = row.cells[5].textContent.trim();
-                if (recommend.includes('🟩')) {
+                const recommendCell = row.cells[5];
+                const recommendToggle = recommendCell.querySelector('.recommend-toggle');
+                if (recommendToggle && recommendToggle.getAttribute('data-current-state') === 'true') {
                     recommendedCount++;
                 }
             }
@@ -988,7 +1146,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Обновляем счетчики
         const countSpan = document.getElementById('events-count-value');
-        const recommendedSpan = document.getElementById('recommended-count-value');
+        const recommendedSpan = document.getElementById('filter-recommended').querySelector('span');
         if (countSpan) {
             countSpan.textContent = visibleCount;
         }
@@ -1000,7 +1158,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateEventsCount() {
         const table = document.querySelector('table');
         const countSpan = document.getElementById('events-count-value');
-        const recommendedSpan = document.getElementById('recommended-count-value');
+        const recommendedSpan = document.getElementById('filter-recommended').querySelector('span');
         if (!table || !countSpan || !recommendedSpan) return;
         let visible = 0;
         let recommended = 0;
