@@ -122,34 +122,119 @@
             font-size: 1.1em !important;
         }
         
-        /* Цветовая схема для заголовков дней (как на странице концертов) */
-        .day-header-day1 td {
+        /* Hover эффект для заголовков дней */
+        .day-header:hover td {
+            background: #e3eafe !important;
+        }
+        
+        /* Отступ перед заголовком нового дня */
+        .day-header {
+            margin-top: 16px !important;
+        }
+        
+        /* Отступ для первого заголовка дня */
+        .day-header:first-of-type {
+            margin-top: 24px !important;
+        }
+        
+        /* Компактные заголовки дней с цветовой схемой (стиль как у номеров концертов) */
+        .day-header-day1 td:first-child {
             background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%) !important;
             color: white !important;
+            border-radius: 0 12px 12px 0 !important;
+            padding: 8px 16px !important;
+            font-weight: bold !important;
+            font-size: 1.08em !important;
+            display: inline-block !important;
+            width: auto !important;
+            min-width: 120px !important;
+            text-align: left !important;
+            line-height: 28px !important;
+            vertical-align: middle !important;
         }
-        .day-header-day2 td {
+        .day-header-day2 td:first-child {
             background: linear-gradient(90deg, #6366f1 0%, #818cf8 100%) !important;
             color: white !important;
+            border-radius: 0 12px 12px 0 !important;
+            padding: 8px 16px !important;
+            font-weight: bold !important;
+            font-size: 1.08em !important;
+            display: inline-block !important;
+            width: auto !important;
+            min-width: 120px !important;
+            text-align: left !important;
+            line-height: 28px !important;
+            vertical-align: middle !important;
         }
-        .day-header-day3 td {
+        .day-header-day3 td:first-child {
             background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%) !important;
             color: white !important;
+            border-radius: 0 12px 12px 0 !important;
+            padding: 8px 16px !important;
+            font-weight: bold !important;
+            font-size: 1.08em !important;
+            display: inline-block !important;
+            width: auto !important;
+            min-width: 120px !important;
+            text-align: left !important;
+            line-height: 28px !important;
+            vertical-align: middle !important;
         }
-        .day-header-day4 td {
+        .day-header-day4 td:first-child {
             background: linear-gradient(90deg, #06b6d4 0%, #0ea5e9 100%) !important;
             color: white !important;
+            border-radius: 0 12px 12px 0 !important;
+            padding: 8px 16px !important;
+            font-weight: bold !important;
+            font-size: 1.08em !important;
+            display: inline-block !important;
+            width: auto !important;
+            min-width: 120px !important;
+            text-align: left !important;
+            line-height: 28px !important;
+            vertical-align: middle !important;
         }
-        .day-header-day5 td {
+        .day-header-day5 td:first-child {
             background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%) !important;
             color: white !important;
+            border-radius: 0 12px 12px 0 !important;
+            padding: 8px 16px !important;
+            font-weight: bold !important;
+            font-size: 1.08em !important;
+            display: inline-block !important;
+            width: auto !important;
+            min-width: 120px !important;
+            text-align: left !important;
+            line-height: 28px !important;
+            vertical-align: middle !important;
         }
-        .day-header-day6 td {
+        .day-header-day6 td:first-child {
             background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%) !important;
             color: white !important;
+            border-radius: 0 12px 12px 0 !important;
+            padding: 8px 16px !important;
+            font-weight: bold !important;
+            font-size: 1.08em !important;
+            display: inline-block !important;
+            width: auto !important;
+            min-width: 120px !important;
+            text-align: left !important;
+            line-height: 28px !important;
+            vertical-align: middle !important;
         }
-        .day-header-day7 td {
+        .day-header-day7 td:first-child {
             background: linear-gradient(90deg, #818cf8 0%, #3b82f6 100%) !important;
             color: white !important;
+            border-radius: 0 12px 12px 0 !important;
+            padding: 8px 16px !important;
+            font-weight: bold !important;
+            font-size: 1.08em !important;
+            display: inline-block !important;
+            width: auto !important;
+            min-width: 120px !important;
+            text-align: left !important;
+            line-height: 28px !important;
+            vertical-align: middle !important;
         }
         
         .day-group {
@@ -256,7 +341,9 @@
     <!-- Счетчик результатов -->
     <div style="margin: 8px 0 0 0; color: #aaa; font-size: 0.98em; text-align: right;">
         Показано мероприятий: <span id="events-count-value">{{ events|length }}</span>, 
-        рекомендовано: <span id="recommended-count-value">{{ recommended_events }}</span>
+        <span id="filter-recommended" style="margin-left: 18px; color: #aaa; font-weight: 500; cursor:pointer; user-select:none;">
+            рекомендовано: <span style="color:#388e3c; font-weight: 600;">{{ recommended_events }}</span>
+        </span>
     </div>
 
 <div class="container-fluid">
@@ -289,9 +376,10 @@
                                     {% if day_index > 7 %}{% set day_index = 7 %}{% endif %}
                                     {% if day_index < 1 %}{% set day_index = 1 %}{% endif %}
                                     <tr class="day-header day-header-day{{ day_index }}" data-day="{{ day.isoformat() }}">
-                                        <td colspan="6" style="border-bottom: 2px solid #dee2e6; padding: 12px 10px; font-weight: 600; font-size: 1.1em;">
-                                            {{ day.day }} {{ month_names[day.month-1] }} {{ day.year }}
+                                        <td style="border-bottom: 2px solid #dee2e6; padding: 12px 10px; font-weight: 600; font-size: 1.1em; background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, rgba(102,126,234,0.05) 50%, transparent 100%);">
+                                            {{ day.day }} {{ month_names[day.month-1] }}
                                         </td>
+                                        <td colspan="5" style="border-bottom: 2px solid #dee2e6; padding: 12px 10px; background: linear-gradient(90deg, rgba(102,126,234,0.05) 0%, rgba(102,126,234,0.02) 50%, transparent 100%);"></td>
                                     </tr>
                                     {% for event in events_by_day[day] %}
                                     <tr class="event-row" data-day="{{ day.isoformat() }}">
@@ -543,7 +631,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (dayIndex > 7) dayIndex = 7;
                 if (dayIndex < 1) dayIndex = 1;
                 dayHeader.className = `day-header day-header-day${dayIndex}`;
-                dayHeader.innerHTML = `<td colspan="6" style="border-bottom: 2px solid #dee2e6; padding: 12px 10px; font-weight: 600; font-size: 1.1em;">${dayObj.day} ${month_names[dayObj.month-1]} ${dayObj.year}</td>`;
+                dayHeader.innerHTML = `<td style="border-bottom: 2px solid #dee2e6; padding: 12px 10px; font-weight: 600; font-size: 1.1em; background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, rgba(102,126,234,0.05) 50%, transparent 100%);">${dayObj.day} ${month_names[dayObj.month-1]}</td><td colspan="5" style="border-bottom: 2px solid #dee2e6; padding: 12px 10px; background: linear-gradient(90deg, rgba(102,126,234,0.05) 0%, rgba(102,126,234,0.02) 50%, transparent 100%);"></td>`;
                 
                 tbody.appendChild(dayHeader);
                 
@@ -611,7 +699,7 @@ function restoreOriginalTableStructure() {
             if (dayIndex > 7) dayIndex = 7;
             if (dayIndex < 1) dayIndex = 1;
             dayHeader.className = `day-header day-header-day${dayIndex}`;
-            dayHeader.innerHTML = `<td colspan="6" style="border-bottom: 2px solid #dee2e6; padding: 12px 10px; font-weight: 600; font-size: 1.1em;">${dayObj.day} ${month_names[dayObj.month-1]} ${dayObj.year}</td>`;
+            dayHeader.innerHTML = `<td style="border-bottom: 2px solid #dee2e6; padding: 12px 10px; font-weight: 600; font-size: 1.1em; background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, rgba(102,126,234,0.05) 50%, transparent 100%);">${dayObj.day} ${month_names[dayObj.month-1]}</td><td colspan="5" style="border-bottom: 2px solid #dee2e6; padding: 12px 10px; background: linear-gradient(90deg, rgba(102,126,234,0.05) 0%, rgba(102,126,234,0.02) 50%, transparent 100%);"></td>`;
             
             tbody.appendChild(dayHeader);
             
@@ -633,6 +721,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const recommendFilter = document.getElementById('recommend-filter');
     const resetFilters = document.getElementById('reset-filters');
     const eventsCount = document.getElementById('events-count-value');
+    const filterRecommended = document.getElementById('filter-recommended');
+    window.recommendedFilter = null; // null, 'recommended', 'not-recommended'
     
     function applyFilters() {
         const tbody = table.tBodies[0];
@@ -688,11 +778,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
                 
-                // Фильтр по рекомендуемости
+                // Фильтр по рекомендуемости (из выпадающего списка)
                 let recommendMatch = true;
                 if (recommendFilter.value === 'recommended') {
                     recommendMatch = recommend.includes('🟩');
                 } else if (recommendFilter.value === 'not-recommended') {
+                    recommendMatch = recommend.includes('⬜️');
+                }
+                
+                // Фильтр по рекомендуемости (клик по счетчику)
+                if (window.recommendedFilter === 'recommended') {
+                    recommendMatch = recommend.includes('🟩');
+                } else if (window.recommendedFilter === 'not-recommended') {
                     recommendMatch = recommend.includes('⬜️');
                 }
                 
@@ -726,12 +823,28 @@ document.addEventListener('DOMContentLoaded', function() {
     formatFilter.addEventListener('change', applyFilters);
     recommendFilter.addEventListener('change', applyFilters);
     
+    // Фильтр по рекомендуемым мероприятиям (клик по счетчику)
+    filterRecommended.addEventListener('click', function() {
+        if (window.recommendedFilter === 'recommended') {
+            window.recommendedFilter = null;
+            filterRecommended.style.background = '';
+        } else {
+            window.recommendedFilter = 'recommended';
+            filterRecommended.style.background = '#e0e7ff';
+        }
+        applyFilters();
+    });
+    
     // Кнопка сброса фильтров
     resetFilters.addEventListener('click', function() {
         universalSearch.value = '';
         hallFilter.value = '';
         formatFilter.value = '';
         recommendFilter.value = '';
+        
+        // Сброс фильтра по рекомендуемым мероприятиям
+        window.recommendedFilter = null;
+        filterRecommended.style.background = '';
         
         // Просто показываем все строки и обновляем счетчики
         const tbody = table.tBodies[0];
@@ -844,6 +957,15 @@ document.addEventListener('DOMContentLoaded', function() {
         dayLinks.forEach(l => l.style.background = '#e0e7ff');
         dayLinks.forEach(l => l.style.color = '#4f5bd5');
         activeDay = null;
+        
+        // Сброс фильтра по рекомендуемым мероприятиям
+        if (window.recommendedFilter !== undefined) {
+            window.recommendedFilter = null;
+            const filterRecommended = document.getElementById('filter-recommended');
+            if (filterRecommended) {
+                filterRecommended.style.background = '';
+            }
+        }
         
         // Просто показываем все строки и обновляем счетчики
         const tbody = table.tBodies[0];
