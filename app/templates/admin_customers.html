@@ -405,7 +405,7 @@
     <div id="assign-toast" style="position:fixed; left:50%; top:70px; transform:translateX(-50%); background:#4f5bd5; color:#fff; padding:10px 22px; border-radius:10px; font-size:1.08em; box-shadow:0 4px 16px rgba(60,60,120,0.13); opacity:0; pointer-events:none; z-index:9999; transition:opacity 0.3s;">External ID присвоен вам</div>
     
     <!-- Модальное окно для детальной информации о маршруте -->
-    <div id="route-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; display:flex; align-items:center; justify-content:center;">
+    <div id="route-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center;">
         <div style="background:white; border-radius:12px; padding:30px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 8px 32px rgba(0,0,0,0.3);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                 <h3 style="margin:0; color:#333; font-size:1.4em;">Информация о маршруте</h3>
@@ -785,6 +785,11 @@
             routeModal.style.display = 'none';
         }
         
+        // Открытие модального окна
+        function openModal() {
+            routeModal.style.display = 'flex';
+        }
+        
         closeRouteModal.addEventListener('click', closeModal);
         routeModal.addEventListener('click', function(e) {
             if (e.target === routeModal) {
@@ -894,7 +899,7 @@
             }
             
             routeModalContent.innerHTML = content;
-            routeModal.style.display = 'flex';
+            openModal();
         }
     });
     </script>
