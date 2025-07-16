@@ -1433,6 +1433,10 @@ async def admin_offprogram(request: Request, session=Depends(get_session)):
         hall_name = event['hall_name']
         halls_stats[hall_name] = halls_stats.get(hall_name, 0) + 1
 
+    # Уникальные списки для фильтров
+    halls = sorted(list(set(event['hall_name'] for event in events_data if event['hall_name'])))
+    formats = sorted(list(set(event['format'] for event in events_data if event['format'])))
+
     context = {
         "user": user_obj,
         "request": request,
@@ -1440,6 +1444,8 @@ async def admin_offprogram(request: Request, session=Depends(get_session)):
         "total_events": total_events,
         "recommended_events": recommended_events,
         "formats_stats": formats_stats,
-        "halls_stats": halls_stats
+        "halls_stats": halls_stats,
+        "halls": halls,
+        "formats": formats
     }
     return templates.TemplateResponse("admin_offprogram.html", context)
