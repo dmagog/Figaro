@@ -10,9 +10,17 @@
         .admin-container { max-width: 1200px; margin: 40px auto; padding: 30px; background: white; border-radius: 18px; box-shadow: 0 8px 32px rgba(60,60,120,0.08); }
         .admin-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 30px; }
         .admin-header h1 { font-size: 2.2em; margin: 0; flex-shrink:0; }
-        .admin-nav-flex { display: flex; gap: 18px; flex-wrap: nowrap; align-items: center; position: relative; overflow-x: auto; padding-bottom: 4px; flex:1; }
+        .admin-nav-flex { display: flex; gap: 18px; flex-wrap: nowrap; align-items: center; position: relative; padding-bottom: 4px; flex:1; }
         .admin-menu-btn { background: #667eea; color: white; padding: 10px 28px; border-radius: 10px; text-decoration: none; font-weight: 500; font-size: 1.08em; border: none; transition: background 0.18s, color 0.18s; display: inline-block; text-align: center; cursor: pointer; white-space: nowrap; }
         .admin-menu-btn:hover, .admin-menu-btn.active { background: #4f5bd5; color: #fff; }
+        .admin-menu-dropdown { position: relative; display: none; }
+        .admin-menu-dropdown-btn { background: #667eea; color: white; padding: 10px 28px; border-radius: 10px; text-decoration: none; font-weight: 500; font-size: 1.08em; border: none; transition: background 0.18s, color 0.18s; display: inline-block; text-align: center; cursor: pointer; white-space: nowrap; }
+        .admin-menu-dropdown-btn:hover { background: #4f5bd5; color: #fff; }
+        .admin-menu-dropdown-content { position: fixed; background: #f0f4ff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 8px 0; min-width: 150px; z-index: 1000; display: none; }
+        .admin-menu-dropdown-content.open { display: block; }
+        .admin-menu-dropdown-links { display: flex; flex-direction: column; }
+        .admin-menu-dropdown-links a { padding: 8px 16px; color: #333; text-decoration: none; transition: background 0.2s; }
+        .admin-menu-dropdown-links a:hover { background: #e0e7ff; }
         .admin-menu-dropdown-arrow { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); width: 24px; height: 12px; pointer-events: none; z-index: 1003; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: translateY(0);} }
         table { width: 100%; border-collapse: collapse; margin-top: 30px; background: #f8f9fa; border-radius: 12px; overflow: hidden; }
@@ -71,8 +79,10 @@
         .row { display: flex; flex-wrap: wrap; margin: 0 -0.75rem; }
         .col-12 { flex: 0 0 100%; max-width: 100%; padding: 0 0.75rem; }
         .col-md-6 { flex: 0 0 50%; max-width: 50%; padding: 0 0.75rem; }
-        @media (max-width: 768px) {
-            .col-md-6 { flex: 0 0 100%; max-width: 100%; }
+        @media (max-width: 900px) {
+            .admin-nav-flex { gap: 8px; }
+            .admin-menu-btn, .admin-menu-dropdown-btn { padding: 10px 12px; font-size: 1em; }
+            .admin-menu-dropdown-content { min-width: 120px; }
         }
     </style>
 </head>
@@ -81,17 +91,25 @@
 <div class="admin-container">
     <div class="admin-header">
         <h1>Офф-программа фестиваля</h1>
-        <nav class="admin-nav-flex" id="adminNav">
-            <a href="/admin" class="admin-menu-btn">Главная</a>
-            <a href="/admin/users" class="admin-menu-btn">Пользователи</a>
-            <a href="/admin/customers" class="admin-menu-btn">Покупатели</a>
-            <a href="/admin/purchases" class="admin-menu-btn">Покупки</a>
-            <a href="/admin/concerts" class="admin-menu-btn">Концерты</a>
-            <a href="/admin/halls" class="admin-menu-btn">Залы</a>
-            <a href="/admin/routes" class="admin-menu-btn">Маршруты</a>
-            <a href="/admin/offprogram" class="admin-menu-btn active">Офф-программа</a>
-            <a href="/" class="admin-menu-btn"><span style="font-size:1.1em; margin-right:6px;">🌐</span>На сайт</a>
-        </nav>
+                    <nav class="admin-nav-flex" id="adminNav">
+                <a href="/admin" class="admin-menu-btn">Главная</a>
+                <a href="/admin/users" class="admin-menu-btn">Пользователи</a>
+                <a href="/admin/customers" class="admin-menu-btn">Покупатели</a>
+                <a href="/admin/purchases" class="admin-menu-btn">Покупки</a>
+                <a href="/admin/concerts" class="admin-menu-btn">Концерты</a>
+                <a href="/admin/halls" class="admin-menu-btn">Залы</a>
+                <a href="/admin/routes" class="admin-menu-btn">Маршруты</a>
+                <a href="/admin/offprogram" class="admin-menu-btn active">Офф-программа</a>
+                <a href="/" class="admin-menu-btn"><span style="font-size:1.1em; margin-right:6px;">🌐</span>На сайт</a>
+                <div class="admin-menu-dropdown" id="adminMenuDropdown" style="display:none;">
+                    <button class="admin-menu-dropdown-btn" id="dropdownBtn">Ещё <span style="font-size:1.1em;">▼</span></button>
+                    <div class="admin-menu-dropdown-content" id="dropdownContent">
+                        <div class="admin-menu-dropdown-arrow">
+                            <svg width="24" height="12"><polygon points="12,12 0,0 24,0" fill="#f0f4ff"/></svg>
+                        </div>
+                    </div>
+                </div>
+            </nav>
     </div>
 <div class="container-fluid">
     <div class="row">
@@ -263,6 +281,81 @@ function showEventDetails(eventId) {
     document.getElementById('eventDetailsContent').innerHTML = content;
     new bootstrap.Modal(document.getElementById('eventDetailsModal')).show();
 }
+
+// Выпадающее меню для переполнения
+document.addEventListener('DOMContentLoaded', function() {
+    const nav = document.getElementById('adminNav');
+    const dropdown = document.getElementById('adminMenuDropdown');
+    const dropdownBtn = document.getElementById('dropdownBtn');
+    const dropdownContent = document.getElementById('dropdownContent');
+    
+    function updateDropdown() {
+        // Сброс
+        dropdownContent.innerHTML = '<div class="admin-menu-dropdown-arrow">\n<svg width="24" height="12"><polygon points="12,12 0,0 24,0" fill="#f0f4ff"/></svg>\n</div>';
+        let linksWrapper = document.createElement('div');
+        linksWrapper.className = 'admin-menu-dropdown-links';
+        
+        const children = Array.from(nav.children).filter(el => el.classList.contains('admin-menu-btn'));
+        children.forEach(el => {
+            el.style.display = '';
+        });
+        
+        // Проверяем, какие кнопки не помещаются
+        let overflowed = [];
+        children.forEach(el => {
+            const rect = el.getBoundingClientRect();
+            const navRect = nav.getBoundingClientRect();
+            if (rect.right > navRect.right - 120) { // 120px запас под dropdown
+                overflowed.push(el);
+            }
+        });
+        
+        if (overflowed.length > 0) {
+            overflowed.forEach(el => {
+                let clone = el.cloneNode(true);
+                clone.classList.remove('admin-menu-btn');
+                if (clone.getAttribute('href') === '/') {
+                    clone.innerHTML = '<span style="font-size:1.1em; margin-right:6px;">🌐</span>На сайт';
+                } else {
+                    clone.innerHTML = clone.textContent.trim();
+                }
+                linksWrapper.appendChild(clone);
+                el.style.display = 'none';
+            });
+            dropdownContent.appendChild(linksWrapper);
+            dropdown.style.display = 'inline-block';
+        } else {
+            dropdown.style.display = 'none';
+        }
+    }
+    
+    window.addEventListener('resize', updateDropdown);
+    updateDropdown();
+    
+    // Открытие/закрытие dropdown
+    dropdownBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+        if (dropdown.classList.contains('open')) {
+            const btnRect = dropdownBtn.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const dropdownWidth = 150; // примерная ширина dropdown
+            
+            // Позиционируем dropdown так, чтобы он не выходил за пределы экрана
+            let left = btnRect.left;
+            if (left + dropdownWidth > viewportWidth) {
+                left = viewportWidth - dropdownWidth - 10;
+            }
+            
+            dropdownContent.style.left = left + 'px';
+            dropdownContent.style.top = (btnRect.bottom + 6) + 'px';
+        }
+    });
+    
+    document.body.addEventListener('click', function() {
+        dropdown.classList.remove('open');
+    });
+});
 </script>
 </div>
 </body>
