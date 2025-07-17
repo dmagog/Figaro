@@ -470,19 +470,22 @@
         
         .day-filters {
             display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
+            flex-direction: row;
+            gap: 8px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
         }
         
         .day-filter-btn {
-            padding: 8px 16px;
+            padding: 6px 12px;
             border: 2px solid #667eea;
             background: white;
             color: #667eea;
-            border-radius: 20px;
+            border-radius: 16px;
             cursor: pointer;
             transition: all 0.3s ease;
             font-weight: 500;
+            font-size: 0.9em;
         }
         
         .day-filter-btn:hover {
