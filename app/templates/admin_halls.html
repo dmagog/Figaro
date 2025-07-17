@@ -258,6 +258,54 @@
                 {% endfor %}
             </tbody>
         </table>
+        
+        <!-- Раздел с переходами между залами -->
+        <div style="margin-top: 40px;">
+            <h2 style="margin-bottom: 20px; color: #333; font-size: 1.8em;">Матрица переходов между залами</h2>
+            <p style="color: #666; margin-bottom: 20px;">Время перехода между залами в минутах (по строкам - от зала, по столбцам - к залу)</p>
+            
+            {% if transitions_matrix and hall_names %}
+            <div style="overflow-x: auto; margin-top: 20px;">
+                <table id="transitions-matrix-table" style="margin-top: 20px; min-width: 600px; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); font-size: 0.9em;">
+                    <thead>
+                        <tr>
+                            <th style="background: white; border: 1px solid #e9ecef; padding: 8px 10px; text-align: center; font-weight: 600; color: #333; font-size: 0.85em;">От зала → К залу</th>
+                            {% for hall_name in hall_names %}
+                            <th style="background: #e0e7ff; border: 1px solid #e9ecef; padding: 8px 6px; text-align: center; font-weight: 600; color: #333; min-width: 100px; max-width: 120px;">
+                                <span class="hall-badge" style="font-size: 0.85em; padding: 3px 8px;">{{ hall_name }}</span>
+                            </th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for from_hall in hall_names %}
+                        <tr>
+                            <td style="background: #e0e7ff; border: 1px solid #e9ecef; padding: 8px 6px; text-align: center; font-weight: 600; color: #333; white-space: nowrap;">
+                                <span class="hall-badge" style="font-size: 0.85em; padding: 3px 8px;">{{ from_hall }}</span>
+                            </td>
+                            {% for to_hall in hall_names %}
+                                {% set transition_time = transitions_matrix[from_hall][to_hall] %}
+                                {% if from_hall == to_hall %}
+                                    <td style="background: #f8f9fa; border: 1px solid #e9ecef; padding: 8px 6px; text-align: center; color: #999; font-style: italic; font-size: 0.9em;">—</td>
+                                {% elif transition_time is not none %}
+                                    <td style="background: white; border: 1px solid #e9ecef; padding: 8px 6px; text-align: center; color: #333; font-weight: 500; font-size: 0.9em;">{{ transition_time }}</td>
+                                {% else %}
+                                    <td style="background: white; border: 1px solid #e9ecef; padding: 8px 6px; text-align: center; color: #999; font-style: italic; font-size: 0.85em;">Н/Д</td>
+                                {% endif %}
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 40px; color: #666; background: #f8f9fa; border-radius: 12px;">
+                <div style="font-size: 3em; margin-bottom: 15px;">🚶</div>
+                <h3 style="margin-bottom: 10px; color: #333;">Данные о переходах отсутствуют</h3>
+                <p>Информация о времени переходов между залами не загружена</p>
+            </div>
+            {% endif %}
+        </div>
     </div>
 </body>
 </html>
@@ -426,5 +474,7 @@ document.addEventListener('DOMContentLoaded', function() {
             };
         });
     });
+    
+    // Убрано интерактивное выделение колонок для стабильности таблицы
 });
 </script> 

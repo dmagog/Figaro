@@ -493,10 +493,13 @@ async def admin_halls(request: Request, session=Depends(get_session)):
     if not user_obj or not getattr(user_obj, 'is_superuser', False):
         return RedirectResponse(url="/login", status_code=302)
 
-    from models import Hall, Concert, Purchase
+    from models import Hall, Concert, Purchase, HallTransition
     from sqlalchemy import select, func
     halls = session.exec(select(Hall)).scalars().all()
     concerts = session.exec(select(Concert)).scalars().all()
+    
+    # Получаем переходы между залами
+    transitions = session.exec(select(HallTransition)).scalars().all()
 
     # Для расчёта средней заполняемости по каждому залу
     concerts_by_hall = {}
@@ -556,11 +559,32 @@ async def admin_halls(request: Request, session=Depends(get_session)):
         })
     mean_fill_percent_all_halls = round(sum(all_fill_percents) / len(all_fill_percents), 1) if all_fill_percents else 0
     hall_ids = [h["hall"].id for h in halls_data]
+    
+    # Формируем данные о переходах между залами в виде матрицы
+    halls_by_id = {h.id: h for h in halls}
+    hall_names = [h.name for h in halls]
+    
+    # Создаем матрицу переходов
+    transitions_matrix = {}
+    for from_hall in halls:
+        transitions_matrix[from_hall.name] = {}
+        for to_hall in halls:
+            transitions_matrix[from_hall.name][to_hall.name] = None
+    
+    # Заполняем матрицу данными о переходах
+    for transition in transitions:
+        from_hall = halls_by_id.get(transition.from_hall_id)
+        to_hall = halls_by_id.get(transition.to_hall_id)
+        if from_hall and to_hall:
+            transitions_matrix[from_hall.name][to_hall.name] = transition.transition_time
+    
     context = {
         "user": user_obj,
         "halls_data": halls_data,
         "hall_ids": hall_ids,
         "mean_fill_percent_all_halls": mean_fill_percent_all_halls,
+        "transitions_matrix": transitions_matrix,
+        "hall_names": hall_names,
         "request": request
     }
     return templates.TemplateResponse("admin_halls.html", context)
