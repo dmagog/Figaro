@@ -52,6 +52,59 @@
             font-weight: bold;
         }
         
+        /* Навигационные вкладки */
+        .tabs-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        
+        .tabs-nav {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .tab-button {
+            flex: 1;
+            padding: 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 500;
+            color: #6c757d;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .tab-button:hover {
+            background: #e9ecef;
+            color: #495057;
+        }
+        
+        .tab-button.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .tab-button .tab-icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
         .concerts-section {
             background: white;
             border-radius: 15px;
@@ -78,8 +131,9 @@
         
         .concerts-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 20px;
+            max-width: 100%;
         }
         
         .concert-card {
@@ -172,8 +226,6 @@
             opacity: 1;
             visibility: visible;
         }
-        
-
         
         .concert-details {
             display: grid;
@@ -307,6 +359,256 @@
             padding-left: 60px;
             padding-top: 15px;
         }
+        
+        /* Стили для маршрутного листа */
+        .route-timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+        
+        .timeline-line {
+            position: absolute;
+            left: 30px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(to bottom, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+        
+        .day-section {
+            position: relative;
+            margin-bottom: 40px;
+            padding-left: 80px;
+        }
+        
+        .day-dot {
+            position: absolute;
+            left: 20px;
+            top: 15px;
+            width: 20px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 50%;
+            border: 4px solid white;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.3);
+            z-index: 2;
+        }
+        
+        .day-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(102,126,234,0.2);
+        }
+        
+        .day-header h3 {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .day-concerts-count {
+            margin-left: auto;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        
+        .concert-event {
+            position: relative;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-left: 4px solid #667eea;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-bottom: 15px;
+        }
+        
+        .concert-event:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+        
+        .event-time {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #667eea;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        .event-number {
+            position: absolute;
+            top: 20px;
+            left: -10px;
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9em;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.3);
+        }
+        
+        .event-title {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 1.2em;
+            padding-right: 100px;
+            padding-left: 40px;
+        }
+        
+        .event-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .event-detail {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .event-detail-icon {
+            font-size: 1.2em;
+        }
+        
+        .event-detail-label {
+            font-size: 0.8em;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .event-detail-value {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .event-duration {
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: inline-block;
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        /* Стили для ачивок */
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .achievement-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-left: 4px solid #667eea;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .achievement-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+        
+        .achievement-icon {
+            font-size: 2em;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .achievement-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .achievement-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .achievement-description {
+            font-size: 0.9em;
+            color: #666;
+            text-align: center;
+        }
+        
+        .route-match-card {
+            background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+            border: 2px solid #4caf50;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .route-match-card.error {
+            background: linear-gradient(135deg, #fff3e0 0%, #fef7e0 100%);
+            border-color: #ff9800;
+        }
+        
+        .route-match-title {
+            margin: 0 0 15px 0;
+            color: #2e7d32;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .route-match-title.error {
+            color: #e65100;
+        }
+        
+        .route-match-reason {
+            margin: 0 0 10px 0;
+            color: #2e7d32;
+        }
+        
+        .route-match-reason.error {
+            color: #e65100;
+        }
+        
+        .route-details {
+            background: rgba(255,255,255,0.7);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .route-details h4 {
+            margin: 0 0 10px 0;
+            color: #2e7d32;
+        }
+        
+        .route-details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
     </style>
 </head>
 <body>
@@ -350,111 +652,376 @@
             </div>
         </div>
         
-        <div class="concerts-section">
-            <div class="concerts-header">
-                <h2>Мои концерты</h2>
-                <div class="concerts-count">
-                    {{ purchase_summary.total_concerts }}
-                    {% set n = purchase_summary.total_concerts %}
-                    {% if n == 1 %}
-                        концерт
-                    {% elif n >= 2 and n <= 4 %}
-                        концерта
-                    {% else %}
-                        концертов
-                    {% endif %}
-                </div>
-                        </div>
-            
-            <!-- Отладочная информация только для суперадминов -->
-            {% if user.is_superuser %}
-            <div style="background: #f0f0f0; padding: 10px; margin-bottom: 20px; border-radius: 5px; font-family: monospace; font-size: 12px;">
-                <strong>Отладка (только для суперадминов):</strong><br>
-                Пользователь: {{ user.email }}<br>
-                External ID: {{ user.external_id }}<br>
-                Всего покупок: {{ purchase_summary.total_purchases }}<br>
-                Всего концертов: {{ purchase_summary.total_concerts }}<br>
-                Потрачено: {{ purchase_summary.total_spent }} ₽<br>
-                Количество уникальных концертов: {{ concerts|length }}<br>
-                Роль: {{ user.role }}<br>
-                Суперадмин: {{ "Да" if user.is_superuser else "Нет" }}
+        <!-- Навигационные вкладки -->
+        <div class="tabs-container">
+            <div class="tabs-nav">
+                <button class="tab-button active" onclick="showTab('concerts')">
+                    <span class="tab-icon">🎵</span>
+                    Мои концерты
+                </button>
+                <button class="tab-button" onclick="showTab('route')">
+                    <span class="tab-icon">🗺️</span>
+                    Маршрутный лист
+                </button>
+                <button class="tab-button" onclick="showTab('achievements')">
+                    <span class="tab-icon">🏆</span>
+                    Ачивки
+                </button>
             </div>
-            {% endif %}
             
-            {% if purchase_summary.total_concerts > 0 %}
-                <div class="concerts-grid">
-                    {% for concert_data in concerts %}
-                    <div class="concert-card concert-card-day{{ concert_data.concert_day_index }}">
-                        <!-- Номер концерта -->
-                        <div class="concert-number concert-number-day{{ concert_data.concert_day_index }}">{{ concert_data.concert.id }}</div>
-                        
-                        <div class="concert-name">{{ concert_data.concert.name }}</div>
-                        
-                        <!-- Бейдж с количеством билетов -->
-                        <div class="tickets-badge" data-tooltip="
-                            {% set n = concert_data.tickets_count %}
-                            {% if n == 1 %}
-                                Куплен 1 билет
-                            {% elif n >= 2 and n <= 4 %}
-                                Куплено {{ n }} билета
-                            {% else %}
-                                Куплено {{ n }} билетов
-                            {% endif %}">
-                            <span class="icon">🎫</span>
-                            {{ concert_data.tickets_count }}
-                        </div>
-                        
-                        <div class="concert-details">
-                            <div class="detail-item">
-                                <span class="detail-label">Дата:</span>
-                                <span class="detail-value">
-                                    {% if concert_data.concert.datetime %}
-                                        {{ concert_data.concert.datetime.strftime('%d.%m.%Y %H:%M') }}
-                                    {% else %}
-                                        Не указана
-                                    {% endif %}
-                                </span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Длительность:</span>
-                                <span class="detail-value">
-                                    {% if concert_data.concert.duration %}
-                                        {% if concert_data.concert.duration.seconds %}
-                                            {{ (concert_data.concert.duration.seconds // 60) }} мин
-                                        {% else %}
-                                            {{ concert_data.concert.duration }}
-                                        {% endif %}
-                                    {% else %}
-                                        Не указана
-                                    {% endif %}
-                                </span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Жанр:</span>
-                                <span class="detail-value">{{ concert_data.concert.genre or 'Не указан' }}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Цена за билет:</span>
-                                <span class="detail-value">{{ concert_data.concert.price or 0 }} ₽</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Потрачено:</span>
-                                <span class="detail-value">{{ concert_data.total_spent }} ₽</span>
-                            </div>
-                        </div>
-                        <div class="concert-hall">
-                            🏛️ {{ concert_data.concert.hall.name if concert_data.concert.hall else 'Зал не указан' }}
-                        </div>
+            <!-- Вкладка "Мои концерты" -->
+            <div id="concerts-tab" class="tab-content active">
+                <div class="concerts-header">
+                    <h2>Мои концерты</h2>
+                    <div class="concerts-count">
+                        {{ purchase_summary.total_concerts }}
+                        {% set n = purchase_summary.total_concerts %}
+                        {% if n == 1 %}
+                            концерт
+                        {% elif n >= 2 and n <= 4 %}
+                            концерта
+                        {% else %}
+                            концертов
+                        {% endif %}
                     </div>
-                    {% endfor %}
                 </div>
-            {% else %}
-                <div class="no-concerts">
-                    <h3>У вас пока нет купленных концертов</h3>
-                    <p>Посетите главную страницу, чтобы выбрать концерты фестиваля</p>
+                
+                <!-- Отладочная информация только для суперадминов -->
+                {% if user.is_superuser %}
+                <div style="background: #f0f0f0; padding: 10px; margin-bottom: 20px; border-radius: 5px; font-family: monospace; font-size: 12px;">
+                    <strong>Отладка (только для суперадминов):</strong><br>
+                    Пользователь: {{ user.email }}<br>
+                    External ID: {{ user.external_id }}<br>
+                    Всего покупок: {{ purchase_summary.total_purchases }}<br>
+                    Всего концертов: {{ purchase_summary.total_concerts }}<br>
+                    Потрачено: {{ purchase_summary.total_spent }} ₽<br>
+                    Количество уникальных концертов: {{ concerts|length }}<br>
+                    Роль: {{ user.role }}<br>
+                    Суперадмин: {{ "Да" if user.is_superuser else "Нет" }}
                 </div>
-            {% endif %}
+                {% endif %}
+                
+                {% if purchase_summary.total_concerts > 0 %}
+                    <div class="concerts-grid">
+                        {% for concert_data in concerts %}
+                        <div class="concert-card concert-card-day{{ concert_data.concert_day_index }}">
+                            <!-- Номер концерта -->
+                            <div class="concert-number concert-number-day{{ concert_data.concert_day_index }}">{{ concert_data.concert.id }}</div>
+                            
+                            <div class="concert-name">{{ concert_data.concert.name }}</div>
+                            
+                            <!-- Бейдж с количеством билетов -->
+                            <div class="tickets-badge" data-tooltip="
+                                {% set n = concert_data.tickets_count %}
+                                {% if n == 1 %}
+                                    Куплен 1 билет
+                                {% elif n >= 2 and n <= 4 %}
+                                    Куплено {{ n }} билета
+                                {% else %}
+                                    Куплено {{ n }} билетов
+                                {% endif %}">
+                                <span class="icon">🎫</span>
+                                {{ concert_data.tickets_count }}
+                            </div>
+                            
+                            <div class="concert-details">
+                                <div class="detail-item">
+                                    <span class="detail-label">Дата:</span>
+                                    <span class="detail-value">
+                                        {% if concert_data.concert.datetime %}
+                                            {{ concert_data.concert.datetime.strftime('%d.%m.%Y %H:%M') }}
+                                        {% else %}
+                                            Не указана
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Длительность:</span>
+                                    <span class="detail-value">
+                                        {% if concert_data.concert.duration %}
+                                            {% if concert_data.concert.duration.seconds %}
+                                                {{ (concert_data.concert.duration.seconds // 60) }} мин
+                                            {% else %}
+                                                {{ concert_data.concert.duration }}
+                                            {% endif %}
+                                        {% else %}
+                                            Не указана
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Жанр:</span>
+                                    <span class="detail-value">{{ concert_data.concert.genre or 'Не указан' }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Цена за билет:</span>
+                                    <span class="detail-value">{{ concert_data.concert.price or 0 }} ₽</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Потрачено:</span>
+                                    <span class="detail-value">{{ concert_data.total_spent }} ₽</span>
+                                </div>
+                            </div>
+                            <div class="concert-hall">
+                                🏛️ {{ concert_data.concert.hall.name if concert_data.concert.hall else 'Зал не указан' }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="no-concerts">
+                        <h3>У вас пока нет купленных концертов</h3>
+                        <p>Посетите главную страницу, чтобы выбрать концерты фестиваля</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Вкладка "Маршрутный лист" -->
+            <div id="route-tab" class="tab-content">
+                <div class="concerts-header">
+                    <h2>Маршрутный лист</h2>
+                    <div class="concerts-count">
+                        {{ route_sheet.summary.total_concerts }}
+                        {% set n = route_sheet.summary.total_concerts %}
+                        {% if n == 1 %}
+                            концерт
+                        {% elif n >= 2 and n <= 4 %}
+                            концерта
+                        {% else %}
+                            концертов
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Дорожная карта событий -->
+                {% if route_sheet.concerts_by_day %}
+                    <div class="route-timeline">
+                        <!-- Вертикальная линия времени -->
+                        <div class="timeline-line"></div>
+                        
+                        {% for day_index, day_concerts in route_sheet.concerts_by_day.items() %}
+                            <div class="day-section">
+                                <!-- Точка дня -->
+                                <div class="day-dot"></div>
+                                
+                                <!-- Заголовок дня -->
+                                <div class="day-header">
+                                    <h3>
+                                        <span style="font-size: 1.3em;">📅</span>
+                                        День {{ day_index }} фестиваля
+                                        <span class="day-concerts-count">
+                                            {{ day_concerts|length }} 
+                                            {% if day_concerts|length == 1 %}
+                                                концерт
+                                            {% elif day_concerts|length >= 2 and day_concerts|length <= 4 %}
+                                                концерта
+                                            {% else %}
+                                                концертов
+                                            {% endif %}
+                                        </span>
+                                    </h3>
+                                </div>
+                                
+                                <!-- События дня -->
+                                <div>
+                                    {% for concert in day_concerts %}
+                                        <div class="concert-event">
+                                            <!-- Время события -->
+                                            <div class="event-time">
+                                                {% if concert.concert.datetime %}
+                                                    {{ concert.concert.datetime.strftime('%H:%M') }}
+                                                {% else %}
+                                                    Время TBD
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <!-- Номер концерта -->
+                                            <div class="event-number">
+                                                {{ concert.concert.id }}
+                                            </div>
+                                            
+                                            <!-- Название концерта -->
+                                            <h4 class="event-title">{{ concert.concert.name }}</h4>
+                                            
+                                            <!-- Детали события -->
+                                            <div class="event-details">
+                                                <div class="event-detail">
+                                                    <span class="event-detail-icon">🏛️</span>
+                                                    <div>
+                                                        <div class="event-detail-label">Зал</div>
+                                                        <div class="event-detail-value">{{ concert.concert.hall.name if concert.concert.hall else 'Не указан' }}</div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="event-detail">
+                                                    <span class="event-detail-icon">🎫</span>
+                                                    <div>
+                                                        <div class="event-detail-label">Билетов</div>
+                                                        <div class="event-detail-value">{{ concert.tickets_count }}</div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="event-detail">
+                                                    <span class="event-detail-icon">💰</span>
+                                                    <div>
+                                                        <div class="event-detail-label">Потрачено</div>
+                                                        <div class="event-detail-value">{{ concert.total_spent }} ₽</div>
+                                                    </div>
+                                                </div>
+                                                
+                                                {% if concert.concert.genre %}
+                                                <div class="event-detail">
+                                                    <span class="event-detail-icon">🎵</span>
+                                                    <div>
+                                                        <div class="event-detail-label">Жанр</div>
+                                                        <div class="event-detail-value">{{ concert.concert.genre }}</div>
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <!-- Длительность -->
+                                            {% if concert.concert.duration %}
+                                            <div class="event-duration">
+                                                <span style="font-weight: 500;">⏱️ Длительность:</span> 
+                                                {% if concert.concert.duration.seconds %}
+                                                    {{ (concert.concert.duration.seconds // 60) }} мин
+                                                {% else %}
+                                                    {{ concert.concert.duration }}
+                                                {% endif %}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div style="text-align: center; padding: 60px 20px; color: #666;">
+                        <div style="font-size: 4em; margin-bottom: 20px;">🗺️</div>
+                        <h3 style="margin-bottom: 10px; color: #333;">Дорожная карта пуста</h3>
+                        <p>Ваш маршрутный лист появится здесь после покупки билетов на концерты</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Вкладка "Ачивки" -->
+            <div id="achievements-tab" class="tab-content">
+                <div class="concerts-header">
+                    <h2>Ачивки</h2>
+                    <div class="concerts-count">
+                        {{ route_sheet.summary.total_concerts }}
+                        {% set n = route_sheet.summary.total_concerts %}
+                        {% if n == 1 %}
+                            концерт
+                        {% elif n >= 2 and n <= 4 %}
+                            концерта
+                        {% else %}
+                            концертов
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Сводная информация о маршруте -->
+                <div class="achievements-grid">
+                    <div class="achievement-card">
+                        <div class="achievement-icon">📅</div>
+                        <div class="achievement-title">Дней фестиваля</div>
+                        <div class="achievement-value">{{ route_sheet.summary.total_days }}</div>
+                        <div class="achievement-description">Количество дней с концертами</div>
+                    </div>
+                    <div class="achievement-card">
+                        <div class="achievement-icon">🏛️</div>
+                        <div class="achievement-title">Залов посещено</div>
+                        <div class="achievement-value">{{ route_sheet.summary.total_halls }}</div>
+                        <div class="achievement-description">Уникальных залов</div>
+                    </div>
+                    <div class="achievement-card">
+                        <div class="achievement-icon">🎵</div>
+                        <div class="achievement-title">Жанров</div>
+                        <div class="achievement-value">{{ route_sheet.summary.total_genres }}</div>
+                        <div class="achievement-description">Различных музыкальных жанров</div>
+                    </div>
+                    <div class="achievement-card">
+                        <div class="achievement-icon">💰</div>
+                        <div class="achievement-title">Потрачено</div>
+                        <div class="achievement-value">{{ "{:,}".format(route_sheet.summary.total_spent) }} ₽</div>
+                        <div class="achievement-description">Общая сумма покупок</div>
+                    </div>
+                </div>
+                
+                <!-- Информация о соответствии маршруту -->
+                {% if route_sheet.match.found %}
+                    <div class="route-match-card">
+                        <h3 class="route-match-title">
+                            <span style="font-size: 1.5em;">🎯</span>
+                            {% if route_sheet.match.match_type == 'exact' %}
+                                Точное совпадение с маршрутом
+                            {% else %}
+                                Частичное совпадение с маршрутом
+                            {% endif %}
+                        </h3>
+                        <p class="route-match-reason">{{ route_sheet.match.reason }}</p>
+                        {% if route_sheet.match.best_route %}
+                            <div class="route-details">
+                                <h4>Маршрут №{{ route_sheet.match.best_route.id }}</h4>
+                                <div class="route-details-grid">
+                                    <div>
+                                        <strong>Дни:</strong> {{ route_sheet.match.best_route.days or 'Не указано' }}
+                                    </div>
+                                    <div>
+                                        <strong>Концерты:</strong> {{ route_sheet.match.best_route.concerts or 'Не указано' }}
+                                    </div>
+                                    <div>
+                                        <strong>Залы:</strong> {{ route_sheet.match.best_route.halls or 'Не указано' }}
+                                    </div>
+                                    <div>
+                                        <strong>Жанр:</strong> {{ route_sheet.match.best_route.genre or 'Не указано' }}
+                                    </div>
+                                    {% if route_sheet.match.best_route.comfort_score %}
+                                    <div>
+                                        <strong>Комфорт:</strong> {{ route_sheet.match.best_route.comfort_score }}/10 ({{ route_sheet.match.best_route.comfort_level or 'Не указано' }})
+                                    </div>
+                                    {% endif %}
+                                    {% if route_sheet.match.best_route.intellect_score %}
+                                    <div>
+                                        <strong>Интеллектуальность:</strong> {{ route_sheet.match.best_route.intellect_score }}/10 ({{ route_sheet.match.best_route.intellect_category or 'Не указано' }})
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="route-match-card error">
+                        <h3 class="route-match-title error">
+                            <span style="font-size: 1.5em;">🔍</span>
+                            Уникальный маршрут
+                        </h3>
+                        <p class="route-match-reason error">{{ route_sheet.match.reason }}</p>
+                    </div>
+                {% endif %}
+            </div>
         </div>
     </div>
+    
+    <script>
+        function showTab(tabName) {
+            // Скрываем все вкладки
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Убираем активный класс со всех кнопок
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(button => button.classList.remove('active'));
+            
+            // Показываем выбранную вкладку
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // Добавляем активный класс к кнопке
+            event.target.classList.add('active');
+        }
+    </script>
 </body>
 </html> 

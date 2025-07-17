@@ -275,15 +275,21 @@ async def profile_page(
         from collections import defaultdict
         day_to_index = {}
         unique_days = []
-        for concert in concerts_for_template:
+        logger.info(f"Processing {len(concerts_for_template)} concerts for day indexing")
+        
+        for i, concert in enumerate(concerts_for_template):
             dt = concert['concert']['datetime']
             if dt:
                 day = dt.date()
                 if day not in day_to_index:
                     day_to_index[day] = len(day_to_index) + 1
                 concert['concert_day_index'] = day_to_index[day]
+                logger.info(f"Concert {i}: date={day}, day_index={day_to_index[day]}")
             else:
                 concert['concert_day_index'] = 0
+                logger.warning(f"Concert {i}: no datetime, day_index=0")
+        
+        logger.info(f"Day to index mapping: {day_to_index}")
         
         # Добавляем номера концертов
         for i, concert_data in enumerate(concerts_for_template, 1):
@@ -291,11 +297,19 @@ async def profile_page(
         
         logger.info(f"Processed {len(concerts_for_template)} unique concerts for template")
         
+        # Получаем данные для маршрутного листа
+        route_sheet_data = get_user_route_sheet(session, user_external_id, concerts_for_template)
+        
+        # Отладочная информация для маршрутного листа
+        logger.info(f"Route sheet data: {route_sheet_data}")
+        logger.info(f"Concerts by day: {route_sheet_data.get('concerts_by_day', {})}")
+        
         context = {
             "request": request,
             "user": current_user,
             "concerts": concerts_for_template,  # Изменили название с purchases на concerts
-            "purchase_summary": purchase_summary
+            "purchase_summary": purchase_summary,
+            "route_sheet": route_sheet_data
         }
         
         return templates.TemplateResponse("profile.html", context)
@@ -396,6 +410,283 @@ async def debug_user_purchases(
         }
     except Exception as e:
         return {"error": str(e)}
+    
+
+
+    
+
+def get_user_route_sheet(session, user_external_id: str, concerts_data: list) -> dict:
+    """
+    Получает данные для маршрутного листа пользователя
+    
+    Args:
+        session: Сессия базы данных
+        user_external_id: Внешний ID пользователя
+        concerts_data: Список концертов пользователя
+        
+    Returns:
+        Словарь с данными маршрутного листа
+    """
+    try:
+        from models import Route, CustomerRouteMatch
+        from sqlalchemy import select
+        
+        # Получаем ID концертов пользователя
+        user_concert_ids = [c['concert']['id'] for c in concerts_data]
+        user_concert_ids_str = ",".join(map(str, sorted(user_concert_ids)))
+        
+        # Ищем существующее соответствие маршрута
+        existing_match = session.exec(
+            select(CustomerRouteMatch)
+            .where(CustomerRouteMatch.user_external_id == user_external_id)
+        ).first()
+        
+        if existing_match:
+            # Если есть сохраненное соответствие, используем его
+            try:
+                match_data = {
+                    "found": getattr(existing_match, 'found', False),
+                    "match_type": getattr(existing_match, 'match_type', 'none'),
+                    "reason": getattr(existing_match, 'reason', 'Неизвестная причина'),
+                    "match_percentage": getattr(existing_match, 'match_percentage', 0.0),
+                    "total_routes_checked": getattr(existing_match, 'total_routes_checked', 0),
+                    "customer_concerts": existing_match.customer_concerts.split(',') if existing_match.customer_concerts else [],
+                    "best_route": None
+                }
+            except Exception as e:
+                logger.error(f"Ошибка при обработке существующего соответствия: {e}")
+                match_data = {
+                    "found": False,
+                    "match_type": "error",
+                    "reason": "Ошибка при обработке данных",
+                    "match_percentage": 0.0,
+                    "total_routes_checked": 0,
+                    "customer_concerts": [],
+                    "best_route": None
+                }
+            
+            if getattr(existing_match, 'found', False) and getattr(existing_match, 'best_route_id', None):
+                best_route = session.exec(
+                    select(Route).where(Route.id == getattr(existing_match, 'best_route_id', None))
+                ).first()
+                
+                if best_route:
+                    match_data["best_route"] = {
+                        "id": best_route.id,
+                        "composition": best_route.Sostav,
+                        "days": best_route.Days,
+                        "concerts": best_route.Concerts,
+                        "halls": best_route.Halls,
+                        "genre": best_route.Genre,
+                        "show_time": best_route.ShowTime,
+                        "trans_time": best_route.TransTime,
+                        "wait_time": best_route.WaitTime,
+                        "costs": best_route.Costs,
+                        "comfort_score": best_route.ComfortScore,
+                        "comfort_level": best_route.ComfortLevel,
+                        "intellect_score": best_route.IntellectScore,
+                        "intellect_category": best_route.IntellectCategory
+                    }
+        else:
+            # Ищем соответствие среди всех маршрутов
+            all_routes = session.exec(select(Route)).all()
+            
+            exact_matches = []
+            partial_matches = []
+            
+            for route in all_routes:
+                try:
+                    # Парсим состав маршрута
+                    route_concert_ids = sorted([int(x.strip()) for x in route.Sostav.split(',') if x.strip()])
+                    
+                    # Проверяем точное совпадение
+                    if route_concert_ids == sorted(user_concert_ids):
+                        exact_matches.append({
+                            "id": route.id,
+                            "composition": route.Sostav,
+                            "days": route.Days,
+                            "concerts": route.Concerts,
+                            "halls": route.Halls,
+                            "genre": route.Genre,
+                            "show_time": route.ShowTime,
+                            "trans_time": route.TransTime,
+                            "wait_time": route.WaitTime,
+                            "costs": route.Costs,
+                            "comfort_score": route.ComfortScore,
+                            "comfort_level": route.ComfortLevel,
+                            "intellect_score": route.IntellectScore,
+                            "intellect_category": route.IntellectCategory,
+                            "match_type": "exact",
+                            "match_percentage": 100.0
+                        })
+                    
+                    # Проверяем частичное совпадение
+                    elif set(user_concert_ids).issubset(set(route_concert_ids)):
+                        match_percentage = (len(user_concert_ids) / len(route_concert_ids)) * 100
+                        partial_matches.append({
+                            "id": route.id,
+                            "composition": route.Sostav,
+                            "days": route.Days,
+                            "concerts": route.Concerts,
+                            "halls": route.Halls,
+                            "genre": route.Genre,
+                            "show_time": route.ShowTime,
+                            "trans_time": route.TransTime,
+                            "wait_time": route.WaitTime,
+                            "costs": route.Costs,
+                            "comfort_score": route.ComfortScore,
+                            "comfort_level": route.ComfortLevel,
+                            "intellect_score": route.IntellectScore,
+                            "intellect_category": route.IntellectCategory,
+                            "match_type": "partial",
+                            "match_percentage": match_percentage,
+                            "missing_concerts": list(set(route_concert_ids) - set(user_concert_ids))
+                        })
+                        
+                except (ValueError, AttributeError) as e:
+                    logger.warning(f"Ошибка при парсинге маршрута {route.id}: {e}")
+                    continue
+            
+            # Сортируем частичные совпадения по проценту совпадения
+            partial_matches.sort(key=lambda x: x["match_percentage"], reverse=True)
+            
+            # Формируем результат
+            if exact_matches:
+                match_data = {
+                    "found": True,
+                    "match_type": "exact",
+                    "reason": "Найдено точное совпадение с маршрутом",
+                    "match_percentage": 100.0,
+                    "total_routes_checked": len(all_routes),
+                    "customer_concerts": user_concert_ids,
+                    "best_route": exact_matches[0]
+                }
+            elif partial_matches:
+                match_data = {
+                    "found": True,
+                    "match_type": "partial",
+                    "reason": f"Найдено частичное совпадение с маршрутом ({partial_matches[0]['match_percentage']:.1f}%)",
+                    "match_percentage": partial_matches[0]["match_percentage"],
+                    "total_routes_checked": len(all_routes),
+                    "customer_concerts": user_concert_ids,
+                    "best_route": partial_matches[0]
+                }
+            else:
+                match_data = {
+                    "found": False,
+                    "match_type": "none",
+                    "reason": "Не найдено подходящих маршрутов",
+                    "match_percentage": 0.0,
+                    "total_routes_checked": len(all_routes),
+                    "customer_concerts": user_concert_ids,
+                    "best_route": None
+                }
+        
+        # Отладочная информация
+        logger.info(f"Processing route sheet for {len(concerts_data)} concerts")
+        logger.info(f"Concert day indices: {[c.get('concert_day_index', 0) for c in concerts_data]}")
+        
+        # Проверяем структуру данных концертов
+        for i, concert in enumerate(concerts_data):
+            logger.info(f"Concert {i}: day_index={concert.get('concert_day_index', 0)}, "
+                       f"hall={concert['concert'].get('hall', 'No hall')}, "
+                       f"genre={concert['concert'].get('genre', 'No genre')}")
+        
+        # Группируем концерты по дням
+        concerts_by_day = group_concerts_by_day(concerts_data)
+        logger.info(f"Concerts grouped by day: {concerts_by_day}")
+        
+        # Безопасный подсчет статистики
+        total_days = len(set(c.get('concert_day_index', 0) for c in concerts_data if c.get('concert_day_index', 0) > 0))
+        
+        hall_ids = set()
+        for c in concerts_data:
+            hall = c['concert'].get('hall')
+            if hall and isinstance(hall, dict) and 'id' in hall:
+                hall_ids.add(hall['id'])
+        total_halls = len(hall_ids)
+        
+        genres = set()
+        for c in concerts_data:
+            genre = c['concert'].get('genre')
+            if genre:
+                genres.add(genre)
+        total_genres = len(genres)
+        
+        return {
+            "summary": {
+                "total_concerts": len(concerts_data),
+                "total_days": total_days,
+                "total_halls": total_halls,
+                "total_genres": total_genres,
+                "total_spent": sum(c['total_spent'] for c in concerts_data)
+            },
+            "match": match_data,
+            "concerts_by_day": concerts_by_day
+        }
+        
+    except Exception as e:
+        logger.error(f"Ошибка при получении маршрутного листа: {e}")
+        return {
+            "summary": {
+                "total_concerts": len(concerts_data),
+                "total_days": 0,
+                "total_halls": 0,
+                "total_genres": 0,
+                "total_spent": sum(c['total_spent'] for c in concerts_data)
+            },
+            "match": {
+                "found": False,
+                "match_type": "error",
+                "reason": "Ошибка при анализе маршрутов",
+                "match_percentage": 0.0,
+                "total_routes_checked": 0,
+                "customer_concerts": [],
+                "best_route": None
+            },
+            "concerts_by_day": {}
+        }
+
+
+def group_concerts_by_day(concerts_data: list) -> dict:
+    """
+    Группирует концерты по дням фестиваля
+    
+    Args:
+        concerts_data: Список концертов пользователя
+        
+    Returns:
+        Словарь с концертами, сгруппированными по дням
+    """
+    from datetime import datetime
+    
+    concerts_by_day = {}
+    
+    logger.info(f"Starting to group {len(concerts_data)} concerts by day")
+    
+    for i, concert in enumerate(concerts_data):
+        day_index = concert.get('concert_day_index', 0)
+        logger.info(f"Concert {i}: day_index={day_index}")
+        
+        if day_index > 0:
+            if day_index not in concerts_by_day:
+                concerts_by_day[day_index] = []
+            concerts_by_day[day_index].append(concert)
+            logger.info(f"Added concert to day {day_index}")
+        else:
+            logger.warning(f"Concert {i} has day_index=0, skipping")
+    
+    # Сортируем концерты в каждом дне по времени
+    for day_concerts in concerts_by_day.values():
+        try:
+            day_concerts.sort(key=lambda x: x['concert'].get('datetime') if x['concert'].get('datetime') else datetime.min)
+        except Exception as e:
+            logger.warning(f"Error sorting concerts by time: {e}")
+            # Если не удалось отсортировать, оставляем как есть
+            pass
+    
+    logger.info(f"Final grouped concerts by day: {concerts_by_day}")
+    return concerts_by_day
     
 
 
