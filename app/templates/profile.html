@@ -1304,12 +1304,12 @@
             <!-- Название концерта -->
             <span style="font-weight:600; color:#333; font-size:1em; flex:1 1 200px; min-width:150px; margin-left:20px; margin-top:6px; display:inline-block;">{{ concert.concert.id }}. {{ concert.concert.name }}</span>
             
-            <!-- Зал -->
-            <span style="color:#666; font-size:0.9em;">{{ concert.concert.hall.name if concert.concert.hall else '—' }}</span>
-            
             <!-- Жанр -->
             {% if concert.concert.genre %}<span style="color:#666; font-size:0.9em;">{{ concert.concert.genre }}</span>{% endif %}
             
+            <!-- Адрес зала -->
+            <div style="color:#666; font-size:0.9em; width: 100%; margin-top: -6px; margin-left: 20px;">{{ concert.concert.hall.name if concert.concert.hall else '—' }} • {% if concert.concert.hall and concert.concert.hall.address %}{{ concert.concert.hall.address }}{% endif %}</div>
+
             <!-- Кнопка подробнее -->
             <button onclick="toggleConcertDetails({{ concert.concert.id }})" style="margin-left:auto; background:none; border:none; color:#999; font-size:0.8em; cursor:pointer; padding:2px 6px; text-decoration:underline;">Подробнее</button>
         </div>
