@@ -234,6 +234,28 @@
             font-weight: 500;
             color: #333;
         }
+        .concert-number {
+            display: inline-block !important;
+            width: 48px !important;
+            height: 28px !important;
+            padding-left: 10px !important;
+            font-size: 1.08em !important;
+            font-weight: bold !important;
+            color: #fff !important;
+            border-radius: 0 12px 12px 0 !important;
+            margin-right: 10px !important;
+            text-align: left !important;
+            line-height: 28px !important;
+            vertical-align: middle !important;
+            box-shadow: none !important;
+        }
+        .concert-number-day1 { background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%) !important; }
+        .concert-number-day2 { background: linear-gradient(90deg, #6366f1 0%, #818cf8 100%) !important; }
+        .concert-number-day3 { background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%) !important; }
+        .concert-number-day4 { background: linear-gradient(90deg, #06b6d4 0%, #0ea5e9 100%) !important; }
+        .concert-number-day5 { background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%) !important; }
+        .concert-number-day6 { background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%) !important; }
+        .concert-number-day7 { background: linear-gradient(90deg, #818cf8 0%, #3b82f6 100%) !important; }
         @media (max-width: 768px) {
             .admin-container { margin: 20px; padding: 20px; }
             .admin-nav-flex { gap: 8px; }
@@ -304,6 +326,7 @@
                         <th class="sortable">Название произведения</th>
                         <th class="sortable">Автор</th>
                         <th class="sortable">Концертов</th>
+                        <th class="sortable">Концерты</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -317,6 +340,25 @@
                                 <span class="concerts-count">{{ composition.concerts_count }}</span>
                             {% else %}
                                 <span class="no-concerts">0</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if composition.concert_data %}
+                                <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                                    {% for concert_id, concert_datetime in composition.concert_data %}
+                                        {% if concert_datetime %}
+                                            {% set day = concert_datetime.day %}
+                                            {% if day > 7 %}{% set day = 7 %}{% endif %}
+                                            {% if day < 1 %}{% set day = 1 %}{% endif %}
+                                        {% else %}
+                                            {% set day = 1 %}
+                                        {% endif %}
+                                        <!-- Debug: concert_id={{ concert_id }}, datetime={{ concert_datetime }}, day={{ day }} -->
+                                        <span class="concert-number concert-number-day{{ day }}">{{ concert_id }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <span style="color: #6c757d; font-style: italic;">—</span>
                             {% endif %}
                         </td>
                     </tr>
@@ -395,6 +437,11 @@
                         return parseInt(span.textContent) || 0;
                     }
                     return parseInt(text) || 0;
+                }
+                if (idx === 4) {
+                    // Концерты: количество номеров концертов
+                    const concertNumbers = cell.querySelectorAll('.concert-number');
+                    return concertNumbers.length;
                 }
                 return text.toLowerCase();
             }

@@ -1619,27 +1619,32 @@ async def admin_artists(request: Request, session=Depends(get_session)):
     from models import Concert
     artist_concerts = {}
     for artist_data in artists_data:
-        if hasattr(artist_data, '_mapping'):
-            artist = artist_data._mapping['Artist']
-        else:
-            artist = artist_data[0]
+        artist = artist_data[0]
         
         concerts = session.exec(
-            select(Concert.id, Concert.datetime)
+            select(Concert)
             .join(ConcertArtistLink, Concert.id == ConcertArtistLink.concert_id)
             .where(ConcertArtistLink.artist_id == artist.id)
             .order_by(Concert.id)
         ).all()
-        # Извлекаем ID и даты из Row объектов и сортируем по ID
+        # Извлекаем ID и даты из объектов
         concert_data = []
         for concert in concerts:
             if hasattr(concert, '_mapping'):
-                concert_id = concert._mapping['id']
-                concert_datetime = concert._mapping['datetime']
+                # Это Row объект с _mapping
+                if 'Concert' in concert._mapping:
+                    # Если есть ключ 'Concert', то это объект Concert
+                    concert_obj = concert._mapping['Concert']
+                    concert_data.append((concert_obj.id, concert_obj.datetime))
+                else:
+                    # Иначе берем по индексам
+                    concert_data.append((concert[0], concert[1]))
             else:
-                concert_id = concert[0]
-                concert_datetime = concert[1]
-            concert_data.append((concert_id, concert_datetime))
+                # Это может быть объект Concert или tuple
+                if hasattr(concert, 'id') and hasattr(concert, 'datetime'):
+                    concert_data.append((concert.id, concert.datetime))
+                else:
+                    concert_data.append((concert[0], concert[1]))
         
         # Сортируем по ID концерта
         concert_data.sort(key=lambda x: x[0])
@@ -1648,12 +1653,8 @@ async def admin_artists(request: Request, session=Depends(get_session)):
     # Подготавливаем данные для отображения
     artists_list = []
     for artist_data in artists_data:
-        if hasattr(artist_data, '_mapping'):
-            artist = artist_data._mapping['Artist']
-            concerts_count = artist_data._mapping['concerts_count']
-        else:
-            artist = artist_data[0]
-            concerts_count = artist_data[1]
+        artist = artist_data[0]
+        concerts_count = artist_data[1]
         
         artists_list.append({
             'id': artist.id,
@@ -1714,14 +1715,9 @@ async def admin_authors(request: Request, session=Depends(get_session)):
     # Подготавливаем данные для отображения
     authors_list = []
     for author_data in authors_data:
-        if hasattr(author_data, '_mapping'):
-            author = author_data._mapping['Author']
-            compositions_count = author_data._mapping['compositions_count']
-            concerts_count = author_data._mapping['concerts_count']
-        else:
-            author = author_data[0]
-            compositions_count = author_data[1]
-            concerts_count = author_data[2]
+        author = author_data[0]
+        compositions_count = author_data[1]
+        concerts_count = author_data[2]
         
         authors_list.append({
             'id': author.id,
@@ -1778,23 +1774,49 @@ async def admin_compositions(request: Request, session=Depends(get_session)):
         .order_by(Author.name, Composition.name)
     ).all()
 
+    # Получаем номера концертов для каждого произведения
+    from models import Concert
+    composition_concerts = {}
+    for comp_data in compositions_data:
+        composition = comp_data[0]
+        concerts = session.exec(
+            select(Concert)
+            .join(ConcertCompositionLink, Concert.id == ConcertCompositionLink.concert_id)
+            .where(ConcertCompositionLink.composition_id == composition.id)
+            .order_by(Concert.id)
+        ).all()
+        concert_data = []
+        for concert in concerts:
+            if hasattr(concert, '_mapping'):
+                # Это Row объект с _mapping
+                if 'Concert' in concert._mapping:
+                    # Если есть ключ 'Concert', то это объект Concert
+                    concert_obj = concert._mapping['Concert']
+                    concert_data.append((concert_obj.id, concert_obj.datetime))
+                else:
+                    # Иначе берем по индексам
+                    concert_data.append((concert[0], concert[1]))
+            else:
+                # Это может быть объект Concert или tuple
+                if hasattr(concert, 'id') and hasattr(concert, 'datetime'):
+                    concert_data.append((concert.id, concert.datetime))
+                else:
+                    concert_data.append((concert[0], concert[1]))
+        composition_concerts[composition.id] = concert_data
+
     # Подготавливаем данные для отображения
     compositions_list = []
     for comp_data in compositions_data:
-        if hasattr(comp_data, '_mapping'):
-            composition = comp_data._mapping['Composition']
-            author_name = comp_data._mapping['author_name']
-            concerts_count = comp_data._mapping['concerts_count']
-        else:
-            composition = comp_data[0]
-            author_name = comp_data[1]
-            concerts_count = comp_data[2]
+        composition = comp_data[0]
+        author_name = comp_data[1]
+        concerts_count = comp_data[2]
         
         compositions_list.append({
             'id': composition.id,
             'name': composition.name,
             'author_name': author_name,
-            'concerts_count': concerts_count
+            'concerts_count': concerts_count,
+            'concert_data': composition_concerts.get(composition.id, [])
         })
 
     # Статистика
