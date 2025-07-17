@@ -1299,13 +1299,10 @@
             <div class="concert-number concert-number-day{{ day_index }}">{{ concert.concert.datetime.strftime('%H:%M') if concert.concert.datetime else 'TBD' }}</div>
             
             <!-- Название концерта -->
-            <span style="font-weight:600; color:#333; font-size:1em; flex:1 1 200px; min-width:150px; margin-left:20px; margin-top:6px; display:inline-block;">{{ concert.concert.name }}</span>
+            <span style="font-weight:600; color:#333; font-size:1em; flex:1 1 200px; min-width:150px; margin-left:20px; margin-top:6px; display:inline-block;">{{ concert.concert.id }}. {{ concert.concert.name }}</span>
             
             <!-- Зал -->
             <span style="color:#666; font-size:0.9em;">{{ concert.concert.hall.name if concert.concert.hall else '—' }}</span>
-            
-            <!-- Количество билетов -->
-            <span style="color:#666; font-size:0.9em;">{{ concert.tickets_count }} бил.</span>
             
             <!-- Жанр -->
             {% if concert.concert.genre %}<span style="color:#666; font-size:0.9em;">{{ concert.concert.genre }}</span>{% endif %}
