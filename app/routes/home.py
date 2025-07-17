@@ -1603,7 +1603,7 @@ async def admin_artists(request: Request, session=Depends(get_session)):
     if not user_obj or not getattr(user_obj, 'is_superuser', False):
         return RedirectResponse(url="/login", status_code=302)
 
-    # Получаем всех артистов с количеством концертов
+    # Получаем всех артистов с количеством концертов и номерами концертов
     from sqlalchemy import func
     artists_data = session.exec(
         select(
@@ -1614,6 +1614,36 @@ async def admin_artists(request: Request, session=Depends(get_session)):
         .group_by(Artist.id)
         .order_by(Artist.name)
     ).all()
+
+    # Получаем номера концертов для каждого артиста
+    from models import Concert
+    artist_concerts = {}
+    for artist_data in artists_data:
+        if hasattr(artist_data, '_mapping'):
+            artist = artist_data._mapping['Artist']
+        else:
+            artist = artist_data[0]
+        
+        concerts = session.exec(
+            select(Concert.id, Concert.datetime)
+            .join(ConcertArtistLink, Concert.id == ConcertArtistLink.concert_id)
+            .where(ConcertArtistLink.artist_id == artist.id)
+            .order_by(Concert.id)
+        ).all()
+        # Извлекаем ID и даты из Row объектов и сортируем по ID
+        concert_data = []
+        for concert in concerts:
+            if hasattr(concert, '_mapping'):
+                concert_id = concert._mapping['id']
+                concert_datetime = concert._mapping['datetime']
+            else:
+                concert_id = concert[0]
+                concert_datetime = concert[1]
+            concert_data.append((concert_id, concert_datetime))
+        
+        # Сортируем по ID концерта
+        concert_data.sort(key=lambda x: x[0])
+        artist_concerts[artist.id] = concert_data
 
     # Подготавливаем данные для отображения
     artists_list = []
@@ -1629,7 +1659,8 @@ async def admin_artists(request: Request, session=Depends(get_session)):
             'id': artist.id,
             'name': artist.name,
             'is_special': artist.is_special,
-            'concerts_count': concerts_count
+            'concerts_count': concerts_count,
+            'concert_data': artist_concerts.get(artist.id, [])
         })
 
     # Статистика
