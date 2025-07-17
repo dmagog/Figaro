@@ -596,6 +596,26 @@ def get_user_route_sheet(session, user_external_id: str, concerts_data: list) ->
         concerts_by_day = group_concerts_by_day(concerts_data)
         logger.info(f"Concerts grouped by day: {concerts_by_day}")
         
+        # Добавляем информацию о переходах между концертами
+        concerts_by_day_with_transitions = {}
+        for day_index, day_concerts in concerts_by_day.items():
+            concerts_with_transitions = []
+            
+            for i, concert in enumerate(day_concerts):
+                concert_with_transition = concert.copy()
+                
+                # Добавляем информацию о переходе к следующему концерту
+                if i < len(day_concerts) - 1:
+                    next_concert = day_concerts[i + 1]
+                    transition_info = calculate_transition_time(session, concert, next_concert)
+                    concert_with_transition['transition_info'] = transition_info
+                else:
+                    concert_with_transition['transition_info'] = None
+                
+                concerts_with_transitions.append(concert_with_transition)
+            
+            concerts_by_day_with_transitions[day_index] = concerts_with_transitions
+        
         # Безопасный подсчет статистики
         total_days = len(set(c.get('concert_day_index', 0) for c in concerts_data if c.get('concert_day_index', 0) > 0))
         
@@ -622,7 +642,7 @@ def get_user_route_sheet(session, user_external_id: str, concerts_data: list) ->
                 "total_spent": sum(c['total_spent'] for c in concerts_data)
             },
             "match": match_data,
-            "concerts_by_day": concerts_by_day
+            "concerts_by_day": concerts_by_day_with_transitions
         }
         
     except Exception as e:
@@ -645,6 +665,110 @@ def get_user_route_sheet(session, user_external_id: str, concerts_data: list) ->
                 "best_route": None
             },
             "concerts_by_day": {}
+        }
+
+
+def calculate_transition_time(session, current_concert: dict, next_concert: dict) -> dict:
+    """
+    Рассчитывает время перехода между двумя концертами
+    
+    Args:
+        session: Сессия базы данных
+        current_concert: Текущий концерт
+        next_concert: Следующий концерт
+        
+    Returns:
+        Словарь с информацией о переходе
+    """
+    try:
+        from datetime import datetime, timedelta
+        
+        # Получаем ID залов
+        current_hall_id = current_concert['concert'].get('hall', {}).get('id')
+        next_hall_id = next_concert['concert'].get('hall', {}).get('id')
+        
+        logger.info(f"Calculating transition: hall {current_hall_id} -> {next_hall_id}")
+        
+        if not current_hall_id or not next_hall_id:
+            logger.warning(f"No hall info: current_hall_id={current_hall_id}, next_hall_id={next_hall_id}")
+            return {
+                'time_between': 0,
+                'walk_time': 0,
+                'status': 'no_hall_info'
+            }
+        
+        # Получаем время начала и окончания концертов
+        current_start = current_concert['concert'].get('datetime')
+        current_duration = current_concert['concert'].get('duration')
+        next_start = next_concert['concert'].get('datetime')
+        
+        logger.info(f"Times: current_start={current_start}, next_start={next_start}, current_duration={current_duration}")
+        
+        if not current_start or not next_start:
+            logger.warning(f"No time info: current_start={current_start}, next_start={next_start}")
+            return {
+                'time_between': 0,
+                'walk_time': 0,
+                'status': 'no_time_info'
+            }
+        
+        # Рассчитываем время окончания текущего концерта
+        if current_duration and hasattr(current_duration, 'seconds'):
+            current_end = current_start + timedelta(seconds=current_duration.seconds)
+        elif current_duration and isinstance(current_duration, timedelta):
+            current_end = current_start + current_duration
+        else:
+            # Если нет информации о длительности, предполагаем 90 минут
+            current_end = current_start + timedelta(minutes=90)
+        
+        logger.info(f"Current end time: {current_end}")
+        
+        # Рассчитываем время между концертами
+        time_between = (next_start - current_end).total_seconds() / 60  # в минутах
+        
+        logger.info(f"Time between concerts: {time_between} minutes")
+        
+        # Получаем время перехода между залами
+        from models import HallTransition
+        from sqlalchemy import select
+        
+        transition = session.exec(
+            select(HallTransition)
+            .where(HallTransition.from_hall_id == current_hall_id)
+            .where(HallTransition.to_hall_id == next_hall_id)
+        ).first()
+        
+        if transition and hasattr(transition, 'transition_time'):
+            walk_time = transition.transition_time
+            logger.info(f"Found transition: {current_hall_id} -> {next_hall_id} = {walk_time} minutes")
+        else:
+            walk_time = 15  # по умолчанию 15 минут
+            logger.warning(f"No transition found for {current_hall_id} -> {next_hall_id}, using default: {walk_time} minutes")
+        
+        # Определяем статус перехода
+        if time_between < walk_time:
+            status = 'warning'  # Недостаточно времени
+        elif time_between < walk_time + 15:
+            status = 'tight'    # Впритык
+        else:
+            status = 'success'  # Достаточно времени
+        
+        logger.info(f"Transition status: {status} (time_between={time_between}, walk_time={walk_time})")
+        
+        return {
+            'time_between': int(time_between),
+            'walk_time': walk_time,
+            'status': status,
+            'current_end': current_end.strftime('%H:%M'),
+            'next_start': next_start.strftime('%H:%M')
+        }
+        
+    except Exception as e:
+        logger.error(f"Error calculating transition time: {e}")
+        return {
+            'time_between': 0,
+            'walk_time': 0,
+            'status': 'error'
         }
 
 
@@ -687,6 +811,76 @@ def group_concerts_by_day(concerts_data: list) -> dict:
     
     logger.info(f"Final grouped concerts by day: {concerts_by_day}")
     return concerts_by_day
+    
+
+
+    
+
+@user_route.get("/debug/transitions")
+async def debug_transitions(session=Depends(get_session)):
+    """Отладочный endpoint для проверки данных о переходах между залами"""
+    try:
+        from models import Hall, HallTransition
+        from sqlmodel import select
+        
+        # Проверяем количество залов
+        halls = session.exec(select(Hall)).all()
+        halls_data = [{"id": hall.id, "name": hall.name} for hall in halls]
+        
+        # Проверяем количество переходов
+        transitions = session.exec(select(HallTransition)).all()
+        transitions_data = []
+        
+        for transition in transitions[:20]:  # Ограничиваем для читаемости
+            from_hall = session.exec(select(Hall).where(Hall.id == transition.from_hall_id)).first()
+            to_hall = session.exec(select(Hall).where(Hall.id == transition.to_hall_id)).first()
+            transitions_data.append({
+                "from_hall": from_hall.name if from_hall else "Unknown",
+                "to_hall": to_hall.name if to_hall else "Unknown",
+                "transition_time": transition.transition_time
+            })
+        
+        # Проверяем конкретные переходы
+        dom_muzyki = session.exec(select(Hall).where(Hall.name.like('%Дом музыки%'))).first()
+        tyuz = session.exec(select(Hall).where(Hall.name.like('%ТЮЗ%'))).first()
+        
+        specific_transitions = {}
+        if dom_muzyki and tyuz:
+            # Дом музыки → ТЮЗ
+            transition1 = session.exec(
+                select(HallTransition)
+                .where(HallTransition.from_hall_id == dom_muzyki.id)
+                .where(HallTransition.to_hall_id == tyuz.id)
+            ).first()
+            
+            if transition1:
+                specific_transitions["dom_muzyki_to_tyuz"] = transition1.transition_time
+            else:
+                specific_transitions["dom_muzyki_to_tyuz"] = "not_found"
+            
+            # ТЮЗ → Дом музыки
+            transition2 = session.exec(
+                select(HallTransition)
+                .where(HallTransition.from_hall_id == tyuz.id)
+                .where(HallTransition.to_hall_id == dom_muzyki.id)
+            ).first()
+            
+            if transition2:
+                specific_transitions["tyuz_to_dom_muzyki"] = transition2.transition_time
+            else:
+                specific_transitions["tyuz_to_dom_muzyki"] = "not_found"
+        
+        return {
+            "total_halls": len(halls),
+            "total_transitions": len(transitions),
+            "sample_transitions": transitions_data,
+            "specific_transitions": specific_transitions,
+            "halls_sample": halls_data[:10]  # Первые 10 залов
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in debug_transitions: {e}")
+        return {"error": str(e)}
     
 
 

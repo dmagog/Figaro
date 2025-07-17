@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Личный кабинет - конструктор маршрутов фестиваля «Безумные дни»</title>
-    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/css/style.css">
     <style>
         .profile-container {
             max-width: 1200px;
@@ -143,13 +143,72 @@
             border-left: 4px solid #667eea;
             transition: transform 0.2s, box-shadow 0.2s;
             position: relative;
-            overflow: hidden;
+            overflow: visible;
         }
         
         .concert-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         }
+        
+
+        
+        /* Специальные стили для номеров концертов в профиле */
+        .concert-card .concert-number {
+            position: absolute;
+            top: 20px;
+            left: 0px;
+            width: 56px;
+            height: 36px;
+            padding-left: 12px;
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #fff;
+            border-radius: 0 18px 18px 0;
+            text-align: left;
+            line-height: 36px;
+            vertical-align: middle;
+            z-index: 2;
+        }
+        
+        /* Цвета номеров концертов по дням */
+        .concert-card .concert-number-day1 { background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); }
+        .concert-card .concert-number-day2 { background: linear-gradient(90deg, #6366f1 0%, #818cf8 100%); }
+        .concert-card .concert-number-day3 { background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%); }
+        .concert-card .concert-number-day4 { background: linear-gradient(90deg, #06b6d4 0%, #0ea5e9 100%); }
+        .concert-card .concert-number-day5 { background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%); }
+        .concert-card .concert-number-day6 { background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%); }
+        .concert-card .concert-number-day7 { background: linear-gradient(90deg, #818cf8 0%, #3b82f6 100%); }
+        
+        /* Цвета номеров концертов в маршрутном листе */
+        .concert-event .concert-number-day1 { background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); }
+        .concert-event .concert-number-day2 { background: linear-gradient(90deg, #6366f1 0%, #818cf8 100%); }
+        .concert-event .concert-number-day3 { background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%); }
+        .concert-event .concert-number-day4 { background: linear-gradient(90deg, #06b6d4 0%, #0ea5e9 100%); }
+        .concert-event .concert-number-day5 { background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%); }
+        .concert-event .concert-number-day6 { background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%); }
+        .concert-event .concert-number-day7 { background: linear-gradient(90deg, #818cf8 0%, #3b82f6 100%); }
+        
+        .concert-event .concert-number {
+            display: inline-block;
+            width: 56px;
+            height: 32px;
+            padding-left: 12px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #fff;
+            border-radius: 0 16px 16px 0;
+            text-align: left;
+            line-height: 32px;
+            vertical-align: middle;
+            flex-shrink: 0;
+        }
+        
+
+        
+
+        
+
         
         /* Цветные подложки карточек по дням фестиваля */
         .concert-card-day1 { 
@@ -179,6 +238,31 @@
         .concert-card-day7 { 
             background: linear-gradient(135deg, rgba(129, 140, 248, 0.05) 0%, rgba(59, 130, 246, 0.08) 100%);
             border-left: 4px solid #818cf8;
+        }
+        
+
+        
+        /* Блоки дней с цветовой привязкой */
+        .day-header-day1 {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        }
+        .day-header-day2 {
+            background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+        }
+        .day-header-day3 {
+            background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+        }
+        .day-header-day4 {
+            background: linear-gradient(135deg, #06b6d4 0%, #0ea5e9 100%);
+        }
+        .day-header-day5 {
+            background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+        }
+        .day-header-day6 {
+            background: linear-gradient(135deg, #2563eb 0%, #6366f1 100%);
+        }
+        .day-header-day7 {
+            background: linear-gradient(135deg, #818cf8 0%, #3b82f6 100%);
         }
         
         .tickets-badge {
@@ -323,33 +407,6 @@
             border: 1px solid rgba(108,117,125,0.5);
         }
         
-        .concert-number-day1 { background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); }
-        .concert-number-day2 { background: linear-gradient(90deg, #6366f1 0%, #818cf8 100%); }
-        .concert-number-day3 { background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%); }
-        .concert-number-day4 { background: linear-gradient(90deg, #06b6d4 0%, #0ea5e9 100%); }
-        .concert-number-day5 { background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%); }
-        .concert-number-day6 { background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%); }
-        .concert-number-day7 { background: linear-gradient(90deg, #818cf8 0%, #3b82f6 100%); }
-        .concert-number {
-            position: absolute;
-            top: 18px;
-            left: 0;
-            color: #fff;
-            min-width: 48px;
-            height: 38px;
-            padding: 0 18px 0 12px;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            font-size: 1.5em;
-            font-weight: bold;
-            border-radius: 0 16px 16px 0;
-            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.15);
-            z-index: 2;
-            letter-spacing: 1px;
-            text-shadow: 0 2px 6px rgba(0,0,0,0.12);
-        }
-        
         .concert-name {
             font-size: 1.2em;
             font-weight: bold;
@@ -376,10 +433,80 @@
             border-radius: 2px;
         }
         
+        /* Фильтры по дням */
+        .route-filters {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .filter-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .day-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .day-filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .day-filter-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .day-filter-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .day-filter-btn.all-days {
+            border-color: #28a745;
+            color: #28a745;
+        }
+        
+        .day-filter-btn.all-days:hover,
+        .day-filter-btn.all-days.active {
+            background: #28a745;
+            color: white;
+        }
+        
         .day-section {
             position: relative;
             margin-bottom: 40px;
             padding-left: 80px;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease forwards;
+        }
+        
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .day-section.hidden {
+            display: none;
         }
         
         .day-dot {
@@ -419,6 +546,54 @@
             font-size: 0.9em;
         }
         
+        /* Прогресс-бар дня */
+        .day-progress {
+            margin-top: 15px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            padding: 10px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4ade80, #22c55e);
+            border-radius: 4px;
+            transition: width 0.8s ease;
+            position: relative;
+        }
+        
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.85em;
+            opacity: 0.9;
+        }
+        
         .concert-event {
             position: relative;
             background: white;
@@ -428,11 +603,62 @@
             border-left: 4px solid #667eea;
             transition: transform 0.2s, box-shadow 0.2s;
             margin-bottom: 15px;
+            opacity: 0;
+            transform: translateX(-20px);
+            animation: slideInLeft 0.5s ease forwards;
+        }
+        
+        @keyframes slideInLeft {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
         
         .concert-event:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+        
+        /* Время перехода между концертами */
+        .transition-info {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9em;
+        }
+        
+        .transition-info.warning {
+            background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+            border-color: #ef4444;
+        }
+        
+        .transition-info.success {
+            background: linear-gradient(135deg, #f0fdf4 0%, #bbf7d0 100%);
+            border-color: #22c55e;
+        }
+        
+        .transition-icon {
+            font-size: 1.2em;
+        }
+        
+        .transition-details {
+            flex: 1;
+        }
+        
+        .transition-time {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .transition-walk-time {
+            color: #666;
+            font-size: 0.85em;
         }
         
         .event-time {
@@ -447,22 +673,9 @@
             font-size: 0.9em;
         }
         
-        .event-number {
-            position: absolute;
-            top: 20px;
-            left: -10px;
-            background: #667eea;
-            color: white;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 0.9em;
-            box-shadow: 0 2px 8px rgba(102,126,234,0.3);
-        }
+
+        
+
         
         .event-title {
             margin: 0 0 15px 0;
@@ -507,6 +720,176 @@
             display: inline-block;
             font-size: 0.9em;
             color: #666;
+        }
+        
+        /* Раскрываемые блоки с деталями */
+        .concert-details-toggle {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .concert-details-toggle:hover {
+            background: #e9ecef;
+        }
+        
+        .toggle-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .toggle-icon {
+            transition: transform 0.3s ease;
+        }
+        
+        .toggle-icon.rotated {
+            transform: rotate(180deg);
+        }
+        
+        .concert-details-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .concert-details-content.expanded {
+            max-height: 500px;
+            margin-top: 15px;
+        }
+        
+        .artists-section,
+        .compositions-section {
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .artists-list,
+        .compositions-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .artist-tag,
+        .composition-tag {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            border: 1px solid #bbdefb;
+        }
+        
+        .hall-address {
+            background: #f3e5f5;
+            color: #7b1fa2;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            margin-top: 10px;
+            border-left: 3px solid #9c27b0;
+        }
+        
+        /* Погода */
+        .weather-info {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .weather-icon {
+            font-size: 1.5em;
+        }
+        
+        .weather-details {
+            flex: 1;
+        }
+        
+        .weather-temp {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .weather-desc {
+            color: #666;
+            font-size: 0.85em;
+        }
+        
+        /* Экспорт в PDF */
+        .export-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid #e9ecef;
+            text-align: center;
+        }
+        
+        .export-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+        }
+        
+        .export-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Анимация загрузки */
+        .loading-animation {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         
         /* Стили для ачивок */
@@ -793,6 +1176,37 @@
                     </div>
                 </div>
                 
+                <!-- Экспорт в PDF -->
+                <div class="export-section">
+                    <button class="export-btn" onclick="exportToPDF()" id="export-btn">
+                        <span>📄</span>
+                        Экспорт в PDF
+                    </button>
+                    <p style="margin-top: 10px; color: #666; font-size: 0.9em;">
+                        Сохраните ваш маршрут в удобном формате для печати
+                    </p>
+                </div>
+                
+                <!-- Фильтры по дням -->
+                {% if route_sheet.concerts_by_day %}
+                <div class="route-filters">
+                    <div class="filter-title">
+                        <span>🔍</span>
+                        Фильтр по дням фестиваля
+                    </div>
+                    <div class="day-filters">
+                        <button class="day-filter-btn all-days active" onclick="filterByDay('all')">
+                            Все дни
+                        </button>
+                        {% for day_index in route_sheet.concerts_by_day.keys() %}
+                        <button class="day-filter-btn" onclick="filterByDay({{ day_index }})">
+                            День {{ day_index }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
                 <!-- Дорожная карта событий -->
                 {% if route_sheet.concerts_by_day %}
                     <div class="route-timeline">
@@ -800,12 +1214,12 @@
                         <div class="timeline-line"></div>
                         
                         {% for day_index, day_concerts in route_sheet.concerts_by_day.items() %}
-                            <div class="day-section">
+                            <div class="day-section" data-day="{{ day_index }}">
                                 <!-- Точка дня -->
                                 <div class="day-dot"></div>
                                 
                                 <!-- Заголовок дня -->
-                                <div class="day-header">
+                                <div class="day-header day-header-day{{ day_index }}">
                                     <h3>
                                         <span style="font-size: 1.3em;">📅</span>
                                         День {{ day_index }} фестиваля
@@ -820,12 +1234,23 @@
                                             {% endif %}
                                         </span>
                                     </h3>
+                                    
+                                    <!-- Прогресс-бар дня -->
+                                    <div class="day-progress">
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" style="width: 0%;" data-day="{{ day_index }}"></div>
+                                        </div>
+                                        <div class="progress-info">
+                                            <span>Начало дня</span>
+                                            <span>Завершение</span>
+                                        </div>
+                                    </div>
                                 </div>
                                 
                                 <!-- События дня -->
                                 <div>
                                     {% for concert in day_concerts %}
-                                        <div class="concert-event">
+                                        <div class="concert-event" style="animation-delay: {{ loop.index * 0.1 }}s;">
                                             <!-- Время события -->
                                             <div class="event-time">
                                                 {% if concert.concert.datetime %}
@@ -836,7 +1261,7 @@
                                             </div>
                                             
                                             <!-- Номер концерта -->
-                                            <div class="event-number">
+                                            <div class="concert-number concert-number-day{{ day_index }}">
                                                 {{ concert.concert.id }}
                                             </div>
                                             
@@ -891,7 +1316,82 @@
                                                 {% endif %}
                                             </div>
                                             {% endif %}
+                                            
+                                            <!-- Адрес зала -->
+                                            {% if concert.concert.hall and concert.concert.hall.address %}
+                                            <div class="hall-address">
+                                                <span style="font-weight: 500;">📍 Адрес:</span> {{ concert.concert.hall.address }}
+                                            </div>
+                                            {% endif %}
+                                            
+                                            <!-- Погода (заглушка) -->
+                                            <div class="weather-info">
+                                                <div class="weather-icon">🌤️</div>
+                                                <div class="weather-details">
+                                                    <div class="weather-temp">+18°C</div>
+                                                    <div class="weather-desc">Переменная облачность</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Раскрываемые детали концерта -->
+                                            <div class="concert-details-toggle" onclick="toggleConcertDetails({{ concert.concert.id }})">
+                                                <div class="toggle-header">
+                                                    <span>🎭 Детали концерта</span>
+                                                    <span class="toggle-icon">▼</span>
+                                                </div>
+                                            </div>
+                                            <div class="concert-details-content" id="details-{{ concert.concert.id }}">
+                                                <div class="artists-section">
+                                                    <div class="section-title">
+                                                        <span>👥</span>
+                                                        Артисты
+                                                    </div>
+                                                    <div class="artists-list">
+                                                        <span class="artist-tag">Исполнитель 1</span>
+                                                        <span class="artist-tag">Исполнитель 2</span>
+                                                    </div>
+                                                </div>
+                                                <div class="compositions-section">
+                                                    <div class="section-title">
+                                                        <span>🎼</span>
+                                                        Произведения
+                                                    </div>
+                                                    <div class="compositions-list">
+                                                        <span class="composition-tag">Симфония №5</span>
+                                                        <span class="composition-tag">Концерт для скрипки</span>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
+                                        
+                                        <!-- Информация о переходе к следующему концерту -->
+                                        {% if concert.transition_info %}
+                                        <div class="transition-info {{ concert.transition_info.status }}" id="transition-{{ day_index }}-{{ loop.index }}">
+                                            <div class="transition-icon">
+                                                {% if concert.transition_info.status == 'warning' %}
+                                                    ⚠️
+                                                {% elif concert.transition_info.status == 'tight' %}
+                                                    ⏰
+                                                {% else %}
+                                                    🚶
+                                                {% endif %}
+                                            </div>
+                                            <div class="transition-details">
+                                                <div class="transition-time">
+                                                    Время до следующего концерта: {{ concert.transition_info.time_between }} мин
+                                                    {% if concert.transition_info.status == 'warning' %}
+                                                        <span style="color: #ef4444; font-weight: bold;">⚠️ Недостаточно времени!</span>
+                                                    {% elif concert.transition_info.status == 'tight' %}
+                                                        <span style="color: #f59e0b; font-weight: bold;">⏰ Впритык</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="transition-walk-time">
+                                                    Время на переход: {{ concert.transition_info.walk_time }} мин
+                                                    ({{ concert.transition_info.current_end }} → {{ concert.transition_info.next_start }})
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
                                     {% endfor %}
                                 </div>
                             </div>
@@ -1021,7 +1521,106 @@
             
             // Добавляем активный класс к кнопке
             event.target.classList.add('active');
+            
+            // Если открываем маршрутный лист, инициализируем прогресс-бары
+            if (tabName === 'route') {
+                setTimeout(initializeProgressBars, 100);
+            }
         }
+        
+        // Фильтрация по дням
+        function filterByDay(day) {
+            const daySections = document.querySelectorAll('.day-section');
+            const filterButtons = document.querySelectorAll('.day-filter-btn');
+            
+            // Убираем активный класс со всех кнопок
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // Добавляем активный класс к выбранной кнопке
+            event.target.classList.add('active');
+            
+            if (day === 'all') {
+                // Показываем все дни
+                daySections.forEach(section => {
+                    section.classList.remove('hidden');
+                });
+            } else {
+                // Скрываем все дни, кроме выбранного
+                daySections.forEach(section => {
+                    if (section.dataset.day == day) {
+                        section.classList.remove('hidden');
+                    } else {
+                        section.classList.add('hidden');
+                    }
+                });
+            }
+        }
+        
+        // Раскрытие/скрытие деталей концерта
+        function toggleConcertDetails(concertId) {
+            const content = document.getElementById('details-' + concertId);
+            const toggle = content.previousElementSibling;
+            const icon = toggle.querySelector('.toggle-icon');
+            
+            if (content.classList.contains('expanded')) {
+                content.classList.remove('expanded');
+                icon.classList.remove('rotated');
+            } else {
+                content.classList.add('expanded');
+                icon.classList.add('rotated');
+            }
+        }
+        
+        // Инициализация прогресс-баров
+        function initializeProgressBars() {
+            const progressBars = document.querySelectorAll('.progress-fill');
+            
+            progressBars.forEach(bar => {
+                const day = bar.dataset.day;
+                const daySection = document.querySelector(`[data-day="${day}"]`);
+                const concerts = daySection.querySelectorAll('.concert-event');
+                
+                if (concerts.length > 0) {
+                    // Рассчитываем прогресс на основе времени
+                    const firstConcert = concerts[0];
+                    const lastConcert = concerts[concerts.length - 1];
+                    
+                    // Простая логика: прогресс увеличивается с каждым концертом
+                    const progress = (concerts.length / Math.max(concerts.length, 1)) * 100;
+                    
+                    // Анимируем заполнение прогресс-бара
+                    setTimeout(() => {
+                        bar.style.width = progress + '%';
+                    }, 200);
+                }
+            });
+        }
+        
+        // Экспорт в PDF (заглушка)
+        function exportToPDF() {
+            const btn = document.getElementById('export-btn');
+            const originalText = btn.innerHTML;
+            
+            // Показываем состояние загрузки
+            btn.innerHTML = '<div class="loading-spinner" style="width: 16px; height: 16px; border-width: 2px;"></div> Экспорт...';
+            btn.disabled = true;
+            
+            // Имитируем процесс экспорта
+            setTimeout(() => {
+                alert('Функция экспорта в PDF будет реализована в ближайшее время!');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }, 2000);
+        }
+        
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            // Если открыта вкладка маршрутного листа, инициализируем прогресс-бары
+            const routeTab = document.getElementById('route-tab');
+            if (routeTab.classList.contains('active')) {
+                setTimeout(initializeProgressBars, 100);
+            }
+        });
     </script>
 </body>
 </html> 

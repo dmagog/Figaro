@@ -181,11 +181,11 @@ def load_artists(session: Session, df_artists: pd.DataFrame):
         # Находим все записи для этого артиста, чтобы определить is_special
         artist_rows = df_artists[df_artists["Artists"] == artist_name]
         is_special = any(artist_rows.get("Spetial", False))
-        
+    
         artist_records.append({
             "name": artist_name,
             "is_special": is_special
-        })
+            })
     
     # Создаем артистов
     artists_map = bulk_get_or_create(session, Artist, artist_records, ["name"])
@@ -200,13 +200,13 @@ def load_artists(session: Session, df_artists: pd.DataFrame):
             artist_name = row["Artists"]
             artist = artists_dict.get(artist_name)
             
-            if artist:
-                get_or_create(
-                    session,
-                    ConcertArtistLink,
-                    concert_id=concert_id,
-                    artist_id=artist.id
-                )
+        if artist:
+            get_or_create(
+                session,
+                ConcertArtistLink,
+                concert_id=concert_id,
+                artist_id=artist.id
+            )
     
     count = session.exec(select(Artist)).all()
     logger.info(f"В базе теперь {len(count)} артистов")
@@ -257,22 +257,22 @@ def load_compositions(session: Session, df_details: pd.DataFrame):
             author_name = row["Author"]
             composition_name = row["Programm"]
             
-            composition = session.exec(
-                select(Composition)
-                .join(Author)
-                .where(
+        composition = session.exec(
+            select(Composition)
+            .join(Author)
+            .where(
                     Composition.name == composition_name,
                     Author.name == author_name
-                )
-            ).first()
-            
-            if composition:
-                get_or_create(
-                    session,
-                    ConcertCompositionLink,
-                    concert_id=concert_id,
-                    composition_id=composition.id
-                )
+            )
+        ).first()
+        
+        if composition:
+            get_or_create(
+                session,
+                ConcertCompositionLink,
+                concert_id=concert_id,
+                composition_id=composition.id
+            )
 
     count = session.exec(select(Composition)).all()
     logger.info(f"В базе теперь {len(count)} композиций")
@@ -831,6 +831,7 @@ def load_hall_transitions(session: Session, df_transitions: pd.DataFrame):
     
     records = []
     transition_count = 0
+    created_pairs = set()  # Для отслеживания уже созданных пар переходов
     
     # Обрабатываем матрицу переходов
     for _, row in df_transitions.iterrows():
@@ -865,19 +866,34 @@ def load_hall_transitions(session: Session, df_transitions: pd.DataFrame):
                 logger.warning(f"Некорректное значение времени перехода: {transition_time} для {from_hall_name} -> {col_name}")
                 continue
             
-            records.append({
-                "from_hall_id": from_hall.id,
-                "to_hall_id": to_hall.id,
-                "transition_time": transition_time_int
-            })
-            transition_count += 1
+            # Создаем пару переходов (в обоих направлениях)
+            pair_key = tuple(sorted([from_hall.id, to_hall.id]))
+            if pair_key not in created_pairs:
+                # Прямой переход
+                records.append({
+                    "from_hall_id": from_hall.id,
+                    "to_hall_id": to_hall.id,
+                    "transition_time": transition_time_int
+                })
+                
+                # Обратный переход (то же время)
+                records.append({
+                    "from_hall_id": to_hall.id,
+                    "to_hall_id": from_hall.id,
+                    "transition_time": transition_time_int
+                })
+                
+                created_pairs.add(pair_key)
+                transition_count += 2  # Добавляем 2 перехода
+                
+                logger.debug(f"Создан переход: {from_hall_name} ↔ {col_name} ({transition_time_int} мин)")
     
     # Массовое создание записей
     if records:
         session.add_all([HallTransition(**record) for record in records])
         session.commit()
     
-    logger.info(f"Загружено {transition_count} записей о переходах между залами")
+    logger.info(f"Загружено {transition_count} записей о переходах между залами (включая обратные)")
     
     # Проверяем результат
     total_transitions = session.exec(select(HallTransition)).all()
