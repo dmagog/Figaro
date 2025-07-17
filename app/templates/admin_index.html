@@ -202,6 +202,12 @@
                 <p>{{ summary.users_count }}</p>
             </div>
             </a>
+            <a href="/admin/customers" style="text-decoration:none; color:inherit;" title="Перейти к покупателям">
+                <div class="summary-card" style="cursor:pointer;">
+                <h3>Покупателей</h3>
+                <p>{{ summary.customers_count or 0 }}</p>
+            </div>
+            </a>
             <a href="/admin/concerts" style="text-decoration:none; color:inherit;" title="Перейти к концертам">
                 <div class="summary-card" style="cursor:pointer;">
                 <h3>Концертов</h3>

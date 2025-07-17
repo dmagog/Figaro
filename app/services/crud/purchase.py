@@ -166,6 +166,12 @@ def get_festival_summary_stats(session: Session) -> dict:
     authors_count = session.exec(select(func.count(Author.id))).one()
     compositions_count = session.exec(select(func.count(Composition.id))).one()
     
+    # Подсчитываем количество уникальных покупателей (пользователей с покупками)
+    customers_count = session.exec(
+        select(func.count(func.distinct(Purchase.user_external_id)))
+        .where(Purchase.user_external_id.is_not(None))
+    ).one()
+    
     return {
         "users_count": users_count,
         "concerts_count": concerts_count,
@@ -177,7 +183,8 @@ def get_festival_summary_stats(session: Session) -> dict:
         "off_program_count": off_program_count,
         "artists_count": artists_count,
         "authors_count": authors_count,
-        "compositions_count": compositions_count
+        "compositions_count": compositions_count,
+        "customers_count": customers_count
     } 
 
 
