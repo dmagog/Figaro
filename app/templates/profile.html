@@ -597,6 +597,9 @@
             left: 0;
             right: 0;
             bottom: 0;
+        }
+        
+
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
             animation: shimmer 2s infinite;
         }
@@ -629,8 +632,8 @@
         }
         
         .concert-event.compact {
-            padding: 12px 16px 12px 20px;
-            margin-bottom: 10px;
+            padding: 8px 12px 8px 16px;
+            margin-bottom: 8px;
             margin-left: 20px;
             background: #fafafa;
             border-left: 3px solid #ddd;
@@ -793,6 +796,32 @@
         
         .toggle-icon {
             transition: transform 0.3s ease;
+        }
+        
+        /* Стили для кнопки раскрытия */
+        .expand-btn:hover {
+            color: #999;
+        }
+        
+        .expand-btn.expanded {
+            transform: rotate(180deg);
+        }
+        
+        /* Всплывающая подсказка */
+        .expand-btn[title]:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            white-space: nowrap;
+            z-index: 1000;
+            margin-bottom: 5px;
         }
         
         .toggle-icon.rotated {
@@ -1296,8 +1325,8 @@
                                 <!-- События дня -->
                                 <div>
                                     {% for concert in day_concerts %}
-    <div class="concert-event compact" style="animation-delay: {{ loop.index * 0.1 }}s;">
-        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+    <div class="concert-event compact" style="animation-delay: {{ loop.index * 0.1 }}s; padding: 4px 8px 4px 12px; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
             <!-- Время начала концерта в ярлычке -->
             <div class="concert-number concert-number-day{{ day_index }}">{{ concert.concert.datetime.strftime('%H:%M') if concert.concert.datetime else 'TBD' }}</div>
             
@@ -1311,9 +1340,9 @@
             <div style="color:#666; font-size:0.9em; width: 100%; margin-top: -6px; margin-left: 20px;">{{ concert.concert.hall.name if concert.concert.hall else '—' }} • {% if concert.concert.hall and concert.concert.hall.address %}{{ concert.concert.hall.address }}{% endif %}</div>
 
             <!-- Кнопка подробнее -->
-            <button onclick="toggleConcertDetails({{ concert.concert.id }})" style="margin-left:auto; background:none; border:none; color:#999; font-size:0.8em; cursor:pointer; padding:2px 6px; text-decoration:underline;">Подробнее</button>
+            <button onclick="toggleConcertDetails({{ concert.concert.id }})" class="expand-btn" data-concert-id="{{ concert.concert.id }}" title="Показать подробности концерта" style="margin-left:6px; background:none; border:none; color:#dddddd; font-size:1.2em; cursor:pointer; padding:2px; transition:transform 0.2s ease; position:relative; transform:translateY(-4px);">▽</button>
         </div>
-                                            <div class="concert-details-content" id="details-{{ concert.concert.id }}" style="margin-top:8px;">
+                                            <div class="concert-details-content" id="details-{{ concert.concert.id }}" style="margin-top:4px; display:none;">
                                                 {% if concert.concert.artists %}
                                                 <div class="artists-section">
                                                     <div class="section-title"><span>👥</span> Артисты</div>
@@ -1537,15 +1566,18 @@
         // Раскрытие/скрытие деталей концерта
         function toggleConcertDetails(concertId) {
             const content = document.getElementById('details-' + concertId);
-            const toggle = content.previousElementSibling;
-            const icon = toggle.querySelector('.toggle-icon');
+            const button = document.querySelector(`[data-concert-id="${concertId}"]`);
             
             if (content.classList.contains('expanded')) {
+                // Скрываем детали
                 content.classList.remove('expanded');
-                icon.classList.remove('rotated');
+                content.style.display = 'none';
+                button.classList.remove('expanded');
             } else {
+                // Показываем детали
                 content.classList.add('expanded');
-                icon.classList.add('rotated');
+                content.style.display = 'block';
+                button.classList.add('expanded');
             }
         }
         
