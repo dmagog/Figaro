@@ -812,6 +812,18 @@
             border: 1px solid #bbdefb;
         }
         
+        .special-artist {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            color: #e65100;
+            border-color: #ffb74d;
+        }
+        
+        .composition-author {
+            color: #666;
+            font-size: 0.8em;
+            font-style: italic;
+        }
+        
         .hall-address {
             background: #f3e5f5;
             color: #7b1fa2;
@@ -1358,26 +1370,43 @@
                                                 </div>
                                             </div>
                                             <div class="concert-details-content" id="details-{{ concert.concert.id }}">
+                                                {% if concert.concert.artists %}
                                                 <div class="artists-section">
                                                     <div class="section-title">
                                                         <span>👥</span>
                                                         Артисты
                                                     </div>
                                                     <div class="artists-list">
-                                                        <span class="artist-tag">Исполнитель 1</span>
-                                                        <span class="artist-tag">Исполнитель 2</span>
+                                                        {% for artist in concert.concert.artists %}
+                                                        <span class="artist-tag{% if artist.is_special %} special-artist{% endif %}">
+                                                            {{ artist.name }}
+                                                            {% if artist.is_special %}⭐{% endif %}
+                                                        </span>
+                                                        {% endfor %}
                                                     </div>
                                                 </div>
+                                                {% endif %}
+                                                {% if concert.concert.compositions %}
                                                 <div class="compositions-section">
                                                     <div class="section-title">
                                                         <span>🎼</span>
                                                         Произведения
                                                     </div>
                                                     <div class="compositions-list">
-                                                        <span class="composition-tag">Симфония №5</span>
-                                                        <span class="composition-tag">Концерт для скрипки</span>
+                                                        {% for composition in concert.concert.compositions %}
+                                                        <span class="composition-tag">
+                                                            {{ composition.name }}
+                                                            <span class="composition-author">({{ composition.author.name }})</span>
+                                                        </span>
+                                                        {% endfor %}
                                                     </div>
                                                 </div>
+                                                {% endif %}
+                                                {% if not concert.concert.artists and not concert.concert.compositions %}
+                                                <div style="text-align: center; padding: 20px; color: #666; font-style: italic;">
+                                                    Информация об артистах и программе пока не добавлена
+                                                </div>
+                                                {% endif %}
                                             </div>
                                         </div>
                                         

@@ -8,8 +8,8 @@ from sqlalchemy import func
 from models.hall import Hall
 from models.statistics import Statistics
 from models import Route
-from models.artist import Artist
-from models.composition import Author, Composition
+from models.artist import Artist, ConcertArtistLink
+from models.composition import Author, Composition, ConcertCompositionLink
 import logging
 
 logger = logging.getLogger(__name__)
@@ -62,6 +62,23 @@ def get_user_purchases_with_details(session: Session, user_external_id: str) -> 
     
     purchases_details = []
     for purchase, concert, hall in results:
+        # Получаем артистов для концерта
+        artists = session.exec(
+            select(Artist)
+            .join(ConcertArtistLink, Artist.id == ConcertArtistLink.artist_id)
+            .where(ConcertArtistLink.concert_id == concert.id)
+            .order_by(Artist.name)
+        ).all()
+        
+        # Получаем произведения для концерта
+        compositions = session.exec(
+            select(Composition, Author)
+            .join(Author, Composition.author_id == Author.id)
+            .join(ConcertCompositionLink, Composition.id == ConcertCompositionLink.composition_id)
+            .where(ConcertCompositionLink.concert_id == concert.id)
+            .order_by(Author.name, Composition.name)
+        ).all()
+        
         purchases_details.append({
             'purchase_id': purchase.id,
             'external_op_id': purchase.external_op_id,
@@ -83,7 +100,26 @@ def get_user_purchases_with_details(session: Session, user_external_id: str) -> 
                     'address': hall.address,
                     'latitude': hall.latitude,
                     'longitude': hall.longitude
-                }
+                },
+                'artists': [
+                    {
+                        'id': artist.id,
+                        'name': artist.name,
+                        'is_special': artist.is_special
+                    }
+                    for artist in artists
+                ],
+                'compositions': [
+                    {
+                        'id': composition.id,
+                        'name': composition.name,
+                        'author': {
+                            'id': author.id,
+                            'name': author.name
+                        }
+                    }
+                    for composition, author in compositions
+                ]
             }
         })
     
