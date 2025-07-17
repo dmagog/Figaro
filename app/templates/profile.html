@@ -1055,15 +1055,15 @@
         <!-- Навигационные вкладки -->
         <div class="tabs-container">
             <div class="tabs-nav">
-                <button class="tab-button active" onclick="showTab('concerts')">
+                <button class="tab-button active" onclick="showTab('concerts'); updateUrlParameter('tab', 'concerts');">
                     <span class="tab-icon">🎵</span>
                     Мои концерты
                 </button>
-                <button class="tab-button" onclick="showTab('route')">
+                <button class="tab-button" onclick="showTab('route'); updateUrlParameter('tab', 'route');">
                     <span class="tab-icon">🗺️</span>
                     Маршрутный лист
                 </button>
-                <button class="tab-button" onclick="showTab('achievements')">
+                <button class="tab-button" onclick="showTab('achievements'); updateUrlParameter('tab', 'achievements');">
                     <span class="tab-icon">🏆</span>
                     Ачивки
                 </button>
@@ -1524,6 +1524,19 @@
     </div>
     
     <script>
+        // Функция для получения параметра из URL
+        function getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+        
+        // Функция для обновления URL без перезагрузки страницы
+        function updateUrlParameter(name, value) {
+            const url = new URL(window.location);
+            url.searchParams.set(name, value);
+            window.history.pushState({}, '', url);
+        }
+        
         function showTab(tabName) {
             // Скрываем все вкладки
             const tabs = document.querySelectorAll('.tab-content');
@@ -1536,8 +1549,18 @@
             // Показываем выбранную вкладку
             document.getElementById(tabName + '-tab').classList.add('active');
             
-            // Добавляем активный класс к кнопке
-            event.target.classList.add('active');
+            // Добавляем активный класс к кнопке (находим кнопку по содержимому)
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => {
+                const buttonText = button.textContent.toLowerCase();
+                if (buttonText.includes('концерты') && tabName === 'concerts') {
+                    button.classList.add('active');
+                } else if (buttonText.includes('маршрут') && tabName === 'route') {
+                    button.classList.add('active');
+                } else if (buttonText.includes('ачивки') && tabName === 'achievements') {
+                    button.classList.add('active');
+                }
+            });
             
             // Если открываем маршрутный лист, инициализируем прогресс-бары
             if (tabName === 'route') {
@@ -1632,9 +1655,14 @@
         
         // Инициализация при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
+            // Получаем активную вкладку из URL или используем 'concerts' по умолчанию
+            const activeTab = getUrlParameter('tab') || 'concerts';
+            
+            // Показываем активную вкладку
+            showTab(activeTab);
+            
             // Если открыта вкладка маршрутного листа, инициализируем прогресс-бары
-            const routeTab = document.getElementById('route-tab');
-            if (routeTab.classList.contains('active')) {
+            if (activeTab === 'route') {
                 setTimeout(initializeProgressBars, 100);
             }
         });
