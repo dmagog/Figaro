@@ -804,7 +804,7 @@
         }
         
         .expand-btn.expanded {
-            transform: rotate(180deg);
+            transform: translateY(-4px) rotate(180deg) !important;
         }
         
         /* Всплывающая подсказка */
@@ -1568,16 +1568,22 @@
             const content = document.getElementById('details-' + concertId);
             const button = document.querySelector(`[data-concert-id="${concertId}"]`);
             
+            console.log('Toggle details for concert:', concertId);
+            console.log('Content found:', content);
+            console.log('Button found:', button);
+            
             if (content.classList.contains('expanded')) {
                 // Скрываем детали
                 content.classList.remove('expanded');
                 content.style.display = 'none';
                 button.classList.remove('expanded');
+                console.log('Hiding details, removing expanded class from button');
             } else {
                 // Показываем детали
                 content.classList.add('expanded');
                 content.style.display = 'block';
                 button.classList.add('expanded');
+                console.log('Showing details, adding expanded class to button');
             }
         }
         
