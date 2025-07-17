@@ -226,6 +226,22 @@
             font-size: 0.8em;
             font-weight: 500;
         }
+        .concerts-count {
+            background: #28a745;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+        .no-concerts {
+            background: #6c757d;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
         @media (max-width: 768px) {
             .admin-container { margin: 20px; padding: 20px; }
             .admin-nav-flex { gap: 8px; }
@@ -276,6 +292,10 @@
                 <h3>С произведениями</h3>
                 <p>{{ authors_with_compositions }}</p>
             </div>
+            <div class="stat-card">
+                <h3>В концертах</h3>
+                <p>{{ authors_with_concerts }}</p>
+            </div>
         </div>
 
         <div class="table-container">
@@ -291,6 +311,7 @@
                         <th class="sortable">ID</th>
                         <th class="sortable">Имя автора</th>
                         <th class="sortable">Произведений</th>
+                        <th class="sortable">Концертов</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -303,6 +324,13 @@
                                 <span class="compositions-count">{{ author.compositions_count }}</span>
                             {% else %}
                                 <span class="no-compositions">0</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if author.concerts_count > 0 %}
+                                <span class="concerts-count">{{ author.concerts_count }}</span>
+                            {% else %}
+                                <span class="no-concerts">0</span>
                             {% endif %}
                         </td>
                     </tr>
@@ -370,6 +398,10 @@
                 }
                 if (idx === 2) {
                     // Произведений: число
+                    return parseInt(text) || 0;
+                }
+                if (idx === 3) {
+                    // Концертов: число
                     return parseInt(text) || 0;
                 }
                 return text.toLowerCase();

@@ -1697,14 +1697,16 @@ async def admin_authors(request: Request, session=Depends(get_session)):
     if not user_obj or not getattr(user_obj, 'is_superuser', False):
         return RedirectResponse(url="/login", status_code=302)
 
-    # Получаем всех авторов с количеством произведений
+    # Получаем всех авторов с количеством произведений и концертов
     from sqlalchemy import func
     authors_data = session.exec(
         select(
             Author,
-            func.count(Composition.id).label('compositions_count')
+            func.count(Composition.id).label('compositions_count'),
+            func.count(ConcertCompositionLink.concert_id.distinct()).label('concerts_count')
         )
         .outerjoin(Composition, Author.id == Composition.author_id)
+        .outerjoin(ConcertCompositionLink, Composition.id == ConcertCompositionLink.composition_id)
         .group_by(Author.id)
         .order_by(Author.name)
     ).all()
@@ -1715,26 +1717,31 @@ async def admin_authors(request: Request, session=Depends(get_session)):
         if hasattr(author_data, '_mapping'):
             author = author_data._mapping['Author']
             compositions_count = author_data._mapping['compositions_count']
+            concerts_count = author_data._mapping['concerts_count']
         else:
             author = author_data[0]
             compositions_count = author_data[1]
+            concerts_count = author_data[2]
         
         authors_list.append({
             'id': author.id,
             'name': author.name,
-            'compositions_count': compositions_count
+            'compositions_count': compositions_count,
+            'concerts_count': concerts_count
         })
 
     # Статистика
     total_authors = len(authors_list)
     authors_with_compositions = sum(1 for author in authors_list if author['compositions_count'] > 0)
+    authors_with_concerts = sum(1 for author in authors_list if author['concerts_count'] > 0)
 
     context = {
         "user": user_obj,
         "request": request,
         "authors": authors_list,
         "total_authors": total_authors,
-        "authors_with_compositions": authors_with_compositions
+        "authors_with_compositions": authors_with_compositions,
+        "authors_with_concerts": authors_with_concerts
     }
     return templates.TemplateResponse("admin_authors.html", context)
 
