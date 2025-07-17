@@ -18,7 +18,7 @@ import os
 import threading
 import logging
 from datetime import datetime
-from models import OffProgram, EventFormat
+from models import OffProgram, EventFormat, Artist, Author, Composition, ConcertArtistLink, ConcertCompositionLink
 
 
 def format_time_minutes(minutes):
@@ -1358,7 +1358,7 @@ async def get_routes_api(request: Request, session=Depends(get_session)):
 @home_route.get("/admin/offprogram", response_class=HTMLResponse)
 async def admin_offprogram(request: Request, session=Depends(get_session)):
     """
-    Страница Офф-программы в админке. Доступ только для суперадмина.
+    Страница управления Офф-программой. Доступ только для суперадмина.
     """
     token = request.cookies.get(settings.COOKIE_NAME)
     if token:
@@ -1373,8 +1373,12 @@ async def admin_offprogram(request: Request, session=Depends(get_session)):
     if not user_obj or not getattr(user_obj, 'is_superuser', False):
         return RedirectResponse(url="/login", status_code=302)
 
-    # Получаем все мероприятия Офф-программы
-    events = session.exec(select(OffProgram).order_by(OffProgram.event_date)).all()
+    # Получаем все мероприятия офф-программы с группировкой по дням
+    from sqlalchemy import func
+    events = session.exec(
+        select(OffProgram)
+        .order_by(OffProgram.event_date, OffProgram.event_name)
+    ).all()
     
     # Подготавливаем данные для отображения
     events_data = []
@@ -1557,6 +1561,10 @@ async def toggle_offprogram_recommend(request: Request, session=Depends(get_sess
         session.add(event_data)
         session.commit()
         
+        # Обновляем статистику офф-программы
+        from services.crud.data_loader import update_off_program_count_cache
+        update_off_program_count_cache(session)
+        
         logging.info(f"Успешно обновлено: event_id={event_id}, recommend={new_recommend}")
         
         return JSONResponse({
@@ -1575,3 +1583,193 @@ async def toggle_offprogram_recommend(request: Request, session=Depends(get_sess
             "success": False,
             "error": f"Ошибка при обновлении: {str(e)}"
         }, status_code=500)
+
+
+@home_route.get("/admin/artists", response_class=HTMLResponse)
+async def admin_artists(request: Request, session=Depends(get_session)):
+    """
+    Страница управления артистами. Доступ только для суперадмина.
+    """
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    # Получаем полноценного пользователя из БД
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return RedirectResponse(url="/login", status_code=302)
+
+    # Получаем всех артистов с количеством концертов
+    from sqlalchemy import func
+    artists_data = session.exec(
+        select(
+            Artist,
+            func.count(ConcertArtistLink.concert_id).label('concerts_count')
+        )
+        .outerjoin(ConcertArtistLink, Artist.id == ConcertArtistLink.artist_id)
+        .group_by(Artist.id)
+        .order_by(Artist.name)
+    ).all()
+
+    # Подготавливаем данные для отображения
+    artists_list = []
+    for artist_data in artists_data:
+        if hasattr(artist_data, '_mapping'):
+            artist = artist_data._mapping['Artist']
+            concerts_count = artist_data._mapping['concerts_count']
+        else:
+            artist = artist_data[0]
+            concerts_count = artist_data[1]
+        
+        artists_list.append({
+            'id': artist.id,
+            'name': artist.name,
+            'is_special': artist.is_special,
+            'concerts_count': concerts_count
+        })
+
+    # Статистика
+    total_artists = len(artists_list)
+    special_artists = sum(1 for artist in artists_list if artist['is_special'])
+    artists_with_concerts = sum(1 for artist in artists_list if artist['concerts_count'] > 0)
+
+    context = {
+        "user": user_obj,
+        "request": request,
+        "artists": artists_list,
+        "total_artists": total_artists,
+        "special_artists": special_artists,
+        "artists_with_concerts": artists_with_concerts
+    }
+    return templates.TemplateResponse("admin_artists.html", context)
+
+
+@home_route.get("/admin/authors", response_class=HTMLResponse)
+async def admin_authors(request: Request, session=Depends(get_session)):
+    """
+    Страница управления авторами. Доступ только для суперадмина.
+    """
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    # Получаем полноценного пользователя из БД
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return RedirectResponse(url="/login", status_code=302)
+
+    # Получаем всех авторов с количеством произведений
+    from sqlalchemy import func
+    authors_data = session.exec(
+        select(
+            Author,
+            func.count(Composition.id).label('compositions_count')
+        )
+        .outerjoin(Composition, Author.id == Composition.author_id)
+        .group_by(Author.id)
+        .order_by(Author.name)
+    ).all()
+
+    # Подготавливаем данные для отображения
+    authors_list = []
+    for author_data in authors_data:
+        if hasattr(author_data, '_mapping'):
+            author = author_data._mapping['Author']
+            compositions_count = author_data._mapping['compositions_count']
+        else:
+            author = author_data[0]
+            compositions_count = author_data[1]
+        
+        authors_list.append({
+            'id': author.id,
+            'name': author.name,
+            'compositions_count': compositions_count
+        })
+
+    # Статистика
+    total_authors = len(authors_list)
+    authors_with_compositions = sum(1 for author in authors_list if author['compositions_count'] > 0)
+
+    context = {
+        "user": user_obj,
+        "request": request,
+        "authors": authors_list,
+        "total_authors": total_authors,
+        "authors_with_compositions": authors_with_compositions
+    }
+    return templates.TemplateResponse("admin_authors.html", context)
+
+
+@home_route.get("/admin/compositions", response_class=HTMLResponse)
+async def admin_compositions(request: Request, session=Depends(get_session)):
+    """
+    Страница управления произведениями. Доступ только для суперадмина.
+    """
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    # Получаем полноценного пользователя из БД
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return RedirectResponse(url="/login", status_code=302)
+
+    # Получаем все произведения с информацией об авторах и количестве концертов
+    from sqlalchemy import func
+    compositions_data = session.exec(
+        select(
+            Composition,
+            Author.name.label('author_name'),
+            func.count(ConcertCompositionLink.concert_id).label('concerts_count')
+        )
+        .join(Author, Composition.author_id == Author.id)
+        .outerjoin(ConcertCompositionLink, Composition.id == ConcertCompositionLink.composition_id)
+        .group_by(Composition.id, Author.name)
+        .order_by(Author.name, Composition.name)
+    ).all()
+
+    # Подготавливаем данные для отображения
+    compositions_list = []
+    for comp_data in compositions_data:
+        if hasattr(comp_data, '_mapping'):
+            composition = comp_data._mapping['Composition']
+            author_name = comp_data._mapping['author_name']
+            concerts_count = comp_data._mapping['concerts_count']
+        else:
+            composition = comp_data[0]
+            author_name = comp_data[1]
+            concerts_count = comp_data[2]
+        
+        compositions_list.append({
+            'id': composition.id,
+            'name': composition.name,
+            'author_name': author_name,
+            'concerts_count': concerts_count
+        })
+
+    # Статистика
+    total_compositions = len(compositions_list)
+    compositions_with_concerts = sum(1 for comp in compositions_list if comp['concerts_count'] > 0)
+    total_performances = sum(comp['concerts_count'] for comp in compositions_list)
+
+    context = {
+        "user": user_obj,
+        "request": request,
+        "compositions": compositions_list,
+        "total_compositions": total_compositions,
+        "compositions_with_concerts": compositions_with_concerts,
+        "total_performances": total_performances
+    }
+    return templates.TemplateResponse("admin_compositions.html", context)

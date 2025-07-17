@@ -166,103 +166,113 @@ def load_concerts(session: Session, df_concerts: pd.DataFrame):
 
 
 def load_artists(session: Session, df_artists: pd.DataFrame):
-    logger.info(f"Загружаем {len(df_artists.drop_duplicates(['ShowNum', 'Artists']))} артистов из Excel")
+    logger.info(f"Загружаем артистов из Excel")
     
     # Загружаем концерты в память
     concerts = {concert.external_id: concert.id for concert in session.exec(select(Concert)).all()}
     
-    # Группируем артистов по концертам
-    artist_records = []
-    link_records = []
+    # Сначала создаем уникальных артистов
+    unique_artists = df_artists["Artists"].dropna().unique()
+    logger.info(f"Найдено {len(unique_artists)} уникальных артистов")
     
-    for _, row in df_artists.drop_duplicates(["ShowNum", "Artists"]).iterrows():
-        artist_records.append({
-            "name": row["Artists"],
-            "is_special": bool(row.get("Spetial", False))
-        })
+    # Создаем записи артистов с учетом флага is_special
+    artist_records = []
+    for artist_name in unique_artists:
+        # Находим все записи для этого артиста, чтобы определить is_special
+        artist_rows = df_artists[df_artists["Artists"] == artist_name]
+        is_special = any(artist_rows.get("Spetial", False))
         
-        concert_id = concerts.get(row["ShowNum"])
-        if concert_id:
-            link_records.append({
-                "concert_id": concert_id,
-                "artist_name": row["Artists"]  # Временное поле для связи
-            })
+        artist_records.append({
+            "name": artist_name,
+            "is_special": is_special
+        })
     
     # Создаем артистов
     artists_map = bulk_get_or_create(session, Artist, artist_records, ["name"])
     
-    # Создаем связи
-    for link_record in link_records:
-        artist_name = link_record.pop("artist_name")
-        artist = session.exec(select(Artist).where(Artist.name == artist_name)).first()
-        if artist:
-            get_or_create(
-                session,
-                ConcertArtistLink,
-                concert_id=link_record["concert_id"],
-                artist_id=artist.id
-            )
+    # Создаем словарь артистов для быстрого доступа
+    artists_dict = {artist.name: artist for artist in session.exec(select(Artist)).all()}
+    
+    # Создаем связи с концертами
+    for _, row in df_artists.drop_duplicates(["ShowNum", "Artists"]).iterrows():
+        concert_id = concerts.get(row["ShowNum"])
+        if concert_id:
+            artist_name = row["Artists"]
+            artist = artists_dict.get(artist_name)
+            
+            if artist:
+                get_or_create(
+                    session,
+                    ConcertArtistLink,
+                    concert_id=concert_id,
+                    artist_id=artist.id
+                )
     
     count = session.exec(select(Artist)).all()
     logger.info(f"В базе теперь {len(count)} артистов")
 
 
 def load_compositions(session: Session, df_details: pd.DataFrame):
-    logger.info(f"Загружаем {len(df_details.drop_duplicates(['ShowNum', 'Author', 'Programm']))} композиций из Excel")
+    logger.info(f"Загружаем композиции из Excel")
     
     # Загружаем концерты в память
     concerts = {concert.external_id: concert.id for concert in session.exec(select(Concert)).all()}
     
-    # Группируем композиции
-    author_records = []
-    composition_records = []
-    link_records = []
+    # Сначала создаем уникальных авторов
+    unique_authors = df_details["Author"].dropna().unique()
+    logger.info(f"Найдено {len(unique_authors)} уникальных авторов")
     
-    for _, row in df_details.drop_duplicates(["ShowNum", "Author", "Programm"]).iterrows():
-        author_records.append({"name": row["Author"]})
-        
-        composition_records.append({
-            "name": row["Programm"],
-            "author_name": row["Author"]  # Временное поле для связи
-        })
-        
-        concert_id = concerts.get(row["ShowNum"])
-        if concert_id:
-            link_records.append({
-                "concert_id": concert_id,
-                "composition_name": row["Programm"],
-                "author_name": row["Author"]
-            })
+    author_records = []
+    for author_name in unique_authors:
+        author_records.append({"name": author_name})
     
     # Создаем авторов
     authors_map = bulk_get_or_create(session, Author, author_records, ["name"])
     
+    # Создаем словарь авторов для быстрого доступа
+    authors_dict = {author.name: author for author in session.exec(select(Author)).all()}
+    
+    # Группируем композиции по уникальным сочетаниям (Author, Programm)
+    composition_records = []
+    link_records = []
+    
+    for _, row in df_details.drop_duplicates(["Author", "Programm"]).iterrows():
+        author_name = row["Author"]
+        author = authors_dict.get(author_name)
+        
+        if author:
+            composition_records.append({
+                "name": row["Programm"],
+                "author_id": author.id
+            })
+    
     # Создаем композиции
     for comp_record in composition_records:
-        author_name = comp_record.pop("author_name")
-        author = session.exec(select(Author).where(Author.name == author_name)).first()
-        if author:
-            comp_record["author_id"] = author.id
-            get_or_create(session, Composition, **comp_record)
+        get_or_create(session, Composition, **comp_record)
     
-    # Создаем связи
-    for link_record in link_records:
-        composition = session.exec(
-            select(Composition)
-            .join(Author)
-            .where(
-                Composition.name == link_record["composition_name"],
-                Author.name == link_record["author_name"]
-            )
-        ).first()
-        
-        if composition:
-            get_or_create(
-                session,
-                ConcertCompositionLink,
-                concert_id=link_record["concert_id"],
-                composition_id=composition.id
-            )
+    # Создаем связи с концертами
+    for _, row in df_details.drop_duplicates(["ShowNum", "Author", "Programm"]).iterrows():
+        concert_id = concerts.get(row["ShowNum"])
+        if concert_id:
+            author_name = row["Author"]
+            composition_name = row["Programm"]
+            
+            composition = session.exec(
+                select(Composition)
+                .join(Author)
+                .where(
+                    Composition.name == composition_name,
+                    Author.name == author_name
+                )
+            ).first()
+            
+            if composition:
+                get_or_create(
+                    session,
+                    ConcertCompositionLink,
+                    concert_id=concert_id,
+                    composition_id=composition.id
+                )
 
     count = session.exec(select(Composition)).all()
     logger.info(f"В базе теперь {len(count)} композиций")
@@ -511,6 +521,9 @@ def load_all_data(session: Session, df_halls: pd.DataFrame, df_concerts: pd.Data
         # Загружаем Офф-программу после залов (если передана)
         if df_off_program is not None:
             load_off_program(session, df_off_program)
+        else:
+            # Инициализируем кэш офф-программы даже если данные не загружаются
+            init_off_program_count_cache(session)
         
         load_concerts(session, df_concerts)
         load_artists(session, df_artists)
@@ -743,6 +756,60 @@ def load_off_program(session: Session, df_off_program: pd.DataFrame):
     
     count = session.exec(select(OffProgram)).all()
     logger.info(f"В базе теперь {len(count)} мероприятий Офф-программы")
+    
+    # Обновляем статистику офф-программы
+    update_off_program_count_cache(session)
+
+
+def update_off_program_count_cache(session: Session):
+    """Обновляет кэшированное количество мероприятий офф-программы в таблице Statistics"""
+    try:
+        # Подсчитываем актуальное количество мероприятий офф-программы
+        off_program_events = session.exec(select(OffProgram)).all()
+        off_program_count = len(off_program_events)
+        
+        # Ищем существующую запись или создаём новую
+        stats_record = session.exec(
+            select(Statistics).where(Statistics.key == "off_program_count")
+        ).first()
+        
+        if stats_record:
+            stats_record.value = off_program_count
+            stats_record.updated_at = datetime.now(timezone.utc)
+        else:
+            stats_record = Statistics(
+                key="off_program_count",
+                value=off_program_count,
+                updated_at=datetime.now(timezone.utc)
+            )
+            session.add(stats_record)
+        
+        session.commit()
+        logger.info(f"Кэш количества мероприятий офф-программы обновлён: {off_program_count}")
+        
+    except Exception as e:
+        logger.error(f"Ошибка при обновлении кэша количества мероприятий офф-программы: {e}")
+        session.rollback()
+
+
+def init_off_program_count_cache(session: Session):
+    """Инициализирует кэш количества мероприятий офф-программы, если его нет"""
+    try:
+        # Проверяем, есть ли уже запись в кэше
+        stats_record = session.exec(
+            select(Statistics).where(Statistics.key == "off_program_count")
+        ).first()
+        
+        if not stats_record:
+            # Если кэша нет, создаём его
+            update_off_program_count_cache(session)
+            logger.info("Кэш количества мероприятий офф-программы инициализирован")
+        else:
+            logger.info("Кэш количества мероприятий офф-программы уже существует")
+            
+    except Exception as e:
+        logger.error(f"Ошибка при инициализации кэша количества мероприятий офф-программы: {e}")
+        session.rollback()
 
 
 def load_hall_transitions(session: Session, df_transitions: pd.DataFrame):

@@ -68,8 +68,8 @@
         .admin-summary {
             margin-top: 30px;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 32px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
         }
         .summary-card {
             background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 100%);
@@ -155,7 +155,10 @@
             .admin-nav-flex { gap: 8px; }
             .admin-menu-btn, .admin-menu-dropdown-btn { padding: 10px 12px; font-size: 1em; }
             .admin-menu-dropdown-content { min-width: 120px; }
-            .admin-summary { grid-template-columns: 1fr; gap: 16px; }
+            .admin-summary { 
+                grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); 
+                gap: 16px; 
+            }
         }
     </style>
 </head>
@@ -174,6 +177,9 @@
                 <a href="/admin/halls" class="admin-menu-btn">Залы</a>
                 <a href="/admin/routes" class="admin-menu-btn">Маршруты</a>
                 <a href="/admin/offprogram" class="admin-menu-btn">Офф-программа</a>
+                <a href="/admin/artists" class="admin-menu-btn">Артисты</a>
+                <a href="/admin/authors" class="admin-menu-btn">Авторы</a>
+                <a href="/admin/compositions" class="admin-menu-btn">Произведения</a>
                 <a href="/" class="admin-menu-btn"><span style="font-size:1.1em; margin-right:6px;">🌐</span>На сайт</a>
                 <div class="admin-menu-dropdown" id="adminMenuDropdown" style="display:none;">
                     <button class="admin-menu-dropdown-btn" id="dropdownBtn">Ещё <span style="font-size:1.1em;">▼</span></button>
@@ -226,6 +232,30 @@
                 <div class="summary-card" style="cursor:pointer;">
                     <h3>Маршрутов</h3>
                     <p>{{ routes_count }}</p>
+                </div>
+            </a>
+            <a href="/admin/offprogram" style="text-decoration:none; color:inherit;" title="Перейти к офф-программе">
+                <div class="summary-card" style="cursor:pointer;">
+                    <h3>Офф-программа</h3>
+                    <p>{{ summary.off_program_count or 0 }}</p>
+                </div>
+            </a>
+            <a href="/admin/artists" style="text-decoration:none; color:inherit;" title="Перейти к артистам">
+                <div class="summary-card" style="cursor:pointer;">
+                    <h3>Артистов</h3>
+                    <p>{{ summary.artists_count or 0 }}</p>
+                </div>
+            </a>
+            <a href="/admin/authors" style="text-decoration:none; color:inherit;" title="Перейти к авторам">
+                <div class="summary-card" style="cursor:pointer;">
+                    <h3>Авторов</h3>
+                    <p>{{ summary.authors_count or 0 }}</p>
+                </div>
+            </a>
+            <a href="/admin/compositions" style="text-decoration:none; color:inherit;" title="Перейти к произведениям">
+                <div class="summary-card" style="cursor:pointer;">
+                    <h3>Произведений</h3>
+                    <p>{{ summary.compositions_count or 0 }}</p>
                 </div>
             </a>
             <a href="/profile" style="text-decoration:none; color:inherit;" title="Перейти в профиль">

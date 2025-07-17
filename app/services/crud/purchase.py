@@ -8,6 +8,8 @@ from sqlalchemy import func
 from models.hall import Hall
 from models.statistics import Statistics
 from models import Route
+from models.artist import Artist
+from models.composition import Author, Composition
 import logging
 
 logger = logging.getLogger(__name__)
@@ -147,6 +149,10 @@ def get_festival_summary_stats(session: Session) -> dict:
     - Средняя заполняемость концертов (купленных билетов / концертов)
     - Количество залов
     - Количество маршрутов (из кэша)
+    - Количество мероприятий офф-программы (из кэша)
+    - Количество артистов
+    - Количество авторов
+    - Количество произведений
     """
     users_count = session.exec(select(func.count(User.id))).one()
     concerts_count = session.exec(select(func.count(Concert.id))).one()
@@ -155,6 +161,10 @@ def get_festival_summary_stats(session: Session) -> dict:
     avg_fill = (tickets_count / concerts_count) if concerts_count else 0
     halls_count = session.exec(select(func.count(Hall.id))).one()
     routes_count = get_cached_routes_count(session)
+    off_program_count = get_cached_off_program_count(session)
+    artists_count = session.exec(select(func.count(Artist.id))).one()
+    authors_count = session.exec(select(func.count(Author.id))).one()
+    compositions_count = session.exec(select(func.count(Composition.id))).one()
     
     return {
         "users_count": users_count,
@@ -163,7 +173,11 @@ def get_festival_summary_stats(session: Session) -> dict:
         "total_spent": total_spent,
         "avg_fill": avg_fill,
         "halls_count": halls_count,
-        "routes_count": routes_count
+        "routes_count": routes_count,
+        "off_program_count": off_program_count,
+        "artists_count": artists_count,
+        "authors_count": authors_count,
+        "compositions_count": compositions_count
     } 
 
 
@@ -190,6 +204,34 @@ def get_cached_routes_count(session: Session) -> int:
             
     except Exception as e:
         logger.error(f"Ошибка при получении кэшированного количества маршрутов: {e}")
+        # В случае ошибки возвращаем 0
+        return 0
+
+
+def get_cached_off_program_count(session: Session) -> int:
+    """Возвращает кэшированное количество мероприятий офф-программы"""
+    try:
+        stats_record = session.exec(
+            select(Statistics).where(Statistics.key == "off_program_count")
+        ).first()
+        
+        if stats_record:
+            return stats_record.value
+        else:
+            # Если кэша нет, подсчитываем и создаём
+            from models import OffProgram
+            off_program_count = len(session.exec(select(OffProgram)).all())
+            stats_record = Statistics(
+                key="off_program_count",
+                value=off_program_count,
+                updated_at=datetime.now(timezone.utc)
+            )
+            session.add(stats_record)
+            session.commit()
+            return off_program_count
+            
+    except Exception as e:
+        logger.error(f"Ошибка при получении кэшированного количества мероприятий офф-программы: {e}")
         # В случае ошибки возвращаем 0
         return 0
 
