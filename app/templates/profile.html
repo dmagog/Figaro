@@ -1425,7 +1425,11 @@
                                         </div>
                                         
                                         <!-- Информация о переходе к следующему концерту -->
-                                        {% if concert.transition_info %}
+                                        {% set show_transition = true %}
+                                        {% if loop.index > 1 and day_concerts[loop.index - 2].transition_info and day_concerts[loop.index - 2].transition_info.status == 'overlap' %}
+                                            {% set show_transition = false %}
+                                        {% endif %}
+                                        {% if concert.transition_info and show_transition %}
                                         <div class="transition-card transition-{{ concert.transition_info.status }}" style="margin: 0 0 12px 0; margin-left: 60px; padding: 4px 12px; border-radius: 0 6px 6px 0; font-size: 0.85em; display: flex; align-items: center; gap: 8px; width: 90%; border-left: 3px solid; position: relative; 
                                             {% if concert.transition_info.status == 'warning' %}border-left-color: #856404; background-color: #fff3cd;{% endif %}
                                             {% if concert.transition_info.status == 'success' %}border-left-color: #155724; background-color: #d4edda;{% endif %}
@@ -1519,6 +1523,9 @@
                                                 </div>
                                             {% endif %}
                                         </div>
+                                        {% elif not show_transition %}
+                                        <!-- Пустой отступ для сохранения интервалов -->
+                                        <div style="margin: 0 0 12px 0; height: 0;"></div>
                                         {% endif %}
                                     {% endfor %}
                                 </div>
