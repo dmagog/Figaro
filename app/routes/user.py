@@ -798,8 +798,12 @@ def calculate_transition_time(session, current_concert: dict, next_concert: dict
             status = 'same_hall'  # В том же зале
         elif walk_time == 1:
             status = 'same_building'  # В том же здании
+        elif time_between < walk_time - 3:
+            # Если время между концертами меньше времени перехода на 3+ минут - это наложение
+            status = 'overlap'  # Наложение из-за недостатка времени на переход
         elif time_between < walk_time:
-            status = 'warning'  # Недостаточно времени
+            # Если разница менее 3 минут - нужно поторопиться
+            status = 'hurry'    # Нужно поторопиться
         elif time_between < walk_time + 10:
             status = 'tight'    # Впритык
         else:

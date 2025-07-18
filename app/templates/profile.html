@@ -206,6 +206,9 @@
         .concert-event .concert-number-day6 { background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%); }
         .concert-event .concert-number-day7 { background: linear-gradient(90deg, #818cf8 0%, #3b82f6 100%); }
         
+        /* Стиль для конфликтующих концертов */
+        .concert-event .concert-number-conflict { background: linear-gradient(90deg, #dc2626 0%, #ef4444 100%); }
+        
         .concert-event .concert-number {
             display: inline-block;
             width: 56px;
@@ -1366,16 +1369,20 @@
                                 <!-- События дня -->
                                 <div>
                                     {% for concert in day_concerts %}
-    <div class="concert-event compact" style="animation-delay: {{ loop.index * 0.1 }}s; padding: 4px 8px 4px 12px; margin-bottom: 0px;">
+                                    {% set is_conflict = false %}
+                                    {% if loop.index > 1 and day_concerts[loop.index - 2].transition_info and day_concerts[loop.index - 2].transition_info.status == 'overlap' %}
+                                        {% set is_conflict = true %}
+                                    {% endif %}
+    <div class="concert-event compact" style="animation-delay: {{ loop.index * 0.1 }}s; padding: 4px 8px 4px 12px; margin-bottom: 0px; {% if is_conflict %}background-color: #fef2f2; border-left: 4px solid #dc2626;{% endif %}">
         <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
             <!-- Время начала концерта в ярлычке -->
-            <div class="concert-number concert-number-day{{ day_index }}">{{ concert.concert.datetime.strftime('%H:%M') if concert.concert.datetime else 'TBD' }}</div>
+            <div class="concert-number {% if is_conflict %}concert-number-conflict{% else %}concert-number-day{{ day_index }}{% endif %}">{{ concert.concert.datetime.strftime('%H:%M') if concert.concert.datetime else 'TBD' }}</div>
             
             <!-- Название концерта -->
             <span style="font-weight:600; color:#333; font-size:1em; flex:1 1 200px; min-width:150px; margin-left:20px; margin-top:6px; display:inline-block;">{{ concert.concert.id }}. {{ concert.concert.name }}</span>
             
             <!-- Жанр и длительность справа -->
-            <div style="display: flex; flex-direction: column; align-items: flex-end; margin-top: -6px; margin-right: 10px;">
+            <div style="display: flex; flex-direction: column; align-items: flex-end; margin-top: 2px; margin-right: 10px;">
                 {% if concert.concert.genre %}<span style="color:#666; font-size:0.9em;">{{ concert.concert.genre }}</span>{% endif %}
                 {% if concert.concert.duration %}<span style="color:#666; font-size:0.9em; cursor: help;" title="Длительность концерта: {{ (concert.concert.duration.total_seconds() / 60) | int }} минут">⏱️ {{ (concert.concert.duration.total_seconds() / 60) | int }} мин</span>{% endif %}
             </div>
@@ -1423,16 +1430,22 @@
                                             {% if concert.transition_info.status == 'warning' %}border-left-color: #856404; background-color: #fff3cd;{% endif %}
                                             {% if concert.transition_info.status == 'success' %}border-left-color: #155724; background-color: #d4edda;{% endif %}
                                             {% if concert.transition_info.status == 'tight' %}border-left-color: #856404; background-color: #fff3cd;{% endif %}
-                                            {% if concert.transition_info.status == 'same_hall' %}border-left-color: #059669; background-color: #d1fae5;{% endif %}
-                                            {% if concert.transition_info.status == 'same_building' %}border-left-color: #059669; background-color: #d1fae5;{% endif %}
+                                            {% if concert.transition_info.status == 'same_hall' %}border-left-color: #155724; background-color: #d4edda;{% endif %}
+                                            {% if concert.transition_info.status == 'same_building' %}border-left-color: #155724; background-color: #d4edda;{% endif %}
                                             {% if concert.transition_info.status == 'overlap' %}border-left-color: #dc2626; background-color: #fee2e2;{% endif %}
+                                            {% if concert.transition_info.status == 'hurry' %}border-left-color: #f59e0b; background-color: #fef3c7;{% endif %}
                                             {% if concert.transition_info.status == 'no_transition_data' %}border-left-color: #dc2626; background-color: #fef2f2;{% endif %}">
                                             {% if concert.transition_info.status == 'overlap' %}
-                                                <span style="color: #dc2626;">🚫</span>
+                                                <span style="color: #dc2626;">{% if concert.transition_info.time_between < 0 %}🚫{% else %}⏰{% endif %}</span>
                                                 <div style="flex: 1;">
                                                     <div style="font-weight: 500; color: #dc2626;">
-                                                        Концерты накладываются по времени • 
-                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">Переход невозможен: {{ concert.transition_info.time_between }} мин между концертами</span>
+                                                        {% if concert.transition_info.time_between < 0 %}
+                                                            Концерты накладываются по времени • 
+                                                            <span style="color: #666; font-size: 0.9em; font-weight: normal;">Переход невозможен</span>
+                                                        {% else %}
+                                                            Недостаточно времени на переход между залами • 
+                                                            <span style="color: #666; font-size: 0.9em; font-weight: normal;">Нужно ~{{ concert.transition_info.walk_time }} мин, есть {{ concert.transition_info.time_between }} мин</span>
+                                                        {% endif %}
                                                     </div>
                                                 </div>
                                             {% elif concert.transition_info.status == 'warning' %}
@@ -1440,7 +1453,7 @@
                                                 <div style="flex: 1;">
                                                     <div style="font-weight: 500; color: #856404;">
                                                         Мало времени до перехода в {{ day_concerts[loop.index].concert.hall.name if loop.index < day_concerts|length and day_concerts[loop.index].concert.hall else 'следующий зал' }} • 
-                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • {{ concert.transition_info.walk_time }} мин пешком</span>
+                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • ~{{ concert.transition_info.walk_time }} мин пешком</span>
                                                     </div>
                                                 </div>
                                             {% elif concert.transition_info.status == 'success' %}
@@ -1448,7 +1461,15 @@
                                                 <div style="flex: 1;">
                                                     <div style="font-weight: 500; color: #155724;">
                                                         Переходим в → {{ day_concerts[loop.index].concert.hall.name if loop.index < day_concerts|length and day_concerts[loop.index].concert.hall else 'следующий зал' }} • 
-                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.walk_time }} мин пешком • {{ concert.transition_info.time_between }} мин до следующего концерта </span>
+                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">~{{ concert.transition_info.walk_time }} мин пешком • {{ concert.transition_info.time_between }} мин до следующего концерта </span>
+                                                    </div>
+                                                </div>
+                                            {% elif concert.transition_info.status == 'hurry' %}
+                                                <span style="color: #f59e0b;">🏃🏼‍➡️</span>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 500; color: #f59e0b;">
+                                                        Нужно поторопиться • 
+                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • ~{{ concert.transition_info.walk_time }} мин пешком</span>
                                                     </div>
                                                 </div>
                                             {% elif concert.transition_info.status == 'tight' %}
@@ -1456,23 +1477,23 @@
                                                 <div style="flex: 1;">
                                                     <div style="font-weight: 500; color: #856404;">
                                                         Впритык по времени • 
-                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • {{ concert.transition_info.walk_time }} мин пешком</span>
+                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • ~{{ concert.transition_info.walk_time }} мин пешком</span>
                                                     </div>
                                                 </div>
                                             {% elif concert.transition_info.status == 'same_hall' %}
-                                                <span style="color: #059669;">📍</span>
+                                                <span style="color: #155724;">📍</span>
                                                 <div style="flex: 1;">
-                                                    <div style="font-weight: 500; color: #059669;">
+                                                    <div style="font-weight: 500; color: #155724;">
                                                         Остаёмся в том же зале • 
                                                         <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин до следующего концерта</span>
                                                     </div>
                                                 </div>
                                             {% elif concert.transition_info.status == 'same_building' %}
-                                                <span style="color: #059669;">🏛️</span>
+                                                <span style="color: #155724;">🏛️</span>
                                                 <div style="flex: 1;">
-                                                    <div style="font-weight: 500; color: #059669;">
+                                                    <div style="font-weight: 500; color: #155724;">
                                                         Остаёмся в том же здании • 
-                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • Переход в другой зал: {{ concert.transition_info.walk_time }} мин</span>
+                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • Переход в другой зал: ~{{ concert.transition_info.walk_time }} мин</span>
                                                     </div>
                                                 </div>
                                             {% elif concert.transition_info.status == 'no_transition_data' %}
@@ -1490,7 +1511,7 @@
                                                         Время перехода • 
                                                         <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • 
                                                         {% if concert.transition_info.walk_time is not none %}
-                                                            {{ concert.transition_info.walk_time }} мин пешком
+                                                            ~{{ concert.transition_info.walk_time }} мин пешком
                                                         {% else %}
                                                             <span style="color: #dc2626;">Время перехода неизвестно</span>
                                                         {% endif %}</span>
