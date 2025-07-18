@@ -697,6 +697,15 @@ def calculate_transition_time(session, current_concert: dict, next_concert: dict
                 'status': 'no_hall_info'
             }
         
+        # Если концерты в одном зале, время перехода = 0
+        if current_hall_id == next_hall_id:
+            logger.info(f"Same hall ({current_hall_id}), no transition needed")
+            return {
+                'time_between': 0,
+                'walk_time': 0,
+                'status': 'same_hall'
+            }
+        
         # Получаем время начала и окончания концертов
         current_start = current_concert['concert'].get('datetime')
         current_duration = current_concert['concert'].get('duration')
@@ -728,27 +737,55 @@ def calculate_transition_time(session, current_concert: dict, next_concert: dict
         
         logger.info(f"Time between concerts: {time_between} minutes")
         
-        # Получаем время перехода между залами
+        # Получаем время перехода между залами через SQLModel
         from models import HallTransition
         from sqlalchemy import select
-        
+
+        # Ищем переход в прямом направлении
         transition = session.exec(
             select(HallTransition)
             .where(HallTransition.from_hall_id == current_hall_id)
             .where(HallTransition.to_hall_id == next_hall_id)
         ).first()
-        
-        if transition and hasattr(transition, 'transition_time'):
-            walk_time = transition.transition_time
-            logger.info(f"Found transition: {current_hall_id} -> {next_hall_id} = {walk_time} minutes")
+
+        # Если не найден прямой переход, ищем обратный
+        if not transition:
+            transition = session.exec(
+                select(HallTransition)
+                .where(HallTransition.from_hall_id == next_hall_id)
+                .where(HallTransition.to_hall_id == current_hall_id)
+            ).first()
+
+        if transition:
+            try:
+                # Если это Row-объект, извлекаем данные через _asdict()
+                if hasattr(transition, '_asdict'):
+                    transition_dict = transition._asdict()
+                    
+                    # Row содержит объект модели под ключом 'HallTransition'
+                    if 'HallTransition' in transition_dict:
+                        hall_transition_obj = transition_dict['HallTransition']
+                        walk_time = hall_transition_obj.transition_time
+                    else:
+                        walk_time = transition_dict.get('transition_time')
+                else:
+                    walk_time = transition.transition_time
+                
+                if walk_time is not None:
+                    logger.info(f"Found transition: {current_hall_id} <-> {next_hall_id} = {walk_time} minutes")
+            except Exception as e:
+                logger.error(f"Error accessing transition_time: {e}")
+                walk_time = None
         else:
-            walk_time = 15  # по умолчанию 15 минут
-            logger.warning(f"No transition found for {current_hall_id} -> {next_hall_id}, using default: {walk_time} minutes")
+            walk_time = None
+            logger.error(f"No transition found for {current_hall_id} <-> {next_hall_id}")
         
         # Определяем статус перехода
-        if time_between < walk_time:
+        if walk_time is None:
+            status = 'no_transition_data'  # Нет данных о переходе
+        elif time_between < walk_time:
             status = 'warning'  # Недостаточно времени
-        elif time_between < walk_time + 15:
+        elif time_between < walk_time + 10:
             status = 'tight'    # Впритык
         else:
             status = 'success'  # Достаточно времени

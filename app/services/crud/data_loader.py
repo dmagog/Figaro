@@ -831,7 +831,6 @@ def load_hall_transitions(session: Session, df_transitions: pd.DataFrame):
     
     records = []
     transition_count = 0
-    created_pairs = set()  # Для отслеживания уже созданных пар переходов
     
     # Обрабатываем матрицу переходов
     for _, row in df_transitions.iterrows():
@@ -866,34 +865,24 @@ def load_hall_transitions(session: Session, df_transitions: pd.DataFrame):
                 logger.warning(f"Некорректное значение времени перехода: {transition_time} для {from_hall_name} -> {col_name}")
                 continue
             
-            # Создаем пару переходов (в обоих направлениях)
-            pair_key = tuple(sorted([from_hall.id, to_hall.id]))
-            if pair_key not in created_pairs:
-                # Прямой переход
-                records.append({
-                    "from_hall_id": from_hall.id,
-                    "to_hall_id": to_hall.id,
-                    "transition_time": transition_time_int
-                })
-                
-                # Обратный переход (то же время)
-                records.append({
-                    "from_hall_id": to_hall.id,
-                    "to_hall_id": from_hall.id,
-                    "transition_time": transition_time_int
-                })
-                
-                created_pairs.add(pair_key)
-                transition_count += 2  # Добавляем 2 перехода
-                
-                logger.debug(f"Создан переход: {from_hall_name} ↔ {col_name} ({transition_time_int} мин)")
+            # Создаем только прямой переход (экономия места в БД)
+            # Обратный переход будет найден функцией calculate_transition_time
+            records.append({
+                "from_hall_id": from_hall.id,
+                "to_hall_id": to_hall.id,
+                "transition_time": transition_time_int
+            })
+            
+            transition_count += 1  # Добавляем 1 переход
+            
+            logger.debug(f"Создан переход: {from_hall_name} → {col_name} ({transition_time_int} мин)")
     
     # Массовое создание записей
     if records:
         session.add_all([HallTransition(**record) for record in records])
         session.commit()
     
-    logger.info(f"Загружено {transition_count} записей о переходах между залами (включая обратные)")
+    logger.info(f"Загружено {transition_count} записей о переходах между залами")
     
     # Проверяем результат
     total_transitions = session.exec(select(HallTransition)).all()
