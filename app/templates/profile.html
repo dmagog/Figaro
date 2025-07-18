@@ -831,6 +831,9 @@
         .transition-card {
             border-left: 3px solid;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            opacity: 0;
+            transform: translateX(-20px);
+            animation: slideInLeft 0.5s ease forwards;
         }
         
         .transition-card.transition-warning {
@@ -866,6 +869,79 @@
         .transition-card.transition-no_transition_data {
             background: #fef2f2;
             border-left-color: #dc2626;
+        }
+        
+        /* Стили для офф-программы */
+        .off-program-section {
+            margin: 0 0 0 60px;
+            padding: 8px 12px;
+            border-radius: 0 6px 6px 0;
+            background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
+            border-left: 3px solid #3b82f6;
+            width: 90%;
+            opacity: 0;
+            transform: translateX(-20px);
+            animation: slideInLeft 0.5s ease forwards;
+        }
+        
+        .off-program-event {
+            background: white;
+            border-radius: 6px;
+            padding: 8px;
+            border: 1px solid #e1e5e9;
+            margin-bottom: 6px;
+        }
+        
+        .off-program-event.recommended {
+            border-left: 3px solid #10b981;
+        }
+        
+        .off-program-event-time {
+            min-width: 40px;
+            text-align: center;
+        }
+        
+        .off-program-event-time .time {
+            font-size: 0.8em;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .off-program-event-time .recommend-star {
+            font-size: 0.7em;
+            color: #10b981;
+            font-weight: 500;
+        }
+        
+        .off-program-event-content {
+            flex: 1;
+        }
+        
+        .off-program-event-title {
+            font-weight: 500;
+            color: #333;
+            font-size: 0.9em;
+            margin-bottom: 2px;
+        }
+        
+        .off-program-event-description {
+            color: #666;
+            font-size: 0.8em;
+            margin-bottom: 4px;
+        }
+        
+        .off-program-event-details {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.8em;
+            color: #666;
+        }
+        
+        .off-program-event-walk-times {
+            text-align: right;
+            font-size: 0.8em;
+            color: #666;
         }
         
         .toggle-icon.rotated {
@@ -1430,7 +1506,7 @@
                                             {% set show_transition = false %}
                                         {% endif %}
                                         {% if concert.transition_info and show_transition %}
-                                        <div class="transition-card transition-{{ concert.transition_info.status }}" style="margin: 0 0 12px 0; margin-left: 60px; padding: 4px 12px; border-radius: 0 6px 6px 0; font-size: 0.85em; display: flex; align-items: center; gap: 8px; width: 90%; border-left: 3px solid; position: relative; 
+                                        <div class="transition-card transition-{{ concert.transition_info.status }}" style="margin: 0 0 0 60px; padding: 4px 12px; border-radius: 0 6px 6px 0; font-size: 0.85em; display: flex; align-items: center; gap: 8px; width: 90%; border-left: 3px solid; position: relative; animation-delay: {{ (loop.index * 0.1) + 0.2 }}s; 
                                             {% if concert.transition_info.status == 'warning' %}border-left-color: #856404; background-color: #fff3cd;{% endif %}
                                             {% if concert.transition_info.status == 'success' %}border-left-color: #155724; background-color: #d4edda;{% endif %}
                                             {% if concert.transition_info.status == 'tight' %}border-left-color: #856404; background-color: #fff3cd;{% endif %}
@@ -1526,6 +1602,56 @@
                                         {% elif not show_transition %}
                                         <!-- Пустой отступ для сохранения интервалов -->
                                         <div style="margin: 0 0 12px 0; height: 0;"></div>
+                                        {% endif %}
+                                        
+                                        <!-- Доступные мероприятия офф-программы -->
+                                        {% if concert.off_program_events and concert.off_program_events|length > 0 %}
+                                        <div class="off-program-section" style="animation-delay: {{ (loop.index * 0.1) + 0.4 }}s;">
+                                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                                <span style="color: #3b82f6; font-size: 1.1em;">🎭</span>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 500; color: #3b82f6; font-size: 0.9em;">
+                                                        Доступные мероприятия офф-программы
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                                {% for event in concert.off_program_events %}
+                                                <div class="off-program-event{% if event.recommend %} recommended{% endif %}">
+                                                    <div style="display: flex; align-items: flex-start; gap: 8px;">
+                                                        <div class="off-program-event-time">
+                                                            <div class="time">{{ event.event_date_display }}</div>
+                                                            {% if event.recommend %}
+                                                            <div class="recommend-star">⭐</div>
+                                                            {% endif %}
+                                                        </div>
+                                                        
+                                                        <div class="off-program-event-content">
+                                                            <div class="off-program-event-title">
+                                                                {{ event.event_name }}
+                                                            </div>
+                                                            {% if event.description %}
+                                                            <div class="off-program-event-description">
+                                                                {{ event.description }}
+                                                            </div>
+                                                            {% endif %}
+                                                            <div class="off-program-event-details">
+                                                                <span>📍 {{ event.hall_name }}</span>
+                                                                <span>🎯 {{ event.format }}</span>
+                                                                <span>⏱️ {{ event.duration }}</span>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div class="off-program-event-walk-times">
+                                                            <div>🚶🏼‍➡️ ~{{ event.walk_time_to_event }} мин</div>
+                                                            <div>🚶 ~{{ event.walk_time_from_event }} мин</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
                                         {% endif %}
                                     {% endfor %}
                                 </div>
