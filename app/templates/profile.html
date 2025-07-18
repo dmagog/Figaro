@@ -875,30 +875,152 @@
         .off-program-section {
             margin: 0 0 12px 60px;
             padding: 8px 12px;
-            border-radius: 0 6px 6px 0;
+            border-radius: 6px;
             background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
-            border-left: 3px solid #3b82f6;
+            border-left: 2px dashed #3b82f6;
+            border-right: 2px dashed #3b82f6;
+            border-bottom: 2px dashed #3b82f6;
             width: 90%;
             opacity: 0;
             transform: translateX(-20px);
             animation: slideInLeft 0.5s ease forwards;
         }
         
+        /* Заголовок раскрывающегося блока офф-программы */
+        .off-program-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            padding: 4px 0;
+            transition: background-color 0.2s ease;
+            border-radius: 4px;
+        }
+        
+        .off-program-header:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        
+        .off-program-header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .off-program-toggle-btn {
+            background: none;
+            border: none;
+            color: #3b82f6;
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: transform 0.3s ease, background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+        }
+        
+        .off-program-toggle-btn:hover {
+            background-color: rgba(59, 130, 246, 0.2);
+        }
+        
+        .off-program-toggle-btn.rotated {
+            transform: rotate(180deg);
+        }
+        
+        /* Свернутое состояние офф-программы */
+        .off-program-collapsed {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 6px;
+            margin-bottom: 6px;
+        }
+        
+        .off-program-collapsed-event, .off-program-event {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            background: white;
+            border-radius: 6px;
+            gap: 0;
+            margin-bottom: 0;
+        }
+        
+        .off-program-collapsed-left, .off-program-event-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+        
+        .off-program-collapsed-title, .off-program-event-title {
+            font-weight: 500;
+            color: #333;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .off-program-collapsed-time, .off-program-event-time .time {
+            font-size: 0.8em;
+            color: #666;
+            font-weight: 500;
+            min-width: 50px;
+        }
+        
+        .off-program-collapsed-duration, .off-program-event-details .duration {
+            font-size: 0.8em;
+            color: #666;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+        
+        .off-program-collapsed-format, .off-program-event-title .off-program-collapsed-format {
+            font-size: 0.8em;
+            color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+        
+        /* Развернутое состояние офф-программы */
+        .off-program-expanded {
+            display: none;
+        }
+        
+        .off-program-expanded.show {
+            display: block;
+        }
+        
         .off-program-section.before-concert {
             background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
-            border-left: 3px solid #3b82f6;
+            border-left: 2px dashed #3b82f6;
+            border-right: 2px dashed #3b82f6;
+            border-top: 2px dashed #3b82f6;
+            border-bottom: none;
+            margin-bottom: 0;
         }
         
         .off-program-section.after-concert {
             background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
-            border-left: 3px solid #3b82f6;
+            border-left: 2px dashed #3b82f6;
+            border-right: 2px dashed #3b82f6;
+            border-bottom: 2px dashed #3b82f6;
         }
         
         .off-program-event {
             background: white;
             border-radius: 6px;
             padding: 8px;
-            border: 1px solid #e1e5e9;
             margin-bottom: 6px;
         }
         
@@ -932,6 +1054,12 @@
             color: #333;
             font-size: 0.9em;
             margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .off-program-event-description {
@@ -1462,49 +1590,70 @@
                                     
                                     <!-- Офф-программа до первого концерта -->
                                     {% if loop.index == 1 and concert.before_concert_events and concert.before_concert_events|length > 0 %}
-                                    <div class="off-program-section before-concert" style="animation-delay: {{ (loop.index * 0.1) - 0.1 }}s; margin-bottom: 12px;">
-                                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                                            <span style="color: #3b82f6; font-size: 1.1em;">🌅</span>
-                                            <div style="flex: 1;">
-                                                <div style="font-weight: 500; color: #3b82f6; font-size: 0.9em;">
-                                                    Возможно, вы захотите начать день с событий офф-программы
+                                    <div class="off-program-section before-concert" style="animation-delay: {{ (loop.index * 0.1) - 0.1 }}s;">
+                                        <!-- Заголовок с кнопкой раскрытия -->
+                                        <div class="off-program-header" onclick="toggleOffProgram('before-day{{ day_index }}-concert{{ concert.concert.id }}')">
+                                            <div class="off-program-header-left">
+                                                <span style="color: #3b82f6; font-size: 1.1em;">🌅</span>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 500; color: #3b82f6; font-size: 0.9em;">
+                                                        Возможно, вы захотите начать день с событий офф-программы
+                                                    </div>
                                                 </div>
                                             </div>
+                                            <button class="off-program-toggle-btn" id="off-program-toggle-before-day{{ day_index }}-concert{{ concert.concert.id }}" onclick="event.stopPropagation(); toggleOffProgram('before-day{{ day_index }}-concert{{ concert.concert.id }}')">▽</button>
                                         </div>
                                         
-                                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                                        <!-- Свернутое состояние -->
+                                        <div class="off-program-collapsed" id="off-program-collapsed-before-day{{ day_index }}-concert{{ concert.concert.id }}">
                                             {% for event in concert.before_concert_events %}
-                                            <div class="off-program-event{% if event.recommend %} recommended{% endif %}">
-                                                <div style="display: flex; align-items: flex-start; gap: 8px;">
-                                                    <div class="off-program-event-time">
-                                                        <div class="time">{{ event.event_date_display }}</div>
-                                                        {% if event.recommend %}
-                                                        <div class="recommend-star">⭐</div>
-                                                        {% endif %}
-                                                    </div>
-                                                    
-                                                    <div class="off-program-event-content">
-                                                        <div class="off-program-event-title">
-                                                            {{ event.event_name }}
-                                                        </div>
-                                                        {% if event.description %}
-                                                        <div class="off-program-event-description">
-                                                            {{ event.description }}
-                                                        </div>
-                                                        {% endif %}
-                                                        <div class="off-program-event-details">
-                                                            <span>📍 {{ event.hall_name }}</span>
-                                                            <span>🎯 {{ event.format }}</span>
-                                                            <span>⏱️ {{ event.duration }}</span>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <div class="off-program-event-walk-times">
-                                                        <div>🚶🏼‍➡️ ~{{ event.walk_time_to_concert }} мин</div>
+                                            <div class="off-program-collapsed-event">
+                                                <div class="off-program-collapsed-left">
+                                                    <div class="off-program-collapsed-time">{{ event.event_date_display }}</div>
+                                                    <div class="off-program-collapsed-title">
+                                                        {{ event.event_name }}
+                                                        <div class="off-program-collapsed-format">{{ event.format }}</div>
                                                     </div>
                                                 </div>
+                                                <div class="off-program-collapsed-duration">{{ event.duration }}</div>
                                             </div>
                                             {% endfor %}
+                                        </div>
+                                        
+                                        <!-- Развернутое состояние -->
+                                        <div class="off-program-expanded" id="off-program-expanded-before-day{{ day_index }}-concert{{ concert.concert.id }}">
+                                            <div style="display: flex; flex-direction: column; gap: 3px;">
+                                                {% for event in concert.before_concert_events %}
+                                                <div class="off-program-event{% if event.recommend %} recommended{% endif %}">
+                                                    <div style="display: flex; align-items: flex-start; gap: 6px;">
+                                                        <div class="off-program-event-time">
+                                                            <div class="time">{{ event.event_date_display }}</div>
+                                                        </div>
+                                                        
+                                                        <div class="off-program-event-content">
+                                                            <div class="off-program-event-title">
+                                                                {{ event.event_name }}
+                                                                <div class="off-program-collapsed-format">{{ event.format }}</div>
+                                                            </div>
+                                                            {% if event.description %}
+                                                            <div class="off-program-event-description">
+                                                                {{ event.description }}
+                                                            </div>
+                                                            {% endif %}
+                                                            <div class="off-program-event-details">
+                                                                <span>{{ event.hall_name }}</span>
+                                                                <span>{{ event.format }}</span>
+                                                                <span>{{ event.duration }}</span>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div class="off-program-event-walk-times">
+                                                            <div>~{{ event.walk_time_to_concert }} мин</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
                                         </div>
                                     </div>
                                     {% endif %}
@@ -1667,29 +1816,121 @@
                                         <!-- Доступные мероприятия офф-программы -->
                                         {% if concert.off_program_events and concert.off_program_events|length > 0 %}
                                         <div class="off-program-section" style="animation-delay: {{ (loop.index * 0.1) + 0.4 }}s;">
-                                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                                                <span style="color: #3b82f6; font-size: 1.1em;">🎭</span>
+                                            <!-- Заголовок с кнопкой раскрытия -->
+                                            <div class="off-program-header" onclick="toggleOffProgram('between-day{{ day_index }}-concert{{ concert.concert.id }}')">
+                                                <div class="off-program-header-left">
+                                                    <span style="color: #3b82f6; font-size: 1.1em;">🎭</span>
+                                                    <div style="flex: 1;">
+                                                        <div style="font-weight: 500; color: #3b82f6; font-size: 0.9em;">
+                                                            Доступные мероприятия офф-программы
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button class="off-program-toggle-btn" id="off-program-toggle-between-day{{ day_index }}-concert{{ concert.concert.id }}" onclick="event.stopPropagation(); toggleOffProgram('between-day{{ day_index }}-concert{{ concert.concert.id }}')">▽</button>
+                                            </div>
+                                            
+                                            <!-- Свернутое состояние -->
+                                            <div class="off-program-collapsed" id="off-program-collapsed-between-day{{ day_index }}-concert{{ concert.concert.id }}">
+                                                {% for event in concert.off_program_events %}
+                                                <div class="off-program-collapsed-event">
+                                                    <div class="off-program-collapsed-left">
+                                                        <div class="off-program-collapsed-time">{{ event.event_date_display }}</div>
+                                                        <div class="off-program-collapsed-title">
+                                                            {{ event.event_name }}
+                                                            <div class="off-program-collapsed-format">{{ event.format }}</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="off-program-collapsed-duration">{{ event.duration }}</div>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                            
+                                            <!-- Развернутое состояние -->
+                                            <div class="off-program-expanded" id="off-program-expanded-between-day{{ day_index }}-concert{{ concert.concert.id }}">
+                                                <div style="display: flex; flex-direction: column; gap: 3px;">
+                                                    {% for event in concert.off_program_events %}
+                                                    <div class="off-program-event{% if event.recommend %} recommended{% endif %}">
+                                                        <div style="display: flex; align-items: flex-start; gap: 8px;">
+                                                            <div class="off-program-event-time">
+                                                                <div class="time">{{ event.event_date_display }}</div>
+                                                            </div>
+                                                            
+                                                            <div class="off-program-event-content">
+                                                                <div class="off-program-event-title">
+                                                                    {{ event.event_name }}
+                                                                    <div class="off-program-collapsed-format">{{ event.format }}</div>
+                                                                </div>
+                                                                {% if event.description %}
+                                                                <div class="off-program-event-description">
+                                                                    {{ event.description }}
+                                                                </div>
+                                                                {% endif %}
+                                                                <div class="off-program-event-details">
+                                                                    <span>📍 {{ event.hall_name }}</span>
+                                                                    <span>🎯 {{ event.format }}</span>
+                                                                    <span>⏱️ {{ event.duration }}</span>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div class="off-program-event-walk-times">
+                                                                <div>🚶🏼‍➡️ ~{{ event.walk_time_to_event }} мин</div>
+                                                                <div>🚶 ~{{ event.walk_time_from_event }} мин</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    <!-- Офф-программа после последнего концерта -->
+                                    {% if day_concerts|length > 0 and day_concerts[-1].after_concert_events and day_concerts[-1].after_concert_events|length > 0 %}
+                                    <div class="off-program-section after-concert" style="animation-delay: {{ (day_concerts|length + 1) * 0.1 }}s; margin-top: 12px;">
+                                        <!-- Заголовок с кнопкой раскрытия -->
+                                        <div class="off-program-header" onclick="toggleOffProgram('after-day{{ day_index }}-concert{{ day_concerts[-1].concert.id }}')">
+                                            <div class="off-program-header-left">
+                                                <span style="color: #3b82f6; font-size: 1.1em;">🌙</span>
                                                 <div style="flex: 1;">
                                                     <div style="font-weight: 500; color: #3b82f6; font-size: 0.9em;">
-                                                        Доступные мероприятия офф-программы
+                                                        Мероприятия после последнего концерта
                                                     </div>
                                                 </div>
                                             </div>
-                                            
-                                            <div style="display: flex; flex-direction: column; gap: 6px;">
-                                                {% for event in concert.off_program_events %}
+                                            <button class="off-program-toggle-btn" id="off-program-toggle-after-day{{ day_index }}-concert{{ day_concerts[-1].concert.id }}" onclick="event.stopPropagation(); toggleOffProgram('after-day{{ day_index }}-concert{{ day_concerts[-1].concert.id }}')">▽</button>
+                                        </div>
+                                        
+                                        <!-- Свернутое состояние -->
+                                        <div class="off-program-collapsed" id="off-program-collapsed-after-day{{ day_index }}-concert{{ day_concerts[-1].concert.id }}">
+                                            {% for event in day_concerts[-1].after_concert_events %}
+                                            <div class="off-program-collapsed-event">
+                                                <div class="off-program-collapsed-left">
+                                                    <div class="off-program-collapsed-time">{{ event.event_date_display }}</div>
+                                                    <div class="off-program-collapsed-title">
+                                                        {{ event.event_name }}
+                                                        <div class="off-program-collapsed-format">{{ event.format }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="off-program-collapsed-duration">{{ event.duration }}</div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        
+                                        <!-- Развернутое состояние -->
+                                        <div class="off-program-expanded" id="off-program-expanded-after-day{{ day_index }}-concert{{ day_concerts[-1].concert.id }}">
+                                            <div style="display: flex; flex-direction: column; gap: 3px;">
+                                                {% for event in day_concerts[-1].after_concert_events %}
                                                 <div class="off-program-event{% if event.recommend %} recommended{% endif %}">
                                                     <div style="display: flex; align-items: flex-start; gap: 8px;">
                                                         <div class="off-program-event-time">
                                                             <div class="time">{{ event.event_date_display }}</div>
-                                                            {% if event.recommend %}
-                                                            <div class="recommend-star">⭐</div>
-                                                            {% endif %}
                                                         </div>
                                                         
                                                         <div class="off-program-event-content">
                                                             <div class="off-program-event-title">
                                                                 {{ event.event_name }}
+                                                                <div class="off-program-collapsed-format">{{ event.format }}</div>
                                                             </div>
                                                             {% if event.description %}
                                                             <div class="off-program-event-description">
@@ -1704,62 +1945,12 @@
                                                         </div>
                                                         
                                                         <div class="off-program-event-walk-times">
-                                                            <div>🚶🏼‍➡️ ~{{ event.walk_time_to_event }} мин</div>
-                                                            <div>🚶 ~{{ event.walk_time_from_event }} мин</div>
+                                                            <div>🚶🏼‍➡️ ~{{ event.walk_time_from_concert }} мин</div>
                                                         </div>
                                                     </div>
                                                 </div>
                                                 {% endfor %}
                                             </div>
-                                        </div>
-                                        {% endif %}
-                                    {% endfor %}
-                                    
-                                    <!-- Офф-программа после последнего концерта -->
-                                    {% if day_concerts|length > 0 and day_concerts[-1].after_concert_events and day_concerts[-1].after_concert_events|length > 0 %}
-                                    <div class="off-program-section after-concert" style="animation-delay: {{ (day_concerts|length + 1) * 0.1 }}s; margin-top: 12px;">
-                                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                                            <span style="color: #3b82f6; font-size: 1.1em;">🌙</span>
-                                            <div style="flex: 1;">
-                                                <div style="font-weight: 500; color: #3b82f6; font-size: 0.9em;">
-                                                    Мероприятия после последнего концерта
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <div style="display: flex; flex-direction: column; gap: 6px;">
-                                            {% for event in day_concerts[-1].after_concert_events %}
-                                            <div class="off-program-event{% if event.recommend %} recommended{% endif %}">
-                                                <div style="display: flex; align-items: flex-start; gap: 8px;">
-                                                    <div class="off-program-event-time">
-                                                        <div class="time">{{ event.event_date_display }}</div>
-                                                        {% if event.recommend %}
-                                                        <div class="recommend-star">⭐</div>
-                                                        {% endif %}
-                                                    </div>
-                                                    
-                                                    <div class="off-program-event-content">
-                                                        <div class="off-program-event-title">
-                                                            {{ event.event_name }}
-                                                        </div>
-                                                        {% if event.description %}
-                                                        <div class="off-program-event-description">
-                                                            {{ event.description }}
-                                                        </div>
-                                                        {% endif %}
-                                                        <div class="off-program-event-details">
-                                                            <span>📍 {{ event.hall_name }}</span>
-                                                            <span>🎯 {{ event.format }}</span>
-                                                            <span>⏱️ {{ event.duration }}</span>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <div class="off-program-event-walk-times">
-                                                        <div>🚶🏼‍➡️ ~{{ event.walk_time_from_concert }} мин</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {% endfor %}
                                         </div>
                                     </div>
                                     {% endif %}
@@ -1970,6 +2161,25 @@
                 content.style.display = 'block';
                 button.classList.add('expanded');
                 console.log('Showing details, adding expanded class to button');
+            }
+        }
+        
+        // Раскрытие/скрытие блока офф-программы
+        function toggleOffProgram(offProgramId) {
+            const collapsedContent = document.getElementById('off-program-collapsed-' + offProgramId);
+            const expandedContent = document.getElementById('off-program-expanded-' + offProgramId);
+            const toggleBtn = document.getElementById('off-program-toggle-' + offProgramId);
+            
+            if (expandedContent.classList.contains('show')) {
+                // Скрываем развернутое содержимое
+                expandedContent.classList.remove('show');
+                collapsedContent.style.display = 'flex';
+                toggleBtn.classList.remove('rotated');
+            } else {
+                // Показываем развернутое содержимое
+                expandedContent.classList.add('show');
+                collapsedContent.style.display = 'none';
+                toggleBtn.classList.add('rotated');
             }
         }
         
