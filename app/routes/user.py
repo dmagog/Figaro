@@ -697,15 +697,6 @@ def calculate_transition_time(session, current_concert: dict, next_concert: dict
                 'status': 'no_hall_info'
             }
         
-        # Если концерты в одном зале, время перехода = 0
-        if current_hall_id == next_hall_id:
-            logger.info(f"Same hall ({current_hall_id}), no transition needed")
-            return {
-                'time_between': 0,
-                'walk_time': 0,
-                'status': 'same_hall'
-            }
-        
         # Получаем время начала и окончания концертов
         current_start = current_concert['concert'].get('datetime')
         current_duration = current_concert['concert'].get('duration')
@@ -736,6 +727,15 @@ def calculate_transition_time(session, current_concert: dict, next_concert: dict
         time_between = (next_start - current_end).total_seconds() / 60  # в минутах
         
         logger.info(f"Time between concerts: {time_between} minutes")
+        
+        # Если концерты в одном зале, время перехода = 0
+        if current_hall_id == next_hall_id:
+            logger.info(f"Same hall ({current_hall_id}), no transition needed")
+            return {
+                'time_between': int(time_between),
+                'walk_time': 0,
+                'status': 'same_hall'
+            }
         
         # Получаем время перехода между залами через SQLModel
         from models import HallTransition
@@ -783,6 +783,10 @@ def calculate_transition_time(session, current_concert: dict, next_concert: dict
         # Определяем статус перехода
         if walk_time is None:
             status = 'no_transition_data'  # Нет данных о переходе
+        elif walk_time == 0:
+            status = 'same_hall'  # В том же зале
+        elif walk_time == 1:
+            status = 'same_building'  # В том же здании
         elif time_between < walk_time:
             status = 'warning'  # Недостаточно времени
         elif time_between < walk_time + 10:
