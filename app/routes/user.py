@@ -913,6 +913,12 @@ def find_available_off_program_events(session, current_concert: dict, next_conce
             else:
                 event_data = event
             
+            # Фильтруем только рекомендуемые мероприятия
+            if not getattr(event_data, 'recommend', False):
+                continue
+            
+            logger.info(f"Processing event: {event_data.event_name} at {event_data.event_date.strftime('%H:%M')}")
+            
             # Вычисляем продолжительность мероприятия
             event_duration = timedelta()
             if event_data.event_long:
@@ -1131,7 +1137,7 @@ def find_available_off_program_events_before_first_concert(session, first_concer
             select(OffProgram)
             .where(OffProgram.event_date >= search_start)
             .where(OffProgram.event_date < concert_start)
-            .order_by(OffProgram.event_date.desc())  # Сортируем по убыванию времени
+            .order_by(OffProgram.event_date)  # Сортируем по возрастанию времени
         ).all()
         
         logger.info(f"Found {len(off_program_events)} off-program events in search window")
@@ -1270,8 +1276,8 @@ def find_available_off_program_events_before_first_concert(session, first_concer
             else:
                 logger.info(f"Event ends after concert start, skipping")
         
-        # Сортируем по времени начала (ближайшие к концерту сначала)
-        available_events.sort(key=lambda x: x['event_date'], reverse=True)
+        # Сортируем: сначала рекомендуемые, затем по времени начала (по возрастанию)
+        available_events.sort(key=lambda x: (-x['recommend'], x['event_date']))
         
         return available_events
         
