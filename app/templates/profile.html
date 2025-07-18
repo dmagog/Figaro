@@ -1424,7 +1424,7 @@
                                                 <span style="color: #856404;">⚠️</span>
                                                 <div style="flex: 1;">
                                                     <div style="font-weight: 500; color: #856404;">
-                                                        Мало времени до следующего концерта • 
+                                                        Мало времени до перехода в {{ day_concerts[loop.index].concert.hall.name if loop.index < day_concerts|length and day_concerts[loop.index].concert.hall else 'следующий зал' }} • 
                                                         <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • {{ concert.transition_info.walk_time }} мин пешком</span>
                                                     </div>
                                                 </div>
@@ -1432,8 +1432,8 @@
                                                 <span style="color: #155724;">✅</span>
                                                 <div style="flex: 1;">
                                                     <div style="font-weight: 500; color: #155724;">
-                                                        Комфортное время перехода • 
-                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • {{ concert.transition_info.walk_time }} мин пешком</span>
+                                                        Переходим в → {{ day_concerts[loop.index].concert.hall.name if loop.index < day_concerts|length and day_concerts[loop.index].concert.hall else 'следующий зал' }} • 
+                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.walk_time }} мин пешком • {{ concert.transition_info.time_between }} мин до следующего концерта </span>
                                                     </div>
                                                 </div>
                                             {% elif concert.transition_info.status == 'tight' %}
