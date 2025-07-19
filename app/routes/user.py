@@ -360,15 +360,23 @@ async def debug_user_external_id(
     try:
         user = UserService.get_user_by_email(email, session)
         if not user:
-            return {"error": "User not found"}
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
         
         return {
             "email": user.email,
             "external_id": user.external_id,
             "id": user.id
         }
+    except HTTPException:
+        raise
     except Exception as e:
-        return {"error": str(e)}
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
 
 
 @user_route.post("/debug/user/{email}/set_external_id/{external_id}")

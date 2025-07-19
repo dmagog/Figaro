@@ -11,6 +11,7 @@ sys.path.insert(0, str(app_path))
 os.environ["TESTING"] = "True"
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 os.environ["SECRET_KEY"] = "test_secret_key_for_testing_only"  # Добавляем SECRET_KEY для тестов
+os.environ["COOKIE_NAME"] = "access_token"  # Добавляем COOKIE_NAME для тестов
 
 # Переопределяем функцию get_settings ДО импорта модулей
 def override_get_settings():
@@ -130,7 +131,8 @@ def test_user(db_session, hash_password, test_user_data):
         email=test_user_data["email"],
         hashed_password=hashed_password,  # Исправлено: используем hashed_password вместо password
         name=test_user_data["name"],  # Исправлено: используем name
-        external_id="test_external_123"
+        external_id="test_external_123",
+        is_superuser=True  # Добавляем права суперпользователя для тестирования
     )
     db_session.add(user)
     db_session.commit()

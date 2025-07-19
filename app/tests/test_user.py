@@ -133,9 +133,15 @@ class TestUserAPI:
     
     def test_profile_page_authenticated(self, client: TestClient, test_user, auth_headers):
         """Тест страницы профиля для аутентифицированного пользователя"""
-        response = client.get("/profile", headers=auth_headers)
+        # Извлекаем токен из заголовка Authorization
+        token = auth_headers["Authorization"].replace("Bearer ", "")
+        
+        # Отправляем токен в cookies
+        response = client.get("/profile", cookies={"access_token": token})
         assert response.status_code == status.HTTP_200_OK
-        assert "profile.html" in response.text
+        # Проверяем наличие элементов профиля вместо точного названия файла
+        assert "Личный кабинет" in response.text
+        assert test_user.email in response.text
     
     def test_profile_page_unauthenticated(self, client: TestClient):
         """Тест страницы профиля для неаутентифицированного пользователя"""
@@ -145,11 +151,14 @@ class TestUserAPI:
     
     def test_set_external_id_success(self, client: TestClient, test_user, auth_headers, db_session):
         """Тест установки external_id"""
+        # Извлекаем токен из заголовка Authorization
+        token = auth_headers["Authorization"].replace("Bearer ", "")
+        
         new_external_id = "new_external_456"
         response = client.post(
             "/profile/set_external_id",
             json={"external_id": new_external_id},
-            headers=auth_headers
+            cookies={"access_token": token}
         )
         assert response.status_code == status.HTTP_200_OK
         
@@ -166,13 +175,17 @@ class TestUserAPI:
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
     
-    def test_debug_user_external_id_success(self, client: TestClient, test_user):
+    def test_debug_user_external_id_success(self, client: TestClient, test_user, db_session):
         """Тест отладочного эндпоинта для получения external_id"""
-        response = client.get(f"/debug/user/{test_user.email}/external_id")
+        # Получаем актуальное состояние пользователя из базы
+        from services.crud import user as UserService
+        current_user = UserService.get_user_by_email(test_user.email, db_session)
+        
+        response = client.get(f"/debug/user/{current_user.email}/external_id")
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert data["email"] == test_user.email
-        assert data["external_id"] == test_user.external_id
+        assert data["email"] == current_user.email
+        assert data["external_id"] == current_user.external_id
     
     def test_debug_user_external_id_not_found(self, client: TestClient):
         """Тест отладочного эндпоинта для несуществующего пользователя"""

@@ -2,6 +2,7 @@ from typing import Optional, List, Dict, Any
 from sqlmodel import SQLModel, Field, Relationship
 from datetime import datetime
 from sqlalchemy import Column, JSON
+from pydantic import EmailStr, validator
 
 
 class UserBase(SQLModel):
@@ -14,6 +15,24 @@ class UserBase(SQLModel):
 
 class UserCreate(UserBase):
     password: str
+    
+    @validator('email')
+    def validate_email(cls, v):
+        if not v or '@' not in v:
+            raise ValueError('Invalid email format')
+        return v
+    
+    @validator('password')
+    def validate_password(cls, v):
+        if not v or len(v) < 6:
+            raise ValueError('Password must be at least 6 characters long')
+        return v
+    
+    @validator('name')
+    def validate_name(cls, v):
+        if v is not None and v.strip() == "":
+            raise ValueError('Name cannot be empty')
+        return v
 
 
 class UserRead(UserBase):
