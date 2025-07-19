@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Личный кабинет - конструктор маршрутов фестиваля «Безумные дни»</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css?v=1.7&t={{ range(1, 10000) | random }}">
     <style>
         .profile-container {
             max-width: 1200px;
@@ -964,13 +964,14 @@
             font-weight: 500;
             color: #333;
             font-size: 0.9em;
+            margin-bottom: 0;
             display: flex;
             align-items: center;
             gap: 8px;
         }
         
         .off-program-collapsed-time, .off-program-event-time .time {
-            font-size: 0.8em;
+            font-size: 0.9em;
             color: #666;
             font-weight: 500;
             min-width: 50px;
@@ -1028,13 +1029,18 @@
             border-left: 3px solid #10b981;
         }
         
+        /* Убираем зеленую полосу у вложенных блоков в развернутом состоянии */
+        .off-program-expanded .off-program-event.recommended {
+            border-left: none;
+        }
+        
         .off-program-event-time {
-            min-width: 40px;
+            min-width: 50px;
             text-align: center;
         }
         
         .off-program-event-time .time {
-            font-size: 0.8em;
+            font-size: 0.9em;
             color: #666;
             font-weight: 500;
         }
@@ -1047,16 +1053,16 @@
         
         .off-program-event-content {
             flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .off-program-event-title {
             font-weight: 500;
             color: #333;
             font-size: 0.9em;
-            margin-bottom: 2px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            margin-bottom: 0;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -1069,11 +1075,19 @@
         }
         
         .off-program-event-details {
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 2px !important;
             font-size: 0.8em;
             color: #666;
+        }
+        
+        .off-program-event-details-vertical {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 2px !important;
         }
         
         .off-program-event-walk-times {
@@ -1625,7 +1639,7 @@
                                             <div style="display: flex; flex-direction: column; gap: 3px;">
                                                 {% for event in concert.before_concert_events %}
                                                 <div class="off-program-event{% if event.recommend %} recommended{% endif %}">
-                                                    <div style="display: flex; align-items: flex-start; gap: 6px;">
+                                                    <div style="display: flex; align-items: center; gap: 8px;">
                                                         <div class="off-program-event-time">
                                                             <div class="time">{{ event.event_date_display }}</div>
                                                         </div>
@@ -1635,21 +1649,22 @@
                                                                 {{ event.event_name }}
                                                                 <div class="off-program-collapsed-format">{{ event.format }}</div>
                                                             </div>
+                                                            
                                                             {% if event.description %}
-                                                            <div class="off-program-event-description">
+                                                            <div class="off-program-event-description" style="margin-top: 4px;">
                                                                 {{ event.description }}
                                                             </div>
                                                             {% endif %}
-                                                            <div class="off-program-event-details">
-                                                                <span>{{ event.hall_name }}</span>
-                                                                <span>{{ event.format }}</span>
-                                                                <span>{{ event.duration }}</span>
-                                                            </div>
                                                         </div>
                                                         
                                                         <div class="off-program-event-walk-times">
                                                             <div>~{{ event.walk_time_to_concert }} мин</div>
                                                         </div>
+                                                    </div>
+                                                    
+                                                    <div class="off-program-event-details" style="margin-top: 4px; margin-left: 56px; display: flex; flex-direction: column; gap: 2px;">
+                                                        <span>📍 {{ event.hall_name }}</span>
+                                                        <span>⏱️ {{ event.duration }}</span>
                                                     </div>
                                                 </div>
                                                 {% endfor %}
@@ -1850,7 +1865,7 @@
                                                 <div style="display: flex; flex-direction: column; gap: 3px;">
                                                     {% for event in concert.off_program_events %}
                                                     <div class="off-program-event{% if event.recommend %} recommended{% endif %}">
-                                                        <div style="display: flex; align-items: flex-start; gap: 8px;">
+                                                        <div style="display: flex; align-items: center; gap: 8px;">
                                                             <div class="off-program-event-time">
                                                                 <div class="time">{{ event.event_date_display }}</div>
                                                             </div>
@@ -1860,22 +1875,23 @@
                                                                     {{ event.event_name }}
                                                                     <div class="off-program-collapsed-format">{{ event.format }}</div>
                                                                 </div>
+                                                                
                                                                 {% if event.description %}
-                                                                <div class="off-program-event-description">
+                                                                <div class="off-program-event-description" style="margin-top: 4px;">
                                                                     {{ event.description }}
                                                                 </div>
                                                                 {% endif %}
-                                                                <div class="off-program-event-details">
-                                                                    <span>📍 {{ event.hall_name }}</span>
-                                                                    <span>🎯 {{ event.format }}</span>
-                                                                    <span>⏱️ {{ event.duration }}</span>
-                                                                </div>
                                                             </div>
                                                             
                                                             <div class="off-program-event-walk-times">
                                                                 <div>🚶🏼‍➡️ ~{{ event.walk_time_to_event }} мин</div>
                                                                 <div>🚶 ~{{ event.walk_time_from_event }} мин</div>
                                                             </div>
+                                                        </div>
+                                                        
+                                                        <div class="off-program-event-details" style="margin-top: 4px; margin-left: 56px; display: flex; flex-direction: column; gap: 2px;">
+                                                            <span>📍 {{ event.hall_name }}</span>
+                                                            <span>⏱️ {{ event.duration }}</span>
                                                         </div>
                                                     </div>
                                                     {% endfor %}
@@ -1922,7 +1938,7 @@
                                             <div style="display: flex; flex-direction: column; gap: 3px;">
                                                 {% for event in day_concerts[-1].after_concert_events %}
                                                 <div class="off-program-event{% if event.recommend %} recommended{% endif %}">
-                                                    <div style="display: flex; align-items: flex-start; gap: 8px;">
+                                                    <div style="display: flex; align-items: center; gap: 8px;">
                                                         <div class="off-program-event-time">
                                                             <div class="time">{{ event.event_date_display }}</div>
                                                         </div>
@@ -1932,21 +1948,22 @@
                                                                 {{ event.event_name }}
                                                                 <div class="off-program-collapsed-format">{{ event.format }}</div>
                                                             </div>
+                                                            
                                                             {% if event.description %}
-                                                            <div class="off-program-event-description">
+                                                            <div class="off-program-event-description" style="margin-top: 4px;">
                                                                 {{ event.description }}
                                                             </div>
                                                             {% endif %}
-                                                            <div class="off-program-event-details">
-                                                                <span>📍 {{ event.hall_name }}</span>
-                                                                <span>🎯 {{ event.format }}</span>
-                                                                <span>⏱️ {{ event.duration }}</span>
-                                                            </div>
                                                         </div>
                                                         
                                                         <div class="off-program-event-walk-times">
                                                             <div>🚶🏼‍➡️ ~{{ event.walk_time_from_concert }} мин</div>
                                                         </div>
+                                                    </div>
+                                                    
+                                                    <div class="off-program-event-details" style="margin-top: 4px; margin-left: 56px; display: flex; flex-direction: column; gap: 2px;">
+                                                        <span>📍 {{ event.hall_name }}</span>
+                                                        <span>⏱️ {{ event.duration }}</span>
                                                     </div>
                                                 </div>
                                                 {% endfor %}
@@ -2239,5 +2256,7 @@
             }
         });
     </script>
+</body>
+</html> 
 </body>
 </html> 
