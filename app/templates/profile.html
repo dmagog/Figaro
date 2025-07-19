@@ -1054,8 +1054,8 @@
         .off-program-event-content {
             flex: 1;
             display: flex;
-            align-items: center;
-            gap: 8px;
+            flex-direction: column;
+            align-items: flex-start;
         }
         
         .off-program-event-title {
@@ -1407,6 +1407,18 @@
             flex-direction: column;
             align-items: flex-start;
         }
+        
+        .off-program-event-duration div[data-tooltip] {
+            cursor: help;
+            position: relative;
+        }
+        
+        /* Отключаем все кастомные tooltips */
+        .off-program-event-duration div[title]:hover::after,
+        .off-program-event-duration div[title]:hover::before {
+            display: none !important;
+        }
+
     </style>
 </head>
 <body>
@@ -1717,7 +1729,7 @@
                                                         
                                                         <div class="off-program-event-duration">
                                                             <div>{{ event.duration }}</div>
-                                                            <div>🚶🏼‍➡️ ~{{ event.walk_time_to_concert }} мин</div>
+                                                            <div title="Время перехода от офф-программы до следующего концерта">🚶 ~{{ event.walk_time_to_concert }} мин</div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1936,7 +1948,8 @@
                                                             
                                                             <div class="off-program-event-duration">
                                                                 <div>{{ event.duration }}</div>
-                                                                <div>🚶🏼‍➡️ ~{{ event.walk_time_to_event }} мин</div>
+                                                                <div title="Время перехода от предыдущего концерта до офф-программы">🚶🏼‍➡️ ~{{ event.walk_time_from_event }} мин</div>
+                                                                <div title="Время перехода от офф-программы до следующего концерта">🚶 ~{{ event.walk_time_to_event }} мин</div>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -2006,7 +2019,7 @@
                                                         
                                                         <div class="off-program-event-duration">
                                                             <div>{{ event.duration }}</div>
-                                                            <div>🚶🏼‍➡️ ~{{ event.walk_time_from_concert }} мин</div>
+                                                            <div title="Время перехода от предыдущего концерта до офф-программы">🚶🏼‍➡️ ~{{ event.walk_time_from_event }} мин</div>
                                                         </div>
                                                     </div>
                                                 </div>
