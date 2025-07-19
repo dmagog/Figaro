@@ -1,6 +1,6 @@
 # data_loader.py
 from sqlmodel import Session, select, delete
-from models import Hall, HallTransition, Concert, Artist, Author, Composition, ConcertArtistLink, ConcertCompositionLink, Purchase, AvailableRoute, OffProgram, EventFormat
+from models import Hall, HallTransition, Concert, Artist, Author, Composition, ConcertArtistLink, ConcertCompositionLink, Purchase, AvailableRoute, OffProgram, EventFormat, Genre, ConcertGenreLink
 from models.statistics import Statistics
 from datetime import datetime, timedelta, timezone
 import pandas as pd
@@ -486,6 +486,96 @@ def update_customer_route_matches(session: Session):
     logger.info(f"Завершено обновление сопоставлений. Обработано {processed} покупателей")
 
 
+def load_genres(session: Session):
+    """
+    Создает жанры на основе данных концертов и связывает их
+    """
+    logger.info("Создаем жанры и связываем с концертами...")
+    
+    try:
+        # Получаем все концерты с жанрами
+        concerts = session.exec(select(Concert).where(Concert.genre.is_not(None))).all()
+        
+        if not concerts:
+            logger.info("Нет концертов с жанрами для обработки")
+            return
+        
+        # Собираем уникальные жанры
+        unique_genres = set()
+        for concert in concerts:
+            if concert.genre:
+                # Разбиваем составные жанры (например, "Кроссовер, Этно")
+                genres = [g.strip() for g in concert.genre.split(',')]
+                unique_genres.update(genres)
+        
+        logger.info(f"Найдено {len(unique_genres)} уникальных жанров")
+        
+        # Создаем жанры в базе данных
+        genre_map = {}  # имя жанра -> объект Genre
+        for genre_name in unique_genres:
+            # Проверяем, существует ли уже такой жанр
+            existing_genre = session.exec(
+                select(Genre).where(Genre.name == genre_name)
+            ).first()
+            
+            if existing_genre:
+                genre_map[genre_name] = existing_genre
+                logger.debug(f"Жанр '{genre_name}' уже существует (ID: {existing_genre.id})")
+            else:
+                # Создаем новый жанр
+                new_genre = Genre(name=genre_name)
+                session.add(new_genre)
+                session.commit()
+                session.refresh(new_genre)
+                genre_map[genre_name] = new_genre
+                logger.info(f"Создан жанр '{genre_name}' (ID: {new_genre.id})")
+        
+        # Связываем концерты с жанрами
+        links_created = 0
+        for concert in concerts:
+            if concert.genre:
+                # Разбиваем составные жанры
+                concert_genres = [g.strip() for g in concert.genre.split(',')]
+                
+                for genre_name in concert_genres:
+                    if genre_name in genre_map:
+                        genre = genre_map[genre_name]
+                        
+                        # Проверяем, существует ли уже связь
+                        existing_link = session.exec(
+                            select(ConcertGenreLink).where(
+                                ConcertGenreLink.concert_id == concert.id,
+                                ConcertGenreLink.genre_id == genre.id
+                            )
+                        ).first()
+                        
+                        if not existing_link:
+                            # Создаем связь
+                            link = ConcertGenreLink(
+                                concert_id=concert.id,
+                                genre_id=genre.id
+                            )
+                            session.add(link)
+                            links_created += 1
+        
+        session.commit()
+        logger.info(f"Создано {links_created} связей концерт-жанр")
+        
+        # Статистика
+        total_genres = len(genre_map)
+        total_concerts = len(concerts)
+        
+        logger.info(f"📊 Статистика жанров:")
+        logger.info(f"  • Всего жанров: {total_genres}")
+        logger.info(f"  • Концертов с жанрами: {total_concerts}")
+        logger.info(f"  • Связей создано: {links_created}")
+        
+    except Exception as e:
+        logger.error(f"Ошибка при создании жанров: {e}")
+        session.rollback()
+        raise
+
+
 def load_all_data(session: Session, df_halls: pd.DataFrame, df_concerts: pd.DataFrame, 
                   df_artists: pd.DataFrame, df_details: pd.DataFrame, df_ops: pd.DataFrame,
                   df_off_program: pd.DataFrame = None, df_hall_transitions: pd.DataFrame = None, 
@@ -529,6 +619,7 @@ def load_all_data(session: Session, df_halls: pd.DataFrame, df_concerts: pd.Data
         load_artists(session, df_artists)
         load_compositions(session, df_details)
         load_purchases(session, df_ops)
+        load_genres(session) # Добавляем вызов load_genres
         
         logger.info("Загрузка всех данных завершена успешно!")
         

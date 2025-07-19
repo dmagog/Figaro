@@ -10,6 +10,7 @@ from models.statistics import Statistics
 from models import Route
 from models.artist import Artist, ConcertArtistLink
 from models.composition import Author, Composition, ConcertCompositionLink
+from models.genre import Genre
 import logging
 
 logger = logging.getLogger(__name__)
@@ -201,6 +202,7 @@ def get_festival_summary_stats(session: Session) -> dict:
     artists_count = session.exec(select(func.count(Artist.id))).one()
     authors_count = session.exec(select(func.count(Author.id))).one()
     compositions_count = session.exec(select(func.count(Composition.id))).one()
+    genres_count = session.exec(select(func.count(Genre.id))).one()
     
     # Подсчитываем количество уникальных покупателей (пользователей с покупками)
     customers_count = session.exec(
@@ -220,6 +222,7 @@ def get_festival_summary_stats(session: Session) -> dict:
         "artists_count": artists_count,
         "authors_count": authors_count,
         "compositions_count": compositions_count,
+        "genres_count": genres_count,
         "customers_count": customers_count
     } 
 

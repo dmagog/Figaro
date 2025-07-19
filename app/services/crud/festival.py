@@ -1,9 +1,73 @@
 # services/crud/festival.py
 from sqlmodel import Session, select
-from models import Concert, FestivalDay
+from models import Concert, FestivalDay, Genre, ConcertGenreLink
 import pandas as pd
 from datetime import date
 from sqlalchemy import func
+
+
+def get_genres_with_concerts(session: Session):
+    """Получает все жанры с информацией о концертах"""
+    # Получаем жанры с количеством концертов
+    genres_query = session.exec(
+        select(Genre).order_by(Genre.name)
+    ).all()
+    
+    genres_data = []
+    for genre in genres_query:
+        # Получаем количество концертов для жанра
+        concerts_count = session.exec(
+            select(func.count(ConcertGenreLink.concert_id))
+            .where(ConcertGenreLink.genre_id == genre.id)
+        ).first() or 0
+        
+        # Получаем данные о концертах для жанра
+        concert_links = session.exec(
+            select(ConcertGenreLink.concert_id)
+            .where(ConcertGenreLink.genre_id == genre.id)
+        ).all()
+        
+        concert_data = []
+        if concert_links:
+            concert_ids = [link for link in concert_links]
+            concerts = session.exec(
+                select(Concert.id, Concert.datetime)
+                .where(Concert.id.in_(concert_ids))
+                .order_by(Concert.datetime)
+            ).all()
+            concert_data = [(concert.id, concert.datetime) for concert in concerts]
+        
+        genres_data.append({
+            'id': genre.id,
+            'name': genre.name,
+            'description': genre.description,
+            'concerts_count': concerts_count,
+            'concert_data': concert_data
+        })
+    
+    return genres_data
+
+
+def get_genres_summary(session: Session):
+    """Получает сводную статистику по жанрам"""
+    # Общее количество жанров
+    total_genres = session.exec(select(func.count(Genre.id))).first() or 0
+    
+    # Количество жанров с концертами
+    genres_with_concerts = session.exec(
+        select(func.count(func.distinct(ConcertGenreLink.genre_id)))
+    ).first() or 0
+    
+    # Общее количество выступлений (связей жанр-концерт)
+    total_performances = session.exec(
+        select(func.count(ConcertGenreLink.concert_id))
+    ).first() or 0
+    
+    return {
+        'total_genres': total_genres,
+        'genres_with_concerts': genres_with_concerts,
+        'total_performances': total_performances
+    }
 
 
 def generate_festival_days(session: Session):

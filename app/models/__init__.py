@@ -3,6 +3,7 @@ from .concert import Concert
 from .hall import Hall, HallTransition
 from .artist import Artist, ConcertArtistLink
 from .composition import Composition, Author, ConcertCompositionLink
+from .genre import Genre, ConcertGenreLink
 from .purchase import Purchase
 from .route import Route, AvailableRoute
 from .statistics import Statistics
@@ -18,6 +19,8 @@ __all__ = [
     "Composition",
     "ConcertArtistLink",
     "ConcertCompositionLink",
+    "Genre",
+    "ConcertGenreLink",
     "Purchase",
     "User",
     "Route",

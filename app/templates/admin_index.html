@@ -180,7 +180,8 @@
                 <a href="/admin/artists" class="admin-menu-btn">Артисты</a>
                 <a href="/admin/authors" class="admin-menu-btn">Авторы</a>
                 <a href="/admin/compositions" class="admin-menu-btn">Произведения</a>
-                <a href="/" class="admin-menu-btn"><span style="font-size:1.1em; margin-right:6px;">🌐</span>На сайт</a>
+                <a href="/admin/genres" class="admin-menu-btn">Жанры</a>
+                <a href="/" class="admin-menu-btn"><span style="font-size:1.1em; margin-right:6px;">��</span>На сайт</a>
                 <div class="admin-menu-dropdown" id="adminMenuDropdown" style="display:none;">
                     <button class="admin-menu-dropdown-btn" id="dropdownBtn">Ещё <span style="font-size:1.1em;">▼</span></button>
                     <div class="admin-menu-dropdown-content" id="dropdownContent">
@@ -262,6 +263,12 @@
                 <div class="summary-card" style="cursor:pointer;">
                     <h3>Произведений</h3>
                     <p>{{ summary.compositions_count or 0 }}</p>
+                </div>
+            </a>
+            <a href="/admin/genres" style="text-decoration:none; color:inherit;" title="Перейти к жанрам">
+                <div class="summary-card" style="cursor:pointer;">
+                    <h3>Жанров</h3>
+                    <p>{{ summary.genres_count or 0 }}</p>
                 </div>
             </a>
             <a href="/profile" style="text-decoration:none; color:inherit;" title="Перейти в профиль">

@@ -1857,3 +1857,95 @@ async def admin_compositions(request: Request, session=Depends(get_session)):
         "total_performances": total_performances
     }
     return templates.TemplateResponse("admin_compositions.html", context)
+
+
+@home_route.get("/admin/genres", response_class=HTMLResponse)
+async def admin_genres(request: Request, session=Depends(get_session)):
+    """
+    Страница управления жанрами. Доступ только для суперадмина.
+    """
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    # Получаем полноценного пользователя из БД
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return RedirectResponse(url="/login", status_code=302)
+
+    # Получаем все жанры с информацией о количестве концертов
+    from sqlalchemy import func
+    from models.genre import Genre, ConcertGenreLink
+    from models import Concert
+    
+    genres_data = session.exec(
+        select(
+            Genre,
+            func.count(ConcertGenreLink.concert_id).label('concerts_count')
+        )
+        .outerjoin(ConcertGenreLink, Genre.id == ConcertGenreLink.genre_id)
+        .group_by(Genre.id)
+        .order_by(Genre.name)
+    ).all()
+
+    # Получаем номера концертов для каждого жанра
+    genre_concerts = {}
+    for genre_data in genres_data:
+        genre = genre_data[0]
+        concerts = session.exec(
+            select(Concert)
+            .join(ConcertGenreLink, Concert.id == ConcertGenreLink.concert_id)
+            .where(ConcertGenreLink.genre_id == genre.id)
+            .order_by(Concert.id)
+        ).all()
+        concert_data = []
+        for concert in concerts:
+            if hasattr(concert, '_mapping'):
+                # Это Row объект с _mapping
+                if 'Concert' in concert._mapping:
+                    # Если есть ключ 'Concert', то это объект Concert
+                    concert_obj = concert._mapping['Concert']
+                    concert_data.append((concert_obj.id, concert_obj.datetime))
+                else:
+                    # Иначе берем по индексам
+                    concert_data.append((concert[0], concert[1]))
+            else:
+                # Это может быть объект Concert или tuple
+                if hasattr(concert, 'id') and hasattr(concert, 'datetime'):
+                    concert_data.append((concert.id, concert.datetime))
+                else:
+                    concert_data.append((concert[0], concert[1]))
+        genre_concerts[genre.id] = concert_data
+
+    # Подготавливаем данные для отображения
+    genres_list = []
+    for genre_data in genres_data:
+        genre = genre_data[0]
+        concerts_count = genre_data[1]
+        
+        genres_list.append({
+            'id': genre.id,
+            'name': genre.name,
+            'description': genre.description,
+            'concerts_count': concerts_count,
+            'concert_data': genre_concerts.get(genre.id, [])
+        })
+
+    # Статистика
+    total_genres = len(genres_list)
+    genres_with_concerts = sum(1 for genre in genres_list if genre['concerts_count'] > 0)
+    total_performances = sum(genre['concerts_count'] for genre in genres_list)
+
+    context = {
+        "user": user_obj,
+        "request": request,
+        "genres": genres_list,
+        "total_genres": total_genres,
+        "genres_with_concerts": genres_with_concerts,
+        "total_performances": total_performances
+    }
+    return templates.TemplateResponse("admin_genres.html", context)

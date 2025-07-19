@@ -196,6 +196,47 @@ class TestHomeAPI:
         # Проверяем наличие элементов админки
         assert "Админка" in response.text or "admin" in response.text.lower()
 
+    def test_admin_genres_authenticated_superuser(self, client: TestClient, test_user, auth_headers, db_session):
+        """Тест страницы жанров для суперпользователя"""
+        # Устанавливаем права суперпользователя
+        test_user.is_superuser = True
+        db_session.add(test_user)
+        db_session.commit()
+        
+        # Извлекаем токен из заголовка Authorization
+        token = auth_headers["Authorization"].replace("Bearer ", "")
+        
+        response = client.get("/admin/genres", cookies={"access_token": token})
+        assert response.status_code == status.HTTP_200_OK
+        # Проверяем наличие элементов админки
+        assert "Админка" in response.text or "admin" in response.text.lower()
+
+    def test_admin_genres_with_data(self, client: TestClient, test_user, auth_headers, db_session):
+        """Тест страницы жанров с проверкой наличия данных"""
+        # Устанавливаем права суперпользователя
+        test_user.is_superuser = True
+        db_session.add(test_user)
+        db_session.commit()
+        
+        # Извлекаем токен из заголовка Authorization
+        token = auth_headers["Authorization"].replace("Bearer ", "")
+        
+        response = client.get("/admin/genres", cookies={"access_token": token})
+        assert response.status_code == status.HTTP_200_OK
+        
+        # Проверяем наличие данных о жанрах
+        assert "Жанры фестиваля" in response.text
+        assert "Список жанров" in response.text
+        
+        # Проверяем, что есть хотя бы один жанр в таблице
+        # (это будет работать только если жанры были созданы)
+        from models.genre import Genre
+        from sqlmodel import select
+        genres_count = len(db_session.exec(select(Genre)).all())
+        if genres_count > 0:
+            assert "tbody" in response.text  # Таблица должна содержать tbody
+            assert "tr" in response.text     # Должны быть строки таблицы
+
     def test_admin_offprogram_authenticated_superuser(self, client: TestClient, test_user, auth_headers, db_session):
         """Тест страницы офф-программы для суперпользователя"""
         # Устанавливаем права суперпользователя

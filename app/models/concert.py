@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from .hall import Hall
 from .artist import Artist, ConcertArtistLink
 from .composition import Composition, ConcertCompositionLink
+from .genre import Genre, ConcertGenreLink
 
 
 class Concert(SQLModel, table=True):
@@ -25,3 +26,4 @@ class Concert(SQLModel, table=True):
 
     artists: List[Artist] = Relationship(back_populates="concerts", link_model=ConcertArtistLink)
     compositions: List[Composition] = Relationship(back_populates="concerts", link_model=ConcertCompositionLink)
+    genres: List[Genre] = Relationship(back_populates="concerts", link_model=ConcertGenreLink)

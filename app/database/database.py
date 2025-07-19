@@ -88,10 +88,14 @@ def init_db(demostart = None):
                 stats = route_service.init_available_routes(session)
                 print(f"✅ AvailableRoute инициализированы: {stats['available_routes']} доступных из {stats['total_routes']} маршрутов")
                 
-                # Инициализируем кэш концертов в продаже
-                print("Инициализируем кэш концертов в продаже...")
-                route_service.init_available_concerts_cache(session)
-                print("✅ Кэш концертов в продаже инициализирован")
+                # Инициализируем кэш концертов в продаже, если его нет
+                try:
+                    route_service.init_available_concerts_cache(session)
+                except Exception as e:
+                    print(f"⚠️ Ошибка при инициализации кэша концертов: {e}")
+
+                # Жанры теперь создаются автоматически в data_loader.load_all_data()
+                print("✅ Жанры созданы автоматически при загрузке данных")
 
     else:
         # Инициализируем кэш количества маршрутов, если его нет
