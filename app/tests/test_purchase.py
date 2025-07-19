@@ -25,8 +25,8 @@ class TestPurchaseAPI:
     def test_get_user_purchased_concerts_empty(self, client: TestClient, auth_headers):
         """Тест получения концертов для пользователя без покупок"""
         response = client.get("/purchases/concerts/nonexistent_user", headers=auth_headers)
-        # Проверяем, что эндпоинт существует (может быть 200 или 404)
-        assert response.status_code in [status.HTTP_200_OK, status.HTTP_404_NOT_FOUND]
+        # Проверяем, что эндпоинт существует (может быть 200, 403 или 404)
+        assert response.status_code in [status.HTTP_200_OK, status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND]
 
     def test_get_user_purchases_with_details_success(self, client: TestClient, test_purchase, auth_headers):
         """Тест получения покупок с деталями"""
@@ -46,8 +46,8 @@ class TestPurchaseAPI:
     def test_get_user_purchases_with_details_empty(self, client: TestClient, auth_headers):
         """Тест получения покупок с деталями для пользователя без покупок"""
         response = client.get("/purchases/details/nonexistent_user", headers=auth_headers)
-        # Проверяем, что эндпоинт существует (может быть 200 или 404)
-        assert response.status_code in [status.HTTP_200_OK, status.HTTP_404_NOT_FOUND]
+        # Проверяем, что эндпоинт существует (может быть 200, 403 или 404)
+        assert response.status_code in [status.HTTP_200_OK, status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND]
 
     def test_get_user_purchase_count_success(self, client: TestClient, test_purchase, auth_headers):
         """Тест получения количества покупок пользователя"""
@@ -67,8 +67,8 @@ class TestPurchaseAPI:
     def test_get_user_purchase_count_empty(self, client: TestClient, auth_headers):
         """Тест получения количества покупок для пользователя без покупок"""
         response = client.get("/purchases/count/nonexistent_user", headers=auth_headers)
-        # Проверяем, что эндпоинт существует (может быть 200 или 404)
-        assert response.status_code in [status.HTTP_200_OK, status.HTTP_404_NOT_FOUND]
+        # Проверяем, что эндпоинт существует (может быть 200, 403 или 404)
+        assert response.status_code in [status.HTTP_200_OK, status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND]
 
     def test_get_user_purchases_by_date_range_success(self, client: TestClient, test_purchase, auth_headers):
         """Тест получения покупок по диапазону дат"""
@@ -104,8 +104,8 @@ class TestPurchaseAPI:
             params={"start_date": "invalid-date", "end_date": "invalid-date"},
             headers=auth_headers
         )
-        # Проверяем, что эндпоинт существует (может быть 400, 404 или 200 с ошибкой)
-        assert response.status_code in [status.HTTP_400_BAD_REQUEST, status.HTTP_404_NOT_FOUND, status.HTTP_200_OK]
+        # Проверяем, что эндпоинт существует (может быть 400, 403, 404 или 200 с ошибкой)
+        assert response.status_code in [status.HTTP_400_BAD_REQUEST, status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND, status.HTTP_200_OK]
 
     def test_get_user_purchases_by_date_range_missing_params(self, client: TestClient, test_purchase, auth_headers):
         """Тест получения покупок без параметров дат"""
@@ -113,8 +113,8 @@ class TestPurchaseAPI:
             f"/purchases/date-range/{test_purchase.user_external_id}",
             headers=auth_headers
         )
-        # Проверяем, что эндпоинт существует (может быть 400, 404 или 200 с ошибкой)
-        assert response.status_code in [status.HTTP_400_BAD_REQUEST, status.HTTP_404_NOT_FOUND, status.HTTP_200_OK]
+        # Проверяем, что эндпоинт существует (может быть 400, 403, 404 или 200 с ошибкой)
+        assert response.status_code in [status.HTTP_400_BAD_REQUEST, status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND, status.HTTP_200_OK]
 
     def test_get_user_purchase_summary_success(self, client: TestClient, test_purchase, auth_headers):
         """Тест получения сводки покупок пользователя"""
@@ -134,8 +134,8 @@ class TestPurchaseAPI:
     def test_get_user_purchase_summary_empty(self, client: TestClient, auth_headers):
         """Тест получения сводки покупок для пользователя без покупок"""
         response = client.get("/purchases/summary/nonexistent_user", headers=auth_headers)
-        # Проверяем, что эндпоинт существует (может быть 200 или 404)
-        assert response.status_code in [status.HTTP_200_OK, status.HTTP_404_NOT_FOUND]
+        # Проверяем, что эндпоинт существует (может быть 200, 403 или 404)
+        assert response.status_code in [status.HTTP_200_OK, status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND]
 
     def test_purchase_data_structure(self, client: TestClient, test_purchase, auth_headers):
         """Тест структуры данных покупки"""

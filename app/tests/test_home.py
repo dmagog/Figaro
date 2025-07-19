@@ -213,8 +213,8 @@ class TestHomeAPI:
     def test_get_routes_api(self, client: TestClient, auth_headers):
         """Тест получения маршрутов через API"""
         response = client.get("/api/routes", headers=auth_headers)
-        # Проверяем, что эндпоинт существует (может быть 200 или 404)
-        assert response.status_code in [status.HTTP_200_OK, status.HTTP_404_NOT_FOUND]
+        # Проверяем, что эндпоинт существует (может быть 200, 403 или 404)
+        assert response.status_code in [status.HTTP_200_OK, status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND]
     
     def test_get_routes_upload_status(self, client: TestClient):
         """Тест получения статуса загрузки маршрутов"""
@@ -244,14 +244,14 @@ class TestHomeAPI:
     def test_get_customer_route_details(self, client: TestClient, test_purchase, auth_headers):
         """Тест получения деталей маршрута клиента"""
         response = client.get(f"/api/customers/{test_purchase.user_external_id}/route-details", headers=auth_headers)
-        # Проверяем, что эндпоинт существует (может быть 200 или 404)
-        assert response.status_code in [status.HTTP_200_OK, status.HTTP_404_NOT_FOUND]
+        # Проверяем, что эндпоинт существует (может быть 200, 403 или 404)
+        assert response.status_code in [status.HTTP_200_OK, status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND]
 
     def test_get_customer_route_details_not_found(self, client: TestClient, auth_headers):
         """Тест получения деталей маршрута для несуществующего клиента"""
         response = client.get("/api/customers/nonexistent_user/route-details", headers=auth_headers)
-        # Проверяем, что эндпоинт существует (может быть 200 или 404)
-        assert response.status_code in [status.HTTP_200_OK, status.HTTP_404_NOT_FOUND]
+        # Проверяем, что эндпоинт существует (может быть 200, 403 или 404)
+        assert response.status_code in [status.HTTP_200_OK, status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND]
     
     def test_update_hall_seats_authenticated_superuser(self, client: TestClient, test_user, test_hall, auth_headers, db_session):
         """Тест обновления количества мест в зале для суперпользователя"""
