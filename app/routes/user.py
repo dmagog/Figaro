@@ -27,7 +27,7 @@ templates = Jinja2Templates(directory="templates")
 user_route = APIRouter(tags=['User'])
 
 @user_route.post('/signup')
-async def signup(user: User, session=Depends(get_session)) -> dict:
+async def signup(user: UserCreate, session=Depends(get_session)) -> dict:
     try:
         user_exist = UserService.get_user_by_email(user.email, session)
         
@@ -36,14 +36,20 @@ async def signup(user: User, session=Depends(get_session)) -> dict:
             status_code=status.HTTP_409_CONFLICT, 
             detail="User with email provided exists already.")
         
-        hashed_password = hash_password.create_hash(user.password)
-        user.password = hashed_password 
-        UserService.create_user(user, 
-                            Bill(balance=10, freeLimit_perDay=3, freeLimit_today=3), 
-                            session)
+        # Создаем пользователя через сервис
+        new_user = UserService.create_user(
+            session=session,
+            email=user.email,
+            password=user.password,
+            name=user.name,
+            role=user.role
+        )
         
         return {"message": "User created successfully"}
 
+    except HTTPException:
+        # Перебрасываем HTTPException как есть
+        raise
     except Exception as e:
         logger.error(f"Error during signup: {str(e)}")
         raise HTTPException(
@@ -74,7 +80,7 @@ async def signin(form_data: OAuth2PasswordRequestForm = Depends(), session=Depen
     if user_exist is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User does not exist")
     
-    if hash_password.verify_hash(form_data.password, user_exist.password):
+    if hash_password.verify_hash(form_data.password, user_exist.hashed_password):
         access_token = create_access_token(user_exist.email)
         return {"access_token": access_token, "token_type": "Bearer"}
     
@@ -96,7 +102,7 @@ async def get_user_by_email(email: str, session=Depends(get_session)) -> User:
 
 @user_route.get("/id/{id}", response_model=User) 
 async def get_user_by_id(id: int, session=Depends(get_session)) -> User:
-    user = UserService.get_user_by_id(id, session)
+    user = UserService.get_user_by_id(session, id)
     if user:
         return user 
     

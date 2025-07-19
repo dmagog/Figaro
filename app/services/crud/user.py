@@ -15,6 +15,11 @@ def get_user_by_id(session: Session, user_id: int) -> Optional[User]:
     return session.get(User, user_id)
 
 
+def get_all_users(session: Session) -> list[User]:
+    """Получение всех пользователей"""
+    return session.exec(select(User)).all()
+
+
 def create_user(session: Session, email: str, password: str, name: Optional[str] = None, role: str = "user") -> User:
     hashed = hash_password.create_hash(password)
     user = User(email=email, hashed_password=hashed, name=name, role=role)
