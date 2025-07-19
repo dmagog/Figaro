@@ -1655,7 +1655,7 @@
                                 {% set first_concert = day_concerts[0] if day_concerts else None %}
                                 {% set concert_date = first_concert.concert.datetime.date() if first_concert and first_concert.concert.datetime else None %}
                                 {% set month_names = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'] %}
-                                {% set day_names = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'] %}
+                                {% set day_names = ['пн','вт','ср','чт','пт','сб','вс'] %}
                                 <div class="day-header day-header-day{{ day_index }}" style="padding: 12px 16px; margin-bottom: 16px; border-radius: 8px;">
                                     <h3 style="margin:0; font-size:1.2em; display:flex; justify-content:space-between; align-items:center; color:white;">
                                         <span>
