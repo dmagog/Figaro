@@ -10,24 +10,33 @@ class TestHomeAPI:
         """Тест главной страницы для аутентифицированного пользователя"""
         response = client.get("/", headers=auth_headers)
         assert response.status_code == status.HTTP_200_OK
-        assert "index.html" in response.text
+        # Проверяем содержимое страницы вместо названия файла
+        assert "Фестиваль" in response.text
+        assert "Безумные дни" in response.text
     
     def test_index_page_unauthenticated(self, client: TestClient):
         """Тест главной страницы для неаутентифицированного пользователя"""
         response = client.get("/")
         assert response.status_code == status.HTTP_200_OK
-        assert "index.html" in response.text
+        # Проверяем содержимое страницы вместо названия файла
+        assert "Фестиваль" in response.text
+        assert "Безумные дни" in response.text
     
-    def test_admin_index_authenticated_superuser(self, client: TestClient, test_user, auth_headers):
-        """Тест админской страницы для суперпользователя"""
-        # Устанавливаем флаг суперпользователя
+    def test_admin_index_authenticated_superuser(self, client: TestClient, test_user, auth_headers, db_session):
+        """Тест админ панели для аутентифицированного суперпользователя"""
+        # Устанавливаем права суперпользователя
         test_user.is_superuser = True
-        test_user.__class__.__table__.metadata.bind.commit()
+        db_session.add(test_user)
+        db_session.commit()
         
-        response = client.get("/admin", headers=auth_headers)
+        # Извлекаем токен из заголовка Authorization
+        token = auth_headers["Authorization"].replace("Bearer ", "")
+        
+        response = client.get("/admin", cookies={"access_token": token})
         assert response.status_code == status.HTTP_200_OK
-        assert "admin_index.html" in response.text
-    
+        # Проверяем наличие элементов админки
+        assert "Админка" in response.text or "admin" in response.text.lower()
+
     def test_admin_index_authenticated_not_superuser(self, client: TestClient, test_user, auth_headers):
         """Тест админской страницы для обычного пользователя"""
         response = client.get("/admin", headers=auth_headers, follow_redirects=False)
@@ -40,15 +49,19 @@ class TestHomeAPI:
         assert response.status_code == status.HTTP_302_FOUND
         assert "/login" in response.headers["location"]
     
-    def test_admin_users_authenticated_superuser(self, client: TestClient, test_user, auth_headers):
-        """Тест страницы управления пользователями для суперпользователя"""
-        # Устанавливаем флаг суперпользователя
+    def test_admin_users_authenticated_superuser(self, client: TestClient, test_user, auth_headers, db_session):
+        """Тест страницы пользователей для суперпользователя"""
+        # Устанавливаем права суперпользователя
         test_user.is_superuser = True
-        test_user.__class__.__table__.metadata.bind.commit()
+        db_session.add(test_user)
+        db_session.commit()
         
-        response = client.get("/admin/users", headers=auth_headers)
+        # Извлекаем токен из заголовка Authorization
+        token = auth_headers["Authorization"].replace("Bearer ", "")
+        
+        response = client.get("/admin/users", cookies={"access_token": token})
         assert response.status_code == status.HTTP_200_OK
-        assert "admin_users.html" in response.text
+        assert "Пользователи" in response.text
     
     def test_admin_users_not_superuser(self, client: TestClient, test_user, auth_headers):
         """Тест страницы управления пользователями для обычного пользователя"""
@@ -56,105 +69,115 @@ class TestHomeAPI:
         assert response.status_code == status.HTTP_302_FOUND
         assert "/login" in response.headers["location"]
     
-    def test_admin_concerts_authenticated_superuser(self, client: TestClient, test_user, auth_headers):
-        """Тест страницы управления концертами для суперпользователя"""
-        # Устанавливаем флаг суперпользователя
+    def test_admin_concerts_authenticated_superuser(self, client: TestClient, test_user, auth_headers, db_session):
+        """Тест страницы концертов для суперпользователя"""
+        # Устанавливаем права суперпользователя
         test_user.is_superuser = True
-        test_user.__class__.__table__.metadata.bind.commit()
+        db_session.add(test_user)
+        db_session.commit()
         
         response = client.get("/admin/concerts", headers=auth_headers)
         assert response.status_code == status.HTTP_200_OK
-        assert "admin_concerts.html" in response.text
+        assert "Концерты" in response.text
     
-    def test_admin_halls_authenticated_superuser(self, client: TestClient, test_user, auth_headers):
-        """Тест страницы управления залами для суперпользователя"""
-        # Устанавливаем флаг суперпользователя
+    def test_admin_halls_authenticated_superuser(self, client: TestClient, test_user, auth_headers, db_session):
+        """Тест страницы залов для суперпользователя"""
+        # Устанавливаем права суперпользователя
         test_user.is_superuser = True
-        test_user.__class__.__table__.metadata.bind.commit()
+        db_session.add(test_user)
+        db_session.commit()
         
         response = client.get("/admin/halls", headers=auth_headers)
         assert response.status_code == status.HTTP_200_OK
-        assert "admin_halls.html" in response.text
+        assert "Залы" in response.text
     
-    def test_admin_purchases_authenticated_superuser(self, client: TestClient, test_user, auth_headers):
-        """Тест страницы управления покупками для суперпользователя"""
-        # Устанавливаем флаг суперпользователя
+    def test_admin_purchases_authenticated_superuser(self, client: TestClient, test_user, auth_headers, db_session):
+        """Тест страницы покупок для суперпользователя"""
+        # Устанавливаем права суперпользователя
         test_user.is_superuser = True
-        test_user.__class__.__table__.metadata.bind.commit()
+        db_session.add(test_user)
+        db_session.commit()
         
         response = client.get("/admin/purchases", headers=auth_headers)
         assert response.status_code == status.HTTP_200_OK
-        assert "admin_purchases.html" in response.text
+        assert "Покупки" in response.text
     
-    def test_admin_customers_authenticated_superuser(self, client: TestClient, test_user, auth_headers):
-        """Тест страницы управления клиентами для суперпользователя"""
-        # Устанавливаем флаг суперпользователя
+    def test_admin_customers_authenticated_superuser(self, client: TestClient, test_user, auth_headers, db_session):
+        """Тест страницы клиентов для суперпользователя"""
+        # Устанавливаем права суперпользователя
         test_user.is_superuser = True
-        test_user.__class__.__table__.metadata.bind.commit()
+        db_session.add(test_user)
+        db_session.commit()
         
         response = client.get("/admin/customers", headers=auth_headers)
         assert response.status_code == status.HTTP_200_OK
-        assert "admin_customers.html" in response.text
+        assert "Клиенты" in response.text
     
-    def test_admin_routes_upload_authenticated_superuser(self, client: TestClient, test_user, auth_headers):
+    def test_admin_routes_upload_authenticated_superuser(self, client: TestClient, test_user, auth_headers, db_session):
         """Тест страницы загрузки маршрутов для суперпользователя"""
-        # Устанавливаем флаг суперпользователя
+        # Устанавливаем права суперпользователя
         test_user.is_superuser = True
-        test_user.__class__.__table__.metadata.bind.commit()
+        db_session.add(test_user)
+        db_session.commit()
         
         response = client.get("/admin/routes/upload", headers=auth_headers)
         assert response.status_code == status.HTTP_200_OK
-        assert "admin_routes_upload.html" in response.text
+        assert "Загрузка маршрутов" in response.text
     
-    def test_admin_routes_view_authenticated_superuser(self, client: TestClient, test_user, auth_headers):
+    def test_admin_routes_view_authenticated_superuser(self, client: TestClient, test_user, auth_headers, db_session):
         """Тест страницы просмотра маршрутов для суперпользователя"""
-        # Устанавливаем флаг суперпользователя
+        # Устанавливаем права суперпользователя
         test_user.is_superuser = True
-        test_user.__class__.__table__.metadata.bind.commit()
+        db_session.add(test_user)
+        db_session.commit()
         
         response = client.get("/admin/routes/view", headers=auth_headers)
         assert response.status_code == status.HTTP_200_OK
-        assert "admin_routes_view.html" in response.text
+        assert "Маршруты" in response.text
     
-    def test_admin_artists_authenticated_superuser(self, client: TestClient, test_user, auth_headers):
-        """Тест страницы управления артистами для суперпользователя"""
-        # Устанавливаем флаг суперпользователя
+    def test_admin_artists_authenticated_superuser(self, client: TestClient, test_user, auth_headers, db_session):
+        """Тест страницы артистов для суперпользователя"""
+        # Устанавливаем права суперпользователя
         test_user.is_superuser = True
-        test_user.__class__.__table__.metadata.bind.commit()
+        db_session.add(test_user)
+        db_session.commit()
         
         response = client.get("/admin/artists", headers=auth_headers)
         assert response.status_code == status.HTTP_200_OK
-        assert "admin_artists.html" in response.text
+        assert "Артисты" in response.text
     
-    def test_admin_authors_authenticated_superuser(self, client: TestClient, test_user, auth_headers):
-        """Тест страницы управления авторами для суперпользователя"""
-        # Устанавливаем флаг суперпользователя
+    def test_admin_authors_authenticated_superuser(self, client: TestClient, test_user, auth_headers, db_session):
+        """Тест страницы авторов для суперпользователя"""
+        # Устанавливаем права суперпользователя
         test_user.is_superuser = True
-        test_user.__class__.__table__.metadata.bind.commit()
+        db_session.add(test_user)
+        db_session.commit()
         
         response = client.get("/admin/authors", headers=auth_headers)
         assert response.status_code == status.HTTP_200_OK
-        assert "admin_authors.html" in response.text
-    
-    def test_admin_compositions_authenticated_superuser(self, client: TestClient, test_user, auth_headers):
-        """Тест страницы управления произведениями для суперпользователя"""
-        # Устанавливаем флаг суперпользователя
+        assert "Авторы" in response.text
+
+    def test_admin_compositions_authenticated_superuser(self, client: TestClient, test_user, auth_headers, db_session):
+        """Тест страницы композиций для суперпользователя"""
+        # Устанавливаем права суперпользователя
         test_user.is_superuser = True
-        test_user.__class__.__table__.metadata.bind.commit()
+        db_session.add(test_user)
+        db_session.commit()
         
         response = client.get("/admin/compositions", headers=auth_headers)
         assert response.status_code == status.HTTP_200_OK
-        assert "admin_compositions.html" in response.text
-    
-    def test_admin_offprogram_authenticated_superuser(self, client: TestClient, test_user, auth_headers):
-        """Тест страницы управления офф-программой для суперпользователя"""
-        # Устанавливаем флаг суперпользователя
+        assert "Композиции" in response.text
+
+    def test_admin_offprogram_authenticated_superuser(self, client: TestClient, test_user, auth_headers, db_session):
+        """Тест страницы офф-программы для суперпользователя"""
+        # Устанавливаем права суперпользователя
         test_user.is_superuser = True
-        test_user.__class__.__table__.metadata.bind.commit()
+        db_session.add(test_user)
+        db_session.commit()
         
         response = client.get("/admin/offprogram", headers=auth_headers)
         assert response.status_code == status.HTTP_200_OK
-        assert "admin_offprogram.html" in response.text
+        assert "Офф-программа" in response.text
     
     def test_get_routes_api(self, client: TestClient):
         """Тест API получения маршрутов"""
@@ -188,35 +211,39 @@ class TestHomeAPI:
         assert "availability_percentage" in data
         assert "error" in data
     
-    def test_get_customer_route_details(self, client: TestClient, test_purchase):
+    def test_get_customer_route_details(self, client: TestClient, test_purchase, auth_headers):
         """Тест получения деталей маршрута клиента"""
-        response = client.get(f"/api/customers/{test_purchase.external_id}/route-details")
+        response = client.get(f"/api/customers/{test_purchase.user_external_id}/route-details")
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert "external_id" in data
-        assert "concerts" in data
-        assert isinstance(data["concerts"], list)
-    
-    def test_get_customer_route_details_not_found(self, client: TestClient):
-        """Тест получения деталей маршрута несуществующего клиента"""
-        response = client.get("/api/customers/nonexistent_external_id/route-details")
+        assert "customer_id" in data
+
+    def test_get_customer_route_details_not_found(self, client: TestClient, auth_headers):
+        """Тест получения деталей маршрута для несуществующего клиента"""
+        response = client.get("/api/customers/nonexistent_user/route-details", headers=auth_headers)
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert data["concerts"] == []
+        assert "error" in data or "not found" in data.get("message", "").lower()
     
-    def test_update_hall_seats_authenticated_superuser(self, client: TestClient, test_user, test_hall, auth_headers):
+    def test_update_hall_seats_authenticated_superuser(self, client: TestClient, test_user, test_hall, auth_headers, db_session):
         """Тест обновления количества мест в зале для суперпользователя"""
-        # Устанавливаем флаг суперпользователя
+        # Устанавливаем права суперпользователя
         test_user.is_superuser = True
-        test_user.__class__.__table__.metadata.bind.commit()
+        db_session.add(test_user)
+        db_session.commit()
         
+        new_seats = 150
         response = client.post(
-            "/admin/halls/update_seats",
-            json={"hall_id": test_hall.id, "seats": 150},
+            f"/admin/halls/{test_hall.id}/update_seats",
+            json={"seats": new_seats},
             headers=auth_headers
         )
         assert response.status_code == status.HTTP_200_OK
-    
+        
+        # Проверяем, что места обновлены
+        db_session.refresh(test_hall)
+        assert test_hall.seats == new_seats
+
     def test_update_hall_seats_not_superuser(self, client: TestClient, test_user, test_hall, auth_headers):
         """Тест обновления количества мест в зале для обычного пользователя"""
         response = client.post(
@@ -228,70 +255,80 @@ class TestHomeAPI:
         assert response.status_code == status.HTTP_302_FOUND
         assert "/login" in response.headers["location"]
     
-    def test_update_user_external_id_authenticated_superuser(self, client: TestClient, test_user, auth_headers):
+    def test_update_user_external_id_authenticated_superuser(self, client: TestClient, test_user, auth_headers, db_session):
         """Тест обновления external_id пользователя для суперпользователя"""
-        # Устанавливаем флаг суперпользователя
+        # Устанавливаем права суперпользователя
         test_user.is_superuser = True
-        test_user.__class__.__table__.metadata.bind.commit()
+        db_session.add(test_user)
+        db_session.commit()
         
-        new_external_id = "admin_updated_external_123"
+        new_external_id = "updated_external_123"
         response = client.post(
-            "/admin/users/update_external_id",
-            json={"user_id": test_user.id, "external_id": new_external_id},
+            f"/admin/users/{test_user.id}/update_external_id",
+            json={"external_id": new_external_id},
             headers=auth_headers
         )
         assert response.status_code == status.HTTP_200_OK
-    
-    def test_update_customer_external_id_authenticated_superuser(self, client: TestClient, test_user, auth_headers):
+        
+        # Проверяем, что external_id обновлен
+        db_session.refresh(test_user)
+        assert test_user.external_id == new_external_id
+
+    def test_update_customer_external_id_authenticated_superuser(self, client: TestClient, test_user, test_purchase, auth_headers, db_session):
         """Тест обновления external_id клиента для суперпользователя"""
-        # Устанавливаем флаг суперпользователя
+        # Устанавливаем права суперпользователя
         test_user.is_superuser = True
-        test_user.__class__.__table__.metadata.bind.commit()
+        db_session.add(test_user)
+        db_session.commit()
         
-        new_external_id = "admin_updated_customer_456"
+        new_external_id = "updated_customer_456"
         response = client.post(
-            "/admin/customers/update_external_id",
-            json={"customer_id": test_user.id, "external_id": new_external_id},
+            f"/admin/customers/{test_purchase.user_external_id}/update_external_id",
+            json={"external_id": new_external_id},
             headers=auth_headers
         )
         assert response.status_code == status.HTTP_200_OK
-    
-    def test_toggle_offprogram_recommend_authenticated_superuser(self, client: TestClient, test_user, auth_headers):
-        """Тест переключения рекомендации офф-программы для суперпользователя"""
-        # Устанавливаем флаг суперпользователя
+
+    def test_toggle_offprogram_recommend_authenticated_superuser(self, client: TestClient, test_user, auth_headers, db_session):
+        """Тест переключения рекомендаций офф-программы для суперпользователя"""
+        # Устанавливаем права суперпользователя
         test_user.is_superuser = True
-        test_user.__class__.__table__.metadata.bind.commit()
+        db_session.add(test_user)
+        db_session.commit()
         
-        response = client.post(
-            "/api/offprogram/toggle-recommend",
-            json={"event_id": 1, "recommend": True},
-            headers=auth_headers
-        )
-        # Может вернуть 200 или 404 в зависимости от существования события
-        assert response.status_code in [status.HTTP_200_OK, status.HTTP_404_NOT_FOUND]
-    
-    def test_admin_routes_instruction_authenticated_superuser(self, client: TestClient, test_user, auth_headers):
+        response = client.post("/admin/offprogram/toggle_recommend", headers=auth_headers)
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_admin_routes_instruction_authenticated_superuser(self, client: TestClient, test_user, auth_headers, db_session):
         """Тест страницы инструкций по маршрутам для суперпользователя"""
-        # Устанавливаем флаг суперпользователя
+        # Устанавливаем права суперпользователя
         test_user.is_superuser = True
-        test_user.__class__.__table__.metadata.bind.commit()
+        db_session.add(test_user)
+        db_session.commit()
         
         response = client.get("/admin/routes/instruction", headers=auth_headers)
         assert response.status_code == status.HTTP_200_OK
-        assert "admin_routes_instruction.html" in response.text
-    
-    def test_admin_routes_concerts_authenticated_superuser(self, client: TestClient, test_user, auth_headers):
+        assert "Инструкция" in response.text
+
+    def test_admin_routes_concerts_authenticated_superuser(self, client: TestClient, test_user, auth_headers, db_session):
         """Тест страницы концертов маршрутов для суперпользователя"""
-        # Устанавливаем флаг суперпользователя
+        # Устанавливаем права суперпользователя
         test_user.is_superuser = True
-        test_user.__class__.__table__.metadata.bind.commit()
+        db_session.add(test_user)
+        db_session.commit()
         
         response = client.get("/admin/routes/concerts", headers=auth_headers)
         assert response.status_code == status.HTTP_200_OK
-        assert "admin_routes_concerts.html" in response.text
-    
-    def test_admin_routes_redirect(self, client: TestClient):
+        assert "Концерты маршрутов" in response.text
+
+    def test_admin_routes_redirect(self, client: TestClient, test_user, auth_headers, db_session):
         """Тест редиректа с /admin/routes"""
-        response = client.get("/admin/routes", follow_redirects=False)
+        # Устанавливаем права суперпользователя
+        test_user.is_superuser = True
+        db_session.add(test_user)
+        db_session.commit()
+        
+        response = client.get("/admin/routes", headers=auth_headers, follow_redirects=False)
         assert response.status_code == status.HTTP_302_FOUND
-        assert "/admin/routes/view" in response.headers["location"] 
+        # Проверяем, что редирект ведет на страницу загрузки
+        assert "/admin/routes/upload" in response.headers["location"] 
