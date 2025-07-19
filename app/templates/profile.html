@@ -643,6 +643,11 @@
             border-radius: 8px;
         }
         
+        /* Уменьшаем отступ у последней карточки концерта в дне */
+        .concert-event.compact:last-child {
+            margin-bottom: 4px;
+        }
+        
         .concert-event.compact .concert-number {
             position: absolute;
             left: -40px;
@@ -1016,6 +1021,7 @@
             border-left: 2px dashed #3b82f6;
             border-right: 2px dashed #3b82f6;
             border-bottom: 2px dashed #3b82f6;
+            margin: 0 0 4px 60px; /* Уменьшаем отступ снизу */
         }
         
         .off-program-event {
@@ -1948,8 +1954,8 @@
                                                             
                                                             <div class="off-program-event-duration">
                                                                 <div>{{ event.duration }}</div>
-                                                                <div title="Время перехода от предыдущего зала до мероприятия оффпрограммы">🚶🏼‍➡️ ~{{ event.walk_time_from_event }} мин</div>
-                                                                <div title="Время перехода от площадки оффпрограммы до следующего концерта">🚶 ~{{ event.walk_time_to_event }} мин</div>
+                                                                <div title="Время перехода от предыдущего зала до мероприятия офф-программы">🚶🏼‍➡️ ~{{ event.walk_time_from_event or 0 }} мин</div>
+                                                                <div title="Время перехода от площадки оффпрограммы до следующего концерта">🚶 ~{{ event.walk_time_to_event or 0 }} мин</div>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1962,7 +1968,7 @@
                                     
                                     <!-- Офф-программа после последнего концерта -->
                                     {% if day_concerts|length > 0 and day_concerts[-1].after_concert_events and day_concerts[-1].after_concert_events|length > 0 %}
-                                    <div class="off-program-section after-concert" style="animation-delay: {{ (day_concerts|length + 1) * 0.1 }}s; margin-top: 12px;">
+                                    <div class="off-program-section after-concert" style="animation-delay: {{ (day_concerts|length + 1) * 0.1 }}s; margin-top: 4px;">
                                         <!-- Заголовок с кнопкой раскрытия -->
                                         <div class="off-program-header" onclick="toggleOffProgram('after-day{{ day_index }}-concert{{ day_concerts[-1].concert.id }}')">
                                             <div class="off-program-header-left">
@@ -2019,7 +2025,7 @@
                                                         
                                                         <div class="off-program-event-duration">
                                                             <div>{{ event.duration }}</div>
-                                                            <div title="Время перехода от предыдущего зала до мероприятия офф-программы">🚶🏼‍➡️ ~{{ event.walk_time_from_event }} мин</div>
+                                                            <div title="Время перехода от предыдущего зала до мероприятия офф-программы">🚶🏼‍➡️ ~{{ event.walk_time_from_concert or 0 }} мин</div>
                                                         </div>
                                                     </div>
                                                 </div>
