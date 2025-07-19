@@ -1090,12 +1090,6 @@
             gap: 2px !important;
         }
         
-        .off-program-event-walk-times {
-            text-align: right;
-            font-size: 0.8em;
-            color: #666;
-        }
-        
         .toggle-icon.rotated {
             transform: rotate(180deg);
         }
@@ -1387,6 +1381,32 @@
             margin-left: 8px;
             min-width: 80px;
         }
+        
+        .off-program-event-duration {
+            text-align: right;
+            font-size: 0.9em;
+            color: #666;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 2px;
+            margin-left: 8px;
+            min-width: 80px;
+        }
+        
+        .off-program-event-container {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            width: 100%;
+        }
+        
+        .off-program-event-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
     </style>
 </head>
 <body>
@@ -1676,12 +1696,12 @@
                                             <div style="display: flex; flex-direction: column; gap: 3px;">
                                                 {% for event in concert.before_concert_events %}
                                                 <div class="off-program-event{% if event.recommend %} recommended{% endif %}">
-                                                    <div style="display: flex; align-items: flex-start; gap: 8px;">
+                                                    <div class="off-program-event-container">
                                                         <div class="off-program-event-time">
                                                             <div class="time">{{ event.event_date_display }}</div>
                                                         </div>
                                                         
-                                                        <div class="off-program-event-content" style="flex: 1; flex-direction: column !important; align-items: flex-start !important;">
+                                                        <div class="off-program-event-content">
                                                             <div class="off-program-event-title" style="flex-direction: row !important; align-items: center !important;">
                                                                 {{ event.event_name }}
                                                                 <div class="off-program-collapsed-format">{{ event.format }}</div>
@@ -1895,12 +1915,12 @@
                                                 <div style="display: flex; flex-direction: column; gap: 3px;">
                                                     {% for event in concert.off_program_events %}
                                                     <div class="off-program-event{% if event.recommend %} recommended{% endif %}">
-                                                        <div style="display: flex; align-items: flex-start; gap: 8px;">
+                                                        <div class="off-program-event-container">
                                                             <div class="off-program-event-time">
                                                                 <div class="time">{{ event.event_date_display }}</div>
                                                             </div>
                                                             
-                                                            <div class="off-program-event-content" style="flex: 1; flex-direction: column !important; align-items: flex-start !important;">
+                                                            <div class="off-program-event-content">
                                                                 <div class="off-program-event-title" style="flex-direction: row !important; align-items: center !important;">
                                                                     {{ event.event_name }}
                                                                     <div class="off-program-collapsed-format">{{ event.format }}</div>
@@ -1965,12 +1985,12 @@
                                             <div style="display: flex; flex-direction: column; gap: 3px;">
                                                 {% for event in day_concerts[-1].after_concert_events %}
                                                 <div class="off-program-event{% if event.recommend %} recommended{% endif %}">
-                                                    <div style="display: flex; align-items: flex-start; gap: 8px;">
+                                                    <div class="off-program-event-container">
                                                         <div class="off-program-event-time">
                                                             <div class="time">{{ event.event_date_display }}</div>
                                                         </div>
                                                         
-                                                        <div class="off-program-event-content" style="flex: 1; flex-direction: column !important; align-items: flex-start !important;">
+                                                        <div class="off-program-event-content">
                                                             <div class="off-program-event-title" style="flex-direction: row !important; align-items: center !important;">
                                                                 {{ event.event_name }}
                                                                 <div class="off-program-collapsed-format">{{ event.format }}</div>
@@ -1982,14 +2002,10 @@
                                                                 {{ event.description }}
                                                             </div>
                                                             {% endif %}
-                                                            
-                                                            <div class="off-program-event-duration">
-                                                                <div>{{ event.duration }}</div>
-                                                                <div>🚶🏼‍➡️ ~{{ event.walk_time_from_concert }} мин</div>
-                                                            </div>
                                                         </div>
                                                         
-                                                        <div class="off-program-event-walk-times">
+                                                        <div class="off-program-event-duration">
+                                                            <div>{{ event.duration }}</div>
                                                             <div>🚶🏼‍➡️ ~{{ event.walk_time_from_concert }} мин</div>
                                                         </div>
                                                     </div>
