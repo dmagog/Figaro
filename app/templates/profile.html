@@ -130,6 +130,24 @@
             font-weight: bold;
         }
         
+        /* Переопределяем для маршрутного листа */
+        #route-tab .concerts-count {
+            background: none;
+            color: inherit;
+            padding: 0;
+            border-radius: 0;
+            font-weight: normal;
+        }
+        
+        /* Переопределяем для страницы "Мои концерты" */
+        #concerts-tab .concerts-count {
+            background: none;
+            color: inherit;
+            padding: 0;
+            border-radius: 0;
+            font-weight: normal;
+        }
+        
         .concerts-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -1490,15 +1508,31 @@
                 <div class="concerts-header">
                     <h2>Мои концерты</h2>
                     <div class="concerts-count">
-                        {{ purchase_summary.total_concerts }}
-                        {% set n = purchase_summary.total_concerts %}
-                        {% if n == 1 %}
-                            концерт
-                        {% elif n >= 2 and n <= 4 %}
-                            концерта
-                        {% else %}
-                            концертов
-                        {% endif %}
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <div style="background: #667eea; color: white; padding: 10px 20px; border-radius: 25px; font-weight: bold;">
+                                {% set unique_days = concerts|map(attribute='concert_day_index')|unique|list %}
+                                {{ unique_days|length }}
+                                {% set days_count = unique_days|length %}
+                                {% if days_count == 1 %}
+                                    день
+                                {% elif days_count >= 2 and days_count <= 4 %}
+                                    дня
+                                {% else %}
+                                    дней
+                                {% endif %}
+                            </div>
+                            <div style="background: #667eea; color: white; padding: 10px 20px; border-radius: 25px; font-weight: bold;">
+                                {{ purchase_summary.total_concerts }}
+                                {% set n = purchase_summary.total_concerts %}
+                                {% if n == 1 %}
+                                    концерт
+                                {% elif n >= 2 and n <= 4 %}
+                                    концерта
+                                {% else %}
+                                    концертов
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -1597,15 +1631,30 @@
                 <div class="concerts-header">
                     <h2>Маршрутный лист</h2>
                     <div class="concerts-count">
-                        {{ route_sheet.summary.total_concerts }}
-                        {% set n = route_sheet.summary.total_concerts %}
-                        {% if n == 1 %}
-                            концерт
-                        {% elif n >= 2 and n <= 4 %}
-                            концерта
-                        {% else %}
-                            концертов
-                        {% endif %}
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <div style="background: #667eea; color: white; padding: 10px 20px; border-radius: 25px; font-weight: bold;">
+                                {{ route_sheet.concerts_by_day|length }}
+                                {% set days_count = route_sheet.concerts_by_day|length %}
+                                {% if days_count == 1 %}
+                                    день
+                                {% elif days_count >= 2 and days_count <= 4 %}
+                                    дня
+                                {% else %}
+                                    дней
+                                {% endif %}
+                            </div>
+                            <div style="background: #667eea; color: white; padding: 10px 20px; border-radius: 25px; font-weight: bold;">
+                                {{ route_sheet.summary.total_concerts }}
+                                {% set n = route_sheet.summary.total_concerts %}
+                                {% if n == 1 %}
+                                    концерт
+                                {% elif n >= 2 and n <= 4 %}
+                                    концерта
+                                {% else %}
+                                    концертов
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
