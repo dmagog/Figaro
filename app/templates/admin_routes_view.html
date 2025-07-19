@@ -34,6 +34,7 @@
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(60,60,120,0.04);
     overflow-x: auto;
+    overflow-y: auto; /* Добавляем вертикальный скролл */
     margin-bottom: 16px;
     max-width: 100%;
     height: 600px; /* Фиксированная высота для виртуализации */
@@ -265,6 +266,25 @@
     width: 100%;
 }
 
+/* Дополнительные стили для обеспечения скролла */
+.routes-table-container {
+    /* Убеждаемся, что контейнер может скроллиться */
+    overflow: auto !important;
+}
+
+.routes-table {
+    /* Убираем фиксированную высоту у таблицы, чтобы она могла расти */
+    height: auto;
+    min-height: 100%;
+}
+
+/* Стили для заголовка таблицы */
+.routes-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #f8f9ff;
+}
 
 </style>
 
@@ -349,9 +369,11 @@ let currentSortBy = 'concerts';
 let currentSortOrder = 'desc';
 let totalCount = 0;
 const BATCH_SIZE = 100; // Размер порции данных
+let scrollObserver = null; // Глобальный наблюдатель для скролла
 
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM загружен, инициализируем виртуализацию...');
+// Функция инициализации виртуализации
+function initializeVirtualization() {
+    console.log('Инициализация виртуализации...');
     
     // Получаем элементы
     const table = document.querySelector('.routes-table');
@@ -361,7 +383,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (!table || !tbody) {
         console.error('Необходимые элементы не найдены!');
-        return;
+        return false;
     }
     
     // Инициализируем сортировку из URL
@@ -384,153 +406,336 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Наблюдатель для бесконечного скролла
-    const observer = new IntersectionObserver((entries) => {
+    // Создаем наблюдатель для бесконечного скролла
+    if (scrollObserver) {
+        scrollObserver.disconnect(); // Отключаем предыдущий наблюдатель
+    }
+    
+    scrollObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting && hasMoreData && !isLoading) {
+                console.log('Scroll sentinel видим, загружаем данные...');
                 loadMoreData();
             }
         });
     });
     
-    observer.observe(scrollSentinel);
+    if (scrollSentinel) {
+        scrollObserver.observe(scrollSentinel);
+        console.log('Наблюдатель скролла установлен');
+    }
     
     // Загружаем первую порцию данных
     loadMoreData();
     
-    // Функция загрузки данных
-    async function loadMoreData() {
-        if (isLoading || !hasMoreData) return;
+    return true;
+}
+
+// Функция принудительной проверки наблюдателя скролла
+function forceCheckScrollObserver() {
+    console.log('Принудительная проверка наблюдателя скролла...');
+    
+    const scrollSentinel = document.getElementById('scroll-sentinel');
+    console.log('Scroll sentinel найден:', !!scrollSentinel);
+    
+    if (scrollObserver) {
+        console.log('Наблюдатель существует, проверяем состояние...');
+        // Отключаем и переподключаем наблюдатель
+        scrollObserver.disconnect();
+        if (scrollSentinel) {
+            scrollObserver.observe(scrollSentinel);
+            console.log('Наблюдатель переподключен к scroll sentinel');
+        }
+    } else {
+        console.error('Наблюдатель не существует!');
+    }
+}
+
+// Функция восстановления наблюдателя скролла
+function restoreScrollObserver() {
+    const scrollSentinel = document.getElementById('scroll-sentinel');
+    if (scrollSentinel && scrollObserver) {
+        // Сначала отключаем наблюдатель от всех элементов
+        scrollObserver.disconnect();
+        // Затем подключаем к scroll sentinel
+        scrollObserver.observe(scrollSentinel);
+        console.log('Наблюдатель скролла восстановлен для элемента:', scrollSentinel);
+    } else {
+        console.error('Не удалось восстановить наблюдатель скролла:', {
+            scrollSentinel: !!scrollSentinel,
+            scrollObserver: !!scrollObserver
+        });
+        // Пытаемся принудительно восстановить
+        forceCheckScrollObserver();
+    }
+}
+
+// Функция загрузки данных
+async function loadMoreData() {
+    if (isLoading || !hasMoreData) {
+        console.log('Загрузка пропущена:', { isLoading, hasMoreData });
+        return;
+    }
+    
+    console.log('Начинаем загрузку данных...');
+    isLoading = true;
+    showLoadingIndicator();
+    
+    try {
+        console.log(`Загружаем данные: offset=${currentOffset}, limit=${BATCH_SIZE}, sort_by=${currentSortBy}, sort_order=${currentSortOrder}`);
         
-        isLoading = true;
-        showLoadingIndicator();
+        const response = await fetch(`/api/routes?offset=${currentOffset}&limit=${BATCH_SIZE}&sort_by=${currentSortBy}&sort_order=${currentSortOrder}`);
         
-        try {
-            const response = await fetch(`/api/routes?offset=${currentOffset}&limit=${BATCH_SIZE}&sort_by=${currentSortBy}&sort_order=${currentSortOrder}`);
-            const result = await response.json();
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            loadedData.push(...result.data);
+            appendRowsToTable(result.data);
             
-            if (result.success) {
-                loadedData.push(...result.data);
-                appendRowsToTable(result.data);
-                
-                currentOffset += result.data.length;
-                totalCount = result.total_count;
-                hasMoreData = result.has_more;
-                
-                updateCounters();
-                console.log(`Загружено ${result.data.length} строк, всего: ${loadedData.length}/${totalCount}`);
-            } else {
-                console.error('Ошибка загрузки данных:', result.error);
+            currentOffset += result.data.length;
+            totalCount = result.total_count;
+            hasMoreData = result.has_more;
+            
+            updateCounters();
+            console.log(`Загружено ${result.data.length} строк, всего: ${loadedData.length}/${totalCount}, есть еще: ${hasMoreData}`);
+            
+            // Проверяем, нужно ли восстановить наблюдатель скролла
+            if (hasMoreData) {
+                restoreScrollObserver();
             }
-        } catch (error) {
-            console.error('Ошибка при загрузке данных:', error);
-        } finally {
-            isLoading = false;
-            hideLoadingIndicator();
-        }
-    }
-    
-    // Функция добавления строк в таблицу
-    function appendRowsToTable(data) {
-        data.forEach(route => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td class="route-id">${route.id}</td>
-                <td class="route-composition" data-sort="${route.composition_count}">${route.composition}</td>
-                <td data-sort="${route.days}">${route.days}</td>
-                <td data-sort="${route.concerts}">${route.concerts}</td>
-                <td data-sort="${route.halls}">${route.halls}</td>
-                <td data-sort="${route.genre}">${route.genre}</td>
-                <td class="route-time" data-sort="${route.show_time}">${route.show_time_display}</td>
-                <td class="route-time" data-sort="${route.trans_time}">${route.trans_time_display}</td>
-                <td class="route-time" data-sort="${route.wait_time}">${route.wait_time_display}</td>
-                <td class="route-costs" data-sort="${route.costs}">${route.costs_display}</td>
-                <td class="route-score" data-sort="${route.comfort_score}">${route.comfort_score_display}</td>
-                <td data-sort="${route.comfort_level}">
-                    ${getComfortLevelHtml(route.comfort_level)}
-                </td>
-                <td class="route-score" data-sort="${route.intellect_score}">${route.intellect_score_display}</td>
-                <td data-sort="${route.intellect_category}">${route.intellect_category}</td>
-            `;
-            tbody.appendChild(row);
-        });
-    }
-    
-    // Функция для HTML уровня комфорта
-    function getComfortLevelHtml(level) {
-        if (level === 'High') {
-            return '<span class="route-level route-level-high">Высокий</span>';
-        } else if (level === 'Medium') {
-            return '<span class="route-level route-level-medium">Средний</span>';
-        } else if (level === 'Low') {
-            return '<span class="route-level route-level-low">Низкий</span>';
         } else {
-            return `<span class="route-level">${level}</span>`;
+            console.error('Ошибка загрузки данных:', result.error);
+            throw new Error(result.error || 'Неизвестная ошибка');
         }
+    } catch (error) {
+        console.error('Ошибка при загрузке данных:', error);
+        
+        // Показываем ошибку пользователю
+        const tbody = document.getElementById('virtual-tbody');
+        if (tbody && tbody.children.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="14" style="text-align: center; padding: 40px; color: #e53935;">
+                        <div style="font-size: 1.2em; margin-bottom: 10px;">❌</div>
+                        <div>Ошибка загрузки данных</div>
+                        <div style="font-size: 0.9em; margin-top: 8px;">${error.message}</div>
+                        <button onclick="retryLoad()" style="margin-top: 16px; padding: 8px 16px; background: #4f5bd5; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                            🔄 Повторить
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }
+    } finally {
+        isLoading = false;
+        hideLoadingIndicator();
     }
+}
+
+// Функция повторной загрузки
+function retryLoad() {
+    console.log('Повторная загрузка данных...');
     
-    // Функция смены сортировки
-    function changeSort(sortField) {
-        console.log('Смена сортировки на:', sortField);
-        
-        let newSortOrder = 'desc';
-        if (currentSortBy === sortField) {
-            newSortOrder = currentSortOrder === 'desc' ? 'asc' : 'desc';
-        }
-        
-        // Сбрасываем состояние
-        loadedData = [];
-        currentOffset = 0;
-        hasMoreData = true;
-        currentSortBy = sortField;
-        currentSortOrder = newSortOrder;
-        
-        // Очищаем таблицу
+    // Сбрасываем состояние
+    loadedData = [];
+    currentOffset = 0;
+    hasMoreData = true;
+    
+    // Очищаем таблицу
+    const tbody = document.getElementById('virtual-tbody');
+    if (tbody) {
         tbody.innerHTML = '';
-        
-        // Обновляем URL
-        const currentUrl = new URL(window.location);
-        currentUrl.searchParams.set('sort_by', sortField);
-        currentUrl.searchParams.set('sort_order', newSortOrder);
-        window.history.replaceState({}, '', currentUrl.toString());
-        
-        // Обновляем индикаторы
-        updateSortIndicators(sortField, newSortOrder);
-        
-        // Загружаем данные заново
-        loadMoreData();
     }
     
-    // Функция обновления индикаторов сортировки
-    function updateSortIndicators(sortBy, sortOrder) {
-        const headers = table.querySelectorAll('th.sortable');
-        headers.forEach(header => {
-            header.classList.remove('sort-asc', 'sort-desc');
-        });
-        
-        const currentHeader = table.querySelector(`th[data-sort="${sortBy}"]`);
-        if (currentHeader) {
-            currentHeader.classList.add(sortOrder === 'asc' ? 'sort-asc' : 'sort-desc');
-        }
+    // Восстанавливаем наблюдатель скролла
+    restoreScrollObserver();
+    
+    // Загружаем данные заново
+    loadMoreData();
+}
+
+// Функция добавления строк в таблицу
+function appendRowsToTable(data) {
+    const tbody = document.getElementById('virtual-tbody');
+    if (!tbody) return;
+    
+    data.forEach(route => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="route-id">${route.id}</td>
+            <td class="route-composition" data-sort="${route.composition_count}">${route.composition}</td>
+            <td data-sort="${route.days}">${route.days}</td>
+            <td data-sort="${route.concerts}">${route.concerts}</td>
+            <td data-sort="${route.halls}">${route.halls}</td>
+            <td data-sort="${route.genre}">${route.genre}</td>
+            <td class="route-time" data-sort="${route.show_time}">${route.show_time_display}</td>
+            <td class="route-time" data-sort="${route.trans_time}">${route.trans_time_display}</td>
+            <td class="route-time" data-sort="${route.wait_time}">${route.wait_time_display}</td>
+            <td class="route-costs" data-sort="${route.costs}">${route.costs_display}</td>
+            <td class="route-score" data-sort="${route.comfort_score}">${route.comfort_score_display}</td>
+            <td data-sort="${route.comfort_level}">
+                ${getComfortLevelHtml(route.comfort_level)}
+            </td>
+            <td class="route-score" data-sort="${route.intellect_score}">${route.intellect_score_display}</td>
+            <td data-sort="${route.intellect_category}">${route.intellect_category}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Функция для HTML уровня комфорта
+function getComfortLevelHtml(level) {
+    if (level === 'High') {
+        return '<span class="route-level route-level-high">Высокий</span>';
+    } else if (level === 'Medium') {
+        return '<span class="route-level route-level-medium">Средний</span>';
+    } else if (level === 'Low') {
+        return '<span class="route-level route-level-low">Низкий</span>';
+    } else {
+        return `<span class="route-level">${level}</span>`;
+    }
+}
+
+// Функция смены сортировки
+function changeSort(sortField) {
+    console.log('Смена сортировки на:', sortField);
+    
+    let newSortOrder = 'desc';
+    if (currentSortBy === sortField) {
+        newSortOrder = currentSortOrder === 'desc' ? 'asc' : 'desc';
     }
     
-    // Функции для индикатора загрузки
-    function showLoadingIndicator() {
+    console.log('Новые параметры сортировки:', { sortField, newSortOrder });
+    
+    // Сбрасываем состояние
+    loadedData = [];
+    currentOffset = 0;
+    hasMoreData = true;
+    currentSortBy = sortField;
+    currentSortOrder = newSortOrder;
+    
+    // Очищаем таблицу
+    const tbody = document.getElementById('virtual-tbody');
+    if (tbody) {
+        tbody.innerHTML = '';
+        console.log('Таблица очищена');
+    }
+    
+    // Обновляем URL
+    const currentUrl = new URL(window.location);
+    currentUrl.searchParams.set('sort_by', sortField);
+    currentUrl.searchParams.set('sort_order', newSortOrder);
+    window.history.replaceState({}, '', currentUrl.toString());
+    
+    // Обновляем индикаторы
+    updateSortIndicators(sortField, newSortOrder);
+    
+    // Восстанавливаем наблюдатель скролла
+    console.log('Восстанавливаем наблюдатель скролла...');
+    restoreScrollObserver();
+    
+    // Загружаем данные заново
+    console.log('Загружаем данные заново...');
+    loadMoreData();
+}
+
+// Функция обновления индикаторов сортировки
+function updateSortIndicators(sortBy, sortOrder) {
+    const table = document.querySelector('.routes-table');
+    if (!table) return;
+    
+    const headers = table.querySelectorAll('th.sortable');
+    headers.forEach(header => {
+        header.classList.remove('sort-asc', 'sort-desc');
+    });
+    
+    const currentHeader = table.querySelector(`th[data-sort="${sortBy}"]`);
+    if (currentHeader) {
+        currentHeader.classList.add(sortOrder === 'asc' ? 'sort-asc' : 'sort-desc');
+    }
+}
+
+// Функции для индикатора загрузки
+function showLoadingIndicator() {
+    const loadingIndicator = document.getElementById('loading-indicator');
+    if (loadingIndicator) {
         loadingIndicator.classList.add('show');
     }
-    
-    function hideLoadingIndicator() {
+}
+
+function hideLoadingIndicator() {
+    const loadingIndicator = document.getElementById('loading-indicator');
+    if (loadingIndicator) {
         loadingIndicator.classList.remove('show');
     }
+}
+
+// Функция обновления счетчиков
+function updateCounters() {
+    const loadedCountElement = document.getElementById('loaded-count');
+    const totalCountElement = document.getElementById('total-count');
     
-    // Функция обновления счетчиков
-    function updateCounters() {
-        const loadedCountElement = document.getElementById('loaded-count');
-        const totalCountElement = document.getElementById('total-count');
-        
-        if (loadedCountElement) loadedCountElement.textContent = loadedData.length;
-        if (totalCountElement) totalCountElement.textContent = totalCount;
+    if (loadedCountElement) loadedCountElement.textContent = loadedData.length;
+    if (totalCountElement) totalCountElement.textContent = totalCount;
+}
+
+// Инициализация при загрузке DOM
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM загружен, инициализируем виртуализацию...');
+    
+    // Пытаемся инициализировать виртуализацию
+    if (!initializeVirtualization()) {
+        console.error('Не удалось инициализировать виртуализацию');
     }
+    
+    // Добавляем резервный обработчик скролла
+    const tableContainer = document.querySelector('.routes-table-container');
+    if (tableContainer) {
+        tableContainer.addEventListener('scroll', function() {
+            const scrollTop = tableContainer.scrollTop;
+            const scrollHeight = tableContainer.scrollHeight;
+            const clientHeight = tableContainer.clientHeight;
+            
+            // Если пользователь прокрутил до 80% от конца
+            if (scrollTop + clientHeight >= scrollHeight * 0.8) {
+                console.log('Резервный обработчик скролла: загружаем данные...');
+                if (hasMoreData && !isLoading) {
+                    loadMoreData();
+                }
+            }
+        });
+        console.log('Резервный обработчик скролла добавлен');
+    }
+});
+
+// Дополнительная инициализация при полной загрузке страницы
+window.addEventListener('load', function() {
+    console.log('Страница полностью загружена');
+    
+    // Проверяем, загрузились ли данные
+    const tbody = document.getElementById('virtual-tbody');
+    if (tbody && tbody.children.length === 0 && !isLoading) {
+        console.log('Данные не загружены, повторная инициализация...');
+        setTimeout(() => {
+            if (!initializeVirtualization()) {
+                console.error('Повторная инициализация не удалась');
+            }
+        }, 1000);
+    }
+});
+
+// Обработка ошибок
+window.addEventListener('error', function(event) {
+    console.error('JavaScript ошибка:', event.error);
+});
+
+// Обработка необработанных промисов
+window.addEventListener('unhandledrejection', function(event) {
+    console.error('Необработанная ошибка промиса:', event.reason);
 });
 </script>
 

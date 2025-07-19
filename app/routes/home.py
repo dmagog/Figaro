@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status, UploadFile, File, Form, Query
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 import logging
 from auth.authenticate import authenticate_cookie, authenticate
@@ -19,6 +19,7 @@ import threading
 import logging
 from datetime import datetime
 from models import OffProgram, EventFormat, Artist, Author, Composition, ConcertArtistLink, ConcertCompositionLink
+import io
 
 
 def format_time_minutes(minutes):
@@ -1219,20 +1220,54 @@ async def admin_routes_view(request: Request, session=Depends(get_session)):
 
 @home_route.get("/admin/routes/instruction", response_class=HTMLResponse)
 async def admin_routes_instruction(request: Request, session=Depends(get_session)):
+    """
+    Страница с инструкцией по работе с маршрутами.
+    """
     token = request.cookies.get(settings.COOKIE_NAME)
     if token:
         user = await authenticate_cookie(token)
     else:
         user = None
+
     user_obj = None
     if user:
         user_obj = UsersService.get_user_by_email(user, session)
     if not user_obj or not getattr(user_obj, 'is_superuser', False):
         return RedirectResponse(url="/login", status_code=302)
+
     context = {
         "user": user_obj,
         "request": request,
         "active_tab": "instruction"
+    }
+    return templates.TemplateResponse("admin_routes_main.html", context)
+
+@home_route.get("/admin/routes/stats", response_class=HTMLResponse)
+async def admin_routes_stats(request: Request, session=Depends(get_session)):
+    """
+    Страница статистики популярности маршрутов.
+    """
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return RedirectResponse(url="/login", status_code=302)
+
+    # Получаем статистику маршрутов (использует простую версию)
+    from services.crud.purchase import get_route_statistics_simple
+    route_stats = get_route_statistics_simple(session)
+
+    context = {
+        "user": user_obj,
+        "request": request,
+        "active_tab": "stats",
+        "route_stats": route_stats
     }
     return templates.TemplateResponse("admin_routes_main.html", context)
 
@@ -1264,7 +1299,10 @@ async def get_routes_upload_status():
 
 @home_route.get("/admin/routes/available_routes_status")
 async def get_available_routes_status():
-    return JSONResponse(available_routes_status)
+    """
+    Получение статуса проверки AvailableRoute.
+    """
+    return available_routes_status
 
 @home_route.get("/api/routes")
 async def get_routes_api(request: Request, session=Depends(get_session)):
@@ -1949,3 +1987,148 @@ async def admin_genres(request: Request, session=Depends(get_session)):
         "total_performances": total_performances
     }
     return templates.TemplateResponse("admin_genres.html", context)
+
+@home_route.post("/api/routes/stats")
+async def update_route_statistics(request: Request, session=Depends(get_session)):
+    """
+    Обновление статистики маршрутов.
+    """
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+
+    try:
+        # Принудительно обновляем статистику (простая версия)
+        from services.crud.purchase import get_route_statistics_simple
+        route_stats = get_route_statistics_simple(session, force_refresh=True)
+        
+        return {
+            "success": True, 
+            "message": "Статистика обновлена",
+            "calculation_time": route_stats.get('cache_info', {}).get('calculation_time', 0)
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@home_route.get("/api/routes/export-stats")
+async def export_route_statistics(request: Request, session=Depends(get_session)):
+    """
+    Экспорт статистики маршрутов в Excel.
+    """
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+
+    try:
+        from services.crud.purchase import get_route_statistics
+        from fastapi.responses import StreamingResponse
+        import io
+        
+        # Получаем статистику
+        route_stats = get_route_statistics(session)
+        
+        # Создаем Excel файл
+        output = io.BytesIO()
+        
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            # Лист с общей статистикой
+            overview_data = {
+                'Метрика': ['Всего покупок', 'Уникальных маршрутов', 'Активных покупателей', 'Средняя популярность (%)'],
+                'Значение': [
+                    route_stats.get('total_purchases', 0),
+                    route_stats.get('unique_routes', 0),
+                    route_stats.get('active_users', 0),
+                    route_stats.get('avg_popularity', 0)
+                ]
+            }
+            pd.DataFrame(overview_data).to_excel(writer, sheet_name='Общая статистика', index=False)
+            
+            # Лист с популярными маршрутами
+            if route_stats.get('popular_routes'):
+                popular_routes_data = []
+                for route in route_stats['popular_routes']:
+                    popular_routes_data.append({
+                        'ID маршрута': route.get('route_id'),
+                        'Название': route.get('route_name'),
+                        'Количество покупок': route.get('purchase_count'),
+                        'Процент от общих покупок': route.get('percentage'),
+                        'Последняя покупка': route.get('last_purchase'),
+                        'Статус': route.get('status')
+                    })
+                pd.DataFrame(popular_routes_data).to_excel(writer, sheet_name='Популярные маршруты', index=False)
+            
+            # Лист со статистикой по дням
+            if route_stats.get('daily_stats'):
+                daily_stats_data = []
+                for day_stat in route_stats['daily_stats']:
+                    daily_stats_data.append({
+                        'День': day_stat.get('day'),
+                        'Дата': day_stat.get('date'),
+                        'Покупок': day_stat.get('purchases'),
+                        'Маршрутов': day_stat.get('routes'),
+                        'Популярность (%)': day_stat.get('popularity')
+                    })
+                pd.DataFrame(daily_stats_data).to_excel(writer, sheet_name='Статистика по дням', index=False)
+        
+        output.seek(0)
+        
+        return StreamingResponse(
+            io.BytesIO(output.getvalue()),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename=route_statistics_{datetime.now().strftime('%Y%m%d')}.xlsx"}
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ошибка экспорта: {str(e)}")
+
+@home_route.get("/api/routes/stats/basic")
+async def get_basic_route_statistics(request: Request, session=Depends(get_session)):
+    """
+    Получение базовой статистики маршрутов (простая версия).
+    """
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+
+    try:
+        # Используем простую версию статистики
+        from services.crud.purchase import get_route_statistics_simple
+        route_stats = get_route_statistics_simple(session)
+        
+        return {
+            "success": True,
+            "data": {
+                "total_purchases": route_stats['total_purchases'],
+                "unique_routes": route_stats['unique_routes'],
+                "active_users": route_stats['active_users'],
+                "matched_customers": route_stats['matched_customers'],
+                "unmatched_customers": route_stats['unmatched_customers'],
+                "match_percentage": (route_stats['matched_customers'] / route_stats['active_users'] * 100) if route_stats['active_users'] > 0 else 0
+            }
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}

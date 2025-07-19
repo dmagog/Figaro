@@ -12,8 +12,14 @@ from models.artist import Artist, ConcertArtistLink
 from models.composition import Author, Composition, ConcertCompositionLink
 from models.genre import Genre
 import logging
+import time
 
 logger = logging.getLogger(__name__)
+
+# Кэш для статистики маршрутов
+_route_statistics_cache = None
+_route_statistics_cache_time = None
+_route_statistics_cache_ttl = 300  # 5 минут
 
 
 def get_user_purchased_concerts(session: Session, user_external_id: str) -> List[Concert]:
@@ -403,136 +409,643 @@ def find_customer_route_match(session: Session, user_external_id: str) -> dict:
 
 def get_all_customers_route_matches(session: Session) -> dict:
     """
-    Оптимизированная функция для получения соответствий маршрутов для всех покупателей.
-    Загружает все маршруты один раз и обрабатывает всех покупателей.
+    Находит соответствия маршрутов для всех покупателей
     
     Returns:
-        Словарь {external_id: route_match_data}
+        Словарь с информацией о соответствии маршрутов
     """
-    # Получаем все маршруты один раз
-    all_routes = session.exec(select(Route)).all()
-    
-    # Создаем индекс маршрутов для быстрого поиска
-    routes_by_composition = {}
-    for route in all_routes:
-        try:
-            route_concert_ids = tuple(sorted([int(x.strip()) for x in route.Sostav.split(',') if x.strip()]))
-            routes_by_composition[route_concert_ids] = route
-        except (ValueError, AttributeError) as e:
-            logger.warning(f"Ошибка при парсинге маршрута {route.id}: {e}")
-            continue
-    
-    # Получаем всех покупателей с их концертами
-    from sqlalchemy import func
-    customer_concerts = session.exec(
-        select(
-            Purchase.user_external_id,
-            func.array_agg(Purchase.concert_id).label('concert_ids')
-        )
-        .group_by(Purchase.user_external_id)
+    # Получаем всех пользователей с покупками
+    users_with_purchases = session.exec(
+        select(User.external_id)
+        .join(Purchase, User.external_id == Purchase.user_external_id)
+        .distinct()
     ).all()
     
-    results = {}
+    results = {
+        'total_customers': len(users_with_purchases),
+        'matched_customers': 0,
+        'unmatched_customers': 0,
+        'customers_data': []
+    }
     
-    for customer_data in customer_concerts:
-        external_id = str(customer_data[0])
-        concert_ids = customer_data[1] if customer_data[1] else []
+    for user_external_id in users_with_purchases:
+        customer_data = find_customer_route_match(session, user_external_id)
+        results['customers_data'].append(customer_data)
         
-        if not concert_ids:
-            results[external_id] = {
-                "found": False,
-                "reason": "У покупателя нет покупок",
-                "customer_concerts": [],
-                "customer_concerts_str": "",
-                "matched_routes": []
+        if customer_data['found']: # Changed from customer_data['route_match'] to customer_data['found']
+            results['matched_customers'] += 1
+        else:
+            results['unmatched_customers'] += 1
+    
+    return results
+
+
+def get_route_statistics(session: Session, force_refresh: bool = False) -> dict:
+    """
+    Возвращает статистику популярности маршрутов среди покупателей
+    Использует кэширование для улучшения производительности
+    
+    Args:
+        session: Сессия базы данных
+        force_refresh: Принудительно обновить кэш
+        
+    Returns:
+        Словарь со статистикой маршрутов
+    """
+    global _route_statistics_cache, _route_statistics_cache_time
+    
+    # Проверяем кэш
+    current_time = time.time()
+    if (not force_refresh and 
+        _route_statistics_cache is not None and 
+        _route_statistics_cache_time is not None and
+        current_time - _route_statistics_cache_time < _route_statistics_cache_ttl):
+        
+        logger.info("Возвращаем статистику маршрутов из кэша")
+        return _route_statistics_cache
+    
+    logger.info("Начинаем расчет статистики маршрутов...")
+    start_time = time.time()
+    
+    try:
+        # Получаем данные о соответствии маршрутов для всех покупателей
+        customers_data = get_all_customers_route_matches(session)
+        
+        if not customers_data['customers_data']:
+            result = {
+                'total_purchases': 0,
+                'unique_routes': 0,
+                'active_users': 0,
+                'avg_popularity': 0,
+                'popular_routes': [],
+                'daily_stats': [],
+                'matched_customers': 0,
+                'unmatched_customers': 0,
+                'cache_info': {
+                    'cached': False,
+                    'calculation_time': 0
+                }
             }
-            continue
+            
+            # Сохраняем в кэш
+            _route_statistics_cache = result
+            _route_statistics_cache_time = current_time
+            
+            return result
         
-        # Сортируем концерты
-        customer_concert_ids = sorted(concert_ids)
-        customer_concert_ids_str = ",".join(map(str, customer_concert_ids))
-        customer_concert_ids_tuple = tuple(customer_concert_ids)
+        # Подсчитываем популярность маршрутов
+        route_popularity = {}
+        route_details = {}
+        route_last_purchase = {}
         
-        # Ищем точные совпадения
-        exact_matches = []
-        partial_matches = []
+        # Получаем все покупки для определения дат
+        purchases_query = (
+            select(Purchase.user_external_id, Purchase.concert_id, Purchase.purchased_at)
+            .order_by(Purchase.purchased_at)
+        )
+        purchases = session.exec(purchases_query).all()
         
-        # Проверяем точное совпадение
-        if customer_concert_ids_tuple in routes_by_composition:
-            route = routes_by_composition[customer_concert_ids_tuple]
-            exact_matches.append({
-                "route_id": route.id,
-                "route_composition": route.Sostav,
-                "route_days": route.Days,
-                "route_concerts": route.Concerts,
-                "route_halls": route.Halls,
-                "route_genre": route.Genre,
-                "route_show_time": route.ShowTime,
-                "route_trans_time": route.TransTime,
-                "route_wait_time": route.WaitTime,
-                "route_costs": route.Costs,
-                "route_comfort_score": route.ComfortScore,
-                "route_comfort_level": route.ComfortLevel,
-                "route_intellect_score": route.IntellectScore,
-                "route_intellect_category": route.IntellectCategory,
-                "match_type": "exact",
-                "match_percentage": 100.0
+        # Создаем словарь последних покупок пользователей
+        user_last_purchase = {}
+        for purchase in purchases:
+            user_id = purchase.user_external_id
+            if user_id not in user_last_purchase or purchase.purchased_at > user_last_purchase[user_id]:
+                user_last_purchase[user_id] = purchase.purchased_at
+        
+        # Анализируем данные о соответствии маршрутов
+        for customer_data in customers_data['customers_data']:
+            if customer_data['found'] and customer_data['matched_routes']:
+                # Берем лучший маршрут для этого покупателя
+                best_match = customer_data['best_match']
+                route_id = best_match['route_id']
+                
+                # Увеличиваем счетчик популярности маршрута
+                if route_id not in route_popularity:
+                    route_popularity[route_id] = 0
+                    route_details[route_id] = best_match
+                route_popularity[route_id] += 1
+                
+                # Обновляем дату последней покупки для маршрута
+                # Находим пользователя по его концертам
+                for purchase in purchases:
+                    user_concerts = [p.concert_id for p in purchases if p.user_external_id == purchase.user_external_id]
+                    if set(user_concerts) == set(customer_data['customer_concerts']):
+                        user_id = purchase.user_external_id
+                        if user_id in user_last_purchase:
+                            if route_id not in route_last_purchase or user_last_purchase[user_id] > route_last_purchase[route_id]:
+                                route_last_purchase[route_id] = user_last_purchase[user_id]
+                        break
+        
+        # Сортируем маршруты по популярности
+        sorted_routes = sorted(route_popularity.items(), key=lambda x: x[1], reverse=True)
+        
+        # Подготавливаем данные для топ маршрутов
+        popular_routes = []
+        total_customers = customers_data['total_customers']
+        
+        for route_id, customer_count in sorted_routes[:20]:  # Топ 20 маршрутов
+            route_detail = route_details[route_id]
+            percentage = (customer_count / total_customers * 100) if total_customers > 0 else 0
+            
+            popular_routes.append({
+                'route_id': route_id,
+                'route_name': f"Маршрут {route_id}",
+                'purchase_count': customer_count,
+                'percentage': percentage,
+                'last_purchase': route_last_purchase.get(route_id),
+                'status': 'available',  # Все найденные маршруты доступны
+                'route_details': {
+                    'days': route_detail.get('route_days'),
+                    'concerts': route_detail.get('route_concerts'),
+                    'halls': route_detail.get('route_halls'),
+                    'genre': route_detail.get('route_genre'),
+                    'comfort_score': route_detail.get('route_comfort_score'),
+                    'intellect_score': route_detail.get('route_intellect_score')
+                }
             })
         
-        # Проверяем частичные совпадения
-        for route_concert_ids_tuple, route in routes_by_composition.items():
-            if set(customer_concert_ids).issubset(set(route_concert_ids_tuple)):
-                match_percentage = (len(customer_concert_ids) / len(route_concert_ids_tuple)) * 100
-                partial_matches.append({
-                    "route_id": route.id,
-                    "route_composition": route.Sostav,
-                    "route_days": route.Days,
-                    "route_concerts": route.Concerts,
-                    "route_halls": route.Halls,
-                    "route_genre": route.Genre,
-                    "route_show_time": route.ShowTime,
-                    "route_trans_time": route.TransTime,
-                    "route_wait_time": route.WaitTime,
-                    "route_costs": route.Costs,
-                    "route_comfort_score": route.ComfortScore,
-                    "route_comfort_level": route.ComfortLevel,
-                    "route_intellect_score": route.IntellectScore,
-                    "route_intellect_category": route.IntellectCategory,
-                    "match_type": "partial",
-                    "match_percentage": match_percentage,
-                    "missing_concerts": list(set(route_concert_ids_tuple) - set(customer_concert_ids))
-                })
+        # Статистика по дням (упрощенная версия для ускорения)
+        daily_stats = []
         
-        # Сортируем частичные совпадения
-        partial_matches.sort(key=lambda x: x["match_percentage"], reverse=True)
+        # Получаем уникальные даты концертов
+        concert_dates = session.exec(
+            select(Concert.datetime)
+            .distinct()
+            .order_by(Concert.datetime)
+        ).all()
         
-        # Формируем результат
-        if exact_matches:
-            results[external_id] = {
-                "found": True,
-                "match_type": "exact",
-                "customer_concerts": customer_concert_ids,
-                "customer_concerts_str": customer_concert_ids_str,
-                "matched_routes": exact_matches,
-                "best_match": exact_matches[0]
+        # Группируем концерты по дням
+        concerts_by_day = {}
+        for concert_datetime in concert_dates:
+            if concert_datetime:
+                day_date = concert_datetime.date()
+                if day_date not in concerts_by_day:
+                    concerts_by_day[day_date] = []
+                concerts_by_day[day_date].append(concert_datetime)
+        
+        # Анализируем статистику по дням
+        for day_num, (day_date, day_concerts) in enumerate(concerts_by_day.items(), 1):
+            day_concert_ids = [c.id for c in day_concerts]
+            day_purchases = 0
+            day_routes = set()
+            
+            # Считаем покупки и маршруты для этого дня
+            for customer_data in customers_data['customers_data']:
+                if customer_data['found']:
+                    # Проверяем, есть ли у покупателя концерты в этот день
+                    customer_day_concerts = [cid for cid in customer_data['customer_concerts'] if cid in day_concert_ids]
+                    if customer_day_concerts:
+                        day_purchases += len(customer_day_concerts)
+                        
+                        # Добавляем маршрут в статистику дня
+                        if customer_data['matched_routes']:
+                            best_match = customer_data['best_match']
+                            day_routes.add(best_match['route_id'])
+            
+            # Вычисляем популярность дня
+            total_purchases = sum(route_popularity.values())
+            day_popularity = (day_purchases / total_purchases * 100) if total_purchases > 0 else 0
+            
+            daily_stats.append({
+                'day': day_num,
+                'date': day_date,
+                'purchases': day_purchases,
+                'routes': len(day_routes),
+                'popularity': day_popularity
+            })
+        
+        calculation_time = time.time() - start_time
+        logger.info(f"Статистика маршрутов рассчитана за {calculation_time:.2f} секунд")
+        
+        result = {
+            'total_purchases': len(purchases),
+            'unique_routes': len(route_popularity),
+            'active_users': total_customers,
+            'avg_popularity': sum(route_popularity.values()) / len(route_popularity) if route_popularity else 0,
+            'popular_routes': popular_routes,
+            'daily_stats': daily_stats,
+            'matched_customers': customers_data['matched_customers'],
+            'unmatched_customers': customers_data['unmatched_customers'],
+            'cache_info': {
+                'cached': True,
+                'calculation_time': calculation_time
             }
-        elif partial_matches:
-            results[external_id] = {
-                "found": True,
-                "match_type": "partial",
-                "customer_concerts": customer_concert_ids,
-                "customer_concerts_str": customer_concert_ids_str,
-                "matched_routes": partial_matches,
-                "best_match": partial_matches[0]
+        }
+        
+        # Сохраняем в кэш
+        _route_statistics_cache = result
+        _route_statistics_cache_time = current_time
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Ошибка при получении статистики маршрутов: {e}")
+        return {
+            'total_purchases': 0,
+            'unique_routes': 0,
+            'active_users': 0,
+            'avg_popularity': 0,
+            'popular_routes': [],
+            'daily_stats': [],
+            'matched_customers': 0,
+            'unmatched_customers': 0,
+            'cache_info': {
+                'cached': False,
+                'calculation_time': 0,
+                'error': str(e)
             }
-        else:
-            results[external_id] = {
-                "found": False,
-                "reason": "Не найдено подходящих маршрутов",
-                "customer_concerts": customer_concert_ids,
-                "customer_concerts_str": customer_concert_ids_str,
-                "matched_routes": [],
-                "total_routes_checked": len(all_routes)
-            }
+        }
+
+
+def get_route_statistics_fast(session: Session, force_refresh: bool = False) -> dict:
+    """
+    Быстрая версия статистики маршрутов через SQL-запросы
+    """
+    global _route_statistics_cache, _route_statistics_cache_time
     
-    return results 
+    # Проверяем кэш
+    current_time = time.time()
+    if (not force_refresh and 
+        _route_statistics_cache is not None and 
+        _route_statistics_cache_time is not None and
+        current_time - _route_statistics_cache_time < _route_statistics_cache_ttl):
+        
+        logger.info("Возвращаем статистику маршрутов из кэша")
+        return _route_statistics_cache
+    
+    logger.info("Начинаем быстрый расчет статистики маршрутов...")
+    start_time = time.time()
+    
+    try:
+        # 1. Базовая статистика покупок
+        total_purchases = session.exec(select(func.count(Purchase.id))).one()
+        active_users = session.exec(select(func.count(func.distinct(Purchase.user_external_id)))).one()
+        
+        if total_purchases == 0:
+            result = {
+                'total_purchases': 0,
+                'unique_routes': 0,
+                'active_users': 0,
+                'avg_popularity': 0,
+                'popular_routes': [],
+                'daily_stats': [],
+                'matched_customers': 0,
+                'unmatched_customers': 0,
+                'cache_info': {
+                    'cached': False,
+                    'calculation_time': 0
+                }
+            }
+            _route_statistics_cache = result
+            _route_statistics_cache_time = current_time
+            return result
+        
+        # 2. Получаем все покупки с группировкой по пользователям (упрощенная версия)
+        all_purchases = session.exec(select(Purchase.user_external_id, Purchase.concert_id)).all()
+        
+        # Группируем покупки по пользователям
+        user_purchases = {}
+        for purchase in all_purchases:
+            user_id = purchase.user_external_id
+            if user_id not in user_purchases:
+                user_purchases[user_id] = []
+            user_purchases[user_id].append(purchase.concert_id)
+        
+        # 3. Получаем все маршруты
+        from models import Route
+        all_routes = session.exec(select(Route)).all()
+        
+        # 4. Быстрый подсчет популярности маршрутов
+        route_popularity = {}
+        route_details = {}
+        matched_customers = 0
+        
+        for user_id, user_concert_ids in user_purchases.items():
+            user_concerts = set(user_concert_ids)
+            
+            # Ищем точные совпадения маршрутов
+            for route in all_routes:
+                try:
+                    route_concerts = set(int(x.strip()) for x in route.Sostav.split(',') if x.strip())
+                    
+                    # Точное совпадение
+                    if route_concerts == user_concerts:
+                        if route.id not in route_popularity:
+                            route_popularity[route.id] = 0
+                            route_details[route.id] = {
+                                'route_id': route.id,
+                                'route_name': f"Маршрут {route.id}",
+                                'route_days': route.Days,
+                                'route_concerts': route.Concerts,
+                                'route_halls': route.Halls,
+                                'route_genre': route.Genre,
+                                'route_comfort_score': route.ComfortScore,
+                                'route_intellect_score': route.IntellectScore
+                            }
+                        route_popularity[route.id] += 1
+                        matched_customers += 1
+                        break
+                        
+                except (ValueError, AttributeError):
+                    continue
+        
+        unmatched_customers = active_users - matched_customers
+        
+        # 5. Сортируем маршруты по популярности
+        sorted_routes = sorted(route_popularity.items(), key=lambda x: x[1], reverse=True)
+        
+        # 6. Подготавливаем топ маршрутов
+        popular_routes = []
+        for route_id, customer_count in sorted_routes[:20]:
+            route_detail = route_details[route_id]
+            percentage = (customer_count / active_users * 100) if active_users > 0 else 0
+            
+            popular_routes.append({
+                'route_id': route_id,
+                'route_name': route_detail['route_name'],
+                'purchase_count': customer_count,
+                'percentage': percentage,
+                'last_purchase': None,  # Упрощено для скорости
+                'status': 'available',
+                'route_details': {
+                    'days': route_detail['route_days'],
+                    'concerts': route_detail['route_concerts'],
+                    'halls': route_detail['route_halls'],
+                    'genre': route_detail['route_genre'],
+                    'comfort_score': route_detail['route_comfort_score'],
+                    'intellect_score': route_detail['route_intellect_score']
+                }
+            })
+        
+        # 7. Упрощенная статистика по дням
+        daily_stats = []
+        concert_dates = session.exec(
+            select(Concert.datetime)
+            .distinct()
+            .order_by(Concert.datetime)
+        ).all()
+        
+        concerts_by_day = {}
+        for concert_datetime in concert_dates:
+            if concert_datetime:
+                day_date = concert_datetime.date()
+                if day_date not in concerts_by_day:
+                    concerts_by_day[day_date] = []
+                concerts_by_day[day_date].append(concert_datetime)
+        
+        for day_num, (day_date, day_concerts) in enumerate(concerts_by_day.items(), 1):
+            day_concert_ids = [c.id for c in day_concerts]
+            
+            # Подсчитываем покупки для этого дня
+            day_purchases = session.exec(
+                select(func.count(Purchase.id))
+                .where(Purchase.concert_id.in_(day_concert_ids))
+            ).one()
+            
+            daily_stats.append({
+                'day': day_num,
+                'date': day_date,
+                'purchases': day_purchases,
+                'routes': 0,  # Упрощено для скорости
+                'popularity': (day_purchases / total_purchases * 100) if total_purchases > 0 else 0
+            })
+        
+        calculation_time = time.time() - start_time
+        logger.info(f"Быстрая статистика маршрутов рассчитана за {calculation_time:.2f} секунд")
+        
+        result = {
+            'total_purchases': total_purchases,
+            'unique_routes': len(route_popularity),
+            'active_users': active_users,
+            'avg_popularity': sum(route_popularity.values()) / len(route_popularity) if route_popularity else 0,
+            'popular_routes': popular_routes,
+            'daily_stats': daily_stats,
+            'matched_customers': matched_customers,
+            'unmatched_customers': unmatched_customers,
+            'cache_info': {
+                'cached': True,
+                'calculation_time': calculation_time
+            }
+        }
+        
+        # Сохраняем в кэш
+        _route_statistics_cache = result
+        _route_statistics_cache_time = current_time
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Ошибка при получении быстрой статистики маршрутов: {e}")
+        return {
+            'total_purchases': 0,
+            'unique_routes': 0,
+            'active_users': 0,
+            'avg_popularity': 0,
+            'popular_routes': [],
+            'daily_stats': [],
+            'matched_customers': 0,
+            'unmatched_customers': 0,
+            'cache_info': {
+                'cached': False,
+                'calculation_time': 0,
+                'error': str(e)
+            }
+        }
+
+
+def get_route_statistics_simple(session: Session, force_refresh: bool = False) -> dict:
+    """
+    Простая и быстрая статистика маршрутов на основе данных из CustomerRouteMatch
+    """
+    global _route_statistics_cache, _route_statistics_cache_time
+    
+    # Проверяем кэш
+    current_time = time.time()
+    if (not force_refresh and 
+        _route_statistics_cache is not None and 
+        _route_statistics_cache_time is not None and
+        current_time - _route_statistics_cache_time < _route_statistics_cache_ttl):
+        
+        logger.info("Возвращаем статистику маршрутов из кэша")
+        return _route_statistics_cache
+    
+    logger.info("Начинаем простой расчет статистики маршрутов...")
+    start_time = time.time()
+    
+    try:
+        from models import CustomerRouteMatch, Route, Purchase, Concert
+        
+        # 1. Базовая статистика покупок
+        total_purchases = session.exec(select(func.count(Purchase.id))).one()
+        active_users = session.exec(select(func.count(func.distinct(Purchase.user_external_id)))).one()
+        
+        if total_purchases == 0:
+            result = {
+                'total_purchases': 0,
+                'unique_routes': 0,
+                'active_users': 0,
+                'avg_popularity': 0,
+                'popular_routes': [],
+                'daily_stats': [],
+                'matched_customers': 0,
+                'unmatched_customers': 0,
+                'cache_info': {
+                    'cached': False,
+                    'calculation_time': 0
+                }
+            }
+            _route_statistics_cache = result
+            _route_statistics_cache_time = current_time
+            return result
+        
+        # 2. Получаем все соответствия маршрутов из CustomerRouteMatch
+        matches = session.exec(select(CustomerRouteMatch)).all()
+        
+        # 3. Подсчитываем статистику
+        matched_customers = 0
+        unmatched_customers = 0
+        route_popularity = {}
+        route_details = {}
+        
+        for match in matches:
+            if match.found and match.best_route_id:
+                matched_customers += 1
+                
+                # Увеличиваем счетчик популярности маршрута
+                if match.best_route_id not in route_popularity:
+                    route_popularity[match.best_route_id] = 0
+                route_popularity[match.best_route_id] += 1
+            else:
+                unmatched_customers += 1
+        
+        # 4. Получаем детали маршрутов для популярных
+        if route_popularity:
+            route_ids = list(route_popularity.keys())
+            routes = session.exec(select(Route).where(Route.id.in_(route_ids))).all()
+            
+            for route in routes:
+                route_details[route.id] = {
+                    'route_id': route.id,
+                    'route_name': f"Маршрут {route.id}",
+                    'route_days': route.Days,
+                    'route_concerts': route.Concerts,
+                    'route_halls': route.Halls,
+                    'route_genre': route.Genre,
+                    'route_comfort_score': route.ComfortScore,
+                    'route_intellect_score': route.IntellectScore
+                }
+        
+        # 5. Сортируем маршруты по популярности
+        sorted_routes = sorted(route_popularity.items(), key=lambda x: x[1], reverse=True)
+        
+        # 6. Подготавливаем топ маршрутов
+        popular_routes = []
+        for route_id, customer_count in sorted_routes[:20]:
+            route_detail = route_details.get(route_id, {})
+            percentage = (customer_count / active_users * 100) if active_users > 0 else 0
+            
+            popular_routes.append({
+                'route_id': route_id,
+                'route_name': route_detail.get('route_name', f"Маршрут {route_id}"),
+                'purchase_count': customer_count,
+                'percentage': percentage,
+                'last_purchase': None,  # Упрощено для скорости
+                'status': 'available',
+                'route_details': {
+                    'days': route_detail.get('route_days'),
+                    'concerts': route_detail.get('route_concerts'),
+                    'halls': route_detail.get('route_halls'),
+                    'genre': route_detail.get('route_genre'),
+                    'comfort_score': route_detail.get('route_comfort_score'),
+                    'intellect_score': route_detail.get('route_intellect_score')
+                }
+            })
+        
+        # 7. Упрощенная статистика по дням
+        daily_stats = []
+        concert_dates = session.exec(
+            select(Concert.datetime)
+            .distinct()
+            .order_by(Concert.datetime)
+        ).all()
+        
+        concerts_by_day = {}
+        for concert_datetime in concert_dates:
+            if concert_datetime:
+                day_date = concert_datetime.date()
+                if day_date not in concerts_by_day:
+                    concerts_by_day[day_date] = []
+                concerts_by_day[day_date].append(concert_datetime)
+        
+        for day_num, (day_date, day_concerts) in enumerate(concerts_by_day.items(), 1):
+            # Получаем ID концертов для этого дня
+            day_concert_ids = session.exec(
+                select(Concert.id)
+                .where(Concert.datetime.in_(day_concerts))
+            ).all()
+            
+            # Подсчитываем покупки для этого дня
+            day_purchases = session.exec(
+                select(func.count(Purchase.id))
+                .where(Purchase.concert_id.in_(day_concert_ids))
+            ).one()
+            
+            daily_stats.append({
+                'day': day_num,
+                'date': day_date,
+                'purchases': day_purchases,
+                'routes': 0,  # Упрощено для скорости
+                'popularity': (day_purchases / total_purchases * 100) if total_purchases > 0 else 0
+            })
+        
+        calculation_time = time.time() - start_time
+        logger.info(f"Простая статистика маршрутов рассчитана за {calculation_time:.2f} секунд")
+        
+        result = {
+            'total_purchases': total_purchases,
+            'unique_routes': len(route_popularity),
+            'active_users': active_users,
+            'avg_popularity': sum(route_popularity.values()) / len(route_popularity) if route_popularity else 0,
+            'popular_routes': popular_routes,
+            'daily_stats': daily_stats,
+            'matched_customers': matched_customers,
+            'unmatched_customers': unmatched_customers,
+            'cache_info': {
+                'cached': True,
+                'calculation_time': calculation_time
+            }
+        }
+        
+        # Сохраняем в кэш
+        _route_statistics_cache = result
+        _route_statistics_cache_time = current_time
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Ошибка при получении простой статистики маршрутов: {e}")
+        return {
+            'total_purchases': 0,
+            'unique_routes': 0,
+            'active_users': 0,
+            'avg_popularity': 0,
+            'popular_routes': [],
+            'daily_stats': [],
+            'matched_customers': 0,
+            'unmatched_customers': 0,
+            'cache_info': {
+                'cached': False,
+                'calculation_time': 0,
+                'error': str(e)
+            }
+        }
+
+
+def clear_route_statistics_cache():
+    """
+    Очищает кэш статистики маршрутов
+    """
+    global _route_statistics_cache, _route_statistics_cache_time
+    _route_statistics_cache = None
+    _route_statistics_cache_time = None
+    logger.info("Кэш статистики маршрутов очищен") 
