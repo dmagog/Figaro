@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Маршрутный лист фестиваля</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+            @top-center {
+                content: "Маршрутный лист фестиваля";
+                font-size: 10pt;
+                color: #6b7280;
+            }
+            @bottom-center {
+                content: "Страница " counter(page) " из " counter(pages);
+                font-size: 10pt;
+                color: #6b7280;
+            }
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #1f2937;
+            background: white;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 2rem 0;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            border-radius: 12px;
+            /* box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); */
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            /* text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); */
+        }
+        
+        .header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .user-info {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .user-info h3 {
+            color: #374151;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .user-info p {
+            color: #6b7280;
+            margin: 0.5rem 0;
+            font-size: 1rem;
+        }
+        
+        .summary-section {
+            margin-bottom: 2rem;
+        }
+        
+        .section-title {
+            background: linear-gradient(90deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px 8px 0 0;
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 0;
+        }
+        
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border: 2px solid #1e40af;
+            border-radius: 0 0 8px 8px;
+            overflow: hidden;
+        }
+        
+        .summary-table th {
+            background: #1e3a8a;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        
+        .summary-table td {
+            padding: 1rem;
+            text-align: center;
+            border-top: 1px solid #e5e7eb;
+            font-size: 1rem;
+        }
+        
+        .summary-table tr:nth-child(even) {
+            background: #f9fafb;
+        }
+        
+        .summary-table tr:nth-child(odd) {
+            background: #ffffff;
+        }
+        
+        .match-info {
+            background: #eff6ff;
+            border: 2px solid #3b82f6;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .match-info h3 {
+            color: #1e40af;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .match-status {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        
+        .match-exact {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #22c55e;
+        }
+        
+        .match-partial {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #f59e0b;
+        }
+        
+        .day-section {
+            margin-bottom: 2rem;
+            page-break-inside: avoid;
+        }
+        
+        .day-header {
+            background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            text-align: center;
+            /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); */
+        }
+        
+        .concert-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); */
+        }
+        
+        .concert-header {
+            background: #f9fafb;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .concert-number {
+            display: inline-block;
+            background: #3b82f6;
+            color: white;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 2rem;
+            font-weight: 600;
+            margin-right: 1rem;
+        }
+        
+        .concert-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .concert-time {
+            color: #6b7280;
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+        
+        .concert-details {
+            padding: 1rem 1.5rem;
+        }
+        
+        .detail-row {
+            display: flex;
+            margin-bottom: 0.5rem;
+            align-items: center;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            color: #374151;
+            min-width: 120px;
+            margin-right: 1rem;
+        }
+        
+        .detail-value {
+            color: #6b7280;
+        }
+        
+        .transition-info {
+            background: #fef2f2;
+            border: 1px solid #fca5a5;
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            margin-top: 1rem;
+            color: #dc2626;
+            font-weight: 500;
+        }
+        
+        .transition-normal {
+            background: #f3f4f6;
+            border: 1px solid #c4b5fd;
+            color: #7c3aed;
+        }
+        
+        .off-program {
+            background: #d1fae5;
+            border: 1px solid #10b981;
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            margin-top: 1rem;
+            color: #059669;
+        }
+        
+        .off-program h4 {
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .off-program ul {
+            margin-left: 1rem;
+        }
+        
+        .off-program li {
+            margin-bottom: 0.25rem;
+            font-size: 0.85rem;
+        }
+        
+        .page-break {
+            page-break-before: always;
+        }
+        
+        @media print {
+            .page-break {
+                page-break-before: always;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎭 Маршрутный лист фестиваля</h1>
+        <div class="subtitle">Персональное расписание концертов</div>
+    </div>
+    
+    <div class="user-info">
+        <h3>👤 Информация о пользователе</h3>
+        <p><strong>Пользователь:</strong> {{ user_name }}</p>
+        <p><strong>Дата создания:</strong> {{ current_date }}</p>
+    </div>
+    
+    {% if summary %}
+    <div class="summary-section">
+        <h2 class="section-title">📊 Сводная статистика</h2>
+        <table class="summary-table">
+            <thead>
+                <tr>
+                    <th>Параметр</th>
+                    <th>Значение</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>🎵 Всего концертов</td>
+                    <td>{{ summary.total_concerts }}</td>
+                </tr>
+                <tr>
+                    <td>📅 Дней фестиваля</td>
+                    <td>{{ summary.total_days }}</td>
+                </tr>
+                <tr>
+                    <td>🏛️ Уникальных залов</td>
+                    <td>{{ summary.total_halls }}</td>
+                </tr>
+                <tr>
+                    <td>🎨 Жанров</td>
+                    <td>{{ summary.total_genres }}</td>
+                </tr>
+                <tr>
+                    <td>💰 Потрачено</td>
+                    <td>{{ summary.total_spent }} руб.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    
+    {% if match and match.found %}
+    <div class="match-info">
+        <h3>🎯 Соответствие маршруту</h3>
+        <div class="match-status {% if match.match_type == 'exact' %}match-exact{% else %}match-partial{% endif %}">
+            {% if match.match_type == 'exact' %}
+                ✅ Точное совпадение с маршрутом
+            {% else %}
+                🔄 Частичное совпадение с маршрутом
+            {% endif %}
+        </div>
+        <p><strong>Причина:</strong> {{ match.reason or 'Не указано' }}</p>
+    </div>
+    {% endif %}
+    
+    {% if concerts_by_day %}
+    <div class="concerts-section">
+        <h2 class="section-title">🎼 Расписание концертов по дням</h2>
+        
+        {% for day_index, day_concerts in concerts_by_day.items() %}
+        <div class="day-section">
+            <div class="day-header">
+                📅 День {{ day_index }} - {{ day_concerts[0].concert.datetime.strftime('%d.%m.%Y') if day_concerts[0].concert.datetime else 'Дата не указана' }} 
+                ({{ day_concerts[0].concert.datetime.strftime('%A') if day_concerts[0].concert.datetime else '' }})
+            </div>
+            
+            {% if day_concerts[0].before_concert_events %}
+            <div class="off-program">
+                <h4>🌅 Офф-программа до первого концерта:</h4>
+                <ul>
+                    {% for event in day_concerts[0].before_concert_events %}
+                    <li>{{ event.event_date_display }} - {{ event.event_name }} ({{ event.format }})</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            {% for concert in day_concerts %}
+            <div class="concert-card">
+                <div class="concert-header">
+                    <span class="concert-number">{{ loop.index }}</span>
+                    <div class="concert-title">{{ concert.concert.name }}</div>
+                    <div class="concert-time">
+                        🎵 {{ concert.concert.datetime.strftime('%H:%M') if concert.concert.datetime else 'TBD' }} - Концерт №{{ concert.concert.id }}
+                    </div>
+                </div>
+                
+                <div class="concert-details">
+                    <div class="detail-row">
+                        <span class="detail-label">🏛️ Зал:</span>
+                        <span class="detail-value">{{ concert.concert.hall.name if concert.concert.hall else 'Зал не указан' }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">🎨 Жанр:</span>
+                        <span class="detail-value">{{ concert.concert.genre or 'Жанр не указан' }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">⏱️ Длительность:</span>
+                        <span class="detail-value">
+                            {% if concert.concert.duration %}
+                                {% if concert.concert.duration.total_seconds %}
+                                    {{ (concert.concert.duration.total_seconds() // 60) | int }} мин
+                                {% else %}
+                                    {{ concert.concert.duration }}
+                                {% endif %}
+                            {% else %}
+                                Длительность не указана
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    {% if concert.concert.artists %}
+                    <div class="detail-row">
+                        <span class="detail-label">👥 Артисты:</span>
+                        <span class="detail-value">{{ concert.concert.artists | map(attribute='name') | join(', ') }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if concert.transition_info %}
+                    <div class="transition-info {% if concert.transition_info.status not in ['overlap', 'hurry', 'tight'] %}transition-normal{% endif %}">
+                        {% if concert.transition_info.status == 'overlap' %}
+                            ⚠️ ВНИМАНИЕ: наложение концертов по времени!
+                        {% elif concert.transition_info.status == 'hurry' %}
+                            🏃 Переход: {{ concert.transition_info.walk_time }} мин (нужно поторопиться)
+                        {% elif concert.transition_info.status == 'tight' %}
+                            🚶 Переход: {{ concert.transition_info.walk_time }} мин (впритык)
+                        {% else %}
+                            🚶 Переход: {{ concert.transition_info.walk_time }} мин (достаточно времени)
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if concert.off_program_events %}
+                    <div class="off-program">
+                        <h4>🎭 Офф-программа между концертами:</h4>
+                        <ul>
+                            {% for event in concert.off_program_events %}
+                            <li>{{ event.event_date_display }} - {{ event.event_name }} ({{ event.format }})</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+            
+            {% if day_concerts[-1].after_concert_events %}
+            <div class="off-program">
+                <h4>🌙 Офф-программа после последнего концерта:</h4>
+                <ul>
+                    {% for event in day_concerts[-1].after_concert_events %}
+                    <li>{{ event.event_date_display }} - {{ event.event_name }} ({{ event.format }})</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</body>
+</html> 

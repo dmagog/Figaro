@@ -1670,7 +1670,7 @@
                 </div>
                 
                 <!-- Фильтры по дням -->
-                {% if route_sheet.concerts_by_day %}
+                {% if route_sheet.concerts_by_day and route_sheet.concerts_by_day|length > 1 %}
                 <div class="route-filters">
                     <div class="filter-title">
                         <span>🔍</span>
