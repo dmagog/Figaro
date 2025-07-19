@@ -504,9 +504,8 @@ def load_genres(session: Session):
         unique_genres = set()
         for concert in concerts:
             if concert.genre:
-                # Разбиваем составные жанры (например, "Кроссовер, Этно")
-                genres = [g.strip() for g in concert.genre.split(',')]
-                unique_genres.update(genres)
+                # Обрабатываем жанр как единое целое (не разбиваем по запятым)
+                unique_genres.add(concert.genre.strip())
         
         logger.info(f"Найдено {len(unique_genres)} уникальных жанров")
         
@@ -534,29 +533,28 @@ def load_genres(session: Session):
         links_created = 0
         for concert in concerts:
             if concert.genre:
-                # Разбиваем составные жанры
-                concert_genres = [g.strip() for g in concert.genre.split(',')]
+                # Обрабатываем жанр как единое целое
+                genre_name = concert.genre.strip()
                 
-                for genre_name in concert_genres:
-                    if genre_name in genre_map:
-                        genre = genre_map[genre_name]
-                        
-                        # Проверяем, существует ли уже связь
-                        existing_link = session.exec(
-                            select(ConcertGenreLink).where(
-                                ConcertGenreLink.concert_id == concert.id,
-                                ConcertGenreLink.genre_id == genre.id
-                            )
-                        ).first()
-                        
-                        if not existing_link:
-                            # Создаем связь
-                            link = ConcertGenreLink(
-                                concert_id=concert.id,
-                                genre_id=genre.id
-                            )
-                            session.add(link)
-                            links_created += 1
+                if genre_name in genre_map:
+                    genre = genre_map[genre_name]
+                    
+                    # Проверяем, существует ли уже связь
+                    existing_link = session.exec(
+                        select(ConcertGenreLink).where(
+                            ConcertGenreLink.concert_id == concert.id,
+                            ConcertGenreLink.genre_id == genre.id
+                        )
+                    ).first()
+                    
+                    if not existing_link:
+                        # Создаем связь
+                        link = ConcertGenreLink(
+                            concert_id=concert.id,
+                            genre_id=genre.id
+                        )
+                        session.add(link)
+                        links_created += 1
         
         session.commit()
         logger.info(f"Создано {links_created} связей концерт-жанр")
