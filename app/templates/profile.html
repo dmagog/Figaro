@@ -1551,15 +1551,28 @@
         }
         
         .item-count {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        
+        .count-visited {
+            background: #10b981;
             color: white;
-            padding: 6px 12px;
-            border-radius: 15px;
-            font-size: 0.9em;
-            font-weight: bold;
-            min-width: 30px;
+            padding: 6px 10px;
+            border-radius: 16px;
+            min-width: 24px;
             text-align: center;
-            box-shadow: 0 2px 8px rgba(102,126,234,0.3);
+        }
+        
+        .count-not-visited {
+            background: #6b7280;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 16px;
+            min-width: 24px;
+            text-align: center;
         }
         
         .no-characteristics {
@@ -1644,6 +1657,27 @@
                 gap: 16px;
             }
         }
+        
+        .characteristic-item.inactive {
+            color: #6b7280;
+            background-color: #f8f9fa;
+        }
+        
+        .characteristic-item.inactive .item-name {
+            color: #6b7280;
+        }
+        
+        .characteristic-item.inactive .item-description {
+            color: #9ca3af;
+        }
+        
+        .visit-check {
+            color: #10b981;
+            font-size: 1.1em;
+            margin-left: 8px;
+        }
+        
+
     </style>
 </head>
 <body>
@@ -2348,16 +2382,31 @@
                                     <h3>Залы фестиваля</h3>
                                     <p>Места проведения концертов</p>
                                 </div>
-                                <div class="characteristic-count">{{ characteristics.halls|length }}</div>
+                                <div class="characteristic-count">{{ characteristics.halls|selectattr('is_visited')|list|length }}</div>
                             </div>
                             <div class="characteristic-content">
                                 {% for hall in characteristics.halls %}
-                                <div class="characteristic-item">
+                                <div class="characteristic-item{% if not hall.is_visited %} inactive{% endif %}">
                                     <div class="item-info">
-                                        <div class="item-name">{{ hall.name }}</div>
-                                        <div class="item-description">{{ hall.count }} концерт{{ 'а' if hall.count >= 2 and hall.count <= 4 else 'ов' if hall.count >= 5 else '' }}</div>
+                                        <div class="item-name">
+                                            {{ hall.name }}
+                                        </div>
+                                        <div class="item-description">
+                                            {% if hall.visit_count > 0 %}
+                                                {{ hall.visit_count }} концерт{{ 'а' if hall.visit_count >= 2 and hall.visit_count <= 4 else 'ов' if hall.visit_count >= 5 else '' }}
+                                            {% else %}
+                                                Не посещён
+                                            {% endif %}
+                                            {% if hall.address %} • {{ hall.address }}{% endif %}
+                                        </div>
                                     </div>
-                                    <div class="item-count">{{ hall.count }}</div>
+                                    <div class="item-count">
+                                        {% if hall.visit_count > 0 %}
+                                            <span class="count-visited">{{ hall.visit_count }}</span>
+                                        {% else %}
+                                            <span class="count-not-visited">0</span>
+                                        {% endif %}
+                                    </div>
                                 </div>
                                 {% endfor %}
                             </div>
@@ -2371,16 +2420,30 @@
                                     <h3>Музыкальные жанры</h3>
                                     <p>Направления в вашем маршруте</p>
                                 </div>
-                                <div class="characteristic-count">{{ characteristics.genres|length }}</div>
+                                <div class="characteristic-count">{{ characteristics.genres|selectattr('is_visited')|list|length }}</div>
                             </div>
                             <div class="characteristic-content">
                                 {% for genre in characteristics.genres %}
-                                <div class="characteristic-item">
+                                <div class="characteristic-item{% if not genre.is_visited %} inactive{% endif %}">
                                     <div class="item-info">
-                                        <div class="item-name">{{ genre.name }}</div>
-                                        <div class="item-description">{{ genre.count }} концерт{{ 'а' if genre.count >= 2 and genre.count <= 4 else 'ов' if genre.count >= 5 else '' }}</div>
+                                        <div class="item-name">
+                                            {{ genre.name }}
+                                        </div>
+                                        <div class="item-description">
+                                            {% if genre.visit_count > 0 %}
+                                                {{ genre.visit_count }} концерт{{ 'а' if genre.visit_count >= 2 and genre.visit_count <= 4 else 'ов' if genre.visit_count >= 5 else '' }}
+                                            {% else %}
+                                                Не посещён
+                                            {% endif %}
+                                        </div>
                                     </div>
-                                    <div class="item-count">{{ genre.count }}</div>
+                                    <div class="item-count">
+                                        {% if genre.visit_count > 0 %}
+                                            <span class="count-visited">{{ genre.visit_count }}</span>
+                                        {% else %}
+                                            <span class="count-not-visited">0</span>
+                                        {% endif %}
+                                    </div>
                                 </div>
                                 {% endfor %}
                             </div>

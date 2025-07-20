@@ -1522,76 +1522,6 @@ def group_concerts_by_day(concerts_data: list) -> dict:
 
     
 
-@user_route.get("/debug/transitions")
-async def debug_transitions(session=Depends(get_session)):
-    """Отладочный endpoint для проверки данных о переходах между залами"""
-    try:
-        from models import Hall, HallTransition
-        from sqlmodel import select
-        
-        # Проверяем количество залов
-        halls = session.exec(select(Hall)).all()
-        halls_data = [{"id": hall.id, "name": hall.name} for hall in halls]
-        
-        # Проверяем количество переходов
-        transitions = session.exec(select(HallTransition)).all()
-        transitions_data = []
-        
-        for transition in transitions[:20]:  # Ограничиваем для читаемости
-            from_hall = session.exec(select(Hall).where(Hall.id == transition.from_hall_id)).first()
-            to_hall = session.exec(select(Hall).where(Hall.id == transition.to_hall_id)).first()
-            transitions_data.append({
-                "from_hall": from_hall.name if from_hall else "Unknown",
-                "to_hall": to_hall.name if to_hall else "Unknown",
-                "transition_time": transition.transition_time
-            })
-        
-        # Проверяем конкретные переходы
-        dom_muzyki = session.exec(select(Hall).where(Hall.name.like('%Дом музыки%'))).first()
-        tyuz = session.exec(select(Hall).where(Hall.name.like('%ТЮЗ%'))).first()
-        
-        specific_transitions = {}
-        if dom_muzyki and tyuz:
-            # Дом музыки → ТЮЗ
-            transition1 = session.exec(
-                select(HallTransition)
-                .where(HallTransition.from_hall_id == dom_muzyki.id)
-                .where(HallTransition.to_hall_id == tyuz.id)
-            ).first()
-            
-            if transition1:
-                specific_transitions["dom_muzyki_to_tyuz"] = transition1.transition_time
-            else:
-                specific_transitions["dom_muzyki_to_tyuz"] = "not_found"
-            
-            # ТЮЗ → Дом музыки
-            transition2 = session.exec(
-                select(HallTransition)
-                .where(HallTransition.from_hall_id == tyuz.id)
-                .where(HallTransition.to_hall_id == dom_muzyki.id)
-            ).first()
-            
-            if transition2:
-                specific_transitions["tyuz_to_dom_muzyki"] = transition2.transition_time
-            else:
-                specific_transitions["tyuz_to_dom_muzyki"] = "not_found"
-        
-        return {
-            "total_halls": len(halls),
-            "total_transitions": len(transitions),
-            "sample_transitions": transitions_data,
-            "specific_transitions": specific_transitions,
-            "halls_sample": halls_data[:10]  # Первые 10 залов
-        }
-        
-    except Exception as e:
-        logger.error(f"Error in debug_transitions: {e}")
-        return {"error": str(e)}
-    
-
-
-    
-
 def get_user_characteristics(session, user_external_id: str, concerts_data: list) -> dict:
     """
     Получает характеристики пользователя на основе его покупок
@@ -1616,9 +1546,10 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
             "compositions": []
         }
     
+    # Получаем все залы и жанры с отметкой о посещении
+    halls_and_genres = get_all_halls_and_genres_with_visit_status(session, user_external_id, concerts_data)
+    
     # Счетчики для различных характеристик
-    halls_counter = Counter()
-    genres_counter = Counter()
     artists_counter = Counter()
     composers_counter = Counter()
     compositions_counter = Counter()
@@ -1626,14 +1557,6 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
     # Обрабатываем каждый концерт
     for concert_data in concerts_data:
         concert = concert_data['concert']
-        
-        # Залы
-        if concert.get('hall') and concert['hall'].get('name'):
-            halls_counter[concert['hall']['name']] += 1
-        
-        # Жанры
-        if concert.get('genre'):
-            genres_counter[concert['genre']] += 1
         
         # Получаем детали концерта из базы данных
         try:
@@ -1674,8 +1597,8 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
     
     characteristics = {
         "total_concerts": len(concerts_data),
-        "halls": counter_to_list(halls_counter),
-        "genres": counter_to_list(genres_counter),
+        "halls": halls_and_genres["halls"],
+        "genres": halls_and_genres["genres"],
         "artists": counter_to_list(artists_counter),
         "composers": counter_to_list(composers_counter),
         "compositions": counter_to_list(compositions_counter)
@@ -1684,6 +1607,88 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
     logger.info(f"Generated characteristics for user {user_external_id}: {characteristics}")
     
     return characteristics
+    
+
+
+    
+
+def get_all_halls_and_genres_with_visit_status(session, user_external_id: str, concerts_data: list) -> dict:
+    """
+    Получает все залы и жанры с отметкой о посещении пользователем
+    
+    Args:
+        session: Сессия базы данных
+        user_external_id: Внешний ID пользователя
+        concerts_data: Список концертов пользователя
+        
+    Returns:
+        Словарь с залами и жанрами и их статусом посещения
+    """
+    from models.hall import Hall
+    from models.concert import Concert
+    from sqlmodel import select
+    from collections import Counter
+    
+    # Получаем все уникальные жанры из концертов
+    all_genres_query = session.exec(select(Concert.genre).distinct().where(Concert.genre.is_not(None))).all()
+    all_genres = [genre for genre in all_genres_query if genre]
+    
+    # Получаем все уникальные залы из концертов
+    all_halls_query = session.exec(select(Concert.hall_id).distinct().where(Concert.hall_id.is_not(None))).all()
+    all_halls = []
+    for hall_id in all_halls_query:
+        hall = session.exec(select(Hall).where(Hall.id == hall_id)).first()
+        if hall:
+            all_halls.append(hall)
+    
+    # Счетчики посещений залов и жанров
+    halls_counter = Counter()
+    genres_counter = Counter()
+    
+    # Обрабатываем концерты пользователя
+    for concert_data in concerts_data:
+        concert = concert_data['concert']
+        
+        # Добавляем зал в счетчик
+        if concert.get('hall') and concert['hall'].get('name'):
+            halls_counter[concert['hall']['name']] += 1
+        
+        # Добавляем жанр в счетчик
+        if concert.get('genre'):
+            genres_counter[concert['genre']] += 1
+    
+    # Формируем список всех залов с количеством посещений
+    halls_with_status = []
+    for hall in all_halls:
+        visit_count = halls_counter.get(hall.name, 0)
+        halls_with_status.append({
+            "name": hall.name,
+            "visit_count": visit_count,
+            "is_visited": visit_count > 0,
+            "address": hall.address,
+            "seats": hall.seats
+        })
+    
+    # Сортируем залы по убыванию количества посещений
+    halls_with_status.sort(key=lambda x: x['visit_count'], reverse=True)
+    
+    # Формируем список всех жанров с количеством посещений
+    genres_with_status = []
+    for genre in all_genres:
+        visit_count = genres_counter.get(genre, 0)
+        genres_with_status.append({
+            "name": genre,
+            "visit_count": visit_count,
+            "is_visited": visit_count > 0
+        })
+    
+    # Сортируем жанры по убыванию количества посещений
+    genres_with_status.sort(key=lambda x: x['visit_count'], reverse=True)
+    
+    return {
+        "halls": halls_with_status,
+        "genres": genres_with_status
+    }
     
 
 
