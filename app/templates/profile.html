@@ -1827,6 +1827,69 @@
             font-size: 1.1em;
             margin: 0;
         }
+        
+        /* Стили для упрощенных карточек дней в характеристиках */
+        .festival-days-simple-container {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: stretch;
+        }
+        
+        .day-simple-card {
+            flex: 1;
+            min-width: 200px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .day-simple-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+        
+        .day-simple-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px 20px;
+            font-weight: 600;
+            font-size: 1.1em;
+            text-align: center;
+        }
+        
+        .day-simple-count {
+            padding: 24px 20px;
+            text-align: center;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .day-simple-count .count-visited {
+            font-size: 3em;
+            font-weight: 700;
+            line-height: 1;
+            color: #667eea;
+            background: none;
+            padding: 0;
+            border-radius: 0;
+            min-width: auto;
+            text-align: center;
+        }
+        
+        .day-simple-label {
+            color: #666;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -2578,6 +2641,43 @@
                 </div>
                 
                 {% if characteristics.total_concerts > 0 %}
+                    <!-- Дни фестиваля -->
+                    {% if route_sheet.concerts_by_day %}
+                    <div class="characteristic-section">
+                        <div class="characteristic-content">
+                            <div class="festival-days-simple-container">
+                            {% for day_index, day_concerts in route_sheet.concerts_by_day.items() %}
+                            <div class="day-simple-card">
+                                <div class="day-simple-header">
+                                    {% if day_concerts and day_concerts[0].concert.datetime %}
+                                        {% set first_concert_date = day_concerts[0].concert.datetime %}
+                                        {% set month_names = {
+                                            'January': 'января', 'February': 'февраля', 'March': 'марта', 'April': 'апреля',
+                                            'May': 'мая', 'June': 'июня', 'July': 'июля', 'August': 'августа',
+                                            'September': 'сентября', 'October': 'октября', 'November': 'ноября', 'December': 'декабря'
+                                        } %}
+                                        {% set day_names = {
+                                            'Monday': 'пн', 'Tuesday': 'вт', 'Wednesday': 'ср', 'Thursday': 'чт',
+                                            'Friday': 'пт', 'Saturday': 'сб', 'Sunday': 'вс'
+                                        } %}
+                                        {{ first_concert_date.day }} {{ month_names[first_concert_date.strftime('%B')] }} ({{ day_names[first_concert_date.strftime('%A')] }})
+                                    {% else %}
+                                        День {{ day_index }}
+                                    {% endif %}
+                                </div>
+                                <div class="day-simple-count">
+                                    <span class="count-visited">{{ day_concerts|length }}</span>
+                                    <div class="day-simple-label">
+                                        концерт{{ 'а' if day_concerts|length >= 2 and day_concerts|length <= 4 else 'ов' if day_concerts|length >= 5 else '' }}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
                     <!-- Залы и Жанры в две колонки -->
                     <div class="characteristics-row">
                         <!-- Залы -->
