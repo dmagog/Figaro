@@ -1457,17 +1457,7 @@
         .characteristic-section:nth-child(6) { animation-delay: 0.5s; }
         
         .characteristic-section::before {
-            content: '';
-            position: absolute;
-            left: 12.5px;
-            top: 9px;
-            width: 20px;
-            height: 20px;
-            background: #667eea;
-            border-radius: 50%;
-            border: 4px solid white;
-            box-shadow: 0 2px 8px rgba(102,126,234,0.3);
-            z-index: 2;
+            content: none;
         }
         
         .characteristic-header {
@@ -1593,6 +1583,66 @@
         .no-characteristics p {
             font-size: 1.1em;
             line-height: 1.6;
+        }
+        
+        .route-finish {
+            display: flex;
+            align-items: center;
+            margin: 40px 0 0 60px;
+            gap: 24px;
+            animation: fadeInUp 0.7s;
+        }
+        .finish-dot {
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 16px rgba(102,126,234,0.2);
+        }
+        .finish-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(102,126,234,0.08);
+            padding: 24px 32px;
+            min-width: 320px;
+        }
+        .finish-title {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #4f5bd5;
+            margin-bottom: 10px;
+        }
+        .finish-stats {
+            color: #555;
+            font-size: 1em;
+            margin-bottom: 10px;
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+        }
+        .finish-message {
+            color: #888;
+            font-size: 1em;
+            margin-top: 8px;
+        }
+        
+        .characteristics-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        
+        @media (max-width: 768px) {
+            .characteristics-row {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
         }
     </style>
 </head>
@@ -1973,7 +2023,7 @@
                                             <div class="concert-details-content" id="details-{{ concert.concert.id }}" style="margin-top:4px; display:none;">
                                                 {% if concert.concert.artists %}
                                                 <div class="artists-section">
-                                                    <div class="section-title"><span>👥</span> Артисты</div>
+                                                    <div class="section-title">Артисты</div>
                                                     <div class="artists-list">
                                                         {% for artist in concert.concert.artists %}
                                                         <span class="artist-tag{% if artist.is_special %} special-artist{% endif %}">{{ artist.name }}{% if artist.is_special %}⭐{% endif %}</span>
@@ -1983,7 +2033,7 @@
                                                 {% endif %}
                                                 {% if concert.concert.compositions %}
                                                 <div class="compositions-section">
-                                                    <div class="section-title"><span>🎼</span> Произведения</div>
+                                                    <div class="section-title">Произведения</div>
                                                     <div class="compositions-list">
                                                         {% for composition in concert.concert.compositions %}
                                                         <span class="composition-tag">{{ composition.name }} <span class="composition-author">({{ composition.author.name }})</span></span>
@@ -2242,6 +2292,20 @@
                                 </div>
                             </div>
                         {% endfor %}
+                        <!-- Финальный блок завершения маршрута -->
+                        <div class="route-finish">
+                            <div class="finish-dot">🏁</div>
+                            <div class="finish-card">
+                                <div class="finish-title">Маршрут завершён!</div>
+                                <div class="finish-stats">
+                                    <span>Дней: {{ route_sheet.summary.total_days }}</span>
+                                    <span>Концертов: {{ route_sheet.summary.total_concerts }}</span>
+                                    <span>Залов: {{ route_sheet.summary.total_halls }}</span>
+                                    <span>Потрачено: {{ "{:,}".format(route_sheet.summary.total_spent) }} ₽</span>
+                                </div>
+                                <div class="finish-message">Спасибо, что выбрали наш фестиваль! До встречи на концертах!</div>
+                            </div>
+                        </div>
                     </div>
                 {% else %}
                     <div style="text-align: center; padding: 60px 20px; color: #666;">
@@ -2274,49 +2338,52 @@
                 </div>
                 
                 {% if characteristics.total_concerts > 0 %}
-                    <!-- Залы -->
-                    <div class="characteristic-section">
-                        <div class="characteristic-header">
-                            <div class="characteristic-icon">🏛️</div>
-                            <div class="characteristic-title">
-                                <h3>Залы фестиваля</h3>
-                                <p>Места проведения концертов</p>
-                            </div>
-                            <div class="characteristic-count">{{ characteristics.halls|length }}</div>
-                        </div>
-                        <div class="characteristic-content">
-                            {% for hall in characteristics.halls %}
-                            <div class="characteristic-item">
-                                <div class="item-info">
-                                    <div class="item-name">{{ hall.name }}</div>
-                                    <div class="item-description">{{ hall.count }} концерт{{ 'а' if hall.count >= 2 and hall.count <= 4 else 'ов' if hall.count >= 5 else '' }}</div>
+                    <!-- Залы и Жанры в две колонки -->
+                    <div class="characteristics-row">
+                        <!-- Залы -->
+                        <div class="characteristic-section">
+                            <div class="characteristic-header">
+                                <div class="characteristic-icon">🏛️</div>
+                                <div class="characteristic-title">
+                                    <h3>Залы фестиваля</h3>
+                                    <p>Места проведения концертов</p>
                                 </div>
-                                <div class="item-count">{{ hall.count }}</div>
+                                <div class="characteristic-count">{{ characteristics.halls|length }}</div>
                             </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    
-                    <!-- Жанры -->
-                    <div class="characteristic-section">
-                        <div class="characteristic-header">
-                            <div class="characteristic-icon">🎭</div>
-                            <div class="characteristic-title">
-                                <h3>Музыкальные жанры</h3>
-                                <p>Направления в вашем маршруте</p>
-                            </div>
-                            <div class="characteristic-count">{{ characteristics.genres|length }}</div>
-                        </div>
-                        <div class="characteristic-content">
-                            {% for genre in characteristics.genres %}
-                            <div class="characteristic-item">
-                                <div class="item-info">
-                                    <div class="item-name">{{ genre.name }}</div>
-                                    <div class="item-description">{{ genre.count }} концерт{{ 'а' if genre.count >= 2 and genre.count <= 4 else 'ов' if genre.count >= 5 else '' }}</div>
+                            <div class="characteristic-content">
+                                {% for hall in characteristics.halls %}
+                                <div class="characteristic-item">
+                                    <div class="item-info">
+                                        <div class="item-name">{{ hall.name }}</div>
+                                        <div class="item-description">{{ hall.count }} концерт{{ 'а' if hall.count >= 2 and hall.count <= 4 else 'ов' if hall.count >= 5 else '' }}</div>
+                                    </div>
+                                    <div class="item-count">{{ hall.count }}</div>
                                 </div>
-                                <div class="item-count">{{ genre.count }}</div>
+                                {% endfor %}
                             </div>
-                            {% endfor %}
+                        </div>
+                        
+                        <!-- Жанры -->
+                        <div class="characteristic-section">
+                            <div class="characteristic-header">
+                                <div class="characteristic-icon">🎭</div>
+                                <div class="characteristic-title">
+                                    <h3>Музыкальные жанры</h3>
+                                    <p>Направления в вашем маршруте</p>
+                                </div>
+                                <div class="characteristic-count">{{ characteristics.genres|length }}</div>
+                            </div>
+                            <div class="characteristic-content">
+                                {% for genre in characteristics.genres %}
+                                <div class="characteristic-item">
+                                    <div class="item-info">
+                                        <div class="item-name">{{ genre.name }}</div>
+                                        <div class="item-description">{{ genre.count }} концерт{{ 'а' if genre.count >= 2 and genre.count <= 4 else 'ов' if genre.count >= 5 else '' }}</div>
+                                    </div>
+                                    <div class="item-count">{{ genre.count }}</div>
+                                </div>
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
                     
