@@ -453,23 +453,6 @@
             box-shadow: 0 3px 8px rgba(102,126,234,0.3);
         }
         
-        .tag.excluded {
-            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-            border-color: #f87171;
-            color: #dc2626;
-        }
-        
-        .tag.excluded:hover {
-            background: linear-gradient(135deg, #fecaca 0%, #f87171 100%);
-            border-color: #dc2626;
-        }
-        
-        .tag.excluded.selected {
-            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-            border-color: #dc2626;
-            color: white;
-        }
-        
         .loading {
             color: #666;
             font-style: italic;
@@ -487,21 +470,6 @@
             border-radius: 16px;
             font-weight: 500;
             font-size: 0.9em;
-        }
-        
-        /* Исключения */
-        .exclusions-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin: 30px 0;
-        }
-        
-        .exclusion-section h4 {
-            text-align: center;
-            color: #333;
-            margin: 0 0 20px 0;
-            font-size: 1.2em;
         }
         
         @media (max-width: 768px) {
@@ -589,7 +557,7 @@
                         <div class="progress-fill" id="progress-fill"></div>
                     </div>
                     <div class="progress-text">
-                        <span id="current-step">1</span> из <span id="total-steps">7</span>
+                        <span id="current-step">1</span> из <span id="total-steps">6</span>
                     </div>
                 </div>
                 
@@ -754,32 +722,8 @@
                     </div>
                 </div>
                 
-                <!-- Слайд 6: Исключения -->
+                <!-- Слайд 6: Концерты -->
                 <div class="survey-slide" data-step="6">
-                    <div class="slide-content">
-                        <h3 class="slide-title">Кого вы точно не хотите?</h3>
-                        <p class="slide-description">Выберите композиторов и исполнителей, которых точно не хотите видеть в маршруте</p>
-                        
-                        <div class="exclusions-container">
-                            <div class="exclusion-section">
-                                <h4>Композиторы</h4>
-                                <div class="tag-cloud" id="exclude-composers-cloud">
-                                    <div class="loading">Загрузка композиторов...</div>
-                                </div>
-                            </div>
-                            
-                            <div class="exclusion-section">
-                                <h4>Исполнители</h4>
-                                <div class="tag-cloud" id="exclude-artists-cloud">
-                                    <div class="loading">Загрузка исполнителей...</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Слайд 7: Концерты -->
-                <div class="survey-slide" data-step="7">
                     <div class="slide-content">
                         <h3 class="slide-title">Какие концерты вы уже планируете посетить?</h3>
                         <p class="slide-description">Отметьте номера концертов, которые уже запланировали (необязательно)</p>
@@ -808,14 +752,12 @@
     <script>
         // Слайдер анкеты
         let currentStep = 1;
-        const totalSteps = 7;
+        const totalSteps = 6;
         
         // Данные для облаков тегов
         let surveyData = null;
         let selectedComposers = new Set();
         let selectedArtists = new Set();
-        let excludedComposers = new Set();
-        let excludedArtists = new Set();
         let selectedConcerts = new Set();
         
         // Инициализация
@@ -861,8 +803,6 @@
                     surveyData = data;
                     renderComposersCloud();
                     renderArtistsCloud();
-                    renderExcludeComposersCloud();
-                    renderExcludeArtistsCloud();
                     renderConcertsCloud();
                 }
             } catch (error) {
@@ -902,42 +842,6 @@
                 tag.dataset.id = artist.id;
                 
                 tag.addEventListener('click', () => toggleArtist(artist.id, artist.name));
-                cloud.appendChild(tag);
-            });
-        }
-        
-        // Рендеринг облака исключений композиторов
-        function renderExcludeComposersCloud() {
-            const cloud = document.getElementById('exclude-composers-cloud');
-            if (!surveyData || !surveyData.composers) return;
-            
-            cloud.innerHTML = '';
-            surveyData.composers.forEach(composer => {
-                const tag = document.createElement('div');
-                tag.className = 'tag excluded';
-                tag.textContent = composer.name;
-                tag.style.fontSize = composer.size + 'px';
-                tag.dataset.id = composer.id;
-                
-                tag.addEventListener('click', () => toggleExcludeComposer(composer.id, composer.name));
-                cloud.appendChild(tag);
-            });
-        }
-        
-        // Рендеринг облака исключений исполнителей
-        function renderExcludeArtistsCloud() {
-            const cloud = document.getElementById('exclude-artists-cloud');
-            if (!surveyData || !surveyData.artists) return;
-            
-            cloud.innerHTML = '';
-            surveyData.artists.forEach(artist => {
-                const tag = document.createElement('div');
-                tag.className = 'tag excluded';
-                tag.textContent = artist.name;
-                tag.style.fontSize = artist.size + 'px';
-                tag.dataset.id = artist.id;
-                
-                tag.addEventListener('click', () => toggleExcludeArtist(artist.id, artist.name));
                 cloud.appendChild(tag);
             });
         }
@@ -994,32 +898,6 @@
             }
             
             updateArtistsCount();
-        }
-        
-        // Переключение исключения композитора
-        function toggleExcludeComposer(id, name) {
-            const tag = document.querySelector(`#exclude-composers-cloud .tag[data-id="${id}"]`);
-            
-            if (excludedComposers.has(id)) {
-                excludedComposers.delete(id);
-                tag.classList.remove('selected');
-            } else {
-                excludedComposers.add(id);
-                tag.classList.add('selected');
-            }
-        }
-        
-        // Переключение исключения исполнителя
-        function toggleExcludeArtist(id, name) {
-            const tag = document.querySelector(`#exclude-artists-cloud .tag[data-id="${id}"]`);
-            
-            if (excludedArtists.has(id)) {
-                excludedArtists.delete(id);
-                tag.classList.remove('selected');
-            } else {
-                excludedArtists.add(id);
-                tag.classList.add('selected');
-            }
         }
         
         // Переключение выбора концерта
@@ -1146,8 +1024,8 @@
                     concert_ids: Array.from(selectedConcerts)
                 },
                 exclude: {
-                    composers: Array.from(excludedComposers),
-                    artists: Array.from(excludedArtists),
+                    composers: [],
+                    artists: [],
                     concert_ids: []
                 }
             };
