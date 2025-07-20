@@ -309,9 +309,13 @@ async def profile_page(
         # Получаем данные для характеристик
         characteristics_data = get_user_characteristics(session, user_external_id, concerts_for_template)
         
+        # Получаем все дни фестиваля с информацией о посещении
+        festival_days_data = get_all_festival_days_with_visit_status(session, concerts_for_template)
+        
         # Отладочная информация для маршрутного листа
         logger.info(f"Route sheet data: {route_sheet_data}")
         logger.info(f"Concerts by day: {route_sheet_data.get('concerts_by_day', {})}")
+        logger.info(f"Festival days data: {festival_days_data}")
         
         context = {
             "request": request,
@@ -319,7 +323,8 @@ async def profile_page(
             "concerts": concerts_for_template,  # Изменили название с purchases на concerts
             "purchase_summary": purchase_summary,
             "route_sheet": route_sheet_data,
-            "characteristics": characteristics_data
+            "characteristics": characteristics_data,
+            "festival_days": festival_days_data
         }
         
         return templates.TemplateResponse("profile.html", context)
@@ -1521,6 +1526,49 @@ def group_concerts_by_day(concerts_data: list) -> dict:
 
 
     
+
+def get_all_festival_days_with_visit_status(session, concerts_data: list) -> list:
+    """
+    Получает все дни фестиваля с отметкой о посещении пользователем
+    
+    Args:
+        session: Сессия базы данных
+        concerts_data: Список концертов пользователя
+        
+    Returns:
+        Список дней фестиваля с информацией о посещении
+    """
+    from models.festival_day import FestivalDay
+    from sqlmodel import select
+    from collections import Counter
+    
+    # Получаем все дни фестиваля
+    all_festival_days = session.exec(select(FestivalDay).order_by(FestivalDay.day)).all()
+    
+    # Счетчик посещений дней пользователем
+    days_counter = Counter()
+    
+    # Обрабатываем концерты пользователя
+    for concert_data in concerts_data:
+        concert = concert_data['concert']
+        if concert.get('datetime'):
+            concert_date = concert['datetime'].date()
+            days_counter[concert_date] += 1
+    
+    # Формируем список всех дней фестиваля с количеством посещений
+    days_with_status = []
+    for festival_day in all_festival_days:
+        visit_count = days_counter.get(festival_day.day, 0)
+        days_with_status.append({
+            "day": festival_day.day,
+            "visit_count": visit_count,
+            "is_visited": visit_count > 0,
+            "total_concerts": festival_day.concert_count,
+            "available_concerts": festival_day.available_concerts
+        })
+    
+    return days_with_status
+
 
 def get_user_characteristics(session, user_external_id: str, concerts_data: list) -> dict:
     """
