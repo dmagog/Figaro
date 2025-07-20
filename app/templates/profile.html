@@ -1677,7 +1677,89 @@
             margin-left: 8px;
         }
         
-
+        /* Стили для таблиц дней фестиваля */
+        .day-table-container {
+            margin-bottom: 24px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .day-table-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px 20px;
+            font-weight: 600;
+            font-size: 1.1em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .day-concert-count {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        
+        .day-concerts-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .day-concerts-table th {
+            background: #f8f9fa;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .day-concerts-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .day-concerts-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .day-concerts-table tr:hover {
+            background: #f8f9ff;
+        }
+        
+        .concert-time {
+            font-weight: 500;
+            color: #6b7280;
+            min-width: 80px;
+        }
+        
+        .concert-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .concert-id {
+            background: #667eea;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 500;
+            min-width: 20px;
+            text-align: center;
+        }
+        
+        .concert-name {
+            color: #374151;
+            font-size: 0.95em;
+            flex: 1;
+        }
     </style>
 </head>
 <body>
@@ -2372,6 +2454,52 @@
                 </div>
                 
                 {% if characteristics.total_concerts > 0 %}
+                    <!-- Дни фестиваля -->
+                    <div class="characteristic-section">
+                        <div class="characteristic-header">
+                            <div class="characteristic-icon">📅</div>
+                            <div class="characteristic-title">
+                                <h3>Дни фестиваля</h3>
+                                <p>Ваша активность по дням</p>
+                            </div>
+                            <div class="characteristic-count">{{ route_sheet.concerts_by_day|length }}</div>
+                        </div>
+                        <div class="characteristic-content">
+                            {% for day_index, day_concerts in route_sheet.concerts_by_day.items() %}
+                            <div class="day-table-container">
+                                <div class="day-table-header">
+                                    {% if day_concerts and day_concerts[0].concert.datetime %}
+                                        {% set first_concert_date = day_concerts[0].concert.datetime %}
+                                        {{ first_concert_date.strftime('%d.%m') }} ({{ first_concert_date.strftime('%a').lower()[:2] }})
+                                    {% else %}
+                                        День {{ day_index }}
+                                    {% endif %}
+                                    <span class="day-concert-count">{{ day_concerts|length }} концерт{{ 'а' if day_concerts|length >= 2 and day_concerts|length <= 4 else 'ов' if day_concerts|length >= 5 else '' }}</span>
+                                </div>
+                                <table class="day-concerts-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Время</th>
+                                            <th>Концерт</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for concert_data in day_concerts %}
+                                        <tr>
+                                            <td class="concert-time">{{ concert_data.concert.datetime.strftime('%H:%M') if concert_data.concert.datetime else 'TBD' }}</td>
+                                            <td class="concert-info">
+                                                <span class="concert-id">#{{ concert_data.concert.id }}</span>
+                                                <span class="concert-name">{{ concert_data.concert.name }}</span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
                     <!-- Залы и Жанры в две колонки -->
                     <div class="characteristics-row">
                         <!-- Залы -->
