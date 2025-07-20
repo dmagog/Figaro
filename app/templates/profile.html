@@ -1743,27 +1743,9 @@
             min-width: 80px;
         }
         
-        .concert-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .concert-id {
-            background: #667eea;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.75em;
-            font-weight: 500;
-            min-width: 20px;
-            text-align: center;
-        }
-        
         .concert-name {
             color: #374151;
             font-size: 0.95em;
-            flex: 1;
         }
     </style>
 </head>
@@ -2485,17 +2467,14 @@
                                     <thead>
                                         <tr>
                                             <th>Время</th>
-                                            <th>Концерт</th>
+                                            <th>Название</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {% for concert_data in day_concerts %}
                                         <tr>
                                             <td class="concert-time">{{ concert_data.concert.datetime.strftime('%H:%M') if concert_data.concert.datetime else 'TBD' }}</td>
-                                            <td class="concert-info">
-                                                <span class="concert-id">#{{ concert_data.concert.id }}</span>
-                                                <span class="concert-name">{{ concert_data.concert.name }}</span>
-                                            </td>
+                                            <td class="concert-name">{{ concert_data.concert.id }}. {{ concert_data.concert.name }}</td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>
