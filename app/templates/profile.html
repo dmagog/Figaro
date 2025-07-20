@@ -2058,12 +2058,6 @@
                                 <span class="day-concert-count">{{ day_concerts|length }} концерт{{ 'а' if day_concerts|length >= 2 and day_concerts|length <= 4 else 'ов' if day_concerts|length >= 5 else '' }}</span>
                             </div>
                             <table class="day-concerts-table">
-                                <thead>
-                                    <tr>
-                                        <th>Время</th>
-                                        <th>Название</th>
-                                    </tr>
-                                </thead>
                                 <tbody>
                                     {% for concert_data in day_concerts %}
                                     <tr>
