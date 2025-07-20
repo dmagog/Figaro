@@ -303,14 +303,14 @@ async def profile_page(
         
         logger.info(f"Processed {len(concerts_for_template)} unique concerts for template")
         
+        # Получаем все дни фестиваля с информацией о посещении
+        festival_days_data = get_all_festival_days_with_visit_status(session, concerts_for_template)
+        
         # Получаем данные для маршрутного листа
-        route_sheet_data = get_user_route_sheet(session, user_external_id, concerts_for_template)
+        route_sheet_data = get_user_route_sheet(session, user_external_id, concerts_for_template, festival_days_data)
         
         # Получаем данные для характеристик
         characteristics_data = get_user_characteristics(session, user_external_id, concerts_for_template)
-        
-        # Получаем все дни фестиваля с информацией о посещении
-        festival_days_data = get_all_festival_days_with_visit_status(session, concerts_for_template)
         
         # Отладочная информация для маршрутного листа
         logger.info(f"Route sheet data: {route_sheet_data}")
@@ -438,7 +438,7 @@ async def debug_user_purchases(
 
     
 
-def get_user_route_sheet(session, user_external_id: str, concerts_data: list) -> dict:
+def get_user_route_sheet(session, user_external_id: str, concerts_data: list, festival_days_data: list = None) -> dict:
     """
     Получает данные для маршрутного листа пользователя
     
@@ -616,7 +616,7 @@ def get_user_route_sheet(session, user_external_id: str, concerts_data: list) ->
                        f"genre={concert['concert'].get('genre', 'No genre')}")
         
         # Группируем концерты по дням
-        concerts_by_day = group_concerts_by_day(concerts_data)
+        concerts_by_day = group_concerts_by_day(concerts_data, festival_days_data)
         logger.info(f"Concerts grouped by day: {concerts_by_day}")
         
         # Добавляем информацию о переходах между концертами и доступных мероприятиях офф-программы
@@ -1483,15 +1483,16 @@ def find_available_off_program_events_after_last_concert(session, last_concert: 
         return []
 
 
-def group_concerts_by_day(concerts_data: list) -> dict:
+def group_concerts_by_day(concerts_data: list, festival_days_data: list = None) -> dict:
     """
-    Группирует концерты по дням фестиваля
+    Группирует концерты по дням фестиваля с учетом порядковых номеров дней
     
     Args:
         concerts_data: Список концертов пользователя
+        festival_days_data: Список всех дней фестиваля
         
     Returns:
-        Словарь с концертами, сгруппированными по дням
+        Словарь с концертами, сгруппированными по дням, и информацией о порядковых номерах
     """
     from datetime import datetime
     
@@ -1499,17 +1500,34 @@ def group_concerts_by_day(concerts_data: list) -> dict:
     
     logger.info(f"Starting to group {len(concerts_data)} concerts by day")
     
+    # Создаем маппинг дат на порядковые номера дней фестиваля
+    date_to_festival_day = {}
+    if festival_days_data:
+        for i, day_data in enumerate(festival_days_data, 1):
+            date_to_festival_day[day_data['day']] = i
+        logger.info(f"Created date mapping: {date_to_festival_day}")
+    
     for i, concert in enumerate(concerts_data):
-        day_index = concert.get('concert_day_index', 0)
-        logger.info(f"Concert {i}: day_index={day_index}")
+        concert_date = None
+        if concert['concert'].get('datetime'):
+            concert_date = concert['concert']['datetime'].date()
         
-        if day_index > 0:
-            if day_index not in concerts_by_day:
-                concerts_by_day[day_index] = []
-            concerts_by_day[day_index].append(concert)
-            logger.info(f"Added concert to day {day_index}")
+        # Определяем порядковый номер дня фестиваля
+        if concert_date and concert_date in date_to_festival_day:
+            festival_day_number = date_to_festival_day[concert_date]
         else:
-            logger.warning(f"Concert {i} has day_index=0, skipping")
+            # Если дата не найдена в днях фестиваля, используем старую логику
+            festival_day_number = concert.get('concert_day_index', 0)
+        
+        logger.info(f"Concert {i}: date={concert_date}, festival_day_number={festival_day_number}")
+        
+        if festival_day_number > 0:
+            if festival_day_number not in concerts_by_day:
+                concerts_by_day[festival_day_number] = []
+            concerts_by_day[festival_day_number].append(concert)
+            logger.info(f"Added concert to festival day {festival_day_number}")
+        else:
+            logger.warning(f"Concert {i} has festival_day_number=0, skipping")
     
     # Сортируем концерты в каждом дне по времени
     for day_concerts in concerts_by_day.values():
@@ -1520,7 +1538,7 @@ def group_concerts_by_day(concerts_data: list) -> dict:
             # Если не удалось отсортировать, оставляем как есть
             pass
     
-    logger.info(f"Final grouped concerts by day: {concerts_by_day}")
+    logger.info(f"Final grouped concerts by festival day: {concerts_by_day}")
     return concerts_by_day
     
 
@@ -1627,13 +1645,16 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
                 
                 # Композиции и их авторы
                 for composition in db_concert.compositions:
-                    compositions_counter[composition.name] += 1
-                    logger.debug(f"Found composition: {composition.name} for concert {concert['id']}")
-                    
-                    # Композиторы (авторы композиций)
+                    # Формируем ключ для композиции с автором
                     if composition.author:
+                        composition_key = f"{composition.name} ({composition.author.name})"
                         composers_counter[composition.author.name] += 1
                         logger.debug(f"Found composer: {composition.author.name} for composition {composition.name}")
+                    else:
+                        composition_key = f"{composition.name} (Автор неизвестен)"
+                    
+                    compositions_counter[composition_key] += 1
+                    logger.debug(f"Found composition: {composition_key} for concert {concert['id']}")
                 
         except Exception as e:
             logger.warning(f"Error getting concert details for {concert['id']}: {e}")
