@@ -1693,6 +1693,7 @@
             display: flex;
             gap: 20px;
             flex-wrap: wrap;
+            align-items: stretch;
         }
         
         .day-table-header {
@@ -1758,6 +1759,50 @@
         .concert-name {
             color: #374151;
             font-size: 0.95em;
+        }
+        
+        /* Стили для блока дней фестиваля на вкладке "Мои концерты" */
+        .festival-days-section {
+            margin-top: 40px;
+            padding: 30px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+        
+        .festival-days-header {
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        
+        .festival-days-header h3 {
+            font-size: 1.8em;
+            font-weight: 600;
+            color: #333;
+            margin: 0 0 8px 0;
+        }
+        
+        .festival-days-header p {
+            color: #666;
+            font-size: 1.1em;
+            margin: 0;
+        }
+        
+        /* Выравнивание высоты карточек дней */
+        .day-table-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .day-concerts-table {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .day-concerts-table tbody {
+            flex: 1;
         }
     </style>
 </head>
@@ -1938,6 +1983,56 @@
                         </div>
                         {% endfor %}
                     </div>
+                    
+                    <!-- Дни фестиваля -->
+                    {% if route_sheet.concerts_by_day %}
+                    <div class="festival-days-section">
+                        <div class="festival-days-header">
+                            <h3>📅 Дни фестиваля</h3>
+                            <p>Ваша активность по дням</p>
+                        </div>
+                        <div class="festival-days-container">
+                        {% for day_index, day_concerts in route_sheet.concerts_by_day.items() %}
+                        <div class="day-table-container">
+                            <div class="day-table-header">
+                                {% if day_concerts and day_concerts[0].concert.datetime %}
+                                    {% set first_concert_date = day_concerts[0].concert.datetime %}
+                                    {% set month_names = {
+                                        'January': 'января', 'February': 'февраля', 'March': 'марта', 'April': 'апреля',
+                                        'May': 'мая', 'June': 'июня', 'July': 'июля', 'August': 'августа',
+                                        'September': 'сентября', 'October': 'октября', 'November': 'ноября', 'December': 'декабря'
+                                    } %}
+                                    {% set day_names = {
+                                        'Monday': 'пн', 'Tuesday': 'вт', 'Wednesday': 'ср', 'Thursday': 'чт',
+                                        'Friday': 'пт', 'Saturday': 'сб', 'Sunday': 'вс'
+                                    } %}
+                                    {{ first_concert_date.day }} {{ month_names[first_concert_date.strftime('%B')] }} ({{ day_names[first_concert_date.strftime('%A')] }})
+                                {% else %}
+                                    День {{ day_index }}
+                                {% endif %}
+                                <span class="day-concert-count">{{ day_concerts|length }} концерт{{ 'а' if day_concerts|length >= 2 and day_concerts|length <= 4 else 'ов' if day_concerts|length >= 5 else '' }}</span>
+                            </div>
+                            <table class="day-concerts-table">
+                                <thead>
+                                    <tr>
+                                        <th>Время</th>
+                                        <th>Название</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for concert_data in day_concerts %}
+                                    <tr>
+                                        <td class="concert-time" data-time="{{ concert_data.concert.datetime.strftime('%H:%M') if concert_data.concert.datetime else 'TBD' }}"></td>
+                                        <td class="concert-name">{{ concert_data.concert.id }}. {{ concert_data.concert.name }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
                 {% else %}
                     <div class="no-concerts">
                         <h3>У вас пока нет купленных концертов</h3>
@@ -2453,60 +2548,6 @@
                 </div>
                 
                 {% if characteristics.total_concerts > 0 %}
-                    <!-- Дни фестиваля -->
-                    <div class="characteristic-section">
-                        <div class="characteristic-header">
-                            <div class="characteristic-icon">📅</div>
-                            <div class="characteristic-title">
-                                <h3>Дни фестиваля</h3>
-                                <p>Ваша активность по дням</p>
-                            </div>
-                            <div class="characteristic-count">{{ route_sheet.concerts_by_day|length }}</div>
-                        </div>
-                        <div class="characteristic-content">
-                            <div class="festival-days-container">
-                            {% for day_index, day_concerts in route_sheet.concerts_by_day.items() %}
-                            <div class="day-table-container">
-                                <div class="day-table-header">
-                                    {% if day_concerts and day_concerts[0].concert.datetime %}
-                                        {% set first_concert_date = day_concerts[0].concert.datetime %}
-                                        {% set month_names = {
-                                            'January': 'января', 'February': 'февраля', 'March': 'марта', 'April': 'апреля',
-                                            'May': 'мая', 'June': 'июня', 'July': 'июля', 'August': 'августа',
-                                            'September': 'сентября', 'October': 'октября', 'November': 'ноября', 'December': 'декабря'
-                                        } %}
-                                        {% set day_names = {
-                                            'Monday': 'пн', 'Tuesday': 'вт', 'Wednesday': 'ср', 'Thursday': 'чт',
-                                            'Friday': 'пт', 'Saturday': 'сб', 'Sunday': 'вс'
-                                        } %}
-                                        {{ first_concert_date.day }} {{ month_names[first_concert_date.strftime('%B')] }} ({{ day_names[first_concert_date.strftime('%A')] }})
-                                    {% else %}
-                                        День {{ day_index }}
-                                    {% endif %}
-                                    <span class="day-concert-count">{{ day_concerts|length }} концерт{{ 'а' if day_concerts|length >= 2 and day_concerts|length <= 4 else 'ов' if day_concerts|length >= 5 else '' }}</span>
-                                </div>
-                                <table class="day-concerts-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Время</th>
-                                            <th>Название</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for concert_data in day_concerts %}
-                                        <tr>
-                                            <td class="concert-time" data-time="{{ concert_data.concert.datetime.strftime('%H:%M') if concert_data.concert.datetime else 'TBD' }}"></td>
-                                            <td class="concert-name">{{ concert_data.concert.id }}. {{ concert_data.concert.name }}</td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                            {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                    
                     <!-- Залы и Жанры в две колонки -->
                     <div class="characteristics-row">
                         <!-- Залы -->
