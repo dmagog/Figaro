@@ -1631,13 +1631,28 @@
             margin-bottom: 10px;
         }
         .finish-stats {
-            color: #555;
-            font-size: 1em;
-            margin-bottom: 10px;
             display: flex;
-            gap: 18px;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 8px;
+            margin: 15px 0;
+            font-size: 0.9em;
+            color: #666;
         }
+        
+        .finish-stats-row {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .finish-stats-row span {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        
         .finish-message {
             color: #888;
             font-size: 1em;
@@ -2013,20 +2028,6 @@
                     </div>
                 </div>
                 
-                <!-- Отладочная информация только для суперадминов -->
-                {% if user.is_superuser %}
-                <div style="background: #f0f0f0; padding: 10px; margin-bottom: 20px; border-radius: 5px; font-family: monospace; font-size: 12px;">
-                    <strong>Отладка (только для суперадминов):</strong><br>
-                    Пользователь: {{ user.email }}<br>
-                    External ID: {{ user.external_id }}<br>
-                    Всего покупок: {{ purchase_summary.total_purchases }}<br>
-                    Всего концертов: {{ purchase_summary.total_concerts }}<br>
-                    Потрачено: {{ purchase_summary.total_spent }} ₽<br>
-                    Количество уникальных концертов: {{ concerts|length }}<br>
-                    Роль: {{ user.role }}<br>
-                    Суперадмин: {{ "Да" if user.is_superuser else "Нет" }}
-                </div>
-                {% endif %}
                 
                 {% if purchase_summary.total_concerts > 0 %}
                     <!-- Дни фестиваля -->
@@ -2621,10 +2622,22 @@
                             <div class="finish-card">
                                 <div class="finish-title">Маршрут завершён!</div>
                                 <div class="finish-stats">
-                                    <span>Дней: {{ route_sheet.summary.total_days }}</span>
-                                    <span>Концертов: {{ route_sheet.summary.total_concerts }}</span>
-                                    <span>Залов: {{ route_sheet.summary.total_halls }}</span>
-                                    <span>Потрачено: {{ "{:,}".format(route_sheet.summary.total_spent) }} ₽</span>
+                                    <div class="finish-stats-row">
+                                        <span>Дней: {{ route_sheet.summary.total_days }}</span>
+                                        <span>Концертов: {{ route_sheet.summary.total_concerts }}</span>
+                                        <span>Залов: {{ route_sheet.summary.total_halls }}</span>
+                                        <span>Потрачено: {{ "{:,}".format(route_sheet.summary.total_spent) }} ₽</span>
+                                    </div>
+                                    <div class="finish-stats-row">
+                                        <span>Время концертов: {{ route_sheet.summary.total_concert_time_minutes }} мин</span>
+                                        <span>Время переходов: {{ route_sheet.summary.total_walk_time_minutes }} мин</span>
+                                        <span>Пройдено: {{ route_sheet.summary.total_distance_km }} км</span>
+                                    </div>
+                                    <div class="finish-stats-row">
+                                        <span>Произведений: {{ route_sheet.summary.unique_compositions }}</span>
+                                        <span>Авторов: {{ route_sheet.summary.unique_authors }}</span>
+                                        <span>Артистов: {{ route_sheet.summary.unique_artists }}</span>
+                                    </div>
                                 </div>
                                 <div class="finish-message">Спасибо, что выбрали наш фестиваль! До встречи на концертах!</div>
                             </div>
