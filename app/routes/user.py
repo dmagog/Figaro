@@ -306,6 +306,9 @@ async def profile_page(
         # Получаем данные для маршрутного листа
         route_sheet_data = get_user_route_sheet(session, user_external_id, concerts_for_template)
         
+        # Получаем данные для характеристик
+        characteristics_data = get_user_characteristics(session, user_external_id, concerts_for_template)
+        
         # Отладочная информация для маршрутного листа
         logger.info(f"Route sheet data: {route_sheet_data}")
         logger.info(f"Concerts by day: {route_sheet_data.get('concerts_by_day', {})}")
@@ -315,7 +318,8 @@ async def profile_page(
             "user": current_user,
             "concerts": concerts_for_template,  # Изменили название с purchases на concerts
             "purchase_summary": purchase_summary,
-            "route_sheet": route_sheet_data
+            "route_sheet": route_sheet_data,
+            "characteristics": characteristics_data
         }
         
         return templates.TemplateResponse("profile.html", context)
@@ -1583,6 +1587,103 @@ async def debug_transitions(session=Depends(get_session)):
     except Exception as e:
         logger.error(f"Error in debug_transitions: {e}")
         return {"error": str(e)}
+    
+
+
+    
+
+def get_user_characteristics(session, user_external_id: str, concerts_data: list) -> dict:
+    """
+    Получает характеристики пользователя на основе его покупок
+    
+    Args:
+        session: Сессия базы данных
+        user_external_id: Внешний ID пользователя
+        concerts_data: Список концертов пользователя
+        
+    Returns:
+        Словарь с характеристиками пользователя
+    """
+    from collections import defaultdict, Counter
+    
+    if not concerts_data:
+        return {
+            "total_concerts": 0,
+            "halls": [],
+            "genres": [],
+            "artists": [],
+            "composers": [],
+            "compositions": []
+        }
+    
+    # Счетчики для различных характеристик
+    halls_counter = Counter()
+    genres_counter = Counter()
+    artists_counter = Counter()
+    composers_counter = Counter()
+    compositions_counter = Counter()
+    
+    # Обрабатываем каждый концерт
+    for concert_data in concerts_data:
+        concert = concert_data['concert']
+        
+        # Залы
+        if concert.get('hall') and concert['hall'].get('name'):
+            halls_counter[concert['hall']['name']] += 1
+        
+        # Жанры
+        if concert.get('genre'):
+            genres_counter[concert['genre']] += 1
+        
+        # Получаем детали концерта из базы данных
+        try:
+            from models.concert import Concert
+            from models.artist import Artist
+            from models.composition import Composition, Author
+            from sqlmodel import select
+            
+            # Получаем концерт с загруженными связями
+            db_concert = session.exec(select(Concert).where(Concert.id == concert['id'])).first()
+            
+            if db_concert:
+                # Принудительно загружаем связи
+                session.refresh(db_concert)
+                
+                # Артисты
+                for artist in db_concert.artists:
+                    artists_counter[artist.name] += 1
+                    logger.debug(f"Found artist: {artist.name} for concert {concert['id']}")
+                
+                # Композиции и их авторы
+                for composition in db_concert.compositions:
+                    compositions_counter[composition.name] += 1
+                    logger.debug(f"Found composition: {composition.name} for concert {concert['id']}")
+                    
+                    # Композиторы (авторы композиций)
+                    if composition.author:
+                        composers_counter[composition.author.name] += 1
+                        logger.debug(f"Found composer: {composition.author.name} for composition {composition.name}")
+                
+        except Exception as e:
+            logger.warning(f"Error getting concert details for {concert['id']}: {e}")
+            continue
+    
+    # Преобразуем счетчики в списки с сортировкой по количеству
+    def counter_to_list(counter, limit=10):
+        return [{"name": name, "count": count} for name, count in counter.most_common(limit)]
+    
+    characteristics = {
+        "total_concerts": len(concerts_data),
+        "halls": counter_to_list(halls_counter),
+        "genres": counter_to_list(genres_counter),
+        "artists": counter_to_list(artists_counter),
+        "composers": counter_to_list(composers_counter),
+        "compositions": counter_to_list(compositions_counter)
+    }
+    
+    logger.info(f"Generated characteristics for user {user_external_id}: {characteristics}")
+    
+    return characteristics
     
 
 
