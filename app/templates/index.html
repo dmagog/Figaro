@@ -120,6 +120,425 @@
             color: #333;
             margin-bottom: 20px;
         }
+        
+        /* Стили для анкеты */
+        .survey-section {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-top: 30px;
+        }
+        
+        .survey-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .survey-header h2 {
+            font-size: 2.2em;
+            color: #333;
+            margin: 0 0 10px 0;
+        }
+        
+        .survey-header p {
+            color: #666;
+            font-size: 1.1em;
+            margin: 0;
+        }
+        
+        .survey-form {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        /* Прогресс-бар */
+        .survey-progress {
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 20%;
+        }
+        
+        .progress-text {
+            color: #666;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        
+        /* Слайды */
+        .survey-slide {
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .survey-slide.active {
+            display: block;
+        }
+        
+        .slide-content {
+            text-align: center;
+        }
+        
+        .slide-title {
+            font-size: 1.8em;
+            color: #333;
+            margin: 0 0 15px 0;
+            font-weight: 600;
+        }
+        
+        .slide-description {
+            color: #666;
+            font-size: 1.1em;
+            margin: 0 0 40px 0;
+            line-height: 1.5;
+        }
+        
+        .form-group {
+            margin-bottom: 40px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .radio-group.compact {
+            flex-direction: row;
+            justify-content: space-between;
+        }
+        
+        .radio-option {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .radio-option:hover .radio-content {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102,126,234,0.15);
+        }
+        
+        .radio-input {
+            display: none;
+        }
+        
+        .radio-content {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            background: #fafafa;
+        }
+        
+        .radio-input:checked + .radio-content {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f8faff 0%, #f0f4ff 100%);
+            box-shadow: 0 4px 20px rgba(102,126,234,0.1);
+        }
+        
+        .radio-icon {
+            font-size: 2em;
+            margin-right: 16px;
+            min-width: 40px;
+            text-align: center;
+        }
+        
+        .radio-number {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #667eea;
+            margin-right: 16px;
+            min-width: 40px;
+            text-align: center;
+        }
+        
+        .radio-text {
+            flex: 1;
+        }
+        
+        .radio-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        
+        .radio-description {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .radio-option.compact .radio-content {
+            flex-direction: column;
+            text-align: center;
+            padding: 16px 12px;
+            min-width: 100px;
+        }
+        
+        .radio-option.compact .radio-number {
+            margin-right: 0;
+            margin-bottom: 8px;
+        }
+        
+        .preferences-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .preference-field {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .preference-field label {
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 8px;
+        }
+        
+        .form-input {
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.2s ease;
+            background: white;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+        
+        .form-input::placeholder {
+            color: #9ca3af;
+        }
+        
+        /* Навигация */
+        .survey-navigation {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 40px;
+            align-items: center;
+        }
+        
+        .btn-prev, .btn-next {
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-prev:hover, .btn-next:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(102,126,234,0.3);
+        }
+        
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102,126,234,0.4);
+        }
+        
+        .btn-skip {
+            background: transparent;
+            color: #666;
+            border: 2px solid #e5e7eb;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-skip:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+        
+        /* Анимации */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        /* Облако тегов */
+        .tag-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin: 20px 0;
+            min-height: 150px;
+            align-items: center;
+            padding: 10px;
+        }
+        
+        .tag {
+            background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%);
+            border: 2px solid #c7d2fe;
+            border-radius: 16px;
+            padding: 6px 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            color: #4f5bd5;
+            user-select: none;
+            font-size: 0.9em;
+        }
+        
+        .tag:hover {
+            background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+            border-color: #667eea;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(102,126,234,0.2);
+        }
+        
+        .tag.selected {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: white;
+            box-shadow: 0 3px 8px rgba(102,126,234,0.3);
+        }
+        
+        .tag.excluded {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-color: #f87171;
+            color: #dc2626;
+        }
+        
+        .tag.excluded:hover {
+            background: linear-gradient(135deg, #fecaca 0%, #f87171 100%);
+            border-color: #dc2626;
+        }
+        
+        .tag.excluded.selected {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            border-color: #dc2626;
+            color: white;
+        }
+        
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+        
+        .selected-tags {
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        .selected-count {
+            background: rgba(102,126,234,0.1);
+            color: #667eea;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+        
+        /* Исключения */
+        .exclusions-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+        
+        .exclusion-section h4 {
+            text-align: center;
+            color: #333;
+            margin: 0 0 20px 0;
+            font-size: 1.2em;
+        }
+        
+        @media (max-width: 768px) {
+            .survey-section {
+                padding: 20px;
+            }
+            
+            .radio-group.compact {
+                flex-direction: column;
+            }
+            
+            .preferences-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .survey-navigation {
+                flex-direction: column;
+            }
+            
+            .slide-title {
+                font-size: 1.5em;
+            }
+            
+            .exclusions-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .tag-cloud {
+                gap: 6px;
+            }
+            
+            .tag {
+                padding: 4px 10px;
+                font-size: 0.85em;
+            }
+        }
     </style>
 </head>
 <body>
@@ -155,6 +574,675 @@
             <h2>Концерты фестиваля</h2>
             <p>Здесь будет список концертов и рекомендации...</p>
         </div>
+        
+        <!-- Анкета пользователя -->
+        <div class="survey-section" id="user-survey">
+            <div class="survey-header">
+                <h2>🎵 Персонализация вашего маршрута</h2>
+                <p>Помогите нам подобрать идеальные концерты для вас</p>
+            </div>
+            
+            <form class="survey-form" id="preferences-form">
+                <!-- Прогресс-бар -->
+                <div class="survey-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span id="current-step">1</span> из <span id="total-steps">7</span>
+                    </div>
+                </div>
+                
+                <!-- Слайд 1: Приоритет -->
+                <div class="survey-slide active" data-step="1">
+                    <div class="slide-content">
+                        <h3 class="slide-title">Что для вас важнее в маршруте?</h3>
+                        <p class="slide-description">Выберите подход, который лучше всего описывает ваши ожидания от фестиваля</p>
+                        
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="priority" value="intellect" class="radio-input">
+                                <div class="radio-content">
+                                    <div class="radio-icon">🔍</div>
+                                    <div class="radio-text">
+                                        <div class="radio-title">Увидеть редкое, услышать необычное</div>
+                                        <div class="radio-description">Интеллектуально насыщенная программа</div>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="priority" value="comfort" class="radio-input">
+                                <div class="radio-content">
+                                    <div class="radio-icon">🛋️</div>
+                                    <div class="radio-text">
+                                        <div class="radio-title">Провести день удобно и без перегрузок</div>
+                                        <div class="radio-description">Комфортный темп и знакомые произведения</div>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="priority" value="balance" class="radio-input">
+                                <div class="radio-content">
+                                    <div class="radio-icon">⚖️</div>
+                                    <div class="radio-text">
+                                        <div class="radio-title">Найти баланс между новизной и удобством</div>
+                                        <div class="radio-description">Оптимальное сочетание</div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Слайд 2: Количество концертов -->
+                <div class="survey-slide" data-step="2">
+                    <div class="slide-content">
+                        <h3 class="slide-title">Сколько концертов в день — это нормально для вас?</h3>
+                        <p class="slide-description">Выберите комфортный для вас темп посещения</p>
+                        
+                        <div class="radio-group compact">
+                            <label class="radio-option compact">
+                                <input type="radio" name="max_concerts" value="2" class="radio-input">
+                                <div class="radio-content">
+                                    <div class="radio-number">2</div>
+                                    <div class="radio-text">
+                                        <div class="radio-title">Спокойный темп</div>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="radio-option compact">
+                                <input type="radio" name="max_concerts" value="3" class="radio-input">
+                                <div class="radio-content">
+                                    <div class="radio-number">3</div>
+                                    <div class="radio-text">
+                                        <div class="radio-title">Оптимально</div>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="radio-option compact">
+                                <input type="radio" name="max_concerts" value="4" class="radio-input">
+                                <div class="radio-content">
+                                    <div class="radio-number">4</div>
+                                    <div class="radio-text">
+                                        <div class="radio-title">Интенсивно</div>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="radio-option compact">
+                                <input type="radio" name="max_concerts" value="5" class="radio-input">
+                                <div class="radio-content">
+                                    <div class="radio-number">5+</div>
+                                    <div class="radio-text">
+                                        <div class="radio-title">Максимум!</div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Слайд 3: Разнообразие -->
+                <div class="survey-slide" data-step="3">
+                    <div class="slide-content">
+                        <h3 class="slide-title">Что ближе по настроению?</h3>
+                        <p class="slide-description">Выберите стиль программы, который вам больше нравится</p>
+                        
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="diversity" value="mono" class="radio-input">
+                                <div class="radio-content">
+                                    <div class="radio-icon">🎼</div>
+                                    <div class="radio-text">
+                                        <div class="radio-title">Посвятить день одному композитору</div>
+                                        <div class="radio-description">Глубокое погружение в творчество</div>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="diversity" value="diverse" class="radio-input">
+                                <div class="radio-content">
+                                    <div class="radio-icon">🌈</div>
+                                    <div class="radio-text">
+                                        <div class="radio-title">Микс из жанров, стилей и эпох</div>
+                                        <div class="radio-description">Разнообразная программа</div>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="diversity" value="flexible" class="radio-input">
+                                <div class="radio-content">
+                                    <div class="radio-icon">🎲</div>
+                                    <div class="radio-text">
+                                        <div class="radio-title">Открыт(а) к разным вариантам</div>
+                                        <div class="radio-description">Готов(а) к сюрпризам</div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Слайд 4: Предпочтения композиторов -->
+                <div class="survey-slide" data-step="4">
+                    <div class="slide-content">
+                        <h3 class="slide-title">Каких композиторов вы хотите услышать?</h3>
+                        <p class="slide-description">Выберите до 5 композиторов (размер шрифта показывает популярность)</p>
+                        
+                        <div class="tag-cloud" id="composers-cloud">
+                            <div class="loading">Загрузка композиторов...</div>
+                        </div>
+                        
+                        <div class="selected-tags" id="selected-composers">
+                            <span class="selected-count">Выбрано: <span id="composers-count">0</span>/5</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Слайд 5: Предпочтения исполнителей -->
+                <div class="survey-slide" data-step="5">
+                    <div class="slide-content">
+                        <h3 class="slide-title">Каких исполнителей вы хотите услышать?</h3>
+                        <p class="slide-description">Выберите до 5 исполнителей (размер шрифта показывает популярность)</p>
+                        
+                        <div class="tag-cloud" id="artists-cloud">
+                            <div class="loading">Загрузка исполнителей...</div>
+                        </div>
+                        
+                        <div class="selected-tags" id="selected-artists">
+                            <span class="selected-count">Выбрано: <span id="artists-count">0</span>/5</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Слайд 6: Исключения -->
+                <div class="survey-slide" data-step="6">
+                    <div class="slide-content">
+                        <h3 class="slide-title">Кого вы точно не хотите?</h3>
+                        <p class="slide-description">Выберите композиторов и исполнителей, которых точно не хотите видеть в маршруте</p>
+                        
+                        <div class="exclusions-container">
+                            <div class="exclusion-section">
+                                <h4>Композиторы</h4>
+                                <div class="tag-cloud" id="exclude-composers-cloud">
+                                    <div class="loading">Загрузка композиторов...</div>
+                                </div>
+                            </div>
+                            
+                            <div class="exclusion-section">
+                                <h4>Исполнители</h4>
+                                <div class="tag-cloud" id="exclude-artists-cloud">
+                                    <div class="loading">Загрузка исполнителей...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Слайд 7: Концерты -->
+                <div class="survey-slide" data-step="7">
+                    <div class="slide-content">
+                        <h3 class="slide-title">Какие концерты вы уже планируете посетить?</h3>
+                        <p class="slide-description">Отметьте номера концертов, которые уже запланировали (необязательно)</p>
+                        
+                        <div class="tag-cloud" id="concerts-cloud">
+                            <div class="loading">Загрузка концертов...</div>
+                        </div>
+                        
+                        <div class="selected-tags" id="selected-concerts">
+                            <span class="selected-count">Выбрано: <span id="concerts-count">0</span></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Навигация -->
+                <div class="survey-navigation">
+                    <button type="button" class="btn-prev" id="btn-prev" style="display: none;">← Назад</button>
+                    <button type="button" class="btn-next" id="btn-next">Далее →</button>
+                    <button type="submit" class="btn-submit" id="btn-submit" style="display: none;">🎯 Получить рекомендации</button>
+                    <button type="button" class="btn-skip" onclick="skipSurvey()">Пропустить</button>
+                </div>
+            </form>
+        </div>
     </div>
+    
+    <script>
+        // Слайдер анкеты
+        let currentStep = 1;
+        const totalSteps = 7;
+        
+        // Данные для облаков тегов
+        let surveyData = null;
+        let selectedComposers = new Set();
+        let selectedArtists = new Set();
+        let excludedComposers = new Set();
+        let excludedArtists = new Set();
+        let selectedConcerts = new Set();
+        
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            updateProgress();
+            updateNavigation();
+            loadSurveyData();
+            
+            // Добавляем обработчики для автоматического перехода
+            const radioInputs = document.querySelectorAll('input[type="radio"]');
+            radioInputs.forEach(input => {
+                input.addEventListener('change', function() {
+                    // Автоматически переходим к следующему слайду через небольшую задержку
+                    setTimeout(() => {
+                        if (currentStep < totalSteps) {
+                            nextStep();
+                        }
+                    }, 500);
+                });
+            });
+            
+            // Добавляем клавиатурную навигацию
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'ArrowRight' || e.key === ' ') {
+                    e.preventDefault();
+                    if (validateCurrentStep()) {
+                        nextStep();
+                    }
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    prevStep();
+                }
+            });
+        });
+        
+        // Загрузка данных для анкеты
+        async function loadSurveyData() {
+            try {
+                const response = await fetch('/api/survey-data');
+                const data = await response.json();
+                
+                if (data.success) {
+                    surveyData = data;
+                    renderComposersCloud();
+                    renderArtistsCloud();
+                    renderExcludeComposersCloud();
+                    renderExcludeArtistsCloud();
+                    renderConcertsCloud();
+                }
+            } catch (error) {
+                console.error('Error loading survey data:', error);
+            }
+        }
+        
+        // Рендеринг облака композиторов
+        function renderComposersCloud() {
+            const cloud = document.getElementById('composers-cloud');
+            if (!surveyData || !surveyData.composers) return;
+            
+            cloud.innerHTML = '';
+            surveyData.composers.forEach(composer => {
+                const tag = document.createElement('div');
+                tag.className = 'tag';
+                tag.textContent = composer.name;
+                tag.style.fontSize = composer.size + 'px';
+                tag.dataset.id = composer.id;
+                
+                tag.addEventListener('click', () => toggleComposer(composer.id, composer.name));
+                cloud.appendChild(tag);
+            });
+        }
+        
+        // Рендеринг облака исполнителей
+        function renderArtistsCloud() {
+            const cloud = document.getElementById('artists-cloud');
+            if (!surveyData || !surveyData.artists) return;
+            
+            cloud.innerHTML = '';
+            surveyData.artists.forEach(artist => {
+                const tag = document.createElement('div');
+                tag.className = 'tag';
+                tag.textContent = artist.name;
+                tag.style.fontSize = artist.size + 'px';
+                tag.dataset.id = artist.id;
+                
+                tag.addEventListener('click', () => toggleArtist(artist.id, artist.name));
+                cloud.appendChild(tag);
+            });
+        }
+        
+        // Рендеринг облака исключений композиторов
+        function renderExcludeComposersCloud() {
+            const cloud = document.getElementById('exclude-composers-cloud');
+            if (!surveyData || !surveyData.composers) return;
+            
+            cloud.innerHTML = '';
+            surveyData.composers.forEach(composer => {
+                const tag = document.createElement('div');
+                tag.className = 'tag excluded';
+                tag.textContent = composer.name;
+                tag.style.fontSize = composer.size + 'px';
+                tag.dataset.id = composer.id;
+                
+                tag.addEventListener('click', () => toggleExcludeComposer(composer.id, composer.name));
+                cloud.appendChild(tag);
+            });
+        }
+        
+        // Рендеринг облака исключений исполнителей
+        function renderExcludeArtistsCloud() {
+            const cloud = document.getElementById('exclude-artists-cloud');
+            if (!surveyData || !surveyData.artists) return;
+            
+            cloud.innerHTML = '';
+            surveyData.artists.forEach(artist => {
+                const tag = document.createElement('div');
+                tag.className = 'tag excluded';
+                tag.textContent = artist.name;
+                tag.style.fontSize = artist.size + 'px';
+                tag.dataset.id = artist.id;
+                
+                tag.addEventListener('click', () => toggleExcludeArtist(artist.id, artist.name));
+                cloud.appendChild(tag);
+            });
+        }
+        
+        // Рендеринг облака концертов
+        function renderConcertsCloud() {
+            const cloud = document.getElementById('concerts-cloud');
+            if (!surveyData || !surveyData.concerts) return;
+            
+            cloud.innerHTML = '';
+            surveyData.concerts.forEach(concert => {
+                const tag = document.createElement('div');
+                tag.className = 'tag';
+                tag.textContent = concert.id;
+                tag.style.fontSize = '1.1em'; // Компактный размер для номеров
+                tag.dataset.id = concert.id;
+                
+                tag.addEventListener('click', () => toggleConcert(concert.id));
+                cloud.appendChild(tag);
+            });
+        }
+        
+        // Переключение выбора композитора
+        function toggleComposer(id, name) {
+            const tag = document.querySelector(`#composers-cloud .tag[data-id="${id}"]`);
+            
+            if (selectedComposers.has(id)) {
+                selectedComposers.delete(id);
+                tag.classList.remove('selected');
+            } else if (selectedComposers.size < 5) {
+                selectedComposers.add(id);
+                tag.classList.add('selected');
+            } else {
+                showErrorMessage('Можно выбрать не более 5 композиторов');
+                return;
+            }
+            
+            updateComposersCount();
+        }
+        
+        // Переключение выбора исполнителя
+        function toggleArtist(id, name) {
+            const tag = document.querySelector(`#artists-cloud .tag[data-id="${id}"]`);
+            
+            if (selectedArtists.has(id)) {
+                selectedArtists.delete(id);
+                tag.classList.remove('selected');
+            } else if (selectedArtists.size < 5) {
+                selectedArtists.add(id);
+                tag.classList.add('selected');
+            } else {
+                showErrorMessage('Можно выбрать не более 5 исполнителей');
+                return;
+            }
+            
+            updateArtistsCount();
+        }
+        
+        // Переключение исключения композитора
+        function toggleExcludeComposer(id, name) {
+            const tag = document.querySelector(`#exclude-composers-cloud .tag[data-id="${id}"]`);
+            
+            if (excludedComposers.has(id)) {
+                excludedComposers.delete(id);
+                tag.classList.remove('selected');
+            } else {
+                excludedComposers.add(id);
+                tag.classList.add('selected');
+            }
+        }
+        
+        // Переключение исключения исполнителя
+        function toggleExcludeArtist(id, name) {
+            const tag = document.querySelector(`#exclude-artists-cloud .tag[data-id="${id}"]`);
+            
+            if (excludedArtists.has(id)) {
+                excludedArtists.delete(id);
+                tag.classList.remove('selected');
+            } else {
+                excludedArtists.add(id);
+                tag.classList.add('selected');
+            }
+        }
+        
+        // Переключение выбора концерта
+        function toggleConcert(id) {
+            const tag = document.querySelector(`#concerts-cloud .tag[data-id="${id}"]`);
+            
+            if (selectedConcerts.has(id)) {
+                selectedConcerts.delete(id);
+                tag.classList.remove('selected');
+            } else {
+                selectedConcerts.add(id);
+                tag.classList.add('selected');
+            }
+            
+            updateConcertsCount();
+        }
+        
+        // Обновление счетчиков
+        function updateComposersCount() {
+            document.getElementById('composers-count').textContent = selectedComposers.size;
+        }
+        
+        function updateArtistsCount() {
+            document.getElementById('artists-count').textContent = selectedArtists.size;
+        }
+        
+        function updateConcertsCount() {
+            document.getElementById('concerts-count').textContent = selectedConcerts.size;
+        }
+        
+        // Навигация по слайдам
+        document.getElementById('btn-next').addEventListener('click', function() {
+            if (validateCurrentStep()) {
+                nextStep();
+            }
+        });
+        
+        document.getElementById('btn-prev').addEventListener('click', function() {
+            prevStep();
+        });
+        
+        function nextStep() {
+            if (currentStep < totalSteps) {
+                hideSlide(currentStep);
+                currentStep++;
+                showSlide(currentStep);
+                updateProgress();
+                updateNavigation();
+            }
+        }
+        
+        function prevStep() {
+            if (currentStep > 1) {
+                hideSlide(currentStep);
+                currentStep--;
+                showSlide(currentStep);
+                updateProgress();
+                updateNavigation();
+            }
+        }
+        
+        function showSlide(step) {
+            const slide = document.querySelector(`[data-step="${step}"]`);
+            if (slide) {
+                slide.classList.add('active');
+            }
+        }
+        
+        function hideSlide(step) {
+            const slide = document.querySelector(`[data-step="${step}"]`);
+            if (slide) {
+                slide.classList.remove('active');
+            }
+        }
+        
+        function updateProgress() {
+            const progressFill = document.getElementById('progress-fill');
+            const currentStepEl = document.getElementById('current-step');
+            const progress = (currentStep / totalSteps) * 100;
+            
+            progressFill.style.width = progress + '%';
+            currentStepEl.textContent = currentStep;
+        }
+        
+        function updateNavigation() {
+            const btnPrev = document.getElementById('btn-prev');
+            const btnNext = document.getElementById('btn-next');
+            const btnSubmit = document.getElementById('btn-submit');
+            
+            // Показываем/скрываем кнопки
+            btnPrev.style.display = currentStep > 1 ? 'block' : 'none';
+            btnNext.style.display = currentStep < totalSteps ? 'block' : 'none';
+            btnSubmit.style.display = currentStep === totalSteps ? 'block' : 'none';
+        }
+        
+        function validateCurrentStep() {
+            const currentSlide = document.querySelector(`[data-step="${currentStep}"]`);
+            const requiredInputs = currentSlide.querySelectorAll('input[type="radio"]');
+            
+            // Проверяем, что выбран хотя бы один радио-кнопка
+            if (requiredInputs.length > 0) {
+                const checked = currentSlide.querySelector('input[type="radio"]:checked');
+                if (!checked) {
+                    showErrorMessage('Пожалуйста, выберите один из вариантов');
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
+        // Обработка формы анкеты
+        document.getElementById('preferences-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const preferences = {
+                priority: formData.get('priority'),
+                max_concerts: parseInt(formData.get('max_concerts')),
+                diversity: formData.get('diversity'),
+                include: {
+                    composers: Array.from(selectedComposers),
+                    artists: Array.from(selectedArtists),
+                    concert_ids: Array.from(selectedConcerts)
+                },
+                exclude: {
+                    composers: Array.from(excludedComposers),
+                    artists: Array.from(excludedArtists),
+                    concert_ids: []
+                }
+            };
+            
+            // Отправляем данные на сервер
+            fetch('/api/preferences', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(preferences)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccessMessage('Ваши предпочтения сохранены! Мы подберем для вас идеальные концерты.');
+                    // Скрываем форму
+                    document.getElementById('user-survey').style.display = 'none';
+                } else {
+                    showErrorMessage('Произошла ошибка при сохранении предпочтений.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showErrorMessage('Произошла ошибка при отправке данных.');
+            });
+        });
+        
+        function skipSurvey() {
+            if (confirm('Вы уверены, что хотите пропустить анкету? Вы всегда сможете заполнить её позже в личном кабинете.')) {
+                document.getElementById('user-survey').style.display = 'none';
+            }
+        }
+        
+        function showSuccessMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'success-message';
+            messageDiv.textContent = message;
+            messageDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #10b981;
+                color: white;
+                padding: 16px 24px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+            document.body.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
+        }
+        
+        function showErrorMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'error-message';
+            messageDiv.textContent = message;
+            messageDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #ef4444;
+                color: white;
+                padding: 16px 24px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+            document.body.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
+        }
+        
+        // Анимация для сообщений
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
 </body>
 </html> 

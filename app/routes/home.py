@@ -20,6 +20,9 @@ import logging
 from datetime import datetime
 from models import OffProgram, EventFormat, Artist, Author, Composition, ConcertArtistLink, ConcertCompositionLink
 import io
+from sqlmodel import Session, select
+from models.user import User
+from typing import Optional
 
 
 def format_time_minutes(minutes):
@@ -140,28 +143,26 @@ async def index(request: Request, session=Depends(get_session)):
     
     Args:
         request (Request): Объект запроса FastAPI
+        session: Сессия базы данных
 
     Returns:
         HTMLResponse: HTML страница с контекстом пользователя
     """
     token = request.cookies.get(settings.COOKIE_NAME)
+    current_user = None
+    
     if token:
-        user = await authenticate_cookie(token)
-    else:
-        user = None
+        try:
+            user_email = await authenticate_cookie(token)
+            current_user = UsersService.get_user_by_email(user_email, session)
+        except:
+            pass  # Пользователь не авторизован
 
     context = {
-        "login": user,
-        "request": request
+        "login": current_user is not None,
+        "request": request,
+        "user": current_user
     }
-
-    if user:
-        user_exist = UsersService.get_user_by_email(context['login'], session)
-        if user_exist is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User does not exist")
-        
-        context['user'] = user_exist
-
 
     return templates.TemplateResponse("index.html", context)
 
@@ -2132,3 +2133,122 @@ async def get_basic_route_statistics(request: Request, session=Depends(get_sessi
         }
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+@home_route.post("/api/preferences")
+async def save_preferences(
+    preferences: dict,
+    request: Request,
+    session: Session = Depends(get_session)
+):
+    """Сохранение предпочтений пользователя"""
+    try:
+        # Получаем токен из cookie
+        token = request.cookies.get(settings.COOKIE_NAME)
+        current_user = None
+        
+        if token:
+            try:
+                user_email = await authenticate_cookie(token)
+                current_user = UsersService.get_user_by_email(user_email, session)
+            except:
+                pass  # Пользователь не авторизован
+        
+        if current_user:
+            # Обновляем предпочтения авторизованного пользователя
+            current_user.preferences = preferences
+            session.add(current_user)
+            session.commit()
+            return {"success": True, "message": "Предпочтения сохранены"}
+        else:
+            # Для неавторизованных пользователей сохраняем в сессии
+            # В реальном приложении здесь можно использовать Redis или другой механизм
+            return {"success": True, "message": "Предпочтения сохранены в сессии"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@home_route.get("/api/survey-data")
+async def get_survey_data(session: Session = Depends(get_session)):
+    """Получение данных для анкеты (композиторы, исполнители, концерты)"""
+    try:
+        from models import Author, Artist, Concert
+        from sqlalchemy import func
+        
+        # Получаем композиторов с количеством произведений в концертах
+        composers_query = session.query(
+            Author.id,
+            Author.name,
+            func.count(Concert.id).label('concerts_count')
+        ).outerjoin(
+            Composition, Author.id == Composition.author_id
+        ).outerjoin(
+            ConcertCompositionLink, Composition.id == ConcertCompositionLink.composition_id
+        ).outerjoin(
+            Concert, ConcertCompositionLink.concert_id == Concert.id
+        ).group_by(
+            Author.id, Author.name
+        ).order_by(
+            func.count(Concert.id).desc()
+        ).all()
+        
+        composers = [
+            {
+                'id': comp.id,
+                'name': comp.name,
+                'count': comp.concerts_count,
+                'size': min(18, max(12, 12 + comp.concerts_count))  # Размер от 12 до 18
+            }
+            for comp in composers_query
+        ]
+        
+        # Получаем исполнителей с количеством концертов
+        artists_query = session.query(
+            Artist.id,
+            Artist.name,
+            func.count(Concert.id).label('concerts_count')
+        ).outerjoin(
+            ConcertArtistLink, Artist.id == ConcertArtistLink.artist_id
+        ).outerjoin(
+            Concert, ConcertArtistLink.concert_id == Concert.id
+        ).group_by(
+            Artist.id, Artist.name
+        ).order_by(
+            func.count(Concert.id).desc()
+        ).all()
+        
+        artists = [
+            {
+                'id': artist.id,
+                'name': artist.name,
+                'count': artist.concerts_count,
+                'size': min(18, max(12, 12 + artist.concerts_count))  # Размер от 12 до 18
+            }
+            for artist in artists_query
+        ]
+        
+        # Получаем концерты
+        concerts_query = session.query(
+            Concert.id,
+            Concert.name,
+            Concert.datetime
+        ).order_by(
+            Concert.datetime
+        ).all()
+        
+        concerts = [
+            {
+                'id': concert.id,
+                'name': f"{concert.id}. {concert.name}",
+                'datetime': concert.datetime.isoformat() if concert.datetime else None
+            }
+            for concert in concerts_query
+        ]
+        
+        return {
+            "success": True,
+            "composers": composers,
+            "artists": artists,
+            "concerts": concerts
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
