@@ -1515,9 +1515,6 @@
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
             overflow: hidden;
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
         }
         
         .characteristic-item {
@@ -1691,6 +1688,13 @@
             min-width: 300px;
         }
         
+        /* Контейнер для дней фестиваля */
+        .festival-days-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
         .day-table-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -1737,10 +1741,18 @@
             background: #f8f9ff;
         }
         
-        .concert-time {
+        .day-concerts-table .concert-time {
             font-weight: 500;
             color: #6b7280;
-            min-width: 80px;
+            min-width: 60px;
+        }
+        
+        .day-concerts-table .concert-time::before {
+            content: attr(data-time);
+            background: #f8f9fa;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
         }
         
         .concert-name {
@@ -2452,12 +2464,22 @@
                             <div class="characteristic-count">{{ route_sheet.concerts_by_day|length }}</div>
                         </div>
                         <div class="characteristic-content">
+                            <div class="festival-days-container">
                             {% for day_index, day_concerts in route_sheet.concerts_by_day.items() %}
                             <div class="day-table-container">
                                 <div class="day-table-header">
                                     {% if day_concerts and day_concerts[0].concert.datetime %}
                                         {% set first_concert_date = day_concerts[0].concert.datetime %}
-                                        {{ first_concert_date.strftime('%d.%m') }} ({{ first_concert_date.strftime('%a').lower()[:2] }})
+                                        {% set month_names = {
+                                            'January': 'января', 'February': 'февраля', 'March': 'марта', 'April': 'апреля',
+                                            'May': 'мая', 'June': 'июня', 'July': 'июля', 'August': 'августа',
+                                            'September': 'сентября', 'October': 'октября', 'November': 'ноября', 'December': 'декабря'
+                                        } %}
+                                        {% set day_names = {
+                                            'Monday': 'пн', 'Tuesday': 'вт', 'Wednesday': 'ср', 'Thursday': 'чт',
+                                            'Friday': 'пт', 'Saturday': 'сб', 'Sunday': 'вс'
+                                        } %}
+                                        {{ first_concert_date.day }} {{ month_names[first_concert_date.strftime('%B')] }} ({{ day_names[first_concert_date.strftime('%A')] }})
                                     {% else %}
                                         День {{ day_index }}
                                     {% endif %}
@@ -2473,7 +2495,7 @@
                                     <tbody>
                                         {% for concert_data in day_concerts %}
                                         <tr>
-                                            <td class="concert-time">{{ concert_data.concert.datetime.strftime('%H:%M') if concert_data.concert.datetime else 'TBD' }}</td>
+                                            <td class="concert-time" data-time="{{ concert_data.concert.datetime.strftime('%H:%M') if concert_data.concert.datetime else 'TBD' }}"></td>
                                             <td class="concert-name">{{ concert_data.concert.id }}. {{ concert_data.concert.name }}</td>
                                         </tr>
                                         {% endfor %}
@@ -2481,6 +2503,7 @@
                                 </table>
                             </div>
                             {% endfor %}
+                            </div>
                         </div>
                     </div>
                     
@@ -2579,7 +2602,9 @@
                                     <div class="item-name">{{ artist.name }}</div>
                                     <div class="item-description">{{ artist.count }} концерт{{ 'а' if artist.count >= 2 and artist.count <= 4 else 'ов' if artist.count >= 5 else '' }}</div>
                                 </div>
-                                <div class="item-count">{{ artist.count }}</div>
+                                <div class="item-count">
+                                    <span class="count-visited">{{ artist.count }}</span>
+                                </div>
                             </div>
                             {% endfor %}
                         </div>
@@ -2602,7 +2627,9 @@
                                     <div class="item-name">{{ composer.name }}</div>
                                     <div class="item-description">{{ composer.count }} произведение{{ 'й' if composer.count >= 2 and composer.count <= 4 else 'ий' if composer.count >= 5 else 'е' }}</div>
                                 </div>
-                                <div class="item-count">{{ composer.count }}</div>
+                                <div class="item-count">
+                                    <span class="count-visited">{{ composer.count }}</span>
+                                </div>
                             </div>
                             {% endfor %}
                         </div>
@@ -2625,7 +2652,9 @@
                                     <div class="item-name">{{ composition.name }}</div>
                                     <div class="item-description">{{ composition.count }} исполнение{{ 'я' if composition.count >= 2 and composition.count <= 4 else 'й' if composition.count >= 5 else 'е' }}</div>
                                 </div>
-                                <div class="item-count">{{ composition.count }}</div>
+                                <div class="item-count">
+                                    <span class="count-visited">{{ composition.count }}</span>
+                                </div>
                             </div>
                             {% endfor %}
                         </div>
