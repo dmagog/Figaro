@@ -1763,7 +1763,7 @@
         
         /* Стили для блока дней фестиваля на вкладке "Мои концерты" */
         .festival-days-section {
-            margin-top: 40px;
+            margin-bottom: 40px;
             padding: 30px;
             background: white;
             border-radius: 16px;
@@ -1803,6 +1803,29 @@
         
         .day-concerts-table tbody {
             flex: 1;
+        }
+        
+        /* Стили для блока детальной информации о концертах */
+        .concerts-details-section {
+            margin-bottom: 40px;
+        }
+        
+        .concerts-details-header {
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        
+        .concerts-details-header h3 {
+            font-size: 1.8em;
+            font-weight: 600;
+            color: #333;
+            margin: 0 0 8px 0;
+        }
+        
+        .concerts-details-header p {
+            color: #666;
+            font-size: 1.1em;
+            margin: 0;
         }
     </style>
 </head>
@@ -1917,73 +1940,6 @@
                 {% endif %}
                 
                 {% if purchase_summary.total_concerts > 0 %}
-                    <div class="concerts-grid">
-                        {% for concert_data in concerts %}
-                        <div class="concert-card concert-card-day{{ concert_data.concert_day_index }}">
-                            <!-- Номер концерта -->
-                            <div class="concert-number concert-number-day{{ concert_data.concert_day_index }}">{{ concert_data.concert.id }}</div>
-                            
-                            <div class="concert-name">{{ concert_data.concert.name }}</div>
-                            
-                            <!-- Бейдж с количеством билетов -->
-                            <div class="tickets-badge" data-tooltip="
-                                {% set n = concert_data.tickets_count %}
-                                {% if n == 1 %}
-                                    Куплен 1 билет
-                                {% elif n >= 2 and n <= 4 %}
-                                    Куплено {{ n }} билета
-                                {% else %}
-                                    Куплено {{ n }} билетов
-                                {% endif %}">
-                                <span class="icon">🎫</span>
-                                {{ concert_data.tickets_count }}
-                            </div>
-                            
-                            <div class="concert-details">
-                                <div class="detail-item">
-                                    <span class="detail-label">Дата:</span>
-                                    <span class="detail-value">
-                                        {% if concert_data.concert.datetime %}
-                                            {{ concert_data.concert.datetime.strftime('%d.%m.%Y %H:%M') }}
-                                        {% else %}
-                                            Не указана
-                                        {% endif %}
-                                    </span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Длительность:</span>
-                                    <span class="detail-value">
-                                        {% if concert_data.concert.duration %}
-                                            {% if concert_data.concert.duration.seconds %}
-                                                {{ (concert_data.concert.duration.seconds // 60) }} мин
-                                            {% else %}
-                                                {{ concert_data.concert.duration }}
-                                            {% endif %}
-                                        {% else %}
-                                            Не указана
-                                        {% endif %}
-                                    </span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Жанр:</span>
-                                    <span class="detail-value">{{ concert_data.concert.genre or 'Не указан' }}</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Цена за билет:</span>
-                                    <span class="detail-value">{{ concert_data.concert.price or 0 }} ₽</span>
-                                </div>
-                                <div class="detail-item">
-                                    <span class="detail-label">Потрачено:</span>
-                                    <span class="detail-value">{{ concert_data.total_spent }} ₽</span>
-                                </div>
-                            </div>
-                            <div class="concert-hall">
-                                🏛️ {{ concert_data.concert.hall.name if concert_data.concert.hall else 'Зал не указан' }}
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    
                     <!-- Дни фестиваля -->
                     {% if route_sheet.concerts_by_day %}
                     <div class="festival-days-section">
@@ -2033,6 +1989,80 @@
                         </div>
                     </div>
                     {% endif %}
+                    
+                    <!-- Детальная информация о концертах -->
+                    <div class="concerts-details-section">
+                        <div class="concerts-details-header">
+                            <h3>🎵 Детальная информация</h3>
+                            <p>Подробности о каждом концерте</p>
+                        </div>
+                        <div class="concerts-grid">
+                            {% for concert_data in concerts %}
+                            <div class="concert-card concert-card-day{{ concert_data.concert_day_index }}">
+                                <!-- Номер концерта -->
+                                <div class="concert-number concert-number-day{{ concert_data.concert_day_index }}">{{ concert_data.concert.id }}</div>
+                                
+                                <div class="concert-name">{{ concert_data.concert.name }}</div>
+                                
+                                <!-- Бейдж с количеством билетов -->
+                                <div class="tickets-badge" data-tooltip="
+                                    {% set n = concert_data.tickets_count %}
+                                    {% if n == 1 %}
+                                        Куплен 1 билет
+                                    {% elif n >= 2 and n <= 4 %}
+                                        Куплено {{ n }} билета
+                                    {% else %}
+                                        Куплено {{ n }} билетов
+                                    {% endif %}">
+                                    <span class="icon">🎫</span>
+                                    {{ concert_data.tickets_count }}
+                                </div>
+                                
+                                <div class="concert-details">
+                                    <div class="detail-item">
+                                        <span class="detail-label">Дата:</span>
+                                        <span class="detail-value">
+                                            {% if concert_data.concert.datetime %}
+                                                {{ concert_data.concert.datetime.strftime('%d.%m.%Y %H:%M') }}
+                                            {% else %}
+                                                Не указана
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Длительность:</span>
+                                        <span class="detail-value">
+                                            {% if concert_data.concert.duration %}
+                                                {% if concert_data.concert.duration.seconds %}
+                                                    {{ (concert_data.concert.duration.seconds // 60) }} мин
+                                                {% else %}
+                                                    {{ concert_data.concert.duration }}
+                                                {% endif %}
+                                            {% else %}
+                                                Не указана
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Жанр:</span>
+                                        <span class="detail-value">{{ concert_data.concert.genre or 'Не указан' }}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Цена за билет:</span>
+                                        <span class="detail-value">{{ concert_data.concert.price or 0 }} ₽</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Потрачено:</span>
+                                        <span class="detail-value">{{ concert_data.total_spent }} ₽</span>
+                                    </div>
+                                </div>
+                                <div class="concert-hall">
+                                    🏛️ {{ concert_data.concert.hall.name if concert_data.concert.hall else 'Зал не указан' }}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
                 {% else %}
                     <div class="no-concerts">
                         <h3>У вас пока нет купленных концертов</h3>
