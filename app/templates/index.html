@@ -419,12 +419,11 @@
         .tag-cloud {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
             justify-content: center;
-            margin: 20px 0;
-            min-height: 150px;
-            align-items: center;
-            padding: 10px;
+            align-items: flex-start;
+            gap: 8px;
+            margin: 0 auto;
+            width: 100%;
         }
         
         .tag {
@@ -432,26 +431,27 @@
             border: 2px solid #c7d2fe;
             border-radius: 16px;
             padding: 6px 12px;
-            cursor: pointer;
-            transition: all 0.2s ease;
+            margin: 0;
+            font-size: 0.9em;
+            display: inline-block;
+            line-height: 1.2;
+            white-space: nowrap;
             font-weight: 500;
             color: #4f5bd5;
+            cursor: pointer;
             user-select: none;
-            font-size: 0.9em;
+            transition: background 0.15s, border 0.15s;
         }
         
         .tag:hover {
-            background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+            background: #e0e7ff;
             border-color: #667eea;
-            transform: translateY(-1px);
-            box-shadow: 0 3px 8px rgba(102,126,234,0.2);
         }
         
         .tag.selected {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-color: #667eea;
             color: white;
-            box-shadow: 0 3px 8px rgba(102,126,234,0.3);
         }
         
         .loading {
@@ -1173,6 +1173,9 @@
                                 <h3 class="slide-title">Каких исполнителей вы хотите услышать?</h3>
                                 <p class="slide-description">Выберите до 5 исполнителей (размер шрифта показывает популярность)</p>
                                 
+                                <div class="tag-cloud-search" style="text-align:center; margin-bottom:10px;">
+                                    <input type="text" id="artists-cloud-search" placeholder="Поиск исполнителя..." style="padding:6px 12px; border-radius:8px; border:1.5px solid #e0e7eb; font-size:0.95em; width:70%; max-width:320px;">
+                                </div>
                                 <div class="tag-cloud" id="artists-cloud">
                                     <div class="loading">Загрузка исполнителей...</div>
                                 </div>
@@ -1601,13 +1604,29 @@
             if (!surveyData || !surveyData.artists) return;
             
             cloud.innerHTML = '';
-            surveyData.artists.forEach(artist => {
+            // Фильтрация по поиску
+            const searchValue = (document.getElementById('artists-cloud-search')?.value || '').toLowerCase();
+            // Копируем и перемешиваем артистов для облака
+            let artists = surveyData.artists.slice();
+            // Перемешиваем массив артистов (Fisher-Yates)
+            for (let i = artists.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [artists[i], artists[j]] = [artists[j], artists[i]];
+            }
+            // Фильтруем по поиску
+            artists = artists.filter(artist => artist.name.toLowerCase().includes(searchValue));
+            artists.forEach(artist => {
                 const tag = document.createElement('div');
                 tag.className = 'tag';
-                tag.textContent = artist.name;
-                tag.style.fontSize = artist.size + 'px';
+                if (artist.is_special) {
+                    tag.innerHTML = '<span title="Отмечено редакцией" style="color:#ffc107; font-size:1.1em; margin-right:3px; vertical-align:middle;">⭐️</span>' + artist.name;
+                } else {
+                    tag.textContent = artist.name;
+                }
+                // Уменьшаем диапазон размера шрифта
+                let fontSize = Math.max(11, Math.min(15, artist.size));
+                tag.style.fontSize = fontSize + 'px';
                 tag.dataset.id = artist.id;
-                
                 tag.addEventListener('click', () => toggleArtist(artist.id, artist.name));
                 cloud.appendChild(tag);
             });
@@ -2054,12 +2073,15 @@
                     tag.setAttribute('data-id', artist.id);
                     tag.setAttribute('onclick', `toggleArtist(${artist.id}, '${artist.name}')`);
                     tag.style.fontSize = artist.size + 'px';
-                    tag.textContent = artist.name;
-                    
+                    // Добавляем иконку и подсказку для специальных артистов
+                    if (artist.is_special) {
+                        tag.innerHTML = '<span title="Отмечено редакцией" style="color:#ffc107; font-size:1.1em; margin-right:3px; vertical-align:middle;">⭐️</span>' + artist.name;
+                    } else {
+                        tag.textContent = artist.name;
+                    }
                     if (selectedArtists.has(artist.id)) {
                         tag.classList.add('selected');
                     }
-                    
                     artistsCloud.appendChild(tag);
                 });
             }
@@ -2276,6 +2298,16 @@
                 fetchRecommendations(preferences);
             }
         }
+
+        // Поиск по артистам
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('artists-cloud-search');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    renderArtistsCloud();
+                });
+            }
+        });
     </script>
 </body>
 </html> 

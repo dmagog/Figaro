@@ -120,9 +120,11 @@ async def get_survey_data(session: Session = Depends(get_session)):
                 'id': artist.id,
                 'name': artist.name,
                 'count': concerts_by_artist.get(artist.id, 0),
-                'size': min(18, max(12, 12 + concerts_by_artist.get(artist.id, 0)))
+                'size': min(18, max(12, 12 + concerts_by_artist.get(artist.id, 0))),
+                'is_special': artist.is_special  # Добавлено поле
             }
             for artist in artists
+            if concerts_by_artist.get(artist.id, 0) > 1 or artist.is_special
         ]
         artists_list.sort(key=lambda a: a['count'], reverse=True)
         concerts_query = session.query(
