@@ -23,6 +23,16 @@ import io
 from sqlmodel import Session, select
 from models.user import User
 from typing import Optional
+from .admin_customers import admin_customers_router
+from .admin_users import admin_users_router
+from .admin_purchases import admin_purchases_router
+from .admin_concerts import admin_concerts_router
+from .admin_halls import admin_halls_router
+from .admin_offprogram import admin_offprogram_router
+from .admin_artists import admin_artists_router
+from .admin_authors import admin_authors_router
+from .admin_compositions import admin_compositions_router
+from .admin_genres import admin_genres_router
 
 def get_field(obj, field):
     if isinstance(obj, dict):
@@ -331,162 +341,6 @@ async def admin_users(request: Request, session=Depends(get_session)):
     return templates.TemplateResponse("admin_users.html", context)
 
 
-@home_route.get("/admin/purchases", response_class=HTMLResponse)
-async def admin_purchases(request: Request, session=Depends(get_session)):
-    token = request.cookies.get(settings.COOKIE_NAME)
-    if token:
-        user = await authenticate_cookie(token)
-    else:
-        user = None
-
-    user_obj = None
-    if user:
-        user_obj = UsersService.get_user_by_email(user, session)
-    if not user_obj or not getattr(user_obj, 'is_superuser', False):
-        return RedirectResponse(url="/login", status_code=302)
-
-    from models import Purchase, Concert, User, Hall
-    from sqlalchemy.orm import aliased
-    from sqlalchemy import select, outerjoin
-    # LEFT OUTER JOIN между Purchase и User
-    UserAlias = aliased(User)
-    stmt = (
-        select(Purchase, Concert, UserAlias, Hall)
-        .join(Concert, Purchase.concert_id == Concert.id)
-        .join(Hall, Concert.hall_id == Hall.id)
-        .outerjoin(UserAlias, Purchase.user_external_id == UserAlias.external_id)
-        .order_by(Purchase.purchased_at.desc())
-    )
-    purchases = session.exec(stmt).all()
-
-    # Уникальные пользователи и концерты для фильтров
-    unique_users = {}
-    unique_concerts = {}
-    purchase_dates = [p.purchased_at for p, _, _, _ in purchases if p.purchased_at]
-    if purchase_dates:
-        min_purchase_date = min(purchase_dates).strftime('%Y-%m-%d')
-        max_purchase_date = max(purchase_dates).strftime('%Y-%m-%d')
-    else:
-        min_purchase_date = ''
-        max_purchase_date = ''
-    # Только зарегистрированные пользователи (User), у которых есть покупки
-    from models import User, Purchase
-    users = session.exec(select(User)).all()
-    users_with_purchases = set(
-        row[0] for row in session.exec(select(Purchase.user_external_id).distinct()).all()
-    )
-    for u in users:
-        if u.external_id and u.external_id in users_with_purchases and u.email and u.email not in unique_users:
-            unique_users[u.email] = u.name or u.email
-    for p, c, u, h in purchases:
-        if c.id not in unique_concerts:
-            unique_concerts[c.id] = c.name
-
-    # Группировка покупок по (user_external_id, concert_id, purchased_at)
-    from collections import defaultdict
-    purchases_grouped = []
-    grouped = defaultdict(list)
-    for p, c, u, h in purchases:
-        key = (p.user_external_id, c.id, p.purchased_at)
-        grouped[key].append((p, c, u, h))
-    for group in grouped.values():
-        count = len(group)
-        p, c, u, h = group[0]
-        purchases_grouped.append({
-            'purchase': p,
-            'concert': c,
-            'user': u,
-            'hall': h,
-            'tickets_count': count,
-            'price': p.price,
-        })
-    context = {
-        "user": user_obj,
-        "purchases": purchases_grouped,
-        "unique_users": unique_users,
-        "unique_concerts": unique_concerts,
-        "min_purchase_date": min_purchase_date,
-        "max_purchase_date": max_purchase_date,
-        "request": request
-    }
-    return templates.TemplateResponse("admin_purchases.html", context)
-
-
-@home_route.get("/admin/concerts", response_class=HTMLResponse)
-async def admin_concerts(request: Request, session=Depends(get_session)):
-    token = request.cookies.get(settings.COOKIE_NAME)
-    if token:
-        user = await authenticate_cookie(token)
-    else:
-        user = None
-
-    user_obj = None
-    if user:
-        user_obj = UsersService.get_user_by_email(user, session)
-    if not user_obj or not getattr(user_obj, 'is_superuser', False):
-        return RedirectResponse(url="/login", status_code=302)
-
-    from models import Concert, Hall
-    from models import Purchase
-    from sqlalchemy import select, func
-    concerts = session.exec(select(Concert)).all()
-    concerts_by_id = {getattr(c, 'id', None): c for c in concerts if hasattr(c, 'id') and getattr(c, 'id', None) is not None}
-    halls = {h.id: h for h in session.exec(select(Hall)).all()}
-
-    # Получаем количество купленных билетов по каждому концерту
-    result = session.exec(
-        select(Purchase.concert_id, func.count(Purchase.id)).group_by(Purchase.concert_id)
-    ).all()
-    tickets_per_concert = {row[0]: row[1] for row in result}
-
-    concerts_data = []
-    available_count = 0
-    unavailable_count = 0
-    for c in concerts:
-        hall = halls.get(c.hall_id)
-        seats = hall.seats if hall else 0
-        # Используем данные напрямую из базы данных
-        tickets_left = c.tickets_left if c.tickets_left is not None else seats
-        tickets_available = c.tickets_available and tickets_left > 0
-        tickets_sold = tickets_per_concert.get(c.id, 0)
-        fill_percent = (tickets_sold / seats * 100) if seats else 0
-        if tickets_available:
-            available_count += 1
-        else:
-            unavailable_count += 1
-        concerts_data.append({
-            'concert': c,
-            'hall': hall,
-            'seats': seats,
-            'tickets_left': tickets_left,
-            'tickets_available': tickets_available,
-            'tickets_sold': tickets_sold,
-            'fill_percent': fill_percent
-        })
-
-    # Формируем список уникальных дней концертов
-    concert_days = []
-    seen = set()
-    for item in concerts_data:
-        dt = item['concert'].datetime
-        if dt:
-            day = dt.date()
-            if day not in seen:
-                concert_days.append(day)
-                seen.add(day)
-    concert_days.sort()
-
-    context = {
-        "user": user_obj,
-        "concerts_data": concerts_data,
-        "concert_days": concert_days,
-        "available_count": available_count,
-        "unavailable_count": unavailable_count,
-        "request": request
-    }
-    return templates.TemplateResponse("admin_concerts.html", context)
-
-
 @home_route.get("/admin/halls", response_class=HTMLResponse)
 async def admin_halls(request: Request, session=Depends(get_session)):
     token = request.cookies.get(settings.COOKIE_NAME)
@@ -512,20 +366,20 @@ async def admin_halls(request: Request, session=Depends(get_session)):
     # Для расчёта средней заполняемости по каждому залу
     concerts_by_hall = {}
     for c in concerts:
-        concerts_by_hall.setdefault(c.hall_id, []).append(c)
+        concerts_by_hall.setdefault(get_field(c, 'hall_id'), []).append(c)
 
     # Используем новый сервис билетов
     from services.crud.tickets import get_tickets_left
 
     # Считаем количество концертов и мест по каждому залу
-    hall_stats = {h.id: {"concerts": 0, "seats": h.seats, "tickets_sold": 0, "available_concerts": 0} for h in halls}
+    hall_stats = {get_field(h, 'id'): {"concerts": 0, "seats": get_field(h, 'seats'), "tickets_sold": 0, "available_concerts": 0} for h in halls}
     for c in concerts:
-        if c.hall_id in hall_stats:
-            hall_stats[c.hall_id]["concerts"] += 1
-            hall_stats[c.hall_id]["seats"] = hall_stats[c.hall_id]["seats"] or 0
-            tickets_left = get_tickets_left(c.id)
+        if get_field(c, 'hall_id') in hall_stats:
+            hall_stats[get_field(c, 'hall_id')]["concerts"] += 1
+            hall_stats[get_field(c, 'hall_id')]["seats"] = hall_stats[get_field(c, 'hall_id')]["seats"] or 0
+            tickets_left = get_tickets_left(get_field(c, 'id'))
             if tickets_left > 0:
-                hall_stats[c.hall_id]["available_concerts"] += 1
+                hall_stats[get_field(c, 'hall_id')]["available_concerts"] += 1
 
     # Считаем количество купленных билетов по каждому залу
     result = session.exec(
@@ -542,16 +396,16 @@ async def admin_halls(request: Request, session=Depends(get_session)):
     halls_data = []
     all_fill_percents = []
     for h in halls:
-        stats = hall_stats[h.id]
+        stats = hall_stats[get_field(h, 'id')]
         fill_percent = (stats["tickets_sold"] / (stats["seats"] * stats["concerts"]) * 100) if stats["seats"] and stats["concerts"] else 0
         # Средняя заполняемость по всем концертам этого зала
         fill_percents = []
-        for c in concerts_by_hall.get(h.id, []):
-            seats = h.seats or 0
+        for c in concerts_by_hall.get(get_field(h, 'id'), []):
+            seats = get_field(h, 'seats') or 0
             if seats > 0:
                 # Считаем количество купленных билетов для этого концерта
                 from models import Purchase
-                tickets_row = session.exec(select(func.count(Purchase.id)).where(Purchase.concert_id == c.id)).scalars().first()
+                tickets_row = session.exec(select(func.count(Purchase.id)).where(Purchase.concert_id == get_field(c, 'id'))).scalars().first()
                 tickets = tickets_row or 0
                 fill_percents.append((tickets / seats) * 100)
                 all_fill_percents.append((tickets / seats) * 100)
@@ -566,25 +420,25 @@ async def admin_halls(request: Request, session=Depends(get_session)):
             "mean_fill_percent": mean_fill_percent
         })
     mean_fill_percent_all_halls = round(sum(all_fill_percents) / len(all_fill_percents), 1) if all_fill_percents else 0
-    hall_ids = [h["hall"].id for h in halls_data]
+    hall_ids = [get_field(h["hall"], 'id') for h in halls_data]
     
     # Формируем данные о переходах между залами в виде матрицы
-    halls_by_id = {h.id: h for h in halls}
-    hall_names = [h.name for h in halls]
+    halls_by_id = {get_field(h, 'id'): h for h in halls}
+    hall_names = [get_field(h, 'name') for h in halls]
     
     # Создаем матрицу переходов
     transitions_matrix = {}
     for from_hall in halls:
-        transitions_matrix[from_hall.name] = {}
+        transitions_matrix[get_field(from_hall, 'name')] = {}
         for to_hall in halls:
-            transitions_matrix[from_hall.name][to_hall.name] = None
+            transitions_matrix[get_field(from_hall, 'name')][get_field(to_hall, 'name')] = None
     
     # Заполняем матрицу данными о переходах
     for transition in transitions:
-        from_hall = halls_by_id.get(transition.from_hall_id)
-        to_hall = halls_by_id.get(transition.to_hall_id)
+        from_hall = halls_by_id.get(get_field(transition, 'from_hall_id'))
+        to_hall = halls_by_id.get(get_field(transition, 'to_hall_id'))
         if from_hall and to_hall:
-            transitions_matrix[from_hall.name][to_hall.name] = transition.transition_time
+            transitions_matrix[get_field(from_hall, 'name')][get_field(to_hall, 'name')] = get_field(transition, 'transition_time')
     
     context = {
         "user": user_obj,
@@ -624,282 +478,6 @@ async def update_hall_seats(request: Request, session=Depends(get_session)):
     session.commit()
     session.refresh(hall)
     return JSONResponse({"success": True, "seats": hall.seats})
-
-
-@home_route.get("/admin/customers", response_class=HTMLResponse)
-async def admin_customers(request: Request, session=Depends(get_session), load_routes: bool = Query(True, description="Загружать ли маршруты")):
-    token = request.cookies.get(settings.COOKIE_NAME)
-    if token:
-        user = await authenticate_cookie(token)
-    else:
-        user = None
-
-    user_obj = None
-    if user:
-        user_obj = UsersService.get_user_by_email(user, session)
-    if not user_obj or not getattr(user_obj, 'is_superuser', False):
-        return RedirectResponse(url="/login", status_code=302)
-
-    from models import Purchase, User, Concert, CustomerRouteMatch
-    from sqlalchemy import select, func
-    
-    # Получаем все уникальные user_external_id из Purchase
-    external_ids = set(str(row[0]) for row in session.exec(select(Purchase.user_external_id).distinct()).all())
-    # Получаем всех пользователей с этими external_id (и вообще всех User)
-    users = session.exec(select(User)).all()
-    users_by_external = {str(get_field(u, 'external_id')): u for u in users if get_field(u, 'external_id') is not None}
-    # Получаем все концерты для быстрого доступа по id
-    concerts = session.exec(select(Concert)).all()
-    concerts_by_id = {get_field(c, 'id'): c for c in concerts if get_field(c, 'id') is not None}
-    
-    # Получаем все соответствия маршрутов из таблицы CustomerRouteMatch
-    route_matches = {}
-    if load_routes:
-        try:
-            from models import Route
-            # Получаем все маршруты для быстрого доступа
-            routes = session.exec(select(Route)).all()
-            routes_by_id = {}
-            for route in routes:
-                if hasattr(route, 'id') and route.id is not None:
-                    routes_by_id[route.id] = route
-            
-            matches = session.exec(select(CustomerRouteMatch)).all()
-            logging.info(f"Найдено {len(matches)} записей в CustomerRouteMatch")
-            
-
-            
-            found_matches = 0
-            for match in matches:
-                # Получаем данные из Row объекта
-                match_obj = match._mapping['CustomerRouteMatch']
-                
-                best_route = None
-                if match_obj.found and match_obj.best_route_id:
-                    try:
-                        best_route = routes_by_id.get(match_obj.best_route_id)
-                        if best_route:
-                            found_matches += 1
-                    except Exception as e:
-                        logging.warning(f"Ошибка при получении маршрута {match_obj.best_route_id}: {e}")
-                        best_route = None
-                
-                # Используем user_external_id как ключ для поиска
-                route_matches[str(match_obj.user_external_id)] = {
-                    "found": match_obj.found,
-                    "match_type": match_obj.match_type,
-                    "reason": match_obj.reason,
-                    "customer_concerts": match_obj.customer_concerts.split(',') if match_obj.customer_concerts else [],
-                    "customer_concerts_str": match_obj.customer_concerts,
-                    "matched_routes": [],
-                    "best_match": {
-                        "route_id": match_obj.best_route_id,
-                        "route_composition": best_route.Sostav if best_route else None,
-                        "route_days": best_route.Days if best_route else None,
-                        "route_concerts": best_route.Concerts if best_route else None,
-                        "route_halls": best_route.Halls if best_route else None,
-                        "route_genre": best_route.Genre if best_route else None,
-                        "route_show_time": best_route.ShowTime if best_route else None,
-                        "route_trans_time": best_route.TransTime if best_route else None,
-                        "route_wait_time": best_route.WaitTime if best_route else None,
-                        "route_costs": best_route.Costs if best_route else None,
-                        "route_comfort_score": best_route.ComfortScore if best_route else None,
-                        "route_comfort_level": best_route.ComfortLevel if best_route else None,
-                        "route_intellect_score": best_route.IntellectScore if best_route else None,
-                        "route_intellect_category": best_route.IntellectCategory if best_route else None,
-                        "match_type": match_obj.match_type,
-                        "match_percentage": match_obj.match_percentage
-                    } if match_obj.found else None,
-                    "total_routes_checked": match_obj.total_routes_checked
-                }
-            
-            logging.info(f"Из них найдено совпадений: {found_matches}")
-            
-        except Exception as e:
-            logging.warning(f"Ошибка при получении маршрутов из базы: {e}")
-            import traceback
-            logging.warning(f"Полный traceback: {traceback.format_exc()}")
-            route_matches = {}
-    
-    customers = []
-    customers_with_matches = 0
-    for ext_id in external_ids:
-        purchases = session.exec(select(Purchase).where(Purchase.user_external_id == ext_id)).all()
-        total_spent = sum((get_field(p, 'price') or 0) for p in purchases)
-        unique_concerts = set(get_field(p, 'concert_id') for p in purchases)
-        unique_days = set(
-            concerts_by_id[get_field(p, 'concert_id')].datetime.date()
-            for p in purchases
-            if get_field(p, 'concert_id') in concerts_by_id and getattr(concerts_by_id[get_field(p, 'concert_id')], 'datetime', None)
-        )
-        user = users_by_external.get(ext_id)
-        
-        # Получаем соответствие с маршрутами из кэша
-        route_match = route_matches.get(ext_id, {
-            "found": False,
-            "reason": "Ошибка при получении данных",
-            "customer_concerts": [],
-            "matched_routes": []
-        })
-        
-        if route_match["found"]:
-            customers_with_matches += 1
-        
-        customers.append({
-            "external_id": ext_id,
-            "user": user,
-            "total_purchases": len(purchases),
-            "total_spent": total_spent,
-            "unique_concerts": len(unique_concerts),
-            "unique_days": len(unique_days),
-            "route_match": route_match
-        })
-    
-    # Передаём customers в шаблон
-    return templates.TemplateResponse("admin_customers.html", {"request": request, "customers": customers})
-
-
-
-@home_route.get("/api/customers/{external_id}/route-details")
-async def get_customer_route_details(external_id: str, request: Request, session=Depends(get_session)):
-    """
-    API endpoint для получения детальной информации о маршруте покупателя
-    """
-    token = request.cookies.get(settings.COOKIE_NAME)
-    user = None
-    if token:
-        user = await authenticate_cookie(token)
-    user_obj = None
-    if user:
-        user_obj = UsersService.get_user_by_email(user, session)
-    if not user_obj or not getattr(user_obj, 'is_superuser', False):
-        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
-    
-    try:
-        from models import CustomerRouteMatch, Route
-        match = session.exec(select(CustomerRouteMatch).where(CustomerRouteMatch.user_external_id == external_id)).first()
-        
-        if match:
-            # Получаем данные из Row объекта
-            match_obj = match._mapping['CustomerRouteMatch']
-            
-            best_route = None
-            if match_obj.found and match_obj.best_route_id:
-                try:
-                    # Получаем полную информацию о маршруте
-                    best_route = session.exec(select(Route).where(Route.id == match_obj.best_route_id)).first()
-                    if not best_route:
-                        logging.warning(f"Маршрут {match_obj.best_route_id} не найден в базе данных")
-                except Exception as e:
-                    logging.warning(f"Ошибка при получении маршрута {match_obj.best_route_id}: {e}")
-                    best_route = None
-            
-            route_match = {
-                "found": match_obj.found,
-                "match_type": match_obj.match_type,
-                "reason": match_obj.reason,
-                "customer_concerts": match_obj.customer_concerts.split(',') if match_obj.customer_concerts else [],
-                "customer_concerts_str": match_obj.customer_concerts,
-                "matched_routes": [],
-                "best_match": {
-                    "route_id": match_obj.best_route_id,
-                    "route_composition": best_route._mapping['Route'].Sostav if best_route else None,
-                    "route_days": best_route._mapping['Route'].Days if best_route else None,
-                    "route_concerts": best_route._mapping['Route'].Concerts if best_route else None,
-                    "route_halls": best_route._mapping['Route'].Halls if best_route else None,
-                    "route_genre": best_route._mapping['Route'].Genre if best_route else None,
-                    "route_show_time": best_route._mapping['Route'].ShowTime if best_route else None,
-                    "route_trans_time": best_route._mapping['Route'].TransTime if best_route else None,
-                    "route_wait_time": best_route._mapping['Route'].WaitTime if best_route else None,
-                    "route_costs": best_route._mapping['Route'].Costs if best_route else None,
-                    "route_comfort_score": best_route._mapping['Route'].ComfortScore if best_route else None,
-                    "route_comfort_level": best_route._mapping['Route'].ComfortLevel if best_route else None,
-                    "route_intellect_score": best_route._mapping['Route'].IntellectScore if best_route else None,
-                    "route_intellect_category": best_route._mapping['Route'].IntellectCategory if best_route else None,
-                    "match_type": match_obj.match_type,
-                    "match_percentage": match_obj.match_percentage
-                } if match_obj.found else None,
-                "total_routes_checked": match_obj.total_routes_checked
-            }
-        else:
-            route_match = {
-                "found": False,
-                "reason": "Покупатель не найден",
-                "customer_concerts": [],
-                "matched_routes": []
-            }
-        
-        return JSONResponse({
-            "success": True,
-            "route_match": route_match
-        })
-    except Exception as e:
-        return JSONResponse({
-            "success": False,
-            "error": f"Ошибка при получении данных о маршруте: {str(e)}"
-        }, status_code=500)
-
-
-@home_route.post("/admin/users/update_external_id")
-async def update_user_external_id(request: Request, session=Depends(get_session)):
-    token = request.cookies.get(settings.COOKIE_NAME)
-    user = None
-    if token:
-        user = await authenticate_cookie(token)
-    user_obj = None
-    if user:
-        user_obj = UsersService.get_user_by_email(user, session)
-    if not user_obj or not getattr(user_obj, 'is_superuser', False):
-        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
-    data = await request.json()
-    old_external_id = data.get('old_external_id')
-    new_external_id = data.get('new_external_id')
-    if not old_external_id or not new_external_id:
-        return JSONResponse({"success": False, "error": "Некорректные данные"}, status_code=400)
-    from models import User
-    from sqlalchemy import select
-    user = session.exec(select(User).where(User.external_id == old_external_id)).scalars().first()
-    if not user:
-        return JSONResponse({"success": False, "error": "Пользователь не найден"}, status_code=404)
-    # Проверка на уникальность нового external_id
-    exists = session.exec(select(User).where(User.external_id == new_external_id)).scalars().first()
-    if exists:
-        return JSONResponse({"success": False, "error": "Такой external_id уже существует"}, status_code=409)
-    user.external_id = new_external_id
-    session.add(user)
-    session.commit()
-    return JSONResponse({"success": True})
-
-
-@home_route.post("/admin/customers/update_external_id")
-async def update_customer_external_id(request: Request, session=Depends(get_session)):
-    token = request.cookies.get(settings.COOKIE_NAME)
-    user = None
-    if token:
-        user = await authenticate_cookie(token)
-    user_obj = None
-    if user:
-        user_obj = UsersService.get_user_by_email(user, session)
-    if not user_obj or not getattr(user_obj, 'is_superuser', False):
-        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
-    data = await request.json()
-    old_external_id = data.get('old_external_id')
-    new_external_id = data.get('new_external_id')
-    if not old_external_id or not new_external_id:
-        return JSONResponse({"success": False, "error": "Некорректные данные"}, status_code=400)
-    from models import User
-    from sqlalchemy import select
-    user = session.exec(select(User).where(User.external_id == old_external_id)).scalars().first()
-    if not user:
-        return JSONResponse({"success": False, "error": "Пользователь не найден"}, status_code=404)
-    # Проверка на уникальность нового external_id
-    exists = session.exec(select(User).where(User.external_id == new_external_id)).scalars().first()
-    if exists:
-        return JSONResponse({"success": False, "error": "Такой external_id уже существует"}, status_code=409)
-    user.external_id = new_external_id
-    session.add(user)
-    session.commit()
-    return JSONResponse({"success": True})
 
 
 @home_route.get("/admin/routes", response_class=HTMLResponse)
@@ -2416,3 +1994,14 @@ async def get_recommendations_api(
         return {"success": True, "recommendations": result}
     except Exception as e:
         return {"success": False, "message": str(e)}
+
+home_route.include_router(admin_customers_router)
+home_route.include_router(admin_users_router)
+home_route.include_router(admin_purchases_router)
+home_route.include_router(admin_concerts_router)
+home_route.include_router(admin_halls_router)
+home_route.include_router(admin_offprogram_router)
+home_route.include_router(admin_artists_router)
+home_route.include_router(admin_authors_router)
+home_route.include_router(admin_compositions_router)
+home_route.include_router(admin_genres_router)
