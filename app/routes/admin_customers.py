@@ -66,6 +66,8 @@ async def admin_customers(request: Request, session=Depends(get_session), load_r
         user = users_by_external.get(normalize_id(ext_id))
         name = user.name if user else None
         email = user.email if user else None
+        role = user.role if user else None
+        is_superuser = user.is_superuser if user else None
         route_match = route_matches.get(normalize_id(ext_id))
         if route_match:
             route_match_dict = route_match.dict()
@@ -89,6 +91,8 @@ async def admin_customers(request: Request, session=Depends(get_session), load_r
             user_external_id=ext_id,
             name=name,
             email=email,
+            role=role,
+            is_superuser=is_superuser,
             total_purchases=len(user_purchases),
             total_spent=total_spent,
             unique_concerts=len(unique_concerts),

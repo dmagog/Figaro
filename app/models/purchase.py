@@ -17,6 +17,8 @@ class Customer(BaseModel):
     user_external_id: str
     name: Optional[str] = None
     email: Optional[str] = None
+    role: Optional[str] = None
+    is_superuser: Optional[bool] = None
     total_purchases: int
     total_spent: int
     unique_concerts: int

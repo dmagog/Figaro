@@ -320,11 +320,11 @@
                             {% set route_match = route_matches[ext_id] %}
                             {% if route_match.found %}
                                 {% if route_match.match_type == 'exact' %}
-                                    <span class="route-match-exact clickable-route" title="Точное совпадение. Нажмите для подробной информации о маршруте #{{ route_match.best_match.route_id }}">
+                                    <span class="route-match-exact" title="Точное совпадение. #{{ route_match.best_match.route_id }}">
                                         ✅ <span class="route-number">#{{ route_match.best_match.route_id }}</span>
                                     </span>
                                 {% else %}
-                                    <span class="route-match-partial clickable-route" title="Частичное совпадение ({{ "%.1f"|format(route_match.best_match.match_percentage) }}%). Нажмите для подробной информации о маршруте #{{ route_match.best_match.route_id }}">
+                                    <span class="route-match-partial" title="Частичное совпадение ({{ "%.1f"|format(route_match.best_match.match_percentage) }}%). #{{ route_match.best_match.route_id }}">
                                         ⚠️ <span class="route-number">#{{ route_match.best_match.route_id }}</span>
                                     </span>
                                 {% endif %}

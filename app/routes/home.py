@@ -280,29 +280,24 @@ async def admin_users(request: Request, session=Depends(get_session)):
         
         found_matches = 0
         for match in matches:
-            # Получаем данные из Row объекта
-            match_obj = match._mapping['CustomerRouteMatch']
-            
             best_route = None
-            if match_obj.found and match_obj.best_route_id:
+            if match.found and match.best_route_id:
                 try:
-                    best_route = routes_by_id.get(match_obj.best_route_id)
+                    best_route = routes_by_id.get(match.best_route_id)
                     if best_route:
                         found_matches += 1
                 except Exception as e:
-                    logging.warning(f"Ошибка при получении маршрута {match_obj.best_route_id}: {e}")
+                    logging.warning(f"Ошибка при получении маршрута {match.best_route_id}: {e}")
                     best_route = None
-            
-            # Используем user_external_id как ключ для поиска
-            route_matches[str(match_obj.user_external_id)] = {
-                "found": match_obj.found,
-                "match_type": match_obj.match_type,
-                "reason": match_obj.reason,
-                "customer_concerts": match_obj.customer_concerts.split(',') if match_obj.customer_concerts else [],
-                "customer_concerts_str": match_obj.customer_concerts,
+            route_matches[str(match.user_external_id)] = {
+                "found": match.found,
+                "match_type": match.match_type,
+                "reason": match.reason,
+                "customer_concerts": match.customer_concerts.split(',') if match.customer_concerts else [],
+                "customer_concerts_str": match.customer_concerts,
                 "matched_routes": [],
                 "best_match": {
-                    "route_id": match_obj.best_route_id,
+                    "route_id": match.best_route_id,
                     "route_composition": best_route.Sostav if best_route else None,
                     "route_days": best_route.Days if best_route else None,
                     "route_concerts": best_route.Concerts if best_route else None,
@@ -316,10 +311,10 @@ async def admin_users(request: Request, session=Depends(get_session)):
                     "route_comfort_level": best_route.ComfortLevel if best_route else None,
                     "route_intellect_score": best_route.IntellectScore if best_route else None,
                     "route_intellect_category": best_route.IntellectCategory if best_route else None,
-                    "match_type": match_obj.match_type,
-                    "match_percentage": match_obj.match_percentage
-                } if match_obj.found else None,
-                "total_routes_checked": match_obj.total_routes_checked
+                    "match_type": match.match_type,
+                    "match_percentage": match.match_percentage
+                } if match.found else None,
+                "total_routes_checked": match.total_routes_checked
             }
         
         logging.info(f"Из них найдено совпадений: {found_matches}")
