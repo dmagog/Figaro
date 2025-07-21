@@ -180,7 +180,11 @@ def load_artists(session: Session, df_artists: pd.DataFrame):
     for artist_name in unique_artists:
         # Находим все записи для этого артиста, чтобы определить is_special
         artist_rows = df_artists[df_artists["Artists"] == artist_name]
-        is_special = any(artist_rows.get("Spetial", False))
+        # Строгое определение: только явно истинные значения считаются специальными
+        is_special = any(
+            bool(val) and str(val).strip().lower() not in ["false", "0", "nan", "none", ""]
+            for val in artist_rows["Spetial"] if not pd.isna(val)
+        )
     
         artist_records.append({
             "name": artist_name,

@@ -11,6 +11,7 @@ class EventFormat(str, Enum):
     BROADCAST = "Трансляция"
     LECTURE = "Лекция"
     MASTERCLASS = "Мастер-класс"
+    EVENT = "Событие"  # Добавлено для поддержки формата 'Событие'
 
 
 class OffProgram(SQLModel, table=True):
