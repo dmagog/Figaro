@@ -213,7 +213,7 @@ async def admin_users(request: Request, session=Depends(get_session)):
         return RedirectResponse(url="/login", status_code=302)
 
     # Получаем всех пользователей
-    users = session.exec(select(UsersService.User)).scalars().all()
+    users = session.exec(select(UsersService.User)).all()
     # Для каждого пользователя считаем покупки и сумму трат
     from models import Purchase
     from sqlalchemy import func
@@ -240,7 +240,7 @@ async def admin_users(request: Request, session=Depends(get_session)):
             user_stats[user_id] = {"count": 0, "spent": 0, "unique_concerts": 0, "tickets": 0}
             continue
         # Все покупки пользователя
-        purchases = session.exec(select(Purchase).where(Purchase.user_external_id == str(ext_id))).scalars().all()
+        purchases = session.exec(select(Purchase).where(Purchase.user_external_id == str(ext_id))).all()
         unique_concerts = len(set(p.concert_id for p in purchases))
         tickets = len(purchases)
         spent = sum(p.price or 0 for p in purchases)
@@ -365,7 +365,7 @@ async def admin_purchases(request: Request, session=Depends(get_session)):
         max_purchase_date = ''
     # Только зарегистрированные пользователи (User), у которых есть покупки
     from models import User, Purchase
-    users = session.exec(select(User)).scalars().all()
+    users = session.exec(select(User)).all()
     users_with_purchases = set(
         row[0] for row in session.exec(select(Purchase.user_external_id).distinct()).all()
     )
@@ -423,9 +423,9 @@ async def admin_concerts(request: Request, session=Depends(get_session)):
     from models import Concert, Hall
     from models import Purchase
     from sqlalchemy import select, func
-    concerts = session.exec(select(Concert)).scalars().all()
+    concerts = session.exec(select(Concert)).all()
     concerts_by_id = {getattr(c, 'id', None): c for c in concerts if hasattr(c, 'id') and getattr(c, 'id', None) is not None}
-    halls = {h.id: h for h in session.exec(select(Hall)).scalars().all()}
+    halls = {h.id: h for h in session.exec(select(Hall)).all()}
 
     # Получаем количество купленных билетов по каждому концерту
     result = session.exec(
@@ -497,11 +497,11 @@ async def admin_halls(request: Request, session=Depends(get_session)):
 
     from models import Hall, Concert, Purchase, HallTransition
     from sqlalchemy import select, func
-    halls = session.exec(select(Hall)).scalars().all()
-    concerts = session.exec(select(Concert)).scalars().all()
+    halls = session.exec(select(Hall)).all()
+    concerts = session.exec(select(Concert)).all()
     
     # Получаем переходы между залами
-    transitions = session.exec(select(HallTransition)).scalars().all()
+    transitions = session.exec(select(HallTransition)).all()
 
     # Для расчёта средней заполняемости по каждому залу
     concerts_by_hall = {}
@@ -640,9 +640,9 @@ async def admin_customers(request: Request, session=Depends(get_session), load_r
     # Получаем все уникальные user_external_id из Purchase
     external_ids = set(str(row[0]) for row in session.exec(select(Purchase.user_external_id).distinct()).all())
     # Получаем всех пользователей с этими external_id (и вообще всех User)
-    users_by_external = {str(u.external_id): u for u in session.exec(select(User)).scalars().all() if u.external_id is not None}
+    users_by_external = {str(u.external_id): u for u in session.exec(select(User)).all() if u.external_id is not None}
     # Получаем все концерты для быстрого доступа по id
-    concerts = session.exec(select(Concert)).scalars().all()
+    concerts = session.exec(select(Concert)).all()
     concerts_by_id = {c.id: c for c in concerts}
     
     # Получаем все соответствия маршрутов из таблицы CustomerRouteMatch
@@ -717,7 +717,7 @@ async def admin_customers(request: Request, session=Depends(get_session), load_r
     customers = []
     customers_with_matches = 0
     for ext_id in external_ids:
-        purchases = session.exec(select(Purchase).where(Purchase.user_external_id == ext_id)).scalars().all()
+        purchases = session.exec(select(Purchase).where(Purchase.user_external_id == ext_id)).all()
         total_spent = sum((p.price or 0) for p in purchases)
         unique_concerts = set(p.concert_id for p in purchases)
         unique_days = set(

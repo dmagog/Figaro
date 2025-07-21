@@ -78,7 +78,7 @@ def fix_external_ids(session: Session):
     """
     Проставляет external_id = str(id) для всех пользователей, у которых external_id = None
     """
-    users = session.exec(select(User)).scalars().all()
+    users = session.exec(select(User)).all()
     updated = 0
     for user in users:
         if user.external_id is None:
@@ -97,8 +97,8 @@ def sync_external_ids_with_ids(session: Session):
     from app.models.purchase import Purchase
     from sqlalchemy import select
     # Собираем все user_external_id из покупок
-    purchase_ids = set(str(row[0]) for row in session.exec(select(Purchase.user_external_id).distinct()).scalars().all())
-    users = session.exec(select(User)).scalars().all()
+    purchase_ids = set(str(row[0]) for row in session.exec(select(Purchase.user_external_id).distinct()).all())
+    users = session.exec(select(User)).all()
     updated = 0
     for user in users:
         if user.external_id is None and str(user.id) in purchase_ids:
