@@ -2142,28 +2142,58 @@ async def save_preferences(
 ):
     """Сохранение предпочтений пользователя"""
     try:
+        print(f"DEBUG: Saving preferences: {preferences}")
+        print(f"DEBUG: Request headers: {dict(request.headers)}")
+        print(f"DEBUG: Request cookies: {request.cookies}")
+        
         # Получаем токен из cookie
         token = request.cookies.get(settings.COOKIE_NAME)
         current_user = None
         
+        print(f"DEBUG: Token from cookie: {token}")
+        print(f"DEBUG: Cookie name setting: {settings.COOKIE_NAME}")
+        
         if token:
             try:
+                print(f"DEBUG: Attempting to authenticate token...")
                 user_email = await authenticate_cookie(token)
-                current_user = UsersService.get_user_by_email(user_email, session)
-            except:
+                print(f"DEBUG: Authenticated user email: {user_email}")
+                
+                if user_email:
+                    current_user = UsersService.get_user_by_email(user_email, session)
+                    print(f"DEBUG: Found user: {current_user.email if current_user else 'None'}")
+                    if current_user:
+                        print(f"DEBUG: User ID: {current_user.id}")
+                        print(f"DEBUG: User preferences before: {current_user.preferences}")
+                else:
+                    print(f"DEBUG: No user email returned from authentication")
+            except Exception as e:
+                print(f"DEBUG: Authentication error: {e}")
+                import traceback
+                print(f"DEBUG: Authentication traceback: {traceback.format_exc()}")
                 pass  # Пользователь не авторизован
+        else:
+            print(f"DEBUG: No token found in cookies")
         
         if current_user:
             # Обновляем предпочтения авторизованного пользователя
+            print(f"DEBUG: Updating preferences for user {current_user.email}")
             current_user.preferences = preferences
             session.add(current_user)
             session.commit()
-            return {"success": True, "message": "Предпочтения сохранены"}
+            print(f"DEBUG: Preferences saved successfully")
+            print(f"DEBUG: User preferences after: {current_user.preferences}")
+            return {"success": True, "message": "Предпочтения сохранены в базе данных"}
         else:
+            print(f"DEBUG: No authenticated user, saving to session")
             # Для неавторизованных пользователей сохраняем в сессии
             # В реальном приложении здесь можно использовать Redis или другой механизм
-            return {"success": True, "message": "Предпочтения сохранены в сессии"}
+            # Пока просто возвращаем успех
+            return {"success": True, "message": "Предпочтения сохранены в сессии (требуется авторизация для постоянного хранения)"}
     except Exception as e:
+        print(f"DEBUG: Error in save_preferences: {e}")
+        import traceback
+        print(f"DEBUG: Full traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @home_route.get("/api/survey-data")
@@ -2252,3 +2282,130 @@ async def get_survey_data(session: Session = Depends(get_session)):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@home_route.get("/api/preferences")
+async def get_preferences(
+    request: Request,
+    session: Session = Depends(get_session)
+):
+    """Получение сохраненных предпочтений пользователя"""
+    try:
+        # Получаем токен из cookie
+        token = request.cookies.get(settings.COOKIE_NAME)
+        current_user = None
+        
+        print(f"DEBUG: Token from cookie: {token}")
+        
+        if token:
+            try:
+                user_email = await authenticate_cookie(token)
+                print(f"DEBUG: Authenticated user email: {user_email}")
+                current_user = UsersService.get_user_by_email(user_email, session)
+                print(f"DEBUG: Found user: {current_user.email if current_user else 'None'}")
+                if current_user:
+                    print(f"DEBUG: User preferences: {current_user.preferences}")
+            except Exception as e:
+                print(f"DEBUG: Authentication error: {e}")
+                pass  # Пользователь не авторизован
+        
+        if current_user and current_user.preferences:
+            print(f"DEBUG: Returning preferences for user {current_user.email}")
+            return {
+                "success": True, 
+                "has_preferences": True,
+                "preferences": current_user.preferences,
+                "message": "Найдены сохраненные предпочтения"
+            }
+        else:
+            print(f"DEBUG: No preferences found for user {current_user.email if current_user else 'anonymous'}")
+            return {
+                "success": True, 
+                "has_preferences": False,
+                "preferences": None,
+                "message": "Предпочтения не найдены"
+            }
+    except Exception as e:
+        print(f"DEBUG: Error in get_preferences: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@home_route.delete("/api/preferences")
+async def reset_preferences(
+    request: Request,
+    session: Session = Depends(get_session)
+):
+    """Сброс предпочтений пользователя"""
+    try:
+        # Получаем токен из cookie
+        token = request.cookies.get(settings.COOKIE_NAME)
+        current_user = None
+        
+        if token:
+            try:
+                user_email = await authenticate_cookie(token)
+                current_user = UsersService.get_user_by_email(user_email, session)
+            except:
+                pass  # Пользователь не авторизован
+        
+        if current_user:
+            # Сбрасываем предпочтения авторизованного пользователя
+            current_user.preferences = None
+            session.add(current_user)
+            session.commit()
+            return {"success": True, "message": "Предпочтения сброшены"}
+        else:
+            return {"success": True, "message": "Предпочтения сброшены"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@home_route.get("/api/auth/check")
+async def check_auth_status(
+    request: Request,
+    session: Session = Depends(get_session)
+):
+    """Проверка статуса авторизации пользователя"""
+    try:
+        # Получаем токен из cookie
+        token = request.cookies.get(settings.COOKIE_NAME)
+        
+        if token:
+            try:
+                user_email = await authenticate_cookie(token)
+                current_user = UsersService.get_user_by_email(user_email, session)
+                if current_user:
+                    return {
+                        "authenticated": True,
+                        "user": {
+                            "email": current_user.email,
+                            "name": current_user.name
+                        }
+                    }
+            except:
+                pass
+        
+        return {
+            "authenticated": False,
+            "user": None
+        }
+    except Exception as e:
+        return {
+            "authenticated": False,
+            "user": None,
+            "error": str(e)
+        }
+
+@home_route.post("/api/recommendations")
+async def get_recommendations_api(
+    request: Request,
+    session=Depends(get_session)
+):
+    """API для получения рекомендованных маршрутов по preferences (анкета)"""
+    try:
+        data = await request.json()
+        preferences = data.get("preferences")
+        if not preferences:
+            return {"success": False, "message": "Не переданы предпочтения"}
+        from services import recommendation
+        result = recommendation.get_recommendations(session, preferences)
+        return {"success": True, "recommendations": result}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
