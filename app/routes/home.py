@@ -24,6 +24,12 @@ from sqlmodel import Session, select
 from models.user import User
 from typing import Optional
 
+def get_field(obj, field):
+    if isinstance(obj, dict):
+        return obj.get(field)
+    if hasattr(obj, '_mapping') and field in obj._mapping:
+        return obj._mapping[field]
+    return getattr(obj, field, None)
 
 def format_time_minutes(minutes):
     """
@@ -640,10 +646,11 @@ async def admin_customers(request: Request, session=Depends(get_session), load_r
     # Получаем все уникальные user_external_id из Purchase
     external_ids = set(str(row[0]) for row in session.exec(select(Purchase.user_external_id).distinct()).all())
     # Получаем всех пользователей с этими external_id (и вообще всех User)
-    users_by_external = {str(u.external_id): u for u in session.exec(select(User)).all() if u.external_id is not None}
+    users = session.exec(select(User)).all()
+    users_by_external = {str(get_field(u, 'external_id')): u for u in users if get_field(u, 'external_id') is not None}
     # Получаем все концерты для быстрого доступа по id
     concerts = session.exec(select(Concert)).all()
-    concerts_by_id = {c.id: c for c in concerts}
+    concerts_by_id = {get_field(c, 'id'): c for c in concerts if get_field(c, 'id') is not None}
     
     # Получаем все соответствия маршрутов из таблицы CustomerRouteMatch
     route_matches = {}
@@ -718,12 +725,12 @@ async def admin_customers(request: Request, session=Depends(get_session), load_r
     customers_with_matches = 0
     for ext_id in external_ids:
         purchases = session.exec(select(Purchase).where(Purchase.user_external_id == ext_id)).all()
-        total_spent = sum((p.price or 0) for p in purchases)
-        unique_concerts = set(p.concert_id for p in purchases)
+        total_spent = sum((get_field(p, 'price') or 0) for p in purchases)
+        unique_concerts = set(get_field(p, 'concert_id') for p in purchases)
         unique_days = set(
-            concerts_by_id[p.concert_id].datetime.date()
+            concerts_by_id[get_field(p, 'concert_id')].datetime.date()
             for p in purchases
-            if p.concert_id in concerts_by_id and concerts_by_id[p.concert_id].datetime
+            if get_field(p, 'concert_id') in concerts_by_id and getattr(concerts_by_id[get_field(p, 'concert_id')], 'datetime', None)
         )
         user = users_by_external.get(ext_id)
         
