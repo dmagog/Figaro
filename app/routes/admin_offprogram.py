@@ -1,13 +1,14 @@
-from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from services.crud import user as UsersService
-from database.config import get_settings
 from database.database import get_session
-from auth.authenticate import authenticate_cookie
-import logging
-from sqlalchemy import select, func
+from database.config import get_settings
+from services.crud import user as UsersService
+from sqlmodel import select
 from datetime import datetime
+import logging
+from models import OffProgram
+from auth.authenticate import authenticate_cookie
 
 settings = get_settings()
 admin_offprogram_router = APIRouter()
@@ -16,29 +17,20 @@ templates = Jinja2Templates(directory="templates")
 @admin_offprogram_router.get("/admin/offprogram", response_class=HTMLResponse)
 async def admin_offprogram(request: Request, session=Depends(get_session)):
     token = request.cookies.get(settings.COOKIE_NAME)
-    if token:
-        user = await authenticate_cookie(token)
-    else:
-        user = None
-
-    user_obj = None
-    if user:
-        user_obj = UsersService.get_user_by_email(user, session)
+    user = await authenticate_cookie(token) if token else None
+    user_obj = UsersService.get_user_by_email(user, session) if user else None
     if not user_obj or not getattr(user_obj, 'is_superuser', False):
-        return RedirectResponse(url="/login", status_code=302)
-
-    from models import OffProgram
+        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
     events = session.exec(
         select(OffProgram)
         .order_by(OffProgram.event_date, OffProgram.event_name)
     ).all()
-
     events_data = []
     for event in events:
         event_data = event
-        event_long = event_data.event_long
-        event_date = event_data.event_date
-        event_format = event_data.format
+        event_long = event.event_long
+        event_date = event.event_date
+        event_format = event.format
         duration_display = event_long
         if event_long and event_long != "00:00:00":
             try:
@@ -108,4 +100,50 @@ async def admin_offprogram(request: Request, session=Depends(get_session)):
         "formats": formats,
         "event_days": event_days
     }
-    return templates.TemplateResponse("admin_offprogram.html", context) 
+    return templates.TemplateResponse("admin_offprogram.html", context)
+
+@admin_offprogram_router.post("/api/offprogram/toggle-recommend")
+async def toggle_offprogram_recommend(request: Request, session=Depends(get_session)):
+    token = request.cookies.get(settings.COOKIE_NAME)
+    user = await authenticate_cookie(token) if token else None
+    user_obj = UsersService.get_user_by_email(user, session) if user else None
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return JSONResponse({"success": False, "error": "Доступ запрещен"}, status_code=403)
+    try:
+        data = await request.json()
+        event_id = data.get('event_id')
+        recommend = data.get('recommend')
+        if event_id is None or recommend is None:
+            return JSONResponse({"success": False, "error": "Отсутствуют обязательные параметры"}, status_code=400)
+        event = session.exec(select(OffProgram).where(OffProgram.id == event_id)).first()
+        if not event:
+            return JSONResponse({"success": False, "error": "Мероприятие не найдено"}, status_code=404)
+        event_data = event
+        if isinstance(recommend, bool):
+            new_recommend = recommend
+        elif isinstance(recommend, str):
+            new_recommend = recommend.lower() in ('true', '1', 'yes', 'да')
+        elif isinstance(recommend, int):
+            new_recommend = bool(recommend)
+        else:
+            new_recommend = bool(recommend)
+        event_data.recommend = new_recommend
+        session.add(event_data)
+        session.commit()
+        from services.crud.data_loader import update_off_program_count_cache
+        update_off_program_count_cache(session)
+        return JSONResponse({
+            "success": True,
+            "message": "Состояние рекомендации обновлено",
+            "data": {
+                "event_id": event_id,
+                "recommend": new_recommend
+            }
+        })
+    except Exception as e:
+        session.rollback()
+        logging.error(f"Ошибка при обновлении рекомендации: {str(e)}", exc_info=True)
+        return JSONResponse({
+            "success": False,
+            "error": f"Ошибка при обновлении: {str(e)}"
+        }, status_code=500) 
