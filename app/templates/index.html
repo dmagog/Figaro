@@ -1173,8 +1173,9 @@
                                 <h3 class="slide-title">Каких исполнителей вы хотите услышать?</h3>
                                 <p class="slide-description">Выберите до 5 исполнителей (размер шрифта показывает популярность)</p>
                                 
-                                <div class="tag-cloud-search" style="text-align:center; margin-bottom:10px;">
+                                <div class="tag-cloud-search" style="text-align:center; margin-bottom:10px; position:relative;">
                                     <input type="text" id="artists-cloud-search" placeholder="Поиск исполнителя..." style="padding:6px 12px; border-radius:8px; border:1.5px solid #e0e7eb; font-size:0.95em; width:70%; max-width:320px;">
+                                    <div id="artists-search-dropdown" style="position:absolute; left:50%; transform:translateX(-50%); top:38px; background:white; border:1.5px solid #e0e7eb; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.08); z-index:10; display:none; min-width:220px; max-height:180px; overflow-y:auto;"></div>
                                 </div>
                                 <div class="tag-cloud" id="artists-cloud">
                                     <div class="loading">Загрузка исполнителей...</div>
@@ -1267,6 +1268,8 @@
         let selectedComposers = new Set();
         let selectedArtists = new Set();
         let selectedConcerts = new Set();
+        
+        let allArtists = null; // полный список артистов
         
         // Инициализация при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
@@ -1568,9 +1571,10 @@
             try {
                 const response = await fetch('/api/survey-data');
                 const data = await response.json();
-                
                 if (data.success) {
                     surveyData = data;
+                    // Сохраняем полный список артистов
+                    allArtists = data.all_artists || data.artists;
                     renderComposersCloud();
                     renderArtistsCloud();
                     renderConcertsCloud();
@@ -1602,19 +1606,22 @@
         function renderArtistsCloud() {
             const cloud = document.getElementById('artists-cloud');
             if (!surveyData || !surveyData.artists) return;
-            
             cloud.innerHTML = '';
-            // Фильтрация по поиску
-            const searchValue = (document.getElementById('artists-cloud-search')?.value || '').toLowerCase();
-            // Копируем и перемешиваем артистов для облака
+            // Список артистов для облака: фильтрованные + выбранные
             let artists = surveyData.artists.slice();
-            // Перемешиваем массив артистов (Fisher-Yates)
+            // Добавляем выбранных, которых нет в облаке
+            selectedArtists.forEach(id => {
+                if (!artists.some(a => a.id == id)) {
+                    const found = (allArtists || []).find(a => a.id == id);
+                    if (found) artists.push(found);
+                }
+            });
+            // Перемешиваем
             for (let i = artists.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [artists[i], artists[j]] = [artists[j], artists[i]];
             }
-            // Фильтруем по поиску
-            artists = artists.filter(artist => artist.name.toLowerCase().includes(searchValue));
+            // Фильтрация по поиску убрана — теперь поиск только через dropdown
             artists.forEach(artist => {
                 const tag = document.createElement('div');
                 tag.className = 'tag';
@@ -1623,10 +1630,10 @@
                 } else {
                     tag.textContent = artist.name;
                 }
-                // Уменьшаем диапазон размера шрифта
-                let fontSize = Math.max(11, Math.min(15, artist.size));
+                let fontSize = Math.max(11, Math.min(15, artist.size || 14));
                 tag.style.fontSize = fontSize + 'px';
                 tag.dataset.id = artist.id;
+                if (selectedArtists.has(artist.id)) tag.classList.add('selected');
                 tag.addEventListener('click', () => toggleArtist(artist.id, artist.name));
                 cloud.appendChild(tag);
             });
@@ -1937,7 +1944,13 @@
                 artistsSummary.classList.add('tags');
                 
                 selectedArtists.forEach(id => {
-                    const artist = surveyData.artists.find(a => a.id == id);
+                    let artist = null;
+                    if (surveyData.artists) {
+                        artist = surveyData.artists.find(a => a.id == id);
+                    }
+                    if (!artist && typeof allArtists !== 'undefined' && allArtists) {
+                        artist = allArtists.find(a => a.id == id);
+                    }
                     if (artist) {
                         const tag = document.createElement('span');
                         tag.className = 'summary-tag';
@@ -2302,9 +2315,43 @@
         // Поиск по артистам
         document.addEventListener('DOMContentLoaded', function() {
             const searchInput = document.getElementById('artists-cloud-search');
-            if (searchInput) {
+            const dropdown = document.getElementById('artists-search-dropdown');
+            if (searchInput && dropdown) {
                 searchInput.addEventListener('input', function() {
-                    renderArtistsCloud();
+                    const val = this.value.trim().toLowerCase();
+                    if (!val || !allArtists) {
+                        dropdown.style.display = 'none';
+                        dropdown.innerHTML = '';
+                        return;
+                    }
+                    // Фильтруем по всем артистам
+                    const matches = allArtists.filter(a => a.name.toLowerCase().includes(val));
+                    if (matches.length === 0) {
+                        dropdown.innerHTML = '<div style="padding:8px 12px; color:#888;">Не найдено</div>';
+                        dropdown.style.display = 'block';
+                        return;
+                    }
+                    dropdown.innerHTML = matches.slice(0, 10).map(a =>
+                        `<div class="tag" style="display:block; margin:2px 0; cursor:pointer; font-size:0.95em;" data-id="${a.id}">
+                            ${a.is_special ? '<span title=\"Отмечено редакцией\" style=\"color:#ffc107; font-size:1.1em; margin-right:3px; vertical-align:middle;\">⭐️</span>' : ''}
+                            ${a.name}
+                        </div>`
+                    ).join('');
+                    dropdown.style.display = 'block';
+                    // Клик по результату поиска
+                    dropdown.querySelectorAll('.tag').forEach(el => {
+                        el.addEventListener('click', function(e) {
+                            const id = parseInt(this.dataset.id);
+                            selectedArtists.add(id);
+                            renderArtistsCloud();
+                            searchInput.value = '';
+                            dropdown.style.display = 'none';
+                        });
+                    });
+                });
+                // Скрывать dropdown при потере фокуса
+                searchInput.addEventListener('blur', function() {
+                    setTimeout(() => { dropdown.style.display = 'none'; }, 200);
                 });
             }
         });

@@ -126,6 +126,17 @@ async def get_survey_data(session: Session = Depends(get_session)):
             for artist in artists
             if concerts_by_artist.get(artist.id, 0) > 1 or artist.is_special
         ]
+        # Абсолютно все артисты для поиска
+        all_artists = [
+            {
+                'id': artist.id,
+                'name': artist.name,
+                'count': concerts_by_artist.get(artist.id, 0),
+                'size': min(18, max(12, 12 + concerts_by_artist.get(artist.id, 0))),
+                'is_special': artist.is_special
+            }
+            for artist in artists
+        ]
         artists_list.sort(key=lambda a: a['count'], reverse=True)
         concerts_query = session.query(
             Concert.id,
@@ -146,6 +157,7 @@ async def get_survey_data(session: Session = Depends(get_session)):
             "success": True,
             "composers": composers,
             "artists": artists_list,
+            "all_artists": all_artists,
             "concerts": concerts
         }
     except Exception as e:
