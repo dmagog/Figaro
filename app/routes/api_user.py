@@ -3,10 +3,11 @@ from fastapi.responses import JSONResponse
 from database.database import get_session
 from database.config import get_settings
 from services.crud import user as UsersService
-from sqlmodel import Session
+from sqlmodel import Session, select
 from auth.authenticate import authenticate_cookie
 import logging
-from models import Author, Artist, Concert, Composition, ConcertCompositionLink, ConcertArtistLink
+from models import Author, Artist, Concert, Composition, ConcertCompositionLink
+from models.artist import ConcertArtistLink
 
 settings = get_settings()
 api_user_router = APIRouter()
@@ -85,50 +86,45 @@ async def reset_preferences(request: Request, session: Session = Depends(get_ses
 @api_user_router.get("/api/survey-data")
 async def get_survey_data(session: Session = Depends(get_session)):
     try:
-        composers_query = session.query(
-            Author.id,
-            Author.name,
-            logging.getLogger().handlers,
-            ).outerjoin(
-            Composition, Author.id == Composition.author_id
-        ).outerjoin(
-            ConcertCompositionLink, Composition.id == ConcertCompositionLink.composition_id
-        ).outerjoin(
-            Concert, ConcertCompositionLink.concert_id == Concert.id
-        ).group_by(
-            Author.id, Author.name
-        ).order_by(
-            ).all()
+        # Получаем всех авторов
+        authors = session.exec(select(Author)).all()
+        # Для каждого автора считаем количество произведений
+        author_ids = [a.id for a in authors]
+        compositions = session.exec(select(Composition)).all()
+        compositions_by_author = {}
+        for comp in compositions:
+            if comp.author_id:
+                compositions_by_author.setdefault(comp.author_id, 0)
+                compositions_by_author[comp.author_id] += 1
+        # Формируем список композиторов с количеством произведений
         composers = [
             {
-                'id': comp.id,
-                'name': comp.name,
-                'count': getattr(comp, 'concerts_count', 0),
-                'size': min(18, max(12, 12 + getattr(comp, 'concerts_count', 0)))
+                'id': author.id,
+                'name': author.name,
+                'count': compositions_by_author.get(author.id, 0),
+                'size': min(18, max(12, 12 + compositions_by_author.get(author.id, 0)))
             }
-            for comp in composers_query
+            for author in authors
         ]
-        artists_query = session.query(
-            Artist.id,
-            Artist.name,
-            logging.getLogger().handlers,
-            ).outerjoin(
-            ConcertArtistLink, Artist.id == ConcertArtistLink.artist_id
-        ).outerjoin(
-            Concert, ConcertArtistLink.concert_id == Concert.id
-        ).group_by(
-            Artist.id, Artist.name
-        ).order_by(
-            ).all()
-        artists = [
+        # Сортируем по количеству произведений (по убыванию)
+        composers.sort(key=lambda c: c['count'], reverse=True)
+        # Артисты через SQLModel
+        artists = session.exec(select(Artist)).all()
+        concert_links = session.exec(select(ConcertArtistLink)).all()
+        concerts_by_artist = {}
+        for link in concert_links:
+            concerts_by_artist.setdefault(link.artist_id, 0)
+            concerts_by_artist[link.artist_id] += 1
+        artists_list = [
             {
                 'id': artist.id,
                 'name': artist.name,
-                'count': getattr(artist, 'concerts_count', 0),
-                'size': min(18, max(12, 12 + getattr(artist, 'concerts_count', 0)))
+                'count': concerts_by_artist.get(artist.id, 0),
+                'size': min(18, max(12, 12 + concerts_by_artist.get(artist.id, 0)))
             }
-            for artist in artists_query
+            for artist in artists
         ]
+        artists_list.sort(key=lambda a: a['count'], reverse=True)
         concerts_query = session.query(
             Concert.id,
             Concert.name,
@@ -147,7 +143,7 @@ async def get_survey_data(session: Session = Depends(get_session)):
         return {
             "success": True,
             "composers": composers,
-            "artists": artists,
+            "artists": artists_list,
             "concerts": concerts
         }
     except Exception as e:
