@@ -13,11 +13,12 @@
         }
         
         .header {
+            max-width: 1100px;
+            margin: 40px auto 0 auto;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 15px;
-            margin-bottom: 30px;
+            border-radius: 36px;
+            padding: 48px 40px 36px 40px;
+            box-shadow: 0 8px 32px rgba(102,126,234,0.13);
             text-align: center;
         }
         
@@ -773,7 +774,14 @@
             }
         }
 
-        .tabs-container { max-width: 900px; margin: 40px auto; background: #fff; border-radius: 18px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); padding: 0 0 40px 0; }
+        .tabs-container {
+            max-width: 1100px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            padding: 0 0 40px 0;
+        }
         .tabs { display: flex; border-bottom: 2px solid #e0e7ff; }
         .tab-btn { flex: 1; padding: 18px 0; background: none; border: none; font-size: 1.2em; font-weight: 600; color: #4f5bd5; cursor: pointer; transition: background 0.2s; border-radius: 18px 18px 0 0; }
         .tab-btn.active { background: linear-gradient(135deg, #f8faff 0%, #e0e7ff 100%); color: #222; }
@@ -832,6 +840,132 @@
             font-weight: 400;
             margin-bottom: 1.2em;
         }
+
+        function renderGroup(title, routes, groupType) {
+            if (!routes || !routes.length) return '';
+            // Выбираем топ-3 по главному параметру группы
+            let sorted = [...routes];
+            if (groupType === 'weighted') {
+                sorted.sort((a, b) => (b.weighted || 0) - (a.weighted || 0));
+            } else if (groupType === 'intellect') {
+                sorted.sort((a, b) => (b.intellect || 0) - (a.intellect || 0));
+            } else if (groupType === 'comfort') {
+                sorted.sort((a, b) => (b.comfort || 0) - (a.comfort || 0));
+            } else if (groupType === 'balanced') {
+                sorted.sort((a, b) => Math.abs((b.intellect || 0) - (b.comfort || 0)) - Math.abs((a.intellect || 0) - (a.comfort || 0)));
+            }
+            const top3 = sorted.slice(0, 3);
+            return `
+                <div class="rec-group">
+                    <h3>${title}</h3>
+                    <div class="rec-table-wrapper">
+                        <table class="rec-table">
+                            <thead>
+                                <tr>
+                                    <th>Маршрут</th>
+                                    <th>Концерты</th>
+                                    <th>Состав</th>
+                                    <th>🧠</th>
+                                    <th>🛋️</th>
+                                    <th>🎯</th>
+                                    <th>🚶</th>
+                                    <th>⏱️</th>
+                                    <th>💰</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${top3.map(renderRouteRow).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderRouteRow(route) {
+            let concertsList = '-';
+            let concertsArr = [];
+            if (route.concerts) {
+                if (Array.isArray(route.concerts)) {
+                    concertsArr = route.concerts.map(x => +x).sort((a, b) => a - b);
+                } else if (typeof route.concerts === 'string') {
+                    concertsArr = route.concerts.split(',').map(x => +x).sort((a, b) => a - b);
+                }
+                concertsList = concertsArr.join(', ');
+            }
+            return `
+                <tr>
+                    <td class="rec-table-title">#${route.id}</td>
+                    <td>${route.concerts_count}</td>
+                    <td>${concertsList}</td>
+                    <td class="score-intellect">${route.intellect}</td>
+                    <td class="score-comfort">${route.comfort}</td>
+                    <td class="score-weighted">${route.weighted !== null && route.weighted !== undefined ? route.weighted.toFixed(1) : ''}</td>
+                    <td>${route.trans_time} мин</td>
+                    <td>${route.wait_time} мин</td>
+                    <td>${route.costs}₽</td>
+                    <td><button class="rec-details-btn" onclick="showRouteDetails(${route.id}, '${concertsArr.join(',')}')">Подробнее</button></td>
+                </tr>
+            `;
+        }
+
+        // Стили для таблицы
+        const recTableStyles = `
+        .rec-table-wrapper { overflow-x: auto; }
+        .rec-table { width: 100%; border-collapse: collapse; margin: 0 0 24px 0; background: #f8faff; border-radius: 12px; box-shadow: 0 2px 8px rgba(102,126,234,0.07); }
+        .rec-table th, .rec-table td { padding: 10px 12px; text-align: center; }
+        .rec-table th { background: #e0e7ff; color: #4f5bd5; font-weight: 700; }
+        .rec-table-title { font-weight: 700; color: #4f5bd5; }
+        .rec-table tr:nth-child(even) { background: #f3f4fa; }
+        .rec-details-btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; padding: 7px 18px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .rec-details-btn:hover { background: linear-gradient(135deg, #5a67d8 0%, #6c3483 100%); }
+        `;
+        if (!document.getElementById('rec-table-styles')) {
+            const style = document.createElement('style');
+            style.id = 'rec-table-styles';
+            style.innerHTML = recTableStyles;
+            document.head.appendChild(style);
+        }
+
+        // Добавим кнопку сброса анкеты на вкладке Анкета
+        const surveySection = document.getElementById('user-survey');
+        if (surveySection && !document.getElementById('reset-survey-btn')) {
+            const resetBtn = document.createElement('button');
+            resetBtn.id = 'reset-survey-btn';
+            resetBtn.className = 'reset-survey-btn';
+            resetBtn.innerText = 'Сбросить анкету';
+            resetBtn.onclick = function() { resetSurvey(); };
+            surveySection.insertAdjacentElement('afterbegin', resetBtn);
+        }
+
+        function resetSurvey() {
+            // Сбросить все выбранные значения
+            document.querySelectorAll('input[type="radio"]').forEach(input => { input.checked = false; });
+            selectedComposers.clear();
+            selectedArtists.clear();
+            selectedConcerts.clear();
+            // Вернуться на первый слайд
+            hideSlide(currentStep);
+            currentStep = 1;
+            showSlide(currentStep);
+            updateProgress();
+            updateNavigation();
+            updateTagClouds();
+            updateSummary();
+        }
+
+        // Стили для кнопки сброса
+        const resetBtnStyles = `
+        .reset-survey-btn { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; border-radius: 8px; padding: 10px 22px; font-weight: 600; cursor: pointer; margin-bottom: 18px; margin-right: 12px; float: right; transition: background 0.2s; }
+        .reset-survey-btn:hover { background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%); }
+        `;
+        if (!document.getElementById('reset-btn-styles')) {
+            const style = document.createElement('style');
+            style.id = 'reset-btn-styles';
+            style.innerHTML = resetBtnStyles;
+            document.head.appendChild(style);
+        }
     </style>
 </head>
 <body>
@@ -871,6 +1005,7 @@
             <div class="tab-content" id="tab-form">
                 <!-- Сюда переносим user-survey -->
                 <div class="survey-section" id="user-survey">
+                    <button id="reset-survey-btn" class="btn btn-prev" onclick="resetSurvey()">Сбросить анкету</button>
                     <div class="survey-header">
                         <h2>🎵 Персонализация вашего маршрута</h2>
                         <p>Помогите нам подобрать идеальные концерты для вас</p>
@@ -2037,14 +2172,32 @@
             return `
                 <div class="rec-group">
                     <h3>${title}</h3>
-                    <div class="rec-list rec-list-row">
-                        ${top3.map(renderRoute).join('')}
+                    <div class="rec-table-wrapper">
+                        <table class="rec-table">
+                            <thead>
+                                <tr>
+                                    <th>Маршрут</th>
+                                    <th>Концерты</th>
+                                    <th>Состав</th>
+                                    <th>🧠</th>
+                                    <th>🛋️</th>
+                                    <th>🎯</th>
+                                    <th>🚶</th>
+                                    <th>⏱️</th>
+                                    <th>💰</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${top3.map(renderRouteRow).join('')}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             `;
         }
 
-        function renderRoute(route) {
+        function renderRouteRow(route) {
             let concertsList = '-';
             let concertsArr = [];
             if (route.concerts) {
@@ -2056,22 +2209,18 @@
                 concertsList = concertsArr.join(', ');
             }
             return `
-                <div class="rec-route">
-                    <div class="rec-title">Маршрут #${route.id}</div>
-                    <div class="rec-meta"><b>Концертов:</b> ${route.concerts_count}</div>
-                    <div class="rec-meta"><b>Состав:</b> ${concertsList}</div>
-                    <div class="rec-scores">
-                        <span class="score-intellect">🧠 ${route.intellect}</span>
-                        <span class="score-comfort">🛋️ ${route.comfort}</span>
-                        ${route.weighted !== null && route.weighted !== undefined ? `<span class="score-weighted">🎯 ${route.weighted.toFixed(1)}</span>` : ''}
-                    </div>
-                    <div class="rec-details">
-                        <span>🚶 ${route.trans_time} мин</span>
-                        <span>⏱️ ${route.wait_time} мин</span>
-                        <span>💰 ${route.costs}₽</span>
-                    </div>
-                    <button class="rec-details-btn" onclick="showRouteDetails(${route.id}, '${concertsArr.join(',')}')">Подробнее</button>
-                </div>
+                <tr>
+                    <td class="rec-table-title">#${route.id}</td>
+                    <td>${route.concerts_count}</td>
+                    <td>${concertsList}</td>
+                    <td class="score-intellect">${route.intellect}</td>
+                    <td class="score-comfort">${route.comfort}</td>
+                    <td class="score-weighted">${route.weighted !== null && route.weighted !== undefined ? route.weighted.toFixed(1) : ''}</td>
+                    <td>${route.trans_time} мин</td>
+                    <td>${route.wait_time} мин</td>
+                    <td>${route.costs}₽</td>
+                    <td><button class="rec-details-btn" onclick="showRouteDetails(${route.id}, '${concertsArr.join(',')}')">Подробнее</button></td>
+                </tr>
             `;
         }
 
@@ -2093,34 +2242,6 @@
             if (e) e.preventDefault();
             const modal = document.querySelector('.route-modal-overlay');
             if (modal) modal.remove();
-        }
-
-        // Стили для карточек и модального окна
-        const recCardStyles = `
-        .rec-list-row { display: flex; flex-wrap: wrap; gap: 24px; justify-content: space-between; }
-        @media (max-width: 900px) { .rec-list-row { flex-direction: column; align-items: stretch; } }
-        .rec-route { background: linear-gradient(135deg, #f8faff 0%, #e0e7ff 100%); border: 2px solid #e0e7ff; border-radius: 14px; padding: 18px 22px; min-width: 260px; max-width: 340px; flex: 1 1 260px; box-shadow: 0 2px 8px rgba(102,126,234,0.07); font-size: 1em; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
-        .rec-title { font-weight: 700; font-size: 1.1em; margin-bottom: 4px; color: #4f5bd5; }
-        .rec-meta { color: #333; font-size: 1em; }
-        .rec-scores { display: flex; gap: 10px; margin: 4px 0; }
-        .score-intellect { color: #3b82f6; font-weight: 600; }
-        .score-comfort { color: #10b981; font-weight: 600; }
-        .score-weighted { color: #f59e42; font-weight: 600; }
-        .rec-details { display: flex; gap: 10px; color: #6b7280; font-size: 0.98em; }
-        .rec-details-btn { margin-top: 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; padding: 7px 18px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-        .rec-details-btn:hover { background: linear-gradient(135deg, #5a67d8 0%, #6c3483 100%); }
-        .route-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.35); z-index: 10000; display: flex; align-items: center; justify-content: center; }
-        .route-modal { background: #fff; border-radius: 16px; padding: 32px 36px; max-width: 420px; width: 90vw; box-shadow: 0 8px 32px rgba(0,0,0,0.18); position: relative; }
-        .route-modal h3 { margin-top: 0; color: #4f5bd5; }
-        .route-modal-list { margin: 18px 0 24px 0; padding-left: 18px; }
-        .route-modal-close { background: #e0e7ff; color: #4f5bd5; border: none; border-radius: 8px; padding: 8px 18px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-        .route-modal-close:hover { background: #c7d2fe; }
-        `;
-        if (!document.getElementById('rec-card-styles')) {
-            const style = document.createElement('style');
-            style.id = 'rec-card-styles';
-            style.innerHTML = recCardStyles;
-            document.head.appendChild(style);
         }
 
         // Индикатор загрузки рекомендаций
