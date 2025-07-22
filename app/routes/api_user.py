@@ -84,7 +84,7 @@ async def reset_preferences(request: Request, session: Session = Depends(get_ses
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_user_router.get("/api/survey-data")
-async def get_survey_data(session: Session = Depends(get_session)):
+async def get_survey_data(request: Request, session: Session = Depends(get_session)):
     try:
         # Получаем всех авторов
         authors = session.exec(select(Author)).all()
@@ -153,12 +153,38 @@ async def get_survey_data(session: Session = Depends(get_session)):
             }
             for concert in concerts_query
         ]
+        # Получаем все концерты
+        concerts = session.exec(select(Concert)).all()
+        concerts_data = [
+            {
+                'id': c.id,
+                'name': f"{c.id}. {c.name}",
+                'datetime': c.datetime.isoformat() if c.datetime else None,
+                'tickets_available': c.tickets_available
+            }
+            for c in concerts
+        ]
+        # Получаем купленные концерты пользователя (если авторизован)
+        purchased_concert_ids = []
+        token = request.cookies.get(settings.COOKIE_NAME)
+        current_user = None
+        if token:
+            try:
+                user_email = await authenticate_cookie(token)
+                current_user = UsersService.get_user_by_email(user_email, session)
+            except Exception:
+                pass
+        if current_user:
+            from models.purchase import Purchase
+            purchases = session.exec(select(Purchase).where(Purchase.user_external_id == current_user.external_id)).all()
+            purchased_concert_ids = [p.concert_id for p in purchases]
         return {
             "success": True,
             "composers": composers,
             "artists": artists_list,
             "all_artists": all_artists,
-            "concerts": concerts
+            "concerts": concerts_data,
+            "purchased_concert_ids": purchased_concert_ids
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

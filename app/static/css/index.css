@@ -549,6 +549,18 @@
 }
 
 /* Облако тегов */
+.concerts-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    justify-content: flex-start;
+    align-items: flex-start;
+    margin: 18px 0 0 0;
+    padding: 0 0 0 0;
+    min-height: 60px;
+}
+
+/* Сохраняем .tag-cloud для артистов и композиторов */
 .tag-cloud {
     display: flex;
     flex-wrap: wrap;
@@ -560,29 +572,61 @@
 }
 
 .tag {
-    padding: 8px 16px;
-    background: #f8f9fa;
-    border: 2px solid #e9ecef;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 14px;
-    color: #495057;
-    white-space: nowrap;
-}
-
-.tag:hover {
-    border-color: #667eea;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    height: 38px;
+    margin: 6px 8px;
+    padding: 0 14px;
+    font-size: 1.08em;
+    font-weight: 500;
+    border-radius: 22px;
+    border: 1.5px solid #e0e7ef;
     background: #f8f9ff;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(102,126,234,0.1);
+    color: #4f5bd5;
+    cursor: pointer;
+    transition: all 0.18s cubic-bezier(.4,0,.2,1);
+    position: relative;
+    outline: none;
+    box-shadow: 0 1px 4px rgba(102,126,234,0.04);
+    user-select: none;
+}
+.tag:hover:not(.concert-unavailable):not(.concert-purchased) {
+    background: #e9eafc;
+    border-color: #bfc6e0;
+    color: #333;
+    transform: translateY(-2px) scale(1.04);
+    z-index: 2;
+}
+.tag.selected {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border-color: #667eea;
+    font-weight: 700;
+    z-index: 2;
 }
 
-.tag.selected {
-    background: #667eea;
-    color: white;
-    border-color: #667eea;
-    box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+/* Tooltip */
+.tag[data-tooltip]:hover:after,
+.concert-unavailable[data-tooltip]:hover:after,
+.concert-purchased[data-tooltip]:hover:after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    bottom: 110%;
+    transform: translateX(-50%);
+    background: #222;
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.98em;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0.97;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(60,60,120,0.13);
+    transition: opacity 0.2s;
 }
 
 /* Поиск артистов */
@@ -1637,4 +1681,38 @@
     display: flex;
     align-items: center;
     justify-content: center;
+} 
+
+.concert-unavailable {
+    background: #eee !important;
+    color: #bbb !important;
+    border: 1.5px dashed #ccc !important;
+    cursor: not-allowed !important;
+    opacity: 0.6;
+    pointer-events: none;
+}
+.concert-purchased {
+    background: linear-gradient(90deg, #b2f7c1 0%, #6ee7b7 100%) !important;
+    color: #1b5e20 !important;
+    border: 2px solid #34c759 !important;
+    font-weight: 700;
+    position: relative;
+}
+.concert-purchased::after {
+    content: '✔';
+    position: absolute;
+    right: 8px;
+    top: 2px;
+    font-size: 0.9em;
+    color: #34c759;
+} 
+
+.concerts-cloud .tag {
+    width: auto !important;
+    min-width: 44px;
+    max-width: none;
+    display: inline-flex !important;
+    box-sizing: border-box;
+    margin: 6px 8px;
+    padding: 0 14px;
 } 

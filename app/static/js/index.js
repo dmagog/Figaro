@@ -352,22 +352,33 @@ function renderArtistsCloud() {
 
 // Рендеринг облака концертов
 function renderConcertsCloud() {
-    const cloud = document.getElementById('concerts-cloud');
-    if (!cloud || !surveyData.concerts) return;
-    
+    let cloud = document.getElementById('concerts-cloud');
+    if (!cloud || !surveyData || !surveyData.concerts) return;
+    cloud.className = '';
+    cloud.classList.add('concerts-cloud');
     cloud.innerHTML = '';
+    const purchased = new Set(surveyData.purchased_concert_ids || []);
     surveyData.concerts.forEach(concert => {
-        const tag = document.createElement('span');
-        tag.className = 'tag';
-        tag.textContent = concert.id;
-        
-        if (selectedConcerts.has(concert.id)) {
-            tag.classList.add('selected');
+        const btn = document.createElement('button');
+        btn.className = 'tag';
+        btn.textContent = concert.id;
+        btn.type = 'button';
+        if (concert.tickets_available === false) {
+            btn.classList.add('concert-unavailable');
+            btn.disabled = true;
+            btn.setAttribute('data-tooltip', 'Билеты на этот концерт закончились');
         }
-        
-        tag.onclick = () => toggleConcert(concert.id);
-        cloud.appendChild(tag);
+        if (purchased.has(concert.id)) {
+            btn.classList.add('concert-purchased');
+            btn.setAttribute('data-tooltip', 'Вы уже купили билет на этот концерт');
+        }
+        if (selectedConcerts.has(concert.id)) {
+            btn.classList.add('selected');
+        }
+        btn.addEventListener('click', () => toggleConcert(concert.id));
+        cloud.appendChild(btn);
     });
+    updateConcertsSummary();
 }
 
 // Настройка поиска артистов
@@ -892,6 +903,11 @@ async function loadUserPreferences() {
             const recsTab = document.getElementById('tab-recs-btn');
             if (recsTab && recsTab.classList.contains('active')) {
                 loadRecommendationsWithPreferences(prefs);
+            }
+            // --- Если мы на анкете, сразу показываем последний слайд (резюме) ---
+            const formTab = document.getElementById('tab-form-btn');
+            if (formTab && formTab.classList.contains('active')) {
+                showSlide(7);
             }
         }
     } catch (e) {
