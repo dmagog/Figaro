@@ -36,12 +36,63 @@
         <!-- Основной контент -->
         <div class="tabs-container">
             <div class="tabs">
-                <button class="tab-btn active" id="tab-form-btn" onclick="showTab('form')">📝 Анкета</button>
+                <button class="tab-btn active" id="tab-about-btn" onclick="showTab('about')">ℹ️ О проекте</button>
+                <button class="tab-btn" id="tab-form-btn" onclick="showTab('form')">📝 Анкета</button>
                 <button class="tab-btn" id="tab-recs-btn" onclick="showTab('recs')">🎯 Рекомендации</button>
             </div>
             
+            <!-- Вкладка О проекте -->
+            <div class="tab-content" id="tab-about" style="display:block;">
+                <div class="about-section">
+                    <div class="about-header">
+                        <h2>🎵 Figaro - Персональный гид по фестивалю</h2>
+                        <p class="about-subtitle">Умная система рекомендаций для идеального музыкального дня</p>
+                    </div>
+                    
+                    <div class="about-content">
+                        <div class="about-feature">
+                            <div class="feature-icon">🎯</div>
+                            <div class="feature-text">
+                                <h3>Персонализированные маршруты</h3>
+                                <p>Наша система анализирует ваши предпочтения и создает уникальные маршруты, учитывая ваши интересы, темп и стиль посещения фестиваля.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="about-feature">
+                            <div class="feature-icon">🧠</div>
+                            <div class="feature-text">
+                                <h3>Искусственный интеллект</h3>
+                                <p>Используем современные алгоритмы машинного обучения для анализа тысяч возможных комбинаций концертов и выбора оптимальных вариантов.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="about-feature">
+                            <div class="feature-icon">⚡</div>
+                            <div class="feature-text">
+                                <h3>Быстрые рекомендации</h3>
+                                <p>Получите персональные рекомендации за считанные секунды. Наша система учитывает время между концертами, стоимость билетов и ваши предпочтения.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="about-feature">
+                            <div class="feature-icon">🎼</div>
+                            <div class="feature-text">
+                                <h3>Богатая база данных</h3>
+                                <p>Доступ к полной информации о концертах, исполнителях, композиторах и залах фестиваля. Мы знаем каждый уголок музыкального мира.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="about-cta">
+                            <h3>Готовы найти свой идеальный маршрут?</h3>
+                            <p>Заполните короткую анкету и получите персональные рекомендации уже через несколько минут!</p>
+                            <button class="btn btn-next" onclick="showTab('form')">📝 Начать анкету</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Вкладка Анкета -->
-            <div class="tab-content" id="tab-form" style="display:block;">
+            <div class="tab-content" id="tab-form" style="display:none;">
                 <div class="survey-section" id="user-survey">
                     <button id="reset-survey-btn" class="btn btn-prev" onclick="resetSurvey()">Сбросить анкету</button>
                     <div class="survey-header">

@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
     currentStep = 1;
     
     loadSurveyData();
-    showTab('form');
+    showTab('about'); // Показываем вкладку "О проекте" по умолчанию
     
     // Убеждаемся, что первый слайд активен
     setTimeout(() => {
@@ -80,8 +80,13 @@ async function loadSurveyData() {
 
 // Переключение вкладок
 function showTab(tab) {
+    // Скрываем все вкладки
+    document.getElementById('tab-about').style.display = tab === 'about' ? 'block' : 'none';
     document.getElementById('tab-form').style.display = tab === 'form' ? 'block' : 'none';
     document.getElementById('tab-recs').style.display = tab === 'recs' ? 'block' : 'none';
+    
+    // Обновляем активные кнопки
+    document.getElementById('tab-about-btn').classList.toggle('active', tab === 'about');
     document.getElementById('tab-form-btn').classList.toggle('active', tab === 'form');
     document.getElementById('tab-recs-btn').classList.toggle('active', tab === 'recs');
 }

@@ -867,3 +867,150 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 } 
+
+/* Стили для вкладки "О проекте" */
+.about-section {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.about-header {
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.about-header h2 {
+    font-size: 2.5em;
+    color: #333;
+    margin-bottom: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.about-subtitle {
+    font-size: 1.3em;
+    color: #666;
+    margin: 0;
+}
+
+.about-content {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.about-feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 25px;
+    padding: 30px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.about-feature:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+}
+
+.feature-icon {
+    font-size: 3em;
+    flex-shrink: 0;
+    width: 80px;
+    text-align: center;
+}
+
+.feature-text h3 {
+    font-size: 1.4em;
+    color: #333;
+    margin: 0 0 15px 0;
+}
+
+.feature-text p {
+    font-size: 1.1em;
+    color: #666;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.about-cta {
+    text-align: center;
+    padding: 50px 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    color: white;
+    margin-top: 20px;
+}
+
+.about-cta h3 {
+    font-size: 1.8em;
+    margin: 0 0 15px 0;
+}
+
+.about-cta p {
+    font-size: 1.2em;
+    margin: 0 0 30px 0;
+    opacity: 0.9;
+}
+
+.about-cta .btn {
+    background: white;
+    color: #667eea;
+    font-size: 1.1em;
+    padding: 15px 30px;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.about-cta .btn:hover {
+    background: #f8f9fa;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .about-section {
+        padding: 20px 15px;
+    }
+    
+    .about-header h2 {
+        font-size: 2em;
+    }
+    
+    .about-subtitle {
+        font-size: 1.1em;
+    }
+    
+    .about-feature {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+        padding: 25px 20px;
+    }
+    
+    .feature-icon {
+        font-size: 2.5em;
+        width: auto;
+    }
+    
+    .about-cta {
+        padding: 40px 20px;
+    }
+    
+    .about-cta h3 {
+        font-size: 1.5em;
+    }
+    
+    .about-cta p {
+        font-size: 1.1em;
+    }
+} 
+
+/* Индикатор загрузки рекомендаций */ 
