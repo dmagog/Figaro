@@ -307,22 +307,31 @@ function updateTagClouds() {
 // Рендеринг облака композиторов
 function renderComposersCloud() {
     const cloud = document.getElementById('composers-cloud');
-    if (!cloud || !surveyData.composers) return;
-    
+    if (!cloud || !surveyData || !surveyData.composers) return;
+    cloud.className = '';
+    cloud.classList.add('composers-cloud');
     cloud.innerHTML = '';
-    surveyData.composers.forEach(composer => {
+    // Случайный порядок
+    const shuffled = [...surveyData.composers];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    shuffled.forEach(composer => {
         const tag = document.createElement('span');
         tag.className = 'tag';
-        tag.style.fontSize = composer.size + 'px';
         tag.textContent = composer.name;
-        
+        tag.style.fontSize = composer.size + 'px';
+        const pad = Math.round(composer.size * 0.7);
+        tag.style.padding = `0.18em ${pad}px`;
+        tag.style.minWidth = Math.round(composer.size * 2.1) + 'px';
         if (selectedComposers.has(composer.id)) {
             tag.classList.add('selected');
         }
-        
         tag.onclick = () => toggleComposer(composer.id);
         cloud.appendChild(tag);
     });
+    updateComposersSummary();
 }
 
 // Рендеринг облака артистов

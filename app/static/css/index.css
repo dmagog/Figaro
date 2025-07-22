@@ -1752,3 +1752,52 @@
     z-index: 11;
     pointer-events: none;
 } 
+
+.composers-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    justify-content: center;
+    align-items: flex-start;
+    margin: 18px 0 0 0;
+    padding: 0 0 0 0;
+    min-height: 30px;
+}
+.composers-cloud .tag {
+    /* Размеры будут задаваться через JS */
+    font-size: 1em;
+    padding: 0.32em 1.1em;
+    min-width: 2.2em;
+    height: auto;
+    border-radius: 2em;
+    background: linear-gradient(135deg, #f8f9ff 60%, #e9eafc 100%);
+    color: #4f5bd5;
+    border: 1.2px solid #e0e7ef;
+    box-shadow: 0 2px 8px rgba(102,126,234,0.07);
+    transition: all 0.16s cubic-bezier(.4,0,.2,1);
+    margin: 0;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+.composers-cloud .tag:hover {
+    background: linear-gradient(135deg, #e9eafc 60%, #d1d5fa 100%);
+    color: #333;
+    border-color: #bfc6e0;
+    transform: scale(1.08) translateY(-2px);
+    z-index: 2;
+    box-shadow: 0 4px 16px rgba(102,126,234,0.13);
+}
+.composers-cloud .tag.selected {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border-color: #667eea;
+    font-weight: 700;
+    z-index: 2;
+    box-shadow: 0 4px 16px rgba(102,126,234,0.18);
+} 
