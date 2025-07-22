@@ -7,6 +7,9 @@ let selectedArtists = new Set();
 let selectedConcerts = new Set();
 let allArtists = null;
 
+// --- Новые переменные для диапазона концертов ---
+let selectedConcertsRange = null;
+
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing...');
@@ -219,6 +222,9 @@ function handleRadioChange(name, value) {
     
     // Обновляем итоги
     updateSummary();
+    if (name === 'concerts_range') {
+        selectedConcertsRange = value;
+    }
 }
 
 // Обработка выбора композиторов
@@ -554,19 +560,15 @@ function updatePreferencesSummary() {
         prioritySummary.textContent = 'Не выбрано';
     }
     
-    // Максимум концертов
-    const maxConcerts = document.querySelector('input[name="max_concerts"]:checked');
-    if (maxConcertsSummary && maxConcerts) {
-        const labels = {
-            '2': '2 концерта (Спокойный темп)',
-            '3': '3 концерта (Оптимально)',
-            '4': '4 концерта (Интенсивно)',
-            '5': '5+ концертов (Максимум!)'
-        };
-        maxConcertsSummary.textContent = labels[maxConcerts.value] || 'Не выбрано';
-        console.log('Выбран максимум концертов:', labels[maxConcerts.value]);
-    } else if (maxConcertsSummary) {
-        maxConcertsSummary.textContent = 'Не выбрано';
+    // --- Новый блок для диапазона концертов ---
+    if (maxConcertsSummary) {
+        let label = 'Не выбрано';
+        if (selectedConcertsRange === '2-3') label = '2–3 концерта (Спокойный темп)';
+        else if (selectedConcertsRange === '3-4') label = '3–4 концерта (Оптимальный)';
+        else if (selectedConcertsRange === '4-5') label = '4–5 концертов (Интенсивный)';
+        else if (selectedConcertsRange === 'any') label = 'Без ограничений (Максимум!)';
+        maxConcertsSummary.textContent = label;
+        console.log('Выбран диапазон концертов:', label);
     }
     
     // Разнообразие
@@ -590,9 +592,15 @@ function updatePreferencesSummary() {
 async function submitSurvey() {
     console.log('Отправляем анкету...');
     
+    let min_concerts = null, max_concerts = null;
+    if (selectedConcertsRange === '2-3') { min_concerts = 2; max_concerts = 3; }
+    else if (selectedConcertsRange === '3-4') { min_concerts = 3; max_concerts = 4; }
+    else if (selectedConcertsRange === '4-5') { min_concerts = 4; max_concerts = 5; }
+    // any — не передаем ограничения
     const preferences = {
         priority: document.querySelector('input[name="priority"]:checked')?.value,
-        max_concerts: document.querySelector('input[name="max_concerts"]:checked')?.value,
+        min_concerts,
+        max_concerts,
         diversity: document.querySelector('input[name="diversity"]:checked')?.value,
         composers: Array.from(selectedComposers),
         artists: Array.from(selectedArtists),
@@ -812,6 +820,7 @@ function resetSurvey() {
     selectedComposers.clear();
     selectedArtists.clear();
     selectedConcerts.clear();
+    selectedConcertsRange = null; // Сбрасываем диапазон концертов
     
     // Сбрасываем все радио кнопки
     document.querySelectorAll('input[type="radio"]').forEach(radio => {

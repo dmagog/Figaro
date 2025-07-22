@@ -37,17 +37,35 @@ def get_recommendations(
             "alternatives": []
         }
     
-    # 2. Фильтрация по max_concerts
-    max_concerts = preferences.get('max_concerts', '5')
-    logger.info(f"Фильтрация по max_concerts: {max_concerts}")
-    
-    if max_concerts == '5':
-        # Для "5+ концертов" - показываем все маршруты с 5+ концертами (без ограничения сверху)
-        filtered = [r for r in routes if getattr(r, 'Concerts', 0) >= 5]
+    # 2. Фильтрация по количеству концертов (min_concerts/max_concerts) с понижением min_concerts
+    min_concerts = preferences.get('min_concerts')
+    max_concerts = preferences.get('max_concerts')
+    logger.info(f"Фильтрация по min_concerts: {min_concerts}, max_concerts: {max_concerts}")
+    filtered = []
+    if min_concerts is not None and max_concerts is not None:
+        cur_min = min_concerts
+        while cur_min >= 0:
+            filtered = [r for r in routes if cur_min <= getattr(r, 'Concerts', 0) <= max_concerts]
+            logger.info(f"min_concerts={cur_min}, найдено маршрутов: {len(filtered)}")
+            if filtered:
+                break
+            cur_min -= 1
+        if cur_min < 0:
+            filtered = [r for r in routes if getattr(r, 'Concerts', 0) <= max_concerts]
+    elif min_concerts is not None:
+        cur_min = min_concerts
+        while cur_min >= 0:
+            filtered = [r for r in routes if getattr(r, 'Concerts', 0) >= cur_min]
+            logger.info(f"min_concerts={cur_min}, найдено маршрутов: {len(filtered)}")
+            if filtered:
+                break
+            cur_min -= 1
+        if cur_min < 0:
+            filtered = routes
+    elif max_concerts is not None:
+        filtered = [r for r in routes if getattr(r, 'Concerts', 0) <= max_concerts]
     else:
-        # Для остальных значений - ограничиваем сверху
-        filtered = [r for r in routes if getattr(r, 'Concerts', 0) <= int(max_concerts)]
-    
+        filtered = routes  # Без ограничений
     logger.info(f"После фильтрации по количеству концертов: {len(filtered)} маршрутов")
 
     # 3. Фильтрация по diversity (уникальные композиторы и доля главного)
