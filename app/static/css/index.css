@@ -104,6 +104,17 @@
     transform: translateY(-1px);
 }
 
+.nav-btn-admin {
+    background: rgba(255, 193, 7, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 193, 7, 0.4);
+}
+
+.nav-btn-admin:hover {
+    background: rgba(255, 193, 7, 0.3);
+    transform: translateY(-1px);
+}
+
 /* Отступ для основного контента под фиксированным меню */
 .container {
     margin-top: 90px;
@@ -155,6 +166,11 @@
         font-size: 0.8em;
     }
     
+    .nav-btn-admin {
+        padding: 6px 10px;
+        font-size: 0.75em;
+    }
+    
     .container {
         margin-top: 80px;
     }
@@ -179,6 +195,11 @@
     .nav-btn {
         padding: 5px 10px;
         font-size: 0.75em;
+    }
+    
+    .nav-btn-admin {
+        padding: 5px 8px;
+        font-size: 0.7em;
     }
 }
 
@@ -344,27 +365,33 @@
 /* Радио группы */
 .radio-group {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    justify-content: center;
     gap: 15px;
-    max-width: 600px;
+    max-width: 900px;
     margin: 0 auto;
+    flex-wrap: wrap;
 }
 
 .radio-group.compact {
     flex-direction: row;
     justify-content: center;
-    gap: 20px;
+    gap: 15px;
+    max-width: 600px;
 }
 
 .radio-option {
     display: flex;
     align-items: center;
-    padding: 20px;
+    padding: 15px;
     border: 2px solid #e9ecef;
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s;
     background: white;
+    flex: 1;
+    min-width: 200px;
+    max-width: 280px;
 }
 
 .radio-option:hover {
@@ -386,20 +413,20 @@
     display: flex;
     align-items: center;
     width: 100%;
-    gap: 15px;
+    gap: 12px;
 }
 
 .radio-icon {
-    font-size: 2em;
-    min-width: 50px;
+    font-size: 1.8em;
+    min-width: 40px;
     text-align: center;
 }
 
 .radio-number {
-    font-size: 2em;
+    font-size: 1.8em;
     font-weight: bold;
     color: #667eea;
-    min-width: 50px;
+    min-width: 40px;
     text-align: center;
 }
 
@@ -409,29 +436,30 @@
 }
 
 .radio-title {
-    font-size: 1.1em;
+    font-size: 1em;
     font-weight: 600;
     color: #333;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
 }
 
 .radio-description {
-    font-size: 0.9em;
+    font-size: 0.85em;
     color: #6c757d;
-    line-height: 1.4;
+    line-height: 1.3;
 }
 
 /* Компактные радио опции */
 .radio-option.compact {
     flex-direction: column;
     text-align: center;
-    padding: 15px;
-    min-width: 120px;
+    padding: 12px;
+    min-width: 100px;
+    max-width: 150px;
 }
 
 .radio-option.compact .radio-content {
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 .radio-option.compact .radio-text {
@@ -889,12 +917,27 @@
     }
     
     .radio-group {
+        flex-direction: column;
         gap: 10px;
+        max-width: 100%;
     }
     
     .radio-group.compact {
-        flex-direction: column;
-        gap: 10px;
+        flex-direction: row;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    
+    .radio-option {
+        min-width: auto;
+        max-width: none;
+        flex: 1;
+    }
+    
+    .radio-option.compact {
+        min-width: 80px;
+        max-width: 120px;
+        flex: 1;
     }
     
     .tag-cloud {
@@ -1236,6 +1279,37 @@
         flex-direction: column;
         gap: 20px;
     }
-}
+    
+    .radio-group {
+        gap: 8px;
+    }
+    
+    .radio-group.compact {
+        gap: 6px;
+    }
+    
+    .radio-option {
+        padding: 12px;
+    }
+    
+    .radio-option.compact {
+        padding: 10px;
+        min-width: 70px;
+        max-width: 100px;
+    }
+    
+    .radio-icon, .radio-number {
+        font-size: 1.5em;
+        min-width: 30px;
+    }
+    
+    .radio-title {
+        font-size: 0.9em;
+    }
+    
+    .radio-description {
+        font-size: 0.8em;
+    }
+} 
 
 /* Индикатор загрузки рекомендаций */ 

@@ -612,10 +612,10 @@ function renderRecommendations(recommendations) {
         ctaElement.style.display = 'none';
     }
     
-    // Удаляем старый блок рекомендаций, если есть
-    const oldRecommendationsBlock = document.querySelector('.recommendations-block');
-    if (oldRecommendationsBlock) {
-        oldRecommendationsBlock.remove();
+    // Очищаем блок рекомендаций (убираем спиннер)
+    const recommendationsBlock = document.getElementById('recommendations-block');
+    if (recommendationsBlock) {
+        recommendationsBlock.innerHTML = '';
     }
     
     const block = document.createElement('div');
