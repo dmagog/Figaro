@@ -721,10 +721,17 @@ function renderRecommendations(recommendations) {
     document.getElementById('recommendations-block').appendChild(block);
 }
 
+// --- Поясняющие тексты для блоков рекомендаций ---
+const recGroupDescriptions = {
+    weighted: 'Здесь собраны маршруты, которые максимально соответствуют вашим индивидуальным предпочтениям, выбранным в анкете: темпу, стилю, любимым композиторам и артистам. Если вы не указали предпочтения, отображаются лучшие маршруты по всем возможным вариантам.',
+    intellect: 'Маршруты с самой высокой интеллектуальной насыщенностью программы: больше редких произведений, необычных сочетаний и авторских задумок.',
+    comfort: 'Маршруты, подобранные с акцентом на удобство: минимальные переходы между залами, оптимальное время ожидания и сбалансированная нагрузка.',
+    balanced: 'Маршруты, в которых гармонично сочетаются интеллектуальная насыщенность и комфорт посещения. Лучший выбор для тех, кто ценит баланс впечатлений и удобства.'
+};
+
 // Рендеринг группы рекомендаций
 function renderGroup(title, routes, groupType) {
     if (!routes || !routes.length) return '';
-    
     // Выбираем топ-3 по главному параметру группы
     let sorted = [...routes];
     if (groupType === 'weighted') {
@@ -737,10 +744,11 @@ function renderGroup(title, routes, groupType) {
         sorted.sort((a, b) => Math.abs((b.intellect || 0) - (b.comfort || 0)) - Math.abs((a.intellect || 0) - (a.comfort || 0)));
     }
     const top3 = sorted.slice(0, 3);
-    
+    const description = recGroupDescriptions[groupType] ? `<div class='rec-group-desc'>${recGroupDescriptions[groupType]}</div>` : '';
     return `
         <div class="rec-group">
             <h3>${title}</h3>
+            ${description}
             <div class="rec-table-wrapper">
                 <table class="rec-table">
                     <thead>
@@ -849,5 +857,55 @@ function resetSurvey() {
     
     console.log('Анкета сброшена');
 }
+
+// --- Автоматическая подгрузка preferences при открытии анкеты или рекомендаций ---
+async function loadUserPreferences() {
+    try {
+        const response = await fetch('/api/preferences');
+        const data = await response.json();
+        if (data.success && data.has_preferences && data.preferences) {
+            const prefs = data.preferences;
+            // Восстанавливаем значения в форме
+            if (prefs.priority) {
+                const el = document.querySelector(`input[name="priority"][value="${prefs.priority}"]`);
+                if (el) el.checked = true;
+            }
+            if (prefs.diversity) {
+                const el = document.querySelector(`input[name="diversity"][value="${prefs.diversity}"]`);
+                if (el) el.checked = true;
+            }
+            if (prefs.min_concerts !== undefined && prefs.max_concerts !== undefined) {
+                if (prefs.min_concerts === 2 && prefs.max_concerts === 3) selectedConcertsRange = '2-3';
+                else if (prefs.min_concerts === 3 && prefs.max_concerts === 4) selectedConcertsRange = '3-4';
+                else if (prefs.min_concerts === 4 && prefs.max_concerts === 5) selectedConcertsRange = '4-5';
+                else selectedConcertsRange = 'any';
+                const el = document.querySelector(`input[name="concerts_range"][value="${selectedConcertsRange}"]`);
+                if (el) el.checked = true;
+            } else {
+                selectedConcertsRange = 'any';
+            }
+            // Восстанавливаем композиторов, артистов, концерты
+            selectedComposers = new Set(prefs.composers || []);
+            selectedArtists = new Set(prefs.artists || []);
+            selectedConcerts = new Set(prefs.concerts || []);
+            updateSummary();
+        }
+    } catch (e) {
+        console.warn('Не удалось загрузить preferences:', e);
+    }
+}
+
+// Вызов при открытии анкеты или рекомендаций
+function onTabShow(tab) {
+    if (tab === 'form' || tab === 'recs') {
+        loadUserPreferences();
+    }
+}
+// Переопределяем showTab, чтобы вызывать onTabShow
+const origShowTab = window.showTab;
+window.showTab = function(tab) {
+    origShowTab(tab);
+    onTabShow(tab);
+};
 
  

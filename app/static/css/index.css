@@ -962,19 +962,42 @@
 }
 
 .rec-group {
-    margin-bottom: 40px;
     background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    overflow: hidden;
+    border-radius: 18px;
+    box-shadow: 0 2px 16px rgba(102,126,234,0.08);
+    padding: 28px 32px 24px 32px;
+    margin-bottom: 36px;
+    position: relative;
 }
 
 .rec-group h3 {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
     color: white;
-    margin: 0;
-    padding: 20px;
-    font-size: 1.3em;
+    border-radius: 12px 12px 0 0;
+    margin: -28px -32px 18px -32px;
+    padding: 18px 32px 14px 32px;
+    font-size: 1.35em;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    box-shadow: 0 2px 8px rgba(102,126,234,0.06);
+}
+
+.rec-group-desc {
+    color: #5a5a7a;
+    font-size: 1.08em;
+    margin-bottom: 18px;
+    margin-top: -2px;
+    line-height: 1.7;
+    max-width: 900px;
+    border-radius: 0 0 8px 8px;
+    padding: 0 0 0 0;
+    background: none;
+    box-shadow: none;
+    animation: fadeIn 0.7s;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
 }
 
 .rec-table-wrapper {
