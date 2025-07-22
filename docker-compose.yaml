@@ -1,0 +1,124 @@
+version: "3"
+services: 
+  app:
+    build: ./app/
+    image: figaro-api:latest 
+    restart: unless-stopped
+    env_file:
+    - .env
+    volumes:
+      - ./app:/app
+    depends_on:
+      db:
+        condition: service_started
+      # rabbitmq:
+      #   condition: service_healthy
+    networks:
+      - figaro-network
+    # healthcheck:
+    #   test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 20s  
+
+  # ml_worker:
+  #   build: ./ml_worker/
+  #   image: my-ml-service-worker:latest
+  #   container_name: my-ml-service-worker
+  #   restart: unless-stopped
+  #   env_file:
+  #   - ./ml_worker/.env
+  #   volumes:
+  #     - ./ml_worker:/app
+  #   depends_on:
+  #     db:
+  #       condition: service_started
+  #     rabbitmq:
+  #       condition: service_healthy
+  #   networks:
+  #     - ml-service-network
+  
+          
+  web:
+    build: ./nginx
+    restart: unless-stopped
+    ports:
+      - 80:80
+      - 443:443
+    # depends_on:
+    #   app:
+    #     condition: service_healthy
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf    
+    networks:
+      - figaro-network
+  
+
+
+  # rabbitmq:
+  #   image: rabbitmq:3-management
+  #   ports:
+  #     - "15672:15672"  # Management UI
+  #     - "5672:5672"    # AMQP protocol
+  #   hostname: rabbitmq
+  #   restart: on-failure
+  #   volumes:
+  #     - rabbitmq_data:/var/lib/rabbitmq/data/
+  #   environment:
+  #     - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+  #     - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS}
+  #     - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit disk_free_limit 2147483648  
+  #   healthcheck:
+  #     test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+  #     interval: 20s
+  #     timeout: 10s
+  #     retries: 3
+  #   networks:
+  #     - ml-service-network
+
+
+  db:
+    image: postgres:17.4
+    restart: unless-stopped
+    shm_size: 128mb
+    # or set shared memory limit when deploy via swarm stack
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+      - type: tmpfs
+        target: /dev/shm
+        tmpfs:
+          size: 134217728 # 128*2^20 bytes = 128Mb
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    ports:
+      #- ${DB_PORT}:${DB_PORT}
+      - 5432:5432
+    #expose:
+    #  - 5432
+    networks:
+      - figaro-network
+
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080 
+    networks:
+      - figaro-network
+
+
+
+volumes:
+    postgres_data:
+    rabbitmq_data:
+    ollama_data:
+
+networks:
+  figaro-network:
+    name: figaro-network
+    driver: bridge    

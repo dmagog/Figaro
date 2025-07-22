@@ -1,0 +1,1804 @@
+/* Верхнее навигационное меню */
+.top-navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+    padding: 0;
+    height: 70px;
+}
+
+.nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+}
+
+.nav-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.nav-title {
+    font-size: 1.8em;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1;
+}
+
+.nav-subtitle {
+    font-size: 0.9em;
+    opacity: 0.9;
+    margin-top: 2px;
+}
+
+.nav-menu {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.nav-user {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-greeting {
+    font-size: 0.95em;
+    opacity: 0.9;
+}
+
+.nav-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.nav-auth {
+    display: flex;
+    gap: 10px;
+}
+
+.nav-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.9em;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.nav-btn-primary {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.nav-btn-primary:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.nav-btn-secondary {
+    background: transparent;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.nav-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+}
+
+.nav-btn-admin {
+    background: rgba(255, 193, 7, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 193, 7, 0.4);
+}
+
+.nav-btn-admin:hover {
+    background: rgba(255, 193, 7, 0.3);
+    transform: translateY(-1px);
+}
+
+/* Отступ для основного контента под фиксированным меню */
+.container {
+    margin-top: 90px;
+    padding-top: 20px;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .top-navbar {
+        height: 60px;
+    }
+    
+    .nav-container {
+        padding: 0 15px;
+    }
+    
+    .nav-title {
+        font-size: 1.5em;
+    }
+    
+    .nav-subtitle {
+        font-size: 0.8em;
+    }
+    
+    .nav-menu {
+        gap: 10px;
+    }
+    
+    .nav-user {
+        flex-direction: column;
+        gap: 5px;
+        align-items: flex-end;
+    }
+    
+    .user-greeting {
+        font-size: 0.8em;
+    }
+    
+    .nav-actions {
+        gap: 5px;
+    }
+    
+    .nav-auth {
+        gap: 5px;
+    }
+    
+    .nav-btn {
+        padding: 6px 12px;
+        font-size: 0.8em;
+    }
+    
+    .nav-btn-admin {
+        padding: 6px 10px;
+        font-size: 0.75em;
+    }
+    
+    .container {
+        margin-top: 80px;
+    }
+}
+
+@media (max-width: 480px) {
+    .nav-brand {
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .nav-subtitle {
+        margin-top: 0;
+    }
+    
+    .nav-user {
+        flex-direction: column;
+        gap: 3px;
+    }
+    
+    .nav-btn {
+        padding: 5px 10px;
+        font-size: 0.75em;
+    }
+    
+    .nav-btn-admin {
+        padding: 5px 8px;
+        font-size: 0.7em;
+    }
+}
+
+/* Основные стили для главной страницы */
+
+.tabs-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Стили для кнопок */
+.btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-prev {
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+    margin-bottom: 20px;
+}
+
+.btn-prev:hover {
+    background: #e9ecef;
+}
+
+/* Вкладки */
+.tabs {
+    display: flex;
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 15px 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    color: #6c757d;
+    transition: all 0.2s;
+}
+
+.tab-btn:hover {
+    background: #e9ecef;
+    color: #495057;
+}
+
+.tab-btn.active {
+    background: white;
+    color: #667eea;
+    border-bottom: 3px solid #667eea;
+}
+
+.tab-content {
+    padding: 30px;
+}
+
+/* Секция анкеты */
+.survey-section {
+    max-width: 1000px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.survey-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.survey-header h2 {
+    font-size: 2em;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.survey-header p {
+    font-size: 1.1em;
+    color: #6c757d;
+}
+
+.survey-form {
+    max-width: 950px;
+    margin: 0 auto;
+    position: relative;
+}
+
+@media (min-width: 1400px) {
+  .survey-section {
+    max-width: 1200px;
+  }
+  .survey-form {
+    max-width: 1100px;
+  }
+}
+
+/* Прогресс-бар */
+.survey-progress {
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.progress-text {
+    font-size: 14px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* Слайды */
+.survey-slide {
+    display: none;
+    animation: slideIn 0.3s ease;
+}
+
+.survey-slide.active {
+    display: block;
+}
+
+.slide-content {
+    text-align: center;
+}
+
+/* Стили для заголовка секции резюме */
+.slide-title {
+    font-size: 1.8em;
+    color: #2d3748;
+    margin-bottom: 10px;
+    font-weight: 700;
+    text-align: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.02em;
+}
+
+.slide-description {
+    font-size: 1em;
+    color: #718096;
+    text-align: center;
+    margin-bottom: 25px;
+    line-height: 1.5;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Радио группы */
+.radio-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin: 30px 0;
+}
+
+.radio-group.compact {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+}
+
+.radio-option {
+    position: relative;
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 16px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    min-width: 180px;
+    max-width: 280px;
+}
+
+.radio-option::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.radio-option:hover {
+    border-color: #667eea;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.15);
+    transform: translateY(-2px);
+}
+
+.radio-option:hover::before {
+    transform: scaleX(1);
+}
+
+.radio-option.selected {
+    border-color: #667eea;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.2);
+    transform: translateY(-3px);
+}
+
+.radio-option.selected::before {
+    transform: scaleX(1);
+}
+
+.radio-option input[type="radio"] {
+    display: none;
+}
+
+.radio-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 8px;
+    height: 100%;
+    min-height: 80px;
+}
+
+.radio-icon {
+    font-size: 2.5em;
+    color: #667eea;
+    transition: all 0.3s ease;
+    opacity: 0.7;
+}
+
+.radio-option:hover .radio-icon,
+.radio-option.selected .radio-icon {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.radio-number {
+    font-size: 2.2em;
+    font-weight: 700;
+    color: #667eea;
+    transition: all 0.3s ease;
+    opacity: 0.8;
+}
+
+.radio-option:hover .radio-number,
+.radio-option.selected .radio-number {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.radio-text {
+    text-align: center;
+}
+
+.radio-title {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+    line-height: 1.3;
+}
+
+.radio-description {
+    font-size: 0.9em;
+    color: #6c757d;
+    line-height: 1.4;
+    margin: 0;
+}
+
+.radio-option.compact {
+    padding: 16px;
+    min-width: 160px;
+    max-width: 240px;
+}
+
+.radio-option.compact .radio-content {
+    gap: 8px;
+    padding: 4px;
+}
+
+.radio-option.compact .radio-text {
+    text-align: center;
+}
+
+.radio-option.compact .radio-title {
+    font-size: 1em;
+    margin-bottom: 2px;
+}
+
+.radio-option.compact .radio-description {
+    font-size: 0.85em;
+}
+
+/* Компактные радио опции */
+.radio-option.compact {
+    flex-direction: column;
+    text-align: center;
+    padding: 0;
+    min-width: 120px;
+    max-width: 180px;
+}
+
+.radio-option.compact .radio-content {
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+}
+
+.radio-option.compact .radio-text {
+    text-align: center;
+}
+
+.radio-option.compact .radio-title {
+    font-size: 1em;
+    margin-bottom: 4px;
+}
+
+.radio-option.compact .radio-description {
+    font-size: 0.85em;
+    line-height: 1.3;
+}
+
+/* Облако тегов */
+.concerts-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    justify-content: flex-start;
+    align-items: flex-start;
+    margin: 18px 0 0 0;
+    padding: 0 0 0 0;
+    min-height: 60px;
+}
+
+/* Сохраняем .tag-cloud для артистов и композиторов */
+.tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin: 20px 0;
+    min-height: 100px;
+    align-items: center;
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    height: 38px;
+    margin: 6px 8px;
+    padding: 0 14px;
+    font-size: 1.08em;
+    font-weight: 500;
+    border-radius: 22px;
+    border: 1.5px solid #e0e7ef;
+    background: #f8f9ff;
+    color: #4f5bd5;
+    cursor: pointer;
+    transition: all 0.18s cubic-bezier(.4,0,.2,1);
+    position: relative;
+    outline: none;
+    box-shadow: 0 1px 4px rgba(102,126,234,0.04);
+    user-select: none;
+}
+.tag:hover:not(.concert-unavailable):not(.concert-purchased) {
+    background: #e9eafc;
+    border-color: #bfc6e0;
+    color: #333;
+    transform: translateY(-2px) scale(1.04);
+    z-index: 2;
+}
+.tag.selected {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border-color: #667eea;
+    font-weight: 700;
+    z-index: 2;
+}
+
+/* Tooltip */
+.tag[data-tooltip]:hover:after,
+.concert-unavailable[data-tooltip]:hover:after,
+.concert-purchased[data-tooltip]:hover:after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    bottom: 110%;
+    transform: translateX(-50%);
+    background: #222;
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.98em;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0.97;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(60,60,120,0.13);
+    transition: opacity 0.2s;
+}
+
+/* Поиск артистов */
+.tag-cloud-search {
+    text-align: center;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.tag-cloud-search input {
+    padding: 10px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 25px;
+    font-size: 14px;
+    width: 300px;
+    max-width: 80%;
+    transition: border-color 0.2s;
+}
+
+.tag-cloud-search input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+#artists-search-dropdown {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 100%;
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 10;
+    min-width: 300px;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+}
+
+.search-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f3f4;
+    transition: background-color 0.2s;
+}
+
+.search-item:hover {
+    background: #f8f9fa;
+}
+
+.search-item:last-child {
+    border-bottom: none;
+}
+
+/* Выбранные теги */
+.selected-tags {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.selected-count {
+    font-size: 14px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* Навигация */
+.survey-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #e9ecef;
+    gap: 20px;
+    min-height: 60px;
+}
+
+.btn-prev, .btn-next, .btn-submit {
+    padding: 6px 16px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    font-size: 14px;
+    min-width: 120px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.2;
+    text-align: center;
+    box-sizing: border-box;
+    margin: 0;
+    position: relative;
+    top: 0;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.btn-prev {
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+}
+
+.btn-prev:hover {
+    background: #e9ecef;
+    color: #495057;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-next {
+    background: #28a745;
+    color: white;
+}
+
+.btn-next:hover {
+    background: #218838;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-submit {
+    background: #28a745;
+    color: white;
+}
+
+.btn-submit:hover {
+    background: #218838;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Резюме */
+.summary-container {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: left;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 15px;
+}
+
+.summary-section {
+    margin-bottom: 0;
+    padding: 18px;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.summary-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.summary-section:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+}
+
+.summary-section h4 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 1em;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+}
+
+.summary-section h4::before {
+    content: '';
+    width: 4px;
+    height: 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 2px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.summary-item {
+    color: #6c757d;
+    font-size: 0.9em;
+    line-height: 1.4;
+    margin: 0;
+    padding-left: 14px;
+    position: relative;
+}
+
+.summary-item::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: #667eea;
+    font-weight: bold;
+}
+
+/* Стили для пилюль в резюме */
+.summary-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.summary-pill {
+    display: inline-block;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+    transition: all 0.3s ease;
+    cursor: default;
+}
+
+.summary-pill:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* Специфичные цвета для разных типов пилюль */
+.summary-section[data-type="composers"] .summary-pill {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.summary-section[data-type="artists"] .summary-pill {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.summary-section[data-type="concerts"] .summary-pill {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+/* Скрываем псевдоэлемент ::before для элементов с пилюлями */
+.summary-section[data-type="composers"] .summary-item::before,
+.summary-section[data-type="artists"] .summary-item::before,
+.summary-section[data-type="concerts"] .summary-item::before {
+    display: none;
+}
+
+/* Убираем отступ слева для элементов с пилюлями */
+.summary-section[data-type="composers"] .summary-item,
+.summary-section[data-type="artists"] .summary-item,
+.summary-section[data-type="concerts"] .summary-item {
+    padding-left: 0;
+}
+
+/* Рекомендации */
+#recommendations-block {
+    padding: 20px;
+}
+
+.recommendations-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.recommendations-header h2 {
+    color: #333;
+    font-size: 1.8em;
+}
+
+.recommendation-group {
+    margin-bottom: 30px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.group-title {
+    background: #667eea;
+    color: white;
+    padding: 15px 20px;
+    margin: 0;
+    font-size: 1.2em;
+}
+
+.routes-list {
+    padding: 20px;
+}
+
+.route-item {
+    padding: 15px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.route-item:hover {
+    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(102,126,234,0.1);
+}
+
+.route-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.route-title {
+    font-weight: 600;
+    color: #333;
+    font-size: 1.1em;
+}
+
+.route-stats {
+    display: flex;
+    gap: 15px;
+    font-size: 0.9em;
+    color: #6c757d;
+}
+
+.route-description {
+    color: #6c757d;
+    line-height: 1.4;
+}
+
+/* Загрузка и ошибки */
+.loading {
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+    padding: 20px;
+}
+
+.error {
+    text-align: center;
+    color: #dc3545;
+    padding: 20px;
+    background: #f8d7da;
+    border-radius: 8px;
+    border: 1px solid #f5c6cb;
+}
+
+.no-recommendations {
+    text-align: center;
+    color: #6c757d;
+    padding: 40px;
+    font-style: italic;
+}
+
+/* Стили для рекомендаций */
+.recommendations-block {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.recommendations-block h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 30px;
+    font-size: 2em;
+}
+
+.rec-group {
+    background: white;
+    border-radius: 18px;
+    box-shadow: 0 2px 16px rgba(102,126,234,0.08);
+    padding: 28px 32px 24px 32px;
+    margin-bottom: 36px;
+    position: relative;
+}
+
+.rec-group h3 {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px 12px 0 0;
+    margin: -28px -32px 18px -32px;
+    padding: 18px 32px 14px 32px;
+    font-size: 1.35em;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    box-shadow: 0 2px 8px rgba(102,126,234,0.06);
+}
+
+.rec-group-desc {
+    color: #5a5a7a;
+    font-size: 1.08em;
+    margin-bottom: 18px;
+    margin-top: -2px;
+    line-height: 1.7;
+    max-width: 900px;
+    border-radius: 0 0 8px 8px;
+    padding: 0 0 0 0;
+    background: none;
+    box-shadow: none;
+    animation: fadeIn 0.7s;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+}
+
+.rec-table-wrapper {
+    overflow-x: auto;
+    padding: 20px;
+}
+
+.rec-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+
+.rec-table th {
+    background: #f8f9fa;
+    padding: 12px 8px;
+    text-align: center;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
+}
+
+.rec-table td {
+    padding: 12px 8px;
+    text-align: center;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+}
+
+.rec-table-title {
+    font-weight: 600;
+    color: #667eea;
+    font-size: 1.1em;
+}
+
+.score-intellect {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.score-comfort {
+    color: #17a2b8;
+    font-weight: 600;
+}
+
+.score-weighted {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.rec-details-btn {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: background 0.2s;
+}
+
+.rec-details-btn:hover {
+    background: #5a6fd8;
+}
+
+.no-recommendations {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+    font-size: 1.1em;
+}
+
+/* Спиннер загрузки */
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+}
+
+#recommendations-spinner {
+    text-align: center;
+    padding: 20px;
+    display: none;
+}
+
+#recommendations-spinner::after {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Анимации */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .survey-section {
+        padding: 20px;
+    }
+    
+    .tab-content {
+        padding: 15px;
+    }
+    
+    .radio-group {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        margin: 20px 0;
+    }
+    
+    .radio-group.compact {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .radio-option {
+        min-width: auto;
+        max-width: none;
+        padding: 16px;
+    }
+    
+    .radio-option.compact {
+        padding: 14px;
+        min-width: auto;
+        max-width: none;
+    }
+    
+    .radio-content {
+        gap: 10px;
+        padding: 6px;
+        min-height: 70px;
+    }
+    
+    .radio-icon, .radio-number {
+        font-size: 2em;
+    }
+    
+    .radio-title {
+        font-size: 1em;
+    }
+    
+    .radio-description {
+        font-size: 0.85em;
+    }
+    
+    .tag-cloud {
+        gap: 8px;
+    }
+    
+    .tag {
+        font-size: 0.85em;
+        padding: 6px 12px;
+    }
+    
+    .survey-navigation {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .btn-prev, .btn-next, .btn-submit {
+        width: 100%;
+        max-width: 200px;
+    }
+    
+    .summary-container {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .summary-section {
+        padding: 15px;
+    }
+    
+    .summary-section h4 {
+        font-size: 1em;
+        gap: 8px;
+    }
+    
+    .summary-section h4::before {
+        width: 24px;
+        height: 24px;
+        font-size: 0.8em;
+    }
+    
+    .summary-item {
+        font-size: 0.85em;
+        padding: 8px 10px;
+    }
+    
+    .summary-pills {
+        gap: 6px;
+        margin-top: 6px;
+    }
+    
+    .summary-pill {
+        padding: 5px 10px;
+        font-size: 0.8em;
+    }
+} 
+
+/* Индикатор загрузки рекомендаций */
+.recs-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+    color: #666;
+    font-size: 1.1em;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+} 
+
+/* Стили для вкладки "О проекте" */
+.about-section {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.about-header {
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.about-header h2 {
+    font-size: 2.5em;
+    color: #333;
+    margin-bottom: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.about-subtitle {
+    font-size: 1.3em;
+    color: #666;
+    margin: 0;
+}
+
+.about-content {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.about-feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 25px;
+    padding: 30px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.about-feature:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+}
+
+.feature-icon {
+    font-size: 3em;
+    flex-shrink: 0;
+    width: 80px;
+    text-align: center;
+}
+
+.feature-text h3 {
+    font-size: 1.4em;
+    color: #333;
+    margin: 0 0 15px 0;
+}
+
+.feature-text p {
+    font-size: 1.1em;
+    color: #666;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.about-cta {
+    text-align: center;
+    padding: 50px 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    color: white;
+    margin-top: 20px;
+}
+
+.about-cta h3 {
+    font-size: 1.8em;
+    margin: 0 0 15px 0;
+}
+
+.about-cta p {
+    font-size: 1.2em;
+    margin: 0 0 30px 0;
+    opacity: 0.9;
+}
+
+.about-cta .btn {
+    background: white;
+    color: #667eea;
+    font-size: 1.1em;
+    padding: 15px 30px;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.about-cta .btn:hover {
+    background: #f8f9fa;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .about-section {
+        padding: 20px 15px;
+    }
+    
+    .about-header h2 {
+        font-size: 2em;
+    }
+    
+    .about-subtitle {
+        font-size: 1.1em;
+    }
+    
+    .about-feature {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+        padding: 25px 20px;
+    }
+    
+    .feature-icon {
+        font-size: 2.5em;
+        width: auto;
+    }
+    
+    .about-cta {
+        padding: 40px 20px;
+    }
+    
+    .about-cta h3 {
+        font-size: 1.5em;
+    }
+    
+    .about-cta p {
+        font-size: 1.1em;
+    }
+} 
+
+/* Призыв к действию на вкладке рекомендаций */
+.recommendations-cta {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.cta-content {
+    background: white;
+    border-radius: 20px;
+    padding: 50px 40px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.cta-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.cta-icon {
+    font-size: 4em;
+    margin-bottom: 20px;
+    display: block;
+}
+
+.cta-content h2 {
+    font-size: 2.2em;
+    color: #333;
+    margin: 0 0 20px 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.cta-content p {
+    font-size: 1.2em;
+    color: #666;
+    line-height: 1.6;
+    margin: 0 0 40px 0;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.cta-features {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+}
+
+.cta-feature {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: #555;
+}
+
+.cta-feature .feature-icon {
+    font-size: 1.5em;
+    margin: 0;
+}
+
+.cta-feature span:last-child {
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.cta-content .btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-size: 1.1em;
+    padding: 15px 30px;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.cta-content .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .recommendations-cta {
+        padding: 40px 15px;
+    }
+    
+    .cta-content {
+        padding: 40px 25px;
+    }
+    
+    .cta-icon {
+        font-size: 3em;
+    }
+    
+    .cta-content h2 {
+        font-size: 1.8em;
+    }
+    
+    .cta-content p {
+        font-size: 1.1em;
+    }
+    
+    .cta-features {
+        gap: 25px;
+    }
+    
+    .cta-feature .feature-icon {
+        font-size: 1.3em;
+    }
+    
+    .cta-feature span:last-child {
+        font-size: 0.85em;
+    }
+}
+
+@media (max-width: 480px) {
+    .cta-content {
+        padding: 20px;
+    }
+    
+    .cta-content h2 {
+        font-size: 1.5em;
+    }
+    
+    .cta-content p {
+        font-size: 0.95em;
+    }
+    
+    .cta-features {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .radio-group {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin: 15px 0;
+    }
+    
+    .radio-group.compact {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .radio-option {
+        padding: 14px;
+        min-width: auto;
+        max-width: none;
+    }
+    
+    .radio-option.compact {
+        padding: 12px;
+        min-width: auto;
+        max-width: none;
+    }
+    
+    .radio-content {
+        gap: 8px;
+        padding: 4px;
+        min-height: 60px;
+    }
+    
+    .radio-icon, .radio-number {
+        font-size: 1.8em;
+    }
+    
+    .radio-title {
+        font-size: 0.95em;
+        margin-bottom: 2px;
+    }
+    
+    .radio-description {
+        font-size: 0.8em;
+    }
+    
+    .summary-container {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .summary-section {
+        padding: 12px;
+    }
+    
+    .summary-section h4 {
+        font-size: 0.9em;
+        gap: 6px;
+    }
+    
+    .summary-section h4::before {
+        width: 20px;
+        height: 20px;
+        font-size: 0.7em;
+    }
+    
+    .summary-item {
+        font-size: 0.8em;
+        padding: 6px 8px;
+    }
+    
+    .summary-pills {
+        gap: 4px;
+        margin-top: 4px;
+    }
+    
+    .summary-pill {
+        padding: 4px 8px;
+        font-size: 0.75em;
+    }
+    
+    .slide-title {
+        font-size: 1.4em;
+    }
+    
+    .slide-description {
+        font-size: 0.9em;
+    }
+} 
+
+/* Индикатор загрузки рекомендаций */ 
+
+.radio-number.infinity {
+    font-size: 3.2em;
+    color: #667eea;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.05em;
+    text-shadow: 0 2px 8px rgba(102,126,234,0.10);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+} 
+
+.concert-unavailable {
+    background: #eee !important;
+    color: #bbb !important;
+    border: 1.5px dashed #ccc !important;
+    cursor: not-allowed !important;
+    opacity: 0.6;
+    pointer-events: none;
+}
+.concert-purchased {
+    background: linear-gradient(90deg, #b2f7c1 0%, #6ee7b7 100%) !important;
+    color: #1b5e20 !important;
+    border: 2px solid #34c759 !important;
+    font-weight: 700;
+    position: relative;
+}
+.concert-purchased::after {
+    content: '✔';
+    position: absolute;
+    right: 8px;
+    top: 2px;
+    font-size: 0.9em;
+    color: #34c759;
+} 
+
+.concerts-cloud .tag {
+    width: auto !important;
+    min-width: 44px;
+    max-width: none;
+    display: inline-flex !important;
+    box-sizing: border-box;
+    margin: 6px 8px;
+    padding: 0 14px;
+} 
+
+.concerts-cloud .tag[data-tooltip]:hover:after,
+.concert-unavailable[data-tooltip]:hover:after,
+.concert-purchased[data-tooltip]:hover:after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    bottom: 120%;
+    transform: translateX(-50%);
+    background: #f8f9ff;
+    color: #333;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.98em;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0.97;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(60,60,120,0.10);
+    border: 1.5px solid #e0e7ef;
+    transition: opacity 0.2s;
+}
+.concerts-cloud .tag[data-tooltip]:hover:before,
+.concert-unavailable[data-tooltip]:hover:before,
+.concert-purchased[data-tooltip]:hover:before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 112%;
+    transform: translateX(-50%);
+    border-width: 7px 7px 0 7px;
+    border-style: solid;
+    border-color: #f8f9ff transparent transparent transparent;
+    z-index: 11;
+    pointer-events: none;
+} 
+
+.artists-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    justify-content: center;
+    align-items: flex-start;
+    margin: 18px 0 0 0;
+    padding: 0 0 0 0;
+    min-height: 30px;
+}
+
+.artists-cloud .tag {
+    /* Размеры будут задаваться через JS */
+    font-size: 1em;
+    padding: 0.32em 1.1em;
+    min-width: 2.2em;
+    height: auto;
+    border-radius: 2em;
+    background: linear-gradient(135deg, #f8f9ff 60%, #e9eafc 100%);
+    color: #4f5bd5;
+    border: 1.2px solid #e0e7ef;
+    box-shadow: 0 2px 8px rgba(102,126,234,0.07);
+    transition: all 0.16s cubic-bezier(.4,0,.2,1);
+    margin: 0;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+.artists-cloud .tag:hover {
+    background: linear-gradient(135deg, #e9eafc 60%, #d1d5fa 100%);
+    color: #333;
+    border-color: #bfc6e0;
+    transform: scale(1.08) translateY(-2px);
+    z-index: 2;
+    box-shadow: 0 4px 16px rgba(102,126,234,0.13);
+}
+.artists-cloud .tag.selected {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border-color: #667eea;
+    font-weight: 700;
+    z-index: 2;
+    box-shadow: 0 4px 16px rgba(102,126,234,0.18);
+} 

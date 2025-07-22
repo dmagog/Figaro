@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Figaro — конструктор маршрутов фестиваля «Безумные дни в Екатеринбурге»</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/index.css">
+</head>
+<body>
+    <!-- Верхнее навигационное меню -->
+    <nav class="top-navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h1 class="nav-title">🎈 Figaro</h1>
+                <span class="nav-subtitle">Конструктор маршрутов</span>
+            </div>
+            
+            <div class="nav-menu">
+                {% if user %}
+                <div class="nav-user">
+                    <span class="user-greeting">Привет, {{ user.name or user.email }}!</span>
+                    <div class="nav-actions">
+                        {% if user.is_superuser %}
+                        <a href="/admin" class="nav-btn nav-btn-admin">Админка</a>
+                        {% endif %}
+                        <a href="/profile" class="nav-btn nav-btn-primary">Личный кабинет</a>
+                        <a href="/logout" class="nav-btn nav-btn-secondary">🚪 Выйти</a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="nav-auth">
+                    <a href="/login" class="nav-btn nav-btn-primary">🔑 Войти</a>
+                    <a href="/register" class="nav-btn nav-btn-secondary">📝 Регистрация</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Основной контент -->
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab-btn active" id="tab-about-btn" onclick="showTab('about')">ℹ️ О проекте</button>
+                <button class="tab-btn" id="tab-form-btn" onclick="showTab('form')">📝 Анкета</button>
+                <button class="tab-btn" id="tab-recs-btn" onclick="showTab('recs')">🎯 Рекомендации</button>
+            </div>
+            
+            <!-- Вкладка О проекте -->
+            <div class="tab-content" id="tab-about" style="display:block;">
+                <div class="about-section">
+                    <div class="about-header">
+                        <h2>🎈 Figaro - Персональный гид по фестивалю</h2>
+                        <p class="about-subtitle">Умная система рекомендаций для идеального музыкального дня</p>
+                    </div>
+                    
+                    <div class="about-content">
+                        <div class="about-feature">
+                            <div class="feature-icon">🎯</div>
+                            <div class="feature-text">
+                                <h3>Персонализированные маршруты</h3>
+                                <p>Наша система анализирует ваши предпочтения и создает уникальные маршруты, учитывая ваши интересы, темп и стиль посещения фестиваля.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="about-feature">
+                            <div class="feature-icon">🧠</div>
+                            <div class="feature-text">
+                                <h3>Искусственный интеллект</h3>
+                                <p>Используем современные алгоритмы машинного обучения для анализа тысяч возможных комбинаций концертов и выбора оптимальных вариантов.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="about-feature">
+                            <div class="feature-icon">⚡</div>
+                            <div class="feature-text">
+                                <h3>Быстрые рекомендации</h3>
+                                <p>Получите персональные рекомендации за считанные секунды. Наша система учитывает время между концертами, стоимость билетов и ваши предпочтения.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="about-feature">
+                            <div class="feature-icon">🎼</div>
+                            <div class="feature-text">
+                                <h3>Богатая база данных</h3>
+                                <p>Доступ к полной информации о концертах, исполнителях, композиторах и залах фестиваля. Мы знаем каждый уголок музыкального мира.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="about-cta">
+                            <h3>Готовы найти свой идеальный маршрут?</h3>
+                            <p>Заполните короткую анкету и получите персональные рекомендации уже через несколько минут!</p>
+                            <button class="btn btn-next" onclick="showTab('form')">📝 Начать анкету</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Вкладка Анкета -->
+            <div class="tab-content" id="tab-form" style="display:none;">
+                <div class="survey-section" id="user-survey">
+                    <button id="reset-survey-btn" class="btn btn-prev" onclick="resetSurvey()">Сбросить анкету</button>
+                    <div class="survey-header">
+                        <h2>🎵 Персонализация вашего маршрута</h2>
+                        <p>Помогите нам подобрать идеальные концерты для вас</p>
+                    </div>
+                    
+                    <form class="survey-form" id="preferences-form">
+                        <!-- Прогресс-бар -->
+                        <div class="survey-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress-fill"></div>
+                            </div>
+                            <div class="progress-text">
+                                <span id="current-step">1</span> из <span id="total-steps">7</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Слайд 1: Приоритет -->
+                        <div class="survey-slide active" data-step="1">
+                            <div class="slide-content">
+                                <h3 class="slide-title">Что для вас важнее в маршруте?</h3>
+                                <p class="slide-description">Выберите подход, который лучше всего описывает ваши ожидания от фестиваля</p>
+                                
+                                <div class="radio-group">
+                                    <label class="radio-option">
+                                        <input type="radio" name="priority" value="intellect" class="radio-input" onchange="handleRadioChange('priority', 'intellect')">
+                                        <div class="radio-content">
+                                            <div class="radio-icon">🔍</div>
+                                            <div class="radio-text">
+                                                <div class="radio-title">Увидеть редкое, услышать необычное</div>
+                                                <div class="radio-description">Интеллектуально насыщенная программа</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <label class="radio-option">
+                                        <input type="radio" name="priority" value="comfort" class="radio-input" onchange="handleRadioChange('priority', 'comfort')">
+                                        <div class="radio-content">
+                                            <div class="radio-icon">🛋️</div>
+                                            <div class="radio-text">
+                                                <div class="radio-title">Провести день удобно и без перегрузок</div>
+                                                <div class="radio-description">Комфортный темп и знакомые произведения</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <label class="radio-option">
+                                        <input type="radio" name="priority" value="balance" class="radio-input" onchange="handleRadioChange('priority', 'balance')">
+                                        <div class="radio-content">
+                                            <div class="radio-icon">⚖️</div>
+                                            <div class="radio-text">
+                                                <div class="radio-title">Найти баланс между новизной и удобством</div>
+                                                <div class="radio-description">Оптимальное сочетание</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Слайд 2: Количество концертов -->
+                        <div class="survey-slide" data-step="2">
+                            <div class="slide-content">
+                                <h3 class="slide-title">Сколько концертов в день — это нормально для вас?</h3>
+                                <p class="slide-description">Выберите комфортный для вас темп посещения</p>
+                                
+                                <div class="radio-group compact">
+                                    <label class="radio-option compact">
+                                        <input type="radio" name="concerts_range" value="2-3" class="radio-input" onchange="handleRadioChange('concerts_range', '2-3')">
+                                        <div class="radio-content">
+                                            <div class="radio-number">2–3</div>
+                                            <div class="radio-text">
+                                                <div class="radio-title">Спокойный темп</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <label class="radio-option compact">
+                                        <input type="radio" name="concerts_range" value="3-4" class="radio-input" onchange="handleRadioChange('concerts_range', '3-4')">
+                                        <div class="radio-content">
+                                            <div class="radio-number">3–4</div>
+                                            <div class="radio-text">
+                                                <div class="radio-title">Оптимальный</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <label class="radio-option compact">
+                                        <input type="radio" name="concerts_range" value="4-5" class="radio-input" onchange="handleRadioChange('concerts_range', '4-5')">
+                                        <div class="radio-content">
+                                            <div class="radio-number">4–5</div>
+                                            <div class="radio-text">
+                                                <div class="radio-title">Интенсивный</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <label class="radio-option compact">
+                                        <input type="radio" name="concerts_range" value="any" class="radio-input" onchange="handleRadioChange('concerts_range', 'any')">
+                                        <div class="radio-content">
+                                            <div class="radio-number infinity">∞</div>
+                                            <div class="radio-text">
+                                                <div class="radio-title">Максимум!</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Слайд 3: Разнообразие -->
+                        <div class="survey-slide" data-step="3">
+                            <div class="slide-content">
+                                <h3 class="slide-title">Что ближе по настроению?</h3>
+                                <p class="slide-description">Выберите стиль программы, который вам больше нравится</p>
+                                
+                                <div class="radio-group">
+                                    <label class="radio-option">
+                                        <input type="radio" name="diversity" value="mono" class="radio-input" onchange="handleRadioChange('diversity', 'mono')">
+                                        <div class="radio-content">
+                                            <div class="radio-icon">🎼</div>
+                                            <div class="radio-text">
+                                                <div class="radio-title">Посвятить день одному композитору</div>
+                                                <div class="radio-description">Глубокое погружение в творчество</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <label class="radio-option">
+                                        <input type="radio" name="diversity" value="diverse" class="radio-input" onchange="handleRadioChange('diversity', 'diverse')">
+                                        <div class="radio-content">
+                                            <div class="radio-icon">🌈</div>
+                                            <div class="radio-text">
+                                                <div class="radio-title">Микс из жанров, стилей и эпох</div>
+                                                <div class="radio-description">Разнообразная программа</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <label class="radio-option">
+                                        <input type="radio" name="diversity" value="flexible" class="radio-input" onchange="handleRadioChange('diversity', 'flexible')">
+                                        <div class="radio-content">
+                                            <div class="radio-icon">🎲</div>
+                                            <div class="radio-text">
+                                                <div class="radio-title">Открыт(а) к разным вариантам</div>
+                                                <div class="radio-description">Готов(а) к сюрпризам</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Слайд 4: Предпочтения композиторов -->
+                        <div class="survey-slide" data-step="4">
+                            <div class="slide-content">
+                                <h3 class="slide-title">Каких композиторов вы хотите услышать?</h3>
+                                <p class="slide-description">Выберите до 5 композиторов (размер шрифта показывает популярность)</p>
+                                
+                                <div class="tag-cloud" id="composers-cloud">
+                                    <div class="loading">Загрузка композиторов...</div>
+                                </div>
+                                
+                                <div class="selected-tags" id="selected-composers">
+                                    <span class="selected-count">Выбрано: <span id="composers-count">0</span>/5</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Слайд 5: Предпочтения исполнителей -->
+                        <div class="survey-slide" data-step="5">
+                            <div class="slide-content">
+                                <h3 class="slide-title">Каких исполнителей вы хотите услышать?</h3>
+                                <p class="slide-description">Выберите до 5 исполнителей (размер шрифта показывает популярность)</p>
+                                
+                                <div class="tag-cloud-search" style="text-align:center; margin-bottom:10px; position:relative;">
+                                    <input type="text" id="artists-cloud-search" placeholder="Поиск исполнителя..." style="padding:6px 12px; border-radius:8px; border:1.5px solid #e0e7eb; font-size:0.95em; width:70%; max-width:320px;">
+                                    <div id="artists-search-dropdown" style="position:absolute; left:50%; transform:translateX(-50%); top:38px; background:white; border:1.5px solid #e0e7eb; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.08); z-index:10; display:none; min-width:220px; max-height:180px; overflow-y:auto;"></div>
+                                </div>
+                                <div class="tag-cloud" id="artists-cloud">
+                                    <div class="loading">Загрузка исполнителей...</div>
+                                </div>
+                                
+                                <div class="selected-tags" id="selected-artists">
+                                    <span class="selected-count">Выбрано: <span id="artists-count">0</span>/5</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Слайд 6: Концерты -->
+                        <div class="survey-slide" data-step="6">
+                            <div class="slide-content">
+                                <h3 class="slide-title">Какие концерты вы уже планируете посетить?</h3>
+                                <p class="slide-description">Отметьте номера концертов, которые уже запланировали (необязательно)</p>
+                                
+                                <div class="tag-cloud" id="concerts-cloud">
+                                    <div class="loading">Загрузка концертов...</div>
+                                </div>
+                                
+                                <div class="selected-tags" id="selected-concerts">
+                                    <span class="selected-count">Выбрано: <span id="concerts-count">0</span></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Слайд 7: Резюме -->
+                        <div class="survey-slide" data-step="7">
+                            <div class="slide-content">
+                                <h3 class="slide-title">Ваши предпочтения</h3>
+                                <p class="slide-description">Проверьте, правильно ли мы поняли ваши пожелания</p>
+                                
+                                <div class="summary-container" id="summary-container">
+                                    <div class="summary-section" data-type="priority">
+                                        <h4>🎯 Подход к маршруту</h4>
+                                        <div class="summary-item" id="priority-summary">Не выбрано</div>
+                                    </div>
+                                    
+                                    <div class="summary-section" data-type="intensity">
+                                        <h4>📅 Интенсивность</h4>
+                                        <div class="summary-item" id="max-concerts-summary">Не выбрано</div>
+                                    </div>
+                                    
+                                    <div class="summary-section" data-type="diversity">
+                                        <h4>🎼 Разнообразие</h4>
+                                        <div class="summary-item" id="diversity-summary">Не выбрано</div>
+                                    </div>
+                                    
+                                    <div class="summary-section" data-type="composers">
+                                        <h4>🎵 Любимые композиторы</h4>
+                                        <div class="summary-item" id="composers-summary">Не выбрано</div>
+                                    </div>
+                                    
+                                    <div class="summary-section" data-type="artists">
+                                        <h4>🎤 Любимые исполнители</h4>
+                                        <div class="summary-item" id="artists-summary">Не выбрано</div>
+                                    </div>
+                                    
+                                    <div class="summary-section" data-type="concerts">
+                                        <h4>🎭 Запланированные концерты</h4>
+                                        <div class="summary-item" id="planned-concerts-summary">Не выбрано</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Навигация -->
+                        <div class="survey-navigation">
+                            <button type="button" class="btn-prev" id="btn-prev" style="display: none;">← Назад</button>
+                            <button type="button" class="btn-next" id="btn-next">Далее →</button>
+                            <button type="submit" class="btn-submit" id="btn-submit" style="display: none;">🎯 Получить рекомендации</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Вкладка Рекомендации -->
+            <div class="tab-content" id="tab-recs" style="display:none;">
+                <div id="recommendations-spinner"></div>
+                <div id="recommendations-block">
+                    <!-- Призыв к действию для неавторизованных пользователей -->
+                    <div id="recommendations-cta" class="recommendations-cta">
+                        <div class="cta-content">
+                            <div class="cta-icon">🎯</div>
+                            <h2>Получите персональные рекомендации</h2>
+                            <p>Заполните короткую анкету, чтобы мы могли подобрать для вас идеальные маршруты по фестивалю</p>
+                            <div class="cta-features">
+                                <div class="cta-feature">
+                                    <span class="feature-icon">⚡</span>
+                                    <span>Быстро и просто</span>
+                                </div>
+                                <div class="cta-feature">
+                                    <span class="feature-icon">🎵</span>
+                                    <span>Учитываем ваши вкусы</span>
+                                </div>
+                                <div class="cta-feature">
+                                    <span class="feature-icon">🧠</span>
+                                    <span>ИИ-алгоритмы</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-next" onclick="showTab('form')">📝 Заполнить анкету</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/js/index.js"></script>
+</body>
+</html> 

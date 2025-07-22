@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Залы — Админка</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body { background: #f6f7fb; font-family: 'Segoe UI', 'Arial', sans-serif; }
+        .admin-container { max-width: 1200px; margin: 40px auto; padding: 30px; background: white; border-radius: 18px; box-shadow: 0 8px 32px rgba(60,60,120,0.08); }
+        .admin-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 30px; }
+        .admin-header h1 { font-size: 2.2em; margin: 0; flex-shrink:0; }
+        .admin-nav-flex { display: flex; gap: 18px; flex-wrap: nowrap; align-items: center; position: relative; overflow-x: auto; padding-bottom: 4px; flex:1; }
+        .admin-menu-btn { background: #667eea; color: white; padding: 10px 28px; border-radius: 10px; text-decoration: none; font-weight: 500; font-size: 1.08em; border: none; transition: background 0.18s, color 0.18s; display: inline-block; text-align: center; cursor: pointer; white-space: nowrap; }
+        .admin-menu-btn:hover, .admin-menu-btn.active { background: #4f5bd5; color: #fff; }
+        /* Удалены стили выпадающего меню, теперь используется общий style.css */
+        .admin-menu-dropdown-arrow { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); width: 24px; height: 12px; pointer-events: none; z-index: 1003; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: translateY(0);} }
+        table { width: 100%; border-collapse: collapse; margin-top: 30px; background: #f8f9fa; border-radius: 12px; overflow: hidden; }
+        th, td { padding: 14px 10px; text-align: left; }
+        th { background: #e0e7ff; color: #333; font-weight: 600; }
+        tr:nth-child(even) { background: #f0f4ff; }
+        tr:hover { background: #e3eafe; }
+        .fill-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            min-width: 60px;
+            padding: 2px 8px 6px 8px;
+            border-radius: 8px;
+            font-weight: 600;
+            color: #fff;
+            text-align: left;
+            position: relative;
+            background: none;
+            box-shadow: none;
+        }
+        .fill-bar .fill-percent {
+            z-index: 2;
+            font-size: 1em;
+            margin-bottom: 2px;
+            font-weight: 700;
+            transition: color 0.2s;
+            cursor: default;
+        }
+        .fill-bar .fill-percent:hover {
+            cursor: help;
+            text-decoration: underline dotted #bfc8e6 1.5px;
+        }
+        .fill-bar .fill-progress {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #e0e7ff;
+            overflow: hidden;
+            margin-top: 4px;
+            position: relative;
+        }
+        .fill-bar .fill-progress-inner {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.3s, background 0.3s;
+        }
+        .fill-bar::after { content: attr(data-tooltip); position: absolute; top: 120%; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 8px 14px; border-radius: 8px; font-size: 13px; white-space: nowrap; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; z-index: 1001; margin-top: 6px; pointer-events: none; box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
+        .fill-bar:hover::after { opacity: 1; visibility: visible; }
+        .hall-badge { display: inline-block; background: #e3f2fd; color: #1976d2; border-radius: 8px; padding: 4px 14px; font-size: 1em; font-weight: 400; margin: 0; }
+        th.sortable { cursor: pointer; user-select: none; position: relative; transition: background 0.15s, color 0.15s; }
+        th.sortable:hover { background: #dbeafe; color: #4f5bd5; }
+        th.sortable:after { content: ''; position: absolute; right: 10px; font-size: 1em; }
+        th.sorted-asc:after { content: '▲'; }
+        th.sorted-desc:after { content: '▼'; }
+        .edit-seats-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0 0 0 4px;
+            display: inline-flex;
+            align-items: center;
+            transition: background 0.15s;
+            outline: none;
+            box-shadow: none;
+        }
+        .edit-seats-btn:hover,
+        .edit-seats-btn:focus {
+            background: #e0e7ff;
+            border-radius: 7px;
+        }
+        .edit-seats-btn svg {
+            width: 16px;
+            height: 16px;
+            vertical-align: middle;
+            margin: 0;
+        }
+        .seats-edit-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 2px;
+        }
+        .seats-edit-row input[type="number"] {
+            width: 70px;
+            padding: 4px 8px;
+            border: 1.5px solid #bfc8e6;
+            border-radius: 7px;
+            font-size: 1em;
+            outline: none;
+            transition: border 0.18s, box-shadow 0.18s;
+        }
+        .seats-edit-row input[type="number"]:focus {
+            border: 1.5px solid #4f5bd5;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.10);
+        }
+        .seats-edit-row .save-btn {
+            background: #4f5bd5;
+            color: #fff;
+            border: none;
+            border-radius: 7px;
+            padding: 2px 8px;
+            font-size: 1.1em;
+            min-width: 28px;
+            min-height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .seats-edit-row .save-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+        .seats-edit-row .cancel-btn {
+            background: none;
+            color: #4f5bd5;
+            border: 1.5px solid #e0e7ff;
+            border-radius: 7px;
+            padding: 2px 8px;
+            font-size: 1.1em;
+            min-width: 28px;
+            min-height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.15s, border 0.15s;
+        }
+        .seats-edit-row .cancel-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+        .seats-inline {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .seats-value {
+            font-size: 1em;
+            margin: 0;
+            padding: 0;
+            line-height: 1.2;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>Залы</h1>
+            <nav class="admin-nav-flex" id="adminNav" style="flex:1;">
+                <a href="/admin" class="admin-menu-btn">Главная</a>
+                <a href="/admin/users" class="admin-menu-btn">Пользователи</a>
+                <a href="/admin/customers" class="admin-menu-btn">Покупатели</a>
+                <a href="/admin/purchases" class="admin-menu-btn">Покупки</a>
+                <a href="/admin/concerts" class="admin-menu-btn">Концерты</a>
+                <a href="/admin/halls" class="admin-menu-btn">Залы</a>
+                <a href="/" class="admin-menu-btn"><span style="font-size:1.1em; margin-right:6px;">🌐</span>На сайт</a>
+                <div class="admin-menu-dropdown" id="adminMenuDropdown" style="display:none;">
+                    <button class="admin-menu-dropdown-btn" id="dropdownBtn">Ещё <span style="font-size:1.1em;">▼</span></button>
+                    <div class="admin-menu-dropdown-content" id="dropdownContent">
+                        <div class="admin-menu-dropdown-arrow">
+                            <svg width="24" height="12"><polygon points="12,12 0,0 24,0" fill="#f0f4ff"/></svg>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        {% set fill = mean_fill_percent_all_halls %}
+        {% if fill < 50 %}
+            {% set fill_color = '#6ec6ff' %}
+        {% elif fill < 70 %}
+            {% set fill_color = '#1e88e5' %}
+        {% elif fill < 100 %}
+            {% set fill_color = '#43e695' %}
+        {% else %}
+            {% set fill_color = '#43a047' %}
+        {% endif %}
+        <div style="margin: 8px 0 0 0; color: #aaa; font-size: 0.98em; text-align: right;">
+            Общая средняя заполняемость: <span id="halls-mean-fill-value" style="color: {{ fill_color }}; font-weight:700;">{{ mean_fill_percent_all_halls }}%</span>
+        </div>
+        <table id="halls-table">
+            <thead>
+                <tr>
+                    <th class="sortable">Название</th>
+                    <th class="sortable">Всего мест</th>
+                    <th class="sortable">Концертов</th>
+                    <th class="sortable">В продаже</th>
+                    <th class="sortable">Продано<br>билетов</th>
+                    <th class="sortable">Средняя<br>заполняемость</th>
+                    <th class="sortable">Заполняемость</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in halls_data %}
+                <tr>
+                    <td><span class="hall-badge">{{ item.hall.name }}</span></td>
+                    <td>
+                        <span class="seats-inline">
+                            <span class="seats-value">{{ item.seats }}</span>
+                            {% if user.is_superuser %}
+                            <button class="edit-seats-btn" title="Редактировать">
+                                <svg viewBox="0 0 20 20" fill="none" width="16" height="16"><path d="M13.586 3.586a2 2 0 0 1 2.828 2.828l-8.5 8.5a2 2 0 0 1-.878.515l-3 1a1 1 0 0 1-1.263-1.263l1-3a2 2 0 0 1 .515-.878l8.5-8.5z" stroke="#4f5bd5" stroke-width="1.2"/></svg>
+                            </button>
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td>{{ item.concerts }}</td>
+                    <td>{{ item.available_concerts }}</td>
+                    <td>{{ item.tickets_sold }}</td>
+                    <td>
+                        <span>{{ item.mean_fill_percent }}%</span>
+                    </td>
+                    <td>
+                        {% set fill = item.fill_percent|round(0, 'floor') %}
+                        {% if fill and fill > 0 %}
+                            {% if fill < 50 %}
+                                {% set fill_color = '#6ec6ff' %}
+                                {% set fill_gradient = 'linear-gradient(90deg, #6ec6ff 0%, #1e88e5 100%)' %}
+                            {% elif fill < 70 %}
+                                {% set fill_color = '#1e88e5' %}
+                                {% set fill_gradient = 'linear-gradient(90deg, #1e88e5 0%, #43e695 100%)' %}
+                            {% elif fill < 100 %}
+                                {% set fill_color = '#43e695' %}
+                                {% set fill_gradient = 'linear-gradient(90deg, #43e695 0%, #43a047 100%)' %}
+                            {% else %}
+                                {% set fill_color = '#43a047' %}
+                                {% set fill_gradient = '#43a047' %}
+                            {% endif %}
+                            <span class="fill-bar" data-tooltip="Заполняемость: {{ fill }}%">
+                                <span class="fill-percent" style="color: {{ fill_color }}; font-weight:700;">{{ fill }}%</span>
+                                <div class="fill-progress">
+                                    <div class="fill-progress-inner" style="width: {{ fill }}%; background: {{ fill_gradient }};"></div>
+                                </div>
+                            </span>
+                        {% else %}
+                            <span style="color:#bfc8e6; font-weight:600;">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- Раздел с переходами между залами -->
+        <div style="margin-top: 40px;">
+            <h2 style="margin-bottom: 20px; color: #333; font-size: 1.8em;">Матрица переходов между залами</h2>
+            <p style="color: #666; margin-bottom: 20px;">Время перехода между залами в минутах (по строкам - от зала, по столбцам - к залу)</p>
+            
+            {% if transitions_matrix and hall_names %}
+            <div style="overflow-x: auto; margin-top: 20px;">
+                <table id="transitions-matrix-table" style="margin-top: 20px; min-width: 600px; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); font-size: 0.9em;">
+                    <thead>
+                        <tr>
+                            <th style="background: white; border: 1px solid #e9ecef; padding: 8px 10px; text-align: center; font-weight: 600; color: #333; font-size: 0.85em;">От зала → К залу</th>
+                            {% for hall_name in hall_names %}
+                            <th style="background: #e0e7ff; border: 1px solid #e9ecef; padding: 8px 6px; text-align: center; font-weight: 600; color: #333; min-width: 100px; max-width: 120px;">
+                                <span class="hall-badge" style="font-size: 0.85em; padding: 3px 8px;">{{ hall_name }}</span>
+                            </th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for from_hall in hall_names %}
+                        <tr>
+                            <td style="background: #e0e7ff; border: 1px solid #e9ecef; padding: 8px 6px; text-align: center; font-weight: 600; color: #333; white-space: nowrap;">
+                                <span class="hall-badge" style="font-size: 0.85em; padding: 3px 8px;">{{ from_hall }}</span>
+                            </td>
+                            {% for to_hall in hall_names %}
+                                {% set transition_time = transitions_matrix[from_hall][to_hall] %}
+                                {% if from_hall == to_hall %}
+                                    <td style="background: #f8f9fa; border: 1px solid #e9ecef; padding: 8px 6px; text-align: center; color: #999; font-style: italic; font-size: 0.9em;">—</td>
+                                {% elif transition_time is not none %}
+                                    <td style="background: white; border: 1px solid #e9ecef; padding: 8px 6px; text-align: center; color: #333; font-weight: 500; font-size: 0.9em;">{{ transition_time }}</td>
+                                {% else %}
+                                    <td style="background: white; border: 1px solid #e9ecef; padding: 8px 6px; text-align: center; color: #999; font-style: italic; font-size: 0.85em;">Н/Д</td>
+                                {% endif %}
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 40px; color: #666; background: #f8f9fa; border-radius: 12px;">
+                <div style="font-size: 3em; margin-bottom: 15px;">🚶</div>
+                <h3 style="margin-bottom: 10px; color: #333;">Данные о переходах отсутствуют</h3>
+                <p>Информация о времени переходов между залами не загружена</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
+<script>
+// JS-сортировка таблицы по клику на заголовки (аналогично admin_concerts.html)
+document.addEventListener('DOMContentLoaded', function() {
+    const table = document.getElementById('halls-table');
+    const headers = table.querySelectorAll('th.sortable');
+    let sortCol = null;
+    let sortDir = 1;
+
+    headers.forEach((th, idx) => {
+        th.addEventListener('click', function() {
+            if (sortCol === idx) {
+                sortDir = -sortDir;
+            } else {
+                sortCol = idx;
+                sortDir = 1;
+            }
+            headers.forEach(h => h.classList.remove('sorted-asc', 'sorted-desc'));
+            th.classList.add(sortDir === 1 ? 'sorted-asc' : 'sorted-desc');
+            sortTable(idx, sortDir);
+        });
+    });
+    function parseCell(cell, idx) {
+        let text = cell.textContent.trim();
+        if (idx === 1 || idx === 2 || idx === 3 || idx === 4) {
+            return parseInt(text.replace(/[^\d]/g, '')) || 0;
+        }
+        if (idx === 5) {
+            // Заполняемость: процент
+            let percent = text.replace(/[^\d]/g, '');
+            return parseInt(percent) || 0;
+        }
+        return text.toLowerCase();
+    }
+    function sortTable(col, dir) {
+        const tbody = table.tBodies[0];
+        const rows = Array.from(tbody.rows);
+        rows.sort((a, b) => {
+            let A = parseCell(a.cells[col], col);
+            let B = parseCell(b.cells[col], col);
+            if (A < B) return -1 * dir;
+            if (A > B) return 1 * dir;
+            return 0;
+        });
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    // Выпадающее меню для переполнения
+    const nav = document.getElementById('adminNav');
+    const dropdown = document.getElementById('adminMenuDropdown');
+    const dropdownBtn = document.getElementById('dropdownBtn');
+    const dropdownContent = document.getElementById('dropdownContent');
+    function updateDropdown() {
+        dropdownContent.innerHTML = '<div class="admin-menu-dropdown-arrow">\n<svg width="24" height="12"><polygon points="12,12 0,0 24,0" fill="#f0f4ff"/></svg>\n</div>';
+        let linksWrapper = document.createElement('div');
+        linksWrapper.className = 'admin-menu-dropdown-links';
+        let navWidth = nav.offsetWidth;
+        let overflowed = [];
+        const children = Array.from(nav.children).filter(el => el.classList.contains('admin-menu-btn'));
+        children.forEach(el => { el.style.display = ''; });
+        children.forEach(el => {
+            const rect = el.getBoundingClientRect();
+            const navRect = nav.getBoundingClientRect();
+            if (rect.right > navRect.right - 120) { overflowed.push(el); }
+        });
+        if (overflowed.length > 0) {
+            overflowed.forEach(el => {
+                let clone = el.cloneNode(true);
+                clone.classList.remove('admin-menu-btn');
+                if (clone.getAttribute('href') === '/') {
+                    clone.innerHTML = '<span style="font-size:1.1em; margin-right:6px;">🌐</span>На сайт';
+                } else {
+                    clone.innerHTML = clone.textContent.trim();
+                }
+                linksWrapper.appendChild(clone);
+                el.style.display = 'none';
+            });
+            dropdownContent.appendChild(linksWrapper);
+            dropdown.style.display = 'inline-block';
+        } else {
+            dropdown.style.display = 'none';
+        }
+    }
+    window.addEventListener('resize', updateDropdown);
+    updateDropdown();
+    dropdownBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+        if (dropdown.classList.contains('open')) {
+            const btnRect = dropdownBtn.getBoundingClientRect();
+            dropdownContent.style.left = btnRect.left + 'px';
+            dropdownContent.style.top = (btnRect.bottom + 6) + 'px';
+        }
+    });
+    document.body.addEventListener('click', function() {
+        dropdown.classList.remove('open');
+    });
+
+    // --- Инлайн-редактирование количества мест ---
+    document.querySelectorAll('.edit-seats-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const span = btn.closest('.seats-inline');
+            const valueSpan = span.querySelector('.seats-value');
+            const oldValue = valueSpan.textContent.trim();
+            // Скрываем value и кнопку
+            valueSpan.style.display = 'none';
+            btn.style.display = 'none';
+            // Создаём input и кнопки
+            const row = document.createElement('span');
+            row.className = 'seats-edit-row';
+            row.innerHTML = `
+                <input type="number" min="1" value="${oldValue}" />
+                <button class="save-btn" title="Сохранить"><svg viewBox="0 0 20 20" fill="none"><path d="M5 10l4 4 6-8" stroke="#fff" stroke-width="2.2"/></svg></button>
+                <button class="cancel-btn" title="Отмена"><svg viewBox="0 0 20 20" fill="none"><path d="M6 6l8 8M6 14L14 6" stroke="#4f5bd5" stroke-width="2.2"/></svg></button>
+            `;
+            span.appendChild(row);
+            const input = row.querySelector('input');
+            input.focus();
+            // Сохранить
+            row.querySelector('.save-btn').onclick = async function(ev) {
+                ev.preventDefault();
+                const newSeats = parseInt(input.value);
+                if (!newSeats || newSeats < 1) {
+                  input.classList.add('error');
+                  input.focus();
+                  return;
+                }
+                // Получаем hall_id (по индексу строки)
+                const tr = btn.closest('tr');
+                const table = tr.closest('table');
+                const rowIndex = Array.from(table.tBodies[0].rows).indexOf(tr);
+                const hallId = {{ hall_ids|tojson }}[rowIndex];
+                try {
+                  const resp = await fetch('/admin/halls/update_seats', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ hall_id: hallId, seats: newSeats })
+                  });
+                  const data = await resp.json();
+                  if (data.success) {
+                    valueSpan.textContent = data.seats;
+                    valueSpan.style.display = '';
+                    btn.style.display = '';
+                    row.remove();
+                  } else {
+                    alert(data.error || 'Ошибка сохранения');
+                  }
+                } catch (e) {
+                  alert('Ошибка соединения с сервером');
+                }
+            };
+            // Отмена
+            row.querySelector('.cancel-btn').onclick = function(ev) {
+                ev.preventDefault();
+                valueSpan.style.display = '';
+                btn.style.display = '';
+                row.remove();
+            };
+            // Enter/ESC
+            input.onkeydown = function(ev) {
+                if (ev.key === 'Enter') row.querySelector('.save-btn').click();
+                if (ev.key === 'Escape') row.querySelector('.cancel-btn').click();
+            };
+        });
+    });
+    
+    // Убрано интерактивное выделение колонок для стабильности таблицы
+});
+</script> 

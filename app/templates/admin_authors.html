@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Авторы — Админка фестиваля</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body {
+            background: #f6f7fb;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            margin: 0;
+        }
+        .admin-container {
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 8px 32px rgba(60,60,120,0.08);
+        }
+        .admin-header {
+            margin-bottom: 30px;
+        }
+        .admin-nav-flex {
+            display: flex;
+            gap: 18px;
+            flex-wrap: nowrap;
+            align-items: center;
+            position: relative;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+        .admin-menu-btn {
+            background: #667eea;
+            color: white;
+            padding: 10px 28px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1.08em;
+            border: none;
+            transition: background 0.18s, color 0.18s;
+            display: inline-block;
+            text-align: center;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .admin-menu-btn:hover, .admin-menu-btn.active {
+            background: #4f5bd5;
+            color: #fff;
+        }
+        .admin-menu-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .admin-menu-dropdown-btn {
+            background: #667eea;
+            color: white;
+            padding: 10px 28px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1.08em;
+            border: none;
+            transition: background 0.18s, color 0.18s;
+            display: inline-block;
+            text-align: center;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .admin-menu-dropdown-btn:hover {
+            background: #4f5bd5;
+            color: #fff;
+        }
+        .admin-menu-dropdown-content {
+            display: none;
+            position: absolute;
+            background: #f0f4ff;
+            min-width: 160px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            z-index: 1000;
+            border-radius: 8px;
+            padding: 8px 0;
+            top: 100%;
+            left: 0;
+            margin-top: 4px;
+        }
+        .admin-menu-dropdown-content a {
+            color: #667eea;
+            padding: 8px 16px;
+            text-decoration: none;
+            display: block;
+            font-size: 0.9em;
+            transition: background 0.18s;
+        }
+        .admin-menu-dropdown-content a:hover {
+            background: #e0e7ff;
+        }
+        .admin-menu-dropdown.open .admin-menu-dropdown-content {
+            display: block;
+        }
+        .admin-menu-dropdown-arrow {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 12px;
+            pointer-events: none;
+            z-index: 1003;
+        }
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 100%);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.07);
+        }
+        .stat-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.2em;
+            color: #667eea;
+            font-weight: 600;
+        }
+        .stat-card p {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #222;
+        }
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .table-header {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .table-header h2 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+        .search-box {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .search-input {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            min-width: 200px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0;
+            background: #f8f9fa;
+            border-radius: 0;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 14px 10px;
+            text-align: left;
+        }
+        th {
+            background: #e0e7ff;
+            color: #333;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background: #f0f4ff;
+        }
+        tr:hover {
+            background: #e3eafe;
+        }
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            transition: background 0.15s, color 0.15s;
+        }
+        th.sortable:hover {
+            background: #dbeafe;
+            color: #4f5bd5;
+        }
+        th.sortable:after {
+            content: '';
+            position: absolute;
+            right: 10px;
+            font-size: 1em;
+        }
+        th.sorted-asc:after {
+            content: '▲';
+        }
+        th.sorted-desc:after {
+            content: '▼';
+        }
+        .compositions-count {
+            background: #17a2b8;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+        .no-compositions {
+            background: #6c757d;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+        .concerts-count {
+            background: #28a745;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+        .no-concerts {
+            background: #6c757d;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+        @media (max-width: 768px) {
+            .admin-container { margin: 20px; padding: 20px; }
+            .admin-nav-flex { gap: 8px; }
+            .admin-menu-btn { padding: 8px 16px; font-size: 0.9em; }
+            .stats-cards { grid-template-columns: 1fr; }
+            .table-header { flex-direction: column; gap: 15px; }
+            .search-box { width: 100%; }
+            .search-input { min-width: auto; flex: 1; }
+            .table { font-size: 0.9em; }
+            .table th, .table td { padding: 8px 6px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header" style="display: flex; align-items: center; justify-content: space-between; gap: 24px;">
+            <h1 style="font-size:2.2em; margin:0; flex-shrink:0;">Авторы фестиваля</h1>
+            <nav class="admin-nav-flex" id="adminNav" style="flex:1;">
+                <a href="/admin" class="admin-menu-btn">Главная</a>
+                <a href="/admin/users" class="admin-menu-btn">Пользователи</a>
+                <a href="/admin/customers" class="admin-menu-btn">Покупатели</a>
+                <a href="/admin/purchases" class="admin-menu-btn">Покупки</a>
+                <a href="/admin/concerts" class="admin-menu-btn">Концерты</a>
+                <a href="/admin/halls" class="admin-menu-btn">Залы</a>
+                <a href="/admin/routes" class="admin-menu-btn">Маршруты</a>
+                <a href="/admin/offprogram" class="admin-menu-btn">Офф-программа</a>
+                <a href="/admin/artists" class="admin-menu-btn">Артисты</a>
+                <a href="/admin/authors" class="admin-menu-btn active">Авторы</a>
+                <a href="/admin/compositions" class="admin-menu-btn">Произведения</a>
+                <a href="/" class="admin-menu-btn"><span style="font-size:1.1em; margin-right:6px;"></span>На сайт</a>
+                <div class="admin-menu-dropdown" id="adminMenuDropdown" style="display:none;">
+                    <button class="admin-menu-dropdown-btn" id="dropdownBtn">Ещё <span style="font-size:1.1em;">▼</span></button>
+                    <div class="admin-menu-dropdown-content" id="dropdownContent">
+                        <div class="admin-menu-dropdown-arrow">
+                            <svg width="24" height="12"><polygon points="12,12 0,0 24,0" fill="#f0f4ff"/></svg>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <div class="stats-cards">
+            <div class="stat-card">
+                <h3>Всего авторов</h3>
+                <p>{{ total_authors }}</p>
+            </div>
+            <div class="stat-card">
+                <h3>С произведениями</h3>
+                <p>{{ authors_with_compositions }}</p>
+            </div>
+            <div class="stat-card">
+                <h3>В концертах</h3>
+                <p>{{ authors_with_concerts }}</p>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div class="table-header">
+                <h2>Список авторов</h2>
+                <div class="search-box">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Поиск авторов...">
+                </div>
+            </div>
+            <table id="authorsTable">
+                <thead>
+                    <tr>
+                        <th class="sortable">ID</th>
+                        <th class="sortable">Имя автора</th>
+                        <th class="sortable">Произведений</th>
+                        <th class="sortable">Концертов</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for author in authors %}
+                    <tr>
+                        <td>{{ author.id }}</td>
+                        <td>{{ author.name }}</td>
+                        <td>
+                            {% if author.compositions_count > 0 %}
+                                <span class="compositions-count">{{ author.compositions_count }}</span>
+                            {% else %}
+                                <span class="no-compositions">0</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if author.concerts_count > 0 %}
+                                <span class="concerts-count">{{ author.concerts_count }}</span>
+                            {% else %}
+                                <span class="no-concerts">0</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Поиск по таблице
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const table = document.getElementById('authorsTable');
+            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+            
+            for (let row of rows) {
+                const nameCell = row.cells[1];
+                const name = nameCell.textContent.toLowerCase();
+                
+                if (name.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        });
+
+        // Сортировка таблицы
+        document.addEventListener('DOMContentLoaded', function() {
+            const table = document.getElementById('authorsTable');
+            const headers = table.querySelectorAll('th.sortable');
+            let sortCol = null;
+            let sortDir = -1; // По умолчанию сортировка по убыванию
+
+            headers.forEach((th, idx) => {
+                th.addEventListener('click', function() {
+                    if (sortCol === idx) {
+                        sortDir = -sortDir;
+                    } else {
+                        sortCol = idx;
+                        sortDir = -1; // По умолчанию по убыванию
+                    }
+                    headers.forEach(h => h.classList.remove('sorted-asc', 'sorted-desc'));
+                    th.classList.add(sortDir === 1 ? 'sorted-asc' : 'sorted-desc');
+                    sortTable(idx, sortDir);
+                });
+            });
+            
+            // Сортировка по умолчанию по количеству произведений в убывающем порядке
+            sortCol = 2;
+            sortDir = -1;
+            headers[2].classList.add('sorted-desc');
+            sortTable(2, -1);
+            
+            function parseCell(cell, idx) {
+                let text = cell.textContent.trim();
+                if (idx === 0) {
+                    // ID: число
+                    return parseInt(text) || 0;
+                }
+                if (idx === 1) {
+                    // Имя: текст
+                    return text.toLowerCase();
+                }
+                if (idx === 2) {
+                    // Произведений: число
+                    return parseInt(text) || 0;
+                }
+                if (idx === 3) {
+                    // Концертов: число
+                    return parseInt(text) || 0;
+                }
+                return text.toLowerCase();
+            }
+            
+            function sortTable(col, dir) {
+                const tbody = table.tBodies[0];
+                const rows = Array.from(tbody.rows);
+                rows.sort((a, b) => {
+                    let A = parseCell(a.cells[col], col);
+                    let B = parseCell(b.cells[col], col);
+                    if (A < B) return -1 * dir;
+                    if (A > B) return 1 * dir;
+                    // Вторичная сортировка по имени автора (колонка 1) в возрастающем порядке
+                    let nameA = parseCell(a.cells[1], 1);
+                    let nameB = parseCell(b.cells[1], 1);
+                    if (nameA < nameB) return -1;
+                    if (nameA > nameB) return 1;
+                    return 0;
+                });
+                rows.forEach(row => tbody.appendChild(row));
+            }
+        });
+
+        // Выпадающее меню для переполнения
+        document.addEventListener('DOMContentLoaded', function() {
+            const nav = document.getElementById('adminNav');
+            const dropdown = document.getElementById('adminMenuDropdown');
+            const dropdownBtn = document.getElementById('dropdownBtn');
+            const dropdownContent = document.getElementById('dropdownContent');
+            
+            function updateDropdown() {
+                // Сброс
+                dropdownContent.innerHTML = '<div class="admin-menu-dropdown-arrow">\n<svg width="24" height="12"><polygon points="12,12 0,0 24,0" fill="#f0f4ff"/></svg>\n</div>';
+                let linksWrapper = document.createElement('div');
+                linksWrapper.className = 'admin-menu-dropdown-links';
+                let navWidth = nav.offsetWidth;
+                let total = 0;
+                let overflowed = [];
+                const children = Array.from(nav.children).filter(el => el.classList.contains('admin-menu-btn'));
+                children.forEach(el => {
+                    el.style.display = '';
+                });
+                // Проверяем, какие кнопки не помещаются
+                children.forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    const navRect = nav.getBoundingClientRect();
+                    if (rect.right > navRect.right - 120) { // 120px запас под dropdown
+                        overflowed.push(el);
+                    }
+                });
+                if (overflowed.length > 0) {
+                    overflowed.forEach(el => {
+                        let clone = el.cloneNode(true);
+                        clone.classList.remove('admin-menu-btn');
+                        if (clone.getAttribute('href') === '/') {
+                            clone.innerHTML = '<span style="font-size:1.1em; margin-right:6px;">🌐</span>На сайт';
+                        } else {
+                            clone.innerHTML = clone.textContent.trim();
+                        }
+                        linksWrapper.appendChild(clone);
+                        el.style.display = 'none';
+                    });
+                    dropdownContent.appendChild(linksWrapper);
+                    dropdown.style.display = 'inline-block';
+                } else {
+                    dropdown.style.display = 'none';
+                }
+            }
+            window.addEventListener('resize', updateDropdown);
+            updateDropdown();
+            
+            // Открытие/закрытие dropdown
+            dropdownBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdown.classList.toggle('open');
+            });
+            document.body.addEventListener('click', function() {
+                dropdown.classList.remove('open');
+            });
+        });
+    </script>
+</body>
+</html> 

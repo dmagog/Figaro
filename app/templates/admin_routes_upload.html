@@ -1,0 +1,238 @@
+{% extends "admin_routes_main.html" %}
+{% block routes_content %}
+<style>
+button[disabled] {
+    background: #bfc6e0 !important;
+    color: #fff !important;
+    cursor: not-allowed !important;
+    opacity: 0.7;
+    box-shadow: none;
+}
+</style>
+{% if available_routes_count is defined and available_routes_count is not none %}
+<div style="max-width:600px; margin:0 auto 24px auto; background: #f8f9ff; border-radius:12px; padding:18px 24px; color:#4f5bd5; font-size:1em; box-shadow:0 2px 8px rgba(60,60,120,0.04); border-left:4px solid #4f5bd5;">
+    <div style="font-weight:500; margin-bottom:8px;">Текущее состояние маршрутов:</div>
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div>
+            Доступных маршрутов: <b style="color:#43A047;">{{ available_routes_count }}</b>
+            {% if summary.routes_count and summary.routes_count > 0 %}
+                <span style="color:#666; font-size:0.9em;">({{ "%.1f"|format(available_routes_count / summary.routes_count * 100) }}% от общего количества)</span>
+            {% endif %}
+        </div>
+        {% if last_check_date %}
+            <div style="font-size:0.9em; color:#666;">
+                Обновлено: <b>{{ last_check_date.strftime('%d.%m.%Y %H:%M') }}</b>
+            </div>
+        {% endif %}
+    </div>
+    <div style="margin-top:12px; padding-top:12px; border-top:1px solid #e0e7ff;">
+        <button id="update-routes-btn" style="padding:8px 16px; border-radius:6px; background:#4f5bd5; color:#fff; font-weight:500; border:none; cursor:pointer; font-size:0.9em;">
+            🔄 Обновить доступные маршруты
+        </button>
+        <span id="routes-update-status" style="margin-left:12px; font-size:0.9em; color:#666;"></span>
+    </div>
+</div>
+{% endif %}
+<div style="max-width:600px; margin:0 auto 32px auto; background: #fff;; border-radius:12px; padding:22px 28px 18px 28px; color:#3a3a4a; font-size:1.08em; box-shadow:0 2px 8px rgba(60,60,120,0.04);">
+    <b>Инструкция:</b> На этой странице вы можете загрузить новый файл с маршрутами фестиваля в формате <b>.csv</b>.<br>
+    <ul style="margin:12px 0 0 18px;">
+        <li>Файл должен содержать актуальные маршруты для всех дней фестиваля.</li>
+        <li>После загрузки начнётся автоматическая обработка данных.</li>
+        <li>По завершении загрузки вы будете перенаправлены на страницу просмотра маршрутов.</li>
+        <li>Если возникнут ошибки, они отобразятся ниже формы.</li>
+    </ul>
+</div>
+<form id="upload-form" enctype="multipart/form-data" style="margin-bottom:24px; max-width:420px; background:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(60,60,120,0.06); padding:32px 32px 24px 32px; margin-left:auto; margin-right:auto;">
+    <label for="routes-file" style="font-weight:500; display:block; margin-bottom:12px;">Загрузить новый файл маршрутов (.csv):</label>
+    <input type="file" id="routes-file" name="file" accept=".csv" required style="margin-bottom:18px; width:100%;">
+    <button type="submit" style="padding:10px 0; width:100%; border-radius:8px; background:#4f5bd5; color:#fff; font-weight:500; border:none; cursor:pointer; font-size:1.08em;">Загрузить</button>
+</form>
+<div id="progress" style="display:none; margin-bottom:18px; color:#4f5bd5; text-align:center;">Загрузка...</div>
+<div id="result" style="margin-top:18px; text-align:center;"></div>
+<script>
+const form = document.getElementById('upload-form');
+const fileInput = document.getElementById('routes-file');
+const progress = document.getElementById('progress');
+const result = document.getElementById('result');
+const updateRoutesBtn = document.getElementById('update-routes-btn');
+const routesUpdateStatus = document.getElementById('routes-update-status');
+let pollInterval = null;
+
+form.onsubmit = async function(e) {
+    e.preventDefault();
+    if (!fileInput.files.length) return;
+    // Блокируем форму
+    form.querySelector('button[type="submit"]').disabled = true;
+    fileInput.disabled = true;
+    progress.style.display = 'block';
+    progress.innerHTML = 'Загрузка файла...';
+    result.innerHTML = '';
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    try {
+        const resp = await fetch('/admin/routes/upload', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await resp.json();
+        if (data.success) {
+            progress.innerHTML = 'Файл загружен, идёт обработка маршрутов...';
+            pollUploadStatus();
+        } else {
+            progress.style.display = 'none';
+            result.innerHTML = `<span style='color:red;'>Ошибка: ${data.error || 'Неизвестная ошибка'}</span>`;
+            // Разблокируем форму
+            form.querySelector('button[type="submit"]').disabled = false;
+            fileInput.disabled = false;
+        }
+    } catch (err) {
+        progress.style.display = 'none';
+        result.innerHTML = `<span style='color:red;'>Ошибка соединения с сервером</span>`;
+        // Разблокируем форму
+        form.querySelector('button[type="submit"]').disabled = false;
+        fileInput.disabled = false;
+    }
+};
+
+function pollUploadStatus() {
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(async () => {
+        try {
+            const resp = await fetch('/admin/routes/upload_status');
+            const status = await resp.json();
+            if (status.error) {
+                progress.style.display = 'none';
+                result.innerHTML = `<span style='color:red;'>Ошибка: ${status.error}</span>`;
+                clearInterval(pollInterval);
+                // Разблокируем форму
+                form.querySelector('button[type="submit"]').disabled = false;
+                fileInput.disabled = false;
+                return;
+            }
+            if (status.in_progress) {
+                let percent = status.total ? Math.round((status.progress / status.total) * 100) : 0;
+                progress.style.display = 'block';
+                progress.innerHTML = `Обработка маршрутов: ${status.progress} / ${status.total} (${percent}%)`;
+            } else {
+                // Загрузка маршрутов завершена, начинаем проверку AvailableRoute
+                progress.style.display = 'block';
+                progress.innerHTML = 'Загрузка маршрутов завершена. Проверяем доступность маршрутов...';
+                result.innerHTML = `<b>Маршруты загружены!</b><br>Добавлено: ${status.added}, обновлено: ${status.updated}`;
+                clearInterval(pollInterval);
+                
+                // Начинаем опрос статуса проверки AvailableRoute
+                pollAvailableRoutesStatus();
+            }
+        } catch (err) {
+            progress.style.display = 'none';
+            result.innerHTML = `<span style='color:red;'>Ошибка соединения с сервером</span>`;
+            clearInterval(pollInterval);
+            // Разблокируем форму
+            form.querySelector('button[type="submit"]').disabled = false;
+            fileInput.disabled = false;
+        }
+    }, 1000);
+}
+
+function pollAvailableRoutesStatus() {
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(async () => {
+        try {
+            const resp = await fetch('/admin/routes/available_routes_status');
+            const status = await resp.json();
+            if (status.error) {
+                progress.style.display = 'none';
+                result.innerHTML += `<br><span style='color:red;'>Ошибка проверки доступности: ${status.error}</span>`;
+                clearInterval(pollInterval);
+                // Разблокируем форму
+                form.querySelector('button[type="submit"]').disabled = false;
+                fileInput.disabled = false;
+                return;
+            }
+            if (status.in_progress) {
+                let percent = status.total ? Math.round((status.progress / status.total) * 100) : 0;
+                progress.style.display = 'block';
+                progress.innerHTML = `Проверка доступности маршрутов: ${status.progress} / ${status.total} (${percent}%) - найдено доступных: ${status.available_count || 0}`;
+            } else {
+                progress.style.display = 'none';
+                result.innerHTML += `<br><b>Проверка доступности завершена!</b><br>Доступных маршрутов: ${status.available_count || 0} из ${status.total_routes || 0} (${status.availability_percentage || 0}%)`;
+                clearInterval(pollInterval);
+                // Очищаем форму
+                form.reset();
+                // Разблокируем форму
+                form.querySelector('button[type="submit"]').disabled = false;
+                fileInput.disabled = false;
+                // Редиректим на страницу просмотра маршрутов через 2 секунды
+                setTimeout(() => {
+                    window.location.href = '/admin/routes/view';
+                }, 2000);
+            }
+        } catch (err) {
+            progress.style.display = 'none';
+            result.innerHTML += `<br><span style='color:red;'>Ошибка соединения с сервером при проверке доступности</span>`;
+            clearInterval(pollInterval);
+            // Разблокируем форму
+            form.querySelector('button[type="submit"]').disabled = false;
+            fileInput.disabled = false;
+        }
+    }, 1000);
+}
+
+// Обработка кнопки обновления доступных маршрутов
+if (updateRoutesBtn) {
+    updateRoutesBtn.addEventListener('click', async function() {
+        // Блокируем кнопку
+        updateRoutesBtn.disabled = true;
+        updateRoutesBtn.style.background = '#bfc6e0';
+        updateRoutesBtn.textContent = '🔄 Обновление...';
+        routesUpdateStatus.textContent = 'Проверка маршрутов...';
+        
+        try {
+            const response = await fetch('/api/routes/update-availability', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.error || 'Ошибка обновления маршрутов');
+            }
+            
+            const result = data.result;
+            routesUpdateStatus.textContent = `✅ Обновлено: удалено ${result.deleted_count}, добавлено ${result.added_count}, всего доступно ${result.current_count}`;
+            
+            // Показываем результат 5 секунд
+            setTimeout(() => {
+                routesUpdateStatus.textContent = '';
+            }, 5000);
+            
+            // Перезагружаем страницу для обновления статистики
+            setTimeout(() => {
+                window.location.reload();
+            }, 5000);
+            
+        } catch (error) {
+            console.error('Ошибка при обновлении маршрутов:', error);
+            routesUpdateStatus.textContent = `❌ Ошибка: ${error.message}`;
+            
+            // Показываем ошибку 5 секунд
+            setTimeout(() => {
+                routesUpdateStatus.textContent = '';
+            }, 5000);
+        } finally {
+            // Разблокируем кнопку
+            updateRoutesBtn.disabled = false;
+            updateRoutesBtn.style.background = '#4f5bd5';
+            updateRoutesBtn.textContent = '🔄 Обновить доступные маршруты';
+        }
+    });
+}
+</script>
+{% endblock %} 

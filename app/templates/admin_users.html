@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Пользователи — Админка</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body { background: #f6f7fb; font-family: 'Segoe UI', 'Arial', sans-serif; }
+        .admin-container { max-width: 1200px; margin: 40px auto; padding: 30px; background: white; border-radius: 18px; box-shadow: 0 8px 32px rgba(60,60,120,0.08); }
+        .admin-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 30px; }
+        .admin-header h1 { font-size: 2.2em; margin: 0; flex-shrink:0; }
+        .admin-nav-flex { display: flex; gap: 18px; flex-wrap: nowrap; align-items: center; position: relative; overflow-x: auto; padding-bottom: 4px; flex:1; }
+        .admin-menu-btn { background: #667eea; color: white; padding: 10px 28px; border-radius: 10px; text-decoration: none; font-weight: 500; font-size: 1.08em; border: none; transition: background 0.18s, color 0.18s; display: inline-block; text-align: center; cursor: pointer; white-space: nowrap; }
+        .admin-menu-btn:hover, .admin-menu-btn.active { background: #4f5bd5; color: #fff; }
+        /* Удалены стили выпадающего меню, теперь используется общий style.css */
+        .admin-menu-dropdown-arrow { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); width: 24px; height: 12px; pointer-events: none; z-index: 1003; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: translateY(0);} }
+        table { width: 100%; border-collapse: collapse; margin-top: 30px; background: #f8f9fa; border-radius: 12px; overflow: hidden; }
+        th, td { padding: 14px 10px; text-align: left; }
+        th { background: #e0e7ff; color: #333; font-weight: 600; }
+        tr:nth-child(even) { background: #f0f4ff; }
+        tr:hover { background: #e3eafe; }
+        .role-badge { display: inline-block; padding: 4px 12px; border-radius: 8px; background: #e3f2fd; color: #1976d2; font-size: 0.95em; font-weight: 500; }
+        .superuser-badge { background: #ffe082; color: #b28704; }
+        th.sortable { cursor: pointer; user-select: none; position: relative; }
+        th.sortable:after {
+            content: '';
+            position: absolute;
+            right: 10px;
+            font-size: 1em;
+        }
+        th.sorted-asc:after { content: '▲'; }
+        th.sorted-desc:after { content: '▼'; }
+        /* Кастомные стили для select и input (как в admin_purchases.html) */
+        .filter-block { background: #f4f6fb; border-radius: 12px; padding: 18px 24px; margin-bottom: 18px; box-shadow: 0 2px 8px rgba(102,126,234,0.07); display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; }
+        .filter-item { min-width: 180px; flex: 1 1 180px; display: flex; flex-direction: column; }
+        .filter-item label { font-size:0.95em; color:#667eea; margin-bottom:4px; }
+        .filter-item input,
+        .filter-item select { height: 44px; font-size: 1em; border-radius: 10px; border: 1.5px solid #bfc8e6; padding: 0 14px; background: #f8f9fa; box-shadow: 0 2px 8px rgba(102,126,234,0.07); transition: border 0.2s, box-shadow 0.2s; outline: none; }
+        .filter-item input:focus,
+        .filter-item select:focus { border: 1.5px solid #667eea; box-shadow: 0 4px 16px rgba(102,126,234,0.13); }
+        .filter-item select { appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill="%23667eea" height="20" viewBox="0 0 20 20" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7.293 7.293a1 1 0 011.414 0L10 8.586l1.293-1.293a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z"/></svg>'); background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; }
+        .filter-item select::-ms-expand { display: none; }
+        .user-name {
+            font-weight: 500;
+            color: #222;
+            display: block;
+        }
+        .user-email {
+            font-size: 0.97em;
+            color: #8ca0c7;
+            display: block;
+            margin-top: 2px;
+            word-break: break-all;
+        }
+        .edit-external-id-btn svg {
+            width: 14px;
+            height: 14px;
+            vertical-align: middle;
+            margin: 0;
+        }
+        .edit-external-id-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            transition: background 0.15s;
+            outline: none;
+            box-shadow: none;
+        }
+        .edit-external-id-btn:hover,
+        .edit-external-id-btn:focus {
+            background: #e0e7ff;
+        }
+        .edit-external-id-btn:hover svg path,
+        .edit-external-id-btn:focus svg path {
+            stroke: #222;
+        }
+        .edit-external-id-btn:active {
+            background: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            border: none !important;
+        }
+        .external-id-edit-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 2px;
+        }
+        .external-id-edit-row input[type="text"] {
+            width: 80px;
+            padding: 4px 8px;
+            border: 1.5px solid #bfc8e6;
+            border-radius: 7px;
+            font-size: 1em;
+            outline: none;
+            transition: border 0.18s, box-shadow 0.18s;
+        }
+        .external-id-edit-row input[type="text"]:focus {
+            border: 1.5px solid #4f5bd5;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.10);
+        }
+        .external-id-edit-row .save-btn {
+            background: #4f5bd5;
+            color: #fff;
+            border: none;
+            border-radius: 7px;
+            padding: 2px 8px;
+            font-size: 1.1em;
+            min-width: 28px;
+            min-height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .external-id-edit-row .save-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+        .external-id-edit-row .cancel-btn {
+            background: none;
+            color: #4f5bd5;
+            border: 1.5px solid #e0e7ff;
+            border-radius: 7px;
+            padding: 2px 8px;
+            font-size: 1.1em;
+            min-width: 28px;
+            min-height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.15s, border 0.15s;
+        }
+        .external-id-edit-row .cancel-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+        .external-id-inline {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .external-id-edit-row .save-btn, .external-id-edit-row .cancel-btn {
+            padding: 2px 10px;
+            font-size: 0.93em;
+            min-height: 28px;
+            line-height: 1.1;
+        }
+        
+        /* Стили для статусов маршрутов */
+        .route-match-exact {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 500;
+            display: inline-block;
+        }
+        
+        .route-match-partial {
+            background: #fff3e0;
+            color: #f57c00;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 500;
+            display: inline-block;
+        }
+        
+        .route-match-none {
+            background: #ffebee;
+            color: #c62828;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 500;
+            display: inline-block;
+        }
+        
+        /* Стили для кликабельных маршрутов */
+        .clickable-route {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .clickable-route:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
+        .route-number {
+            font-weight: 700;
+            text-decoration: underline;
+            color: inherit;
+        }
+        
+        .clickable-route:hover .route-number {
+            color: #1a237e;
+        }
+        
+        .route-match-exact.clickable-route:hover {
+            background: #c8e6c9;
+        }
+        
+        .route-match-partial.clickable-route:hover {
+            background: #ffe0b2;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>Пользователи</h1>
+            <nav class="admin-nav-flex" id="adminNav" style="flex:1;">
+                <a href="/admin" class="admin-menu-btn">Главная</a>
+                <a href="/admin/users" class="admin-menu-btn">Пользователи</a>
+                <a href="/admin/customers" class="admin-menu-btn">Покупатели</a>
+                <a href="/admin/purchases" class="admin-menu-btn">Покупки</a>
+                <a href="/admin/concerts" class="admin-menu-btn">Концерты</a>
+                <a href="/admin/halls" class="admin-menu-btn">Залы</a>
+                <a href="/" class="admin-menu-btn"><span style="font-size:1.1em; margin-right:6px;">��</span>На сайт</a>
+                <div class="admin-menu-dropdown" id="adminMenuDropdown" style="display:none;">
+                    <button class="admin-menu-dropdown-btn" id="dropdownBtn">Ещё <span style="font-size:1.1em;">▼</span></button>
+                    <div class="admin-menu-dropdown-content" id="dropdownContent">
+                        <div class="admin-menu-dropdown-arrow">
+                            <svg width="24" height="12"><polygon points="12,12 0,0 24,0" fill="#f0f4ff"/></svg>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <div class="filter-block">
+            <div class="filter-item" style="flex:2; min-width:200px;">
+                <label for="search-input">Поиск</label>
+                <input type="text" id="search-input" placeholder="Поиск по всем полям...">
+            </div>
+            <div class="filter-item" style="min-width:140px;">
+                <label for="role-filter">Роль</label>
+                <select id="role-filter">
+                    <option value="">Все роли</option>
+                    {% set roles = users | map(attribute='role') | list %}
+                    {% set unique_roles = roles | map('lower') | unique | list %}
+                    {% for role in unique_roles %}
+                        <option value="{{ role|title }}">{{ role|title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-item" style="min-width:140px;">
+                <label for="date-from">Дата регистрации от</label>
+                <input type="date" id="date-from">
+            </div>
+            <div class="filter-item" style="min-width:140px;">
+                <label for="date-to">Дата регистрации до</label>
+                <input type="date" id="date-to">
+            </div>
+            <div style="display:flex; align-items:flex-end; padding-bottom:2px; margin-left:8px;">
+                <button id="reset-filters" type="button" style="height:44px; width:44px; display:flex; align-items:center; justify-content:center; border:none; border-radius:50%; background:#e0e7ff; color:#4f5bd5; font-size:1.5em; box-shadow:0 2px 8px rgba(102,126,234,0.07); cursor:pointer; transition:background 0.2s;">
+                    <span title="Сбросить фильтры" style="display:inline-block; line-height:1;">&#8635;</span>
+                </button>
+            </div>
+        </div>
+        <div style="margin: 8px 0 0 0; color: #aaa; font-size: 0.98em; text-align: right;">
+            Всего пользователей: {{ users|length }}, с покупками: {{ users_with_purchases_count }}
+        </div>
+        <table id="users-table">
+            <thead>
+                <tr>
+                    <th class="sortable">ID</th>
+                    <th class="sortable">External ID</th>
+                    <th class="sortable" colspan="2">Пользователь</th>
+                    <th class="sortable">Роль</th>
+                    <th class="sortable">Дата регистрации</th>
+                    <th class="sortable">Уникальных концертов</th>
+                    <th class="sortable">Покупок</th>
+                    <th class="sortable">Потрачено</th>
+                    <th class="sortable">Маршрут</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>{{ u.id }}</td>
+                    <td>
+                        <span class="external-id-inline">
+                            <span class="external-id-value">{{ u.external_id or '—' }}</span>
+                            <button class="edit-external-id-btn" title="Редактировать">
+                                <svg viewBox="0 0 20 20" fill="none"><path d="M13.586 3.586a2 2 0 0 1 2.828 2.828l-8.5 8.5a2 2 0 0 1-.878.515l-3 1a1 1 0 0 1-1.263-1.263l1-3a2 2 0 0 1 .515-.878l8.5-8.5z" stroke="#4f5bd5" stroke-width="1.2"/></svg>
+                            </button>
+                        </span>
+                    </td>
+                    <td colspan="2">
+                        <span class="user-name">{{ u.name or '—' }}</span>
+                        <span class="user-email">{{ u.email or '—' }}</span>
+                    </td>
+                    <td>
+                        <span class="role-badge{% if u.is_superuser %} superuser-badge{% endif %}">
+                            {% if u.is_superuser %}Суперадмин{% else %}{{ u.role|title if u.role else '—' }}{% endif %}
+                        </span>
+                    </td>
+                    <td>{{ u.created_at.strftime('%d.%m.%Y') if u.created_at else '—' }}</td>
+                    {% if u.id in user_stats %}
+                        <td>{{ user_stats[u.id].unique_concerts }}</td>
+                        <td>{{ user_stats[u.id].tickets }}</td>
+                        <td>{{ "{:,}".format(user_stats[u.id].spent) }} ₽</td>
+                    {% else %}
+                        <td colspan="3">—</td>
+                    {% endif %}
+                    <td>
+                        {% set ext_id = u.external_id or '' %}
+                        {% if ext_id and ext_id in route_matches %}
+                            {% set route_match = route_matches[ext_id] %}
+                            {% if route_match.found %}
+                                {% if route_match.match_type == 'exact' %}
+                                    <span class="route-match-exact" title="Точное совпадение. #{{ route_match.best_match.route_id }}">
+                                        ✅ <span class="route-number">#{{ route_match.best_match.route_id }}</span>
+                                    </span>
+                                {% else %}
+                                    <span class="route-match-partial" title="Частичное совпадение ({{ "%.1f"|format(route_match.best_match.match_percentage) }}%). #{{ route_match.best_match.route_id }}">
+                                        ⚠️ <span class="route-number">#{{ route_match.best_match.route_id }}</span>
+                                    </span>
+                                {% endif %}
+                            {% else %}
+                                <span class="route-match-none" title="{{ route_match.reason }}">
+                                    ❌
+                                </span>
+                            {% endif %}
+                        {% else %}
+                            <span class="route-match-none" title="Нет данных о покупках">
+                                —
+                            </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Модальное окно для детальной информации о маршруте -->
+    <div id="route-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center;">
+        <div style="background:white; border-radius:12px; padding:30px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="margin:0; color:#333; font-size:1.4em;">Информация о маршруте</h3>
+                <button id="close-route-modal" style="background:none; border:none; font-size:1.5em; cursor:pointer; color:#666;">&times;</button>
+            </div>
+            <div id="route-modal-content">
+                <!-- Содержимое будет заполнено JavaScript -->
+            </div>
+        </div>
+    </div>
+    
+    <script>
+    // JS-сортировка и фильтрация таблицы
+    document.addEventListener('DOMContentLoaded', function() {
+        const table = document.getElementById('users-table');
+        const headers = table.querySelectorAll('th.sortable');
+        let sortCol = null;
+        let sortDir = 1;
+
+        // Фильтры
+        const searchInput = document.getElementById('search-input');
+        const roleFilter = document.getElementById('role-filter');
+        const dateFrom = document.getElementById('date-from');
+        const dateTo = document.getElementById('date-to');
+        const resetBtn = document.getElementById('reset-filters');
+
+        function filterTable() {
+            const search = searchInput.value.toLowerCase();
+            const role = roleFilter.value.toLowerCase();
+            const from = dateFrom.value;
+            const to = dateTo.value;
+            Array.from(table.tBodies[0].rows).forEach(row => {
+                let cells = Array.from(row.cells).map(td => td.textContent.toLowerCase());
+                let show = true;
+                // Поиск по всем полям
+                if (search && !cells.some(c => c.includes(search))) show = false;
+                // Фильтр по роли
+                if (role) {
+                    let roleCell = row.cells[2].textContent.trim().toLowerCase();
+                    if (roleCell !== role) show = false;
+                }
+                // Фильтр по дате регистрации
+                // Преобразуем дату из таблицы в ISO (YYYY-MM-DD)
+                function toISODate(d) {
+                    let parts = d.split('.');
+                    if (parts.length === 3) {
+                        let day = parts[0].padStart(2, '0');
+                        let month = parts[1].padStart(2, '0');
+                        let year = parts[2];
+                        return `${year}-${month}-${day}`;
+                    }
+                    return '';
+                }
+                let rowDateISO = toISODate(row.cells[3].textContent.trim());
+                if (from) {
+                    if (rowDateISO < from) show = false;
+                }
+                if (to) {
+                    if (rowDateISO > to) show = false;
+                }
+                row.style.display = show ? '' : 'none';
+            });
+        }
+        [searchInput, roleFilter, dateFrom, dateTo].forEach(el => el && el.addEventListener('input', filterTable));
+
+        // Сброс фильтров
+        resetBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            roleFilter.value = '';
+            dateFrom.value = '';
+            dateTo.value = '';
+            filterTable();
+        });
+
+        // Сортировка (оставляем как было)
+        headers.forEach((th, idx) => {
+            th.addEventListener('click', function() {
+                if (sortCol === idx) {
+                    sortDir = -sortDir;
+                } else {
+                    sortCol = idx;
+                    sortDir = 1;
+                }
+                headers.forEach(h => h.classList.remove('sorted-asc', 'sorted-desc'));
+                th.classList.add(sortDir === 1 ? 'sorted-asc' : 'sorted-desc');
+                sortTable(idx, sortDir);
+            });
+        });
+        function parseCell(cell, idx) {
+            let text = cell.textContent.trim();
+            if (idx === 3) { // дата
+                let parts = text.split('.');
+                if (parts.length === 3) return new Date(parts[2], parts[1]-1, parts[0]);
+            }
+            if (idx === 4 || idx === 5) { // числа
+                return parseInt(text.replace(/[^\d]/g, '')) || 0;
+            }
+            return text.toLowerCase();
+        }
+        function sortTable(col, dir) {
+            const tbody = table.tBodies[0];
+            const rows = Array.from(tbody.rows);
+            rows.sort((a, b) => {
+                let A = parseCell(a.cells[col], col);
+                let B = parseCell(b.cells[col], col);
+                if (A < B) return -1 * dir;
+                if (A > B) return 1 * dir;
+                return 0;
+            });
+            rows.forEach(row => tbody.appendChild(row));
+        }
+    });
+    // --- инлайн-редактирование external_id ---
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.edit-external-id-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const td = btn.closest('td');
+                const span = td.querySelector('.external-id-value');
+                const oldVal = span.textContent.trim();
+                if (td.querySelector('input')) return;
+                // Создаём контейнер
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'external-id-edit-row';
+                // Создаём input и кнопки
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = oldVal;
+                const saveBtn = document.createElement('button');
+                saveBtn.className = 'save-btn';
+                saveBtn.title = 'Сохранить';
+                saveBtn.innerHTML = '<svg viewBox="0 0 20 20" fill="none"><path d="M5 10.5l4 4 6-8" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+                const cancelBtn = document.createElement('button');
+                cancelBtn.className = 'cancel-btn';
+                cancelBtn.title = 'Отмена';
+                cancelBtn.innerHTML = '<svg viewBox="0 0 20 20" fill="none"><path d="M6 6l8 8M14 6l-8 8" stroke="#4f5bd5" stroke-width="2" stroke-linecap="round"/></svg>';
+                rowDiv.appendChild(input);
+                rowDiv.appendChild(saveBtn);
+                rowDiv.appendChild(cancelBtn);
+                // Скрываем старое
+                span.style.display = 'none';
+                btn.style.display = 'none';
+                td.appendChild(rowDiv);
+                input.focus();
+                // Отмена
+                cancelBtn.addEventListener('click', function() {
+                    rowDiv.remove();
+                    span.style.display = '';
+                    btn.style.display = '';
+                });
+                // Сохранить
+                saveBtn.addEventListener('click', function() {
+                    const newVal = input.value.trim();
+                    if (!newVal || newVal === oldVal) {
+                        rowDiv.remove();
+                        span.style.display = '';
+                        btn.style.display = '';
+                        return;
+                    }
+                    fetch('/admin/users/update_external_id', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ old_external_id: oldVal, new_external_id: newVal })
+                    }).then(resp => resp.json()).then(data => {
+                        if (data.success) {
+                            span.textContent = newVal;
+                        } else {
+                            alert(data.error || 'Ошибка при обновлении external_id');
+                        }
+                        rowDiv.remove();
+                        span.style.display = '';
+                        btn.style.display = '';
+                    }).catch(() => {
+                        alert('Ошибка при обновлении external_id');
+                        rowDiv.remove();
+                        span.style.display = '';
+                        btn.style.display = '';
+                    });
+                });
+                // Enter/ESC
+                input.addEventListener('keydown', function(ev) {
+                    if (ev.key === 'Enter') saveBtn.click();
+                    if (ev.key === 'Escape') cancelBtn.click();
+                });
+            });
+        });
+    });
+    // Выпадающее меню для переполнения
+    document.addEventListener('DOMContentLoaded', function() {
+        const nav = document.getElementById('adminNav');
+        const dropdown = document.getElementById('adminMenuDropdown');
+        const dropdownBtn = document.getElementById('dropdownBtn');
+        const dropdownContent = document.getElementById('dropdownContent');
+        function updateDropdown() {
+            dropdownContent.innerHTML = '<div class="admin-menu-dropdown-arrow">\n<svg width="24" height="12"><polygon points="12,12 0,0 24,0" fill="#f0f4ff"/></svg>\n</div>';
+            let linksWrapper = document.createElement('div');
+            linksWrapper.className = 'admin-menu-dropdown-links';
+            let navWidth = nav.offsetWidth;
+            let overflowed = [];
+            const children = Array.from(nav.children).filter(el => el.classList.contains('admin-menu-btn'));
+            children.forEach(el => { el.style.display = ''; });
+            children.forEach(el => {
+                const rect = el.getBoundingClientRect();
+                const navRect = nav.getBoundingClientRect();
+                if (rect.right > navRect.right - 120) { overflowed.push(el); }
+            });
+            if (overflowed.length > 0) {
+                overflowed.forEach(el => {
+                    let clone = el.cloneNode(true);
+                    clone.classList.remove('admin-menu-btn');
+                    if (clone.getAttribute('href') === '/') {
+                        clone.innerHTML = '<span style="font-size:1.1em; margin-right:6px;">🌐</span>На сайт';
+                    } else {
+                        clone.innerHTML = clone.textContent.trim();
+                    }
+                    linksWrapper.appendChild(clone);
+                    el.style.display = 'none';
+                });
+                dropdownContent.appendChild(linksWrapper);
+                dropdown.style.display = 'inline-block';
+            } else {
+                dropdown.style.display = 'none';
+            }
+        }
+        window.addEventListener('resize', updateDropdown);
+        updateDropdown();
+        dropdownBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dropdown.classList.toggle('open');
+            if (dropdown.classList.contains('open')) {
+                const btnRect = dropdownBtn.getBoundingClientRect();
+                dropdownContent.style.left = btnRect.left + 'px';
+                dropdownContent.style.top = (btnRect.bottom + 6) + 'px';
+            }
+        });
+        document.body.addEventListener('click', function() {
+            dropdown.classList.remove('open');
+        });
+    });
+    
+    // --- Модальное окно для маршрутов ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const routeModal = document.getElementById('route-modal');
+        const closeRouteModal = document.getElementById('close-route-modal');
+        const routeModalContent = document.getElementById('route-modal-content');
+        
+        // Закрытие модального окна
+        function closeModal() {
+            routeModal.style.display = 'none';
+        }
+        
+        // Открытие модального окна
+        function openModal() {
+            routeModal.style.display = 'flex';
+        }
+        
+        closeRouteModal.addEventListener('click', closeModal);
+        routeModal.addEventListener('click', function(e) {
+            if (e.target === routeModal) {
+                closeModal();
+            }
+        });
+        
+        // Обработка клика по статусу маршрута
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.clickable-route')) {
+                e.preventDefault();
+                console.log('Клик по маршруту обнаружен');
+                
+                const span = e.target.closest('.clickable-route');
+                const row = span.closest('tr');
+                const externalId = row.querySelector('.external-id-value').textContent.trim();
+                
+                console.log('External ID:', externalId);
+                console.log('Отправляем запрос к API...');
+                
+                // Получаем данные о маршруте через API
+                fetch(`/api/customers/${externalId}/route-details`)
+                    .then(response => {
+                        console.log('Ответ получен:', response.status);
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Данные получены:', data);
+                        if (data.success) {
+                            showRouteDetails(data.route_match, externalId);
+                        } else {
+                            console.error('Ошибка в данных:', data);
+                            alert('Ошибка при получении данных о маршруте');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Ошибка при запросе:', error);
+                        alert('Ошибка при получении данных о маршруте');
+                    });
+            }
+        });
+        
+        function showRouteDetails(routeMatch, externalId) {
+            console.log('showRouteDetails вызвана с:', { routeMatch, externalId });
+            let content = '';
+            
+            if (routeMatch.found) {
+                const bestMatch = routeMatch.best_match;
+                content = `
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="color: #4f5bd5; margin-bottom: 10px;">Пользователь: ${externalId}</h4>
+                        <p><strong>Концерты пользователя:</strong> ${routeMatch.customer_concerts_str}</p>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="color: #2e7d32; margin-bottom: 10px;">
+                            ${routeMatch.match_type === 'exact' ? '✅ Точное совпадение' : '⚠️ Частичное совпадение'}
+                        </h4>
+                        <p><strong>Маршрут #${bestMatch.route_id}</strong></p>
+                        <p><strong>Состав маршрута:</strong> ${bestMatch.route_composition || '—'}</p>
+                        ${routeMatch.match_type === 'partial' ? `<p><strong>Совпадение:</strong> ${bestMatch.match_percentage.toFixed(1)}%</p>` : ''}
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                        <div>
+                            <h5 style="color: #667eea; margin-bottom: 8px;">Основные характеристики</h5>
+                            <p><strong>Дней:</strong> ${bestMatch.route_days || '—'}</p>
+                            <p><strong>Концертов:</strong> ${bestMatch.route_concerts || '—'}</p>
+                            <p><strong>Залов:</strong> ${bestMatch.route_halls || '—'}</p>
+                            <p><strong>Жанр:</strong> ${bestMatch.route_genre || '—'}</p>
+                        </div>
+                        <div>
+                            <h5 style="color: #667eea; margin-bottom: 8px;">Время и стоимость</h5>
+                            <p><strong>Время концертов:</strong> ${bestMatch.route_show_time ? bestMatch.route_show_time + 'ч' : '—'}</p>
+                            <p><strong>Время переходов:</strong> ${bestMatch.route_trans_time ? bestMatch.route_trans_time + 'ч' : '—'}</p>
+                            <p><strong>Время ожидания:</strong> ${bestMatch.route_wait_time ? bestMatch.route_wait_time + 'ч' : '—'}</p>
+                            <p><strong>Стоимость:</strong> ${bestMatch.route_costs ? bestMatch.route_costs + ' ₽' : '—'}</p>
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <h5 style="color: #667eea; margin-bottom: 8px;">Оценки комфорта</h5>
+                            <p><strong>Уровень комфорта:</strong> ${bestMatch.route_comfort_level || '—'}</p>
+                            <p><strong>Оценка комфорта:</strong> ${bestMatch.route_comfort_score || '—'}</p>
+                        </div>
+                        <div>
+                            <h5 style="color: #667eea; margin-bottom: 8px;">Интеллектуальная оценка</h5>
+                            <p><strong>Категория:</strong> ${bestMatch.route_intellect_category || '—'}</p>
+                            <p><strong>Оценка:</strong> ${bestMatch.route_intellect_score || '—'}</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                content = `
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="color: #4f5bd5; margin-bottom: 10px;">Пользователь: ${externalId}</h4>
+                        <p><strong>Концерты пользователя:</strong> ${routeMatch.customer_concerts_str}</p>
+                    </div>
+                    
+                    <div style="background: #ffebee; padding: 15px; border-radius: 8px;">
+                        <h4 style="color: #c62828; margin-bottom: 10px;">❌ Совпадений не найдено</h4>
+                        <p><strong>Причина:</strong> ${routeMatch.reason}</p>
+                        <p><strong>Проверено маршрутов:</strong> ${routeMatch.total_routes_checked}</p>
+                    </div>
+                `;
+            }
+            
+            routeModalContent.innerHTML = content;
+            openModal();
+        }
+    });
+    </script>
+</body>
+</html> 

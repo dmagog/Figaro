@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Офф-программа — Админка</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body { background: #f6f7fb; font-family: 'Segoe UI', 'Arial', sans-serif; }
+        .admin-container { max-width: 1200px; margin: 40px auto; padding: 30px; background: white; border-radius: 18px; box-shadow: 0 8px 32px rgba(60,60,120,0.08); }
+        .admin-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 30px; }
+        .admin-header h1 { font-size: 2.2em; margin: 0; flex-shrink:0; }
+        .admin-nav-flex { display: flex; gap: 18px; flex-wrap: nowrap; align-items: center; position: relative; padding-bottom: 4px; flex:1; }
+        .admin-menu-btn { background: #667eea; color: white; padding: 10px 28px; border-radius: 10px; text-decoration: none; font-weight: 500; font-size: 1.08em; border: none; transition: background 0.18s, color 0.18s; display: inline-block; text-align: center; cursor: pointer; white-space: nowrap; }
+        .admin-menu-btn:hover, .admin-menu-btn.active { background: #4f5bd5; color: #fff; }
+        .admin-menu-dropdown { position: relative; display: none; }
+        .admin-menu-dropdown-btn { background: #667eea; color: white; padding: 10px 28px; border-radius: 10px; text-decoration: none; font-weight: 500; font-size: 1.08em; border: none; transition: background 0.18s, color 0.18s; display: inline-block; text-align: center; cursor: pointer; white-space: nowrap; }
+        .admin-menu-dropdown-btn:hover { background: #4f5bd5; color: #fff; }
+        .admin-menu-dropdown-content { position: fixed; background: #f0f4ff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 8px 0; min-width: 150px; z-index: 1000; display: none; }
+        .admin-menu-dropdown-content.open { display: block; }
+        .admin-menu-dropdown-links { display: flex; flex-direction: column; }
+        .admin-menu-dropdown-links a { padding: 8px 16px; color: #333; text-decoration: none; transition: background 0.2s; }
+        .admin-menu-dropdown-links a:hover { background: #e0e7ff; }
+        .admin-menu-dropdown-arrow { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); width: 24px; height: 12px; pointer-events: none; z-index: 1003; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px);} to { opacity: 1; transform: translateY(0);} }
+        table { width: 100%; border-collapse: collapse; margin-top: 30px; background: #f8f9fa; border-radius: 12px; overflow: hidden; }
+        th, td { padding: 14px 10px; text-align: left; }
+        th { background: #e0e7ff; color: #333; font-weight: 600; }
+        tr:nth-child(even) { background: #f0f4ff; }
+        tr:hover { background: #e3eafe; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(102,126,234,0.07); margin-bottom: 20px; }
+        .card-header { padding: 18px 24px; border-bottom: 1px solid #e0e7ff; background: #f8f9fa; border-radius: 12px 12px 0 0; }
+        .card-body { padding: 24px; }
+        .card-title { margin: 0; font-size: 1.1em; font-weight: 600; color: #333; }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 0.9em; font-weight: 500; }
+        .bg-primary { background: #667eea; color: white; }
+        .bg-success { background: #28a745; color: white; }
+        .bg-info { background: #17a2b8; color: white; }
+        .bg-warning { background: #ffc107; color: #212529; }
+        .bg-secondary { background: #6c757d; color: white; }
+        .bg-light { background: #f8f9fa; color: #212529; }
+        .bg-outline-primary { background: transparent; color: #667eea; border: 1px solid #667eea; }
+        .bg-outline-secondary { background: transparent; color: #6c757d; border: 1px solid #6c757d; }
+        .text-primary { color: #667eea; }
+        .text-muted { color: #6c757d; }
+        .fw-bold { font-weight: bold; }
+        .fw-semibold { font-weight: 600; }
+        .text-center { text-align: center; }
+        .btn { display: inline-block; padding: 8px 16px; border-radius: 6px; text-decoration: none; border: none; cursor: pointer; transition: all 0.2s; }
+        .btn-sm { padding: 4px 8px; font-size: 0.9em; }
+        .btn-outline-primary { background: transparent; color: #667eea; border: 1px solid #667eea; }
+        .btn-outline-primary:hover { background: #667eea; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-secondary:hover { background: #5a6268; }
+        .table-responsive { overflow-x: auto; }
+        .fs-6 { font-size: 1rem; }
+        .fs-5 { font-size: 1.25rem; }
+        .mb-0 { margin-bottom: 0; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-3 { margin-bottom: 1rem; }
+        .mb-4 { margin-bottom: 1.5rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-3 { margin-top: 1rem; }
+        .p-0 { padding: 0; }
+        .p-3 { padding: 1rem; }
+        .rounded { border-radius: 0.375rem; }
+        .d-flex { display: flex; }
+        .justify-content-between { justify-content: center; }
+        .align-items-center { align-items: center; }
+        .gap-2 { gap: 0.5rem; }
+        .row { display: flex; flex-wrap: wrap; margin: 0 -0.75rem; }
+        .col-12 { flex: 0 0 100%; max-width: 100%; padding: 0 0.75rem; }
+        .col-md-6 { flex: 0 0 50%; max-width: 50%; padding: 0 0.75rem; }
+        .hall-badge { display: inline-block; background: #e3f2fd; color: #1976d2; border-radius: 8px; padding: 4px 14px; font-size: 1em; font-weight: 400; margin: 0; }
+        /* Кастомные стили для select и input (как в admin_users.html) */
+        .filter-block { background: #f4f6fb; border-radius: 12px; padding: 18px 24px; margin-bottom: 18px; box-shadow: 0 2px 8px rgba(102,126,234,0.07); display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; }
+        .filter-item { min-width: 180px; flex: 1 1 180px; display: flex; flex-direction: column; }
+        .filter-item label { font-size:0.95em; color:#667eea; margin-bottom:4px; }
+        .filter-item input,
+        .filter-item select { height: 44px; font-size: 1em; border-radius: 10px; border: 1.5px solid #bfc8e6; padding: 0 14px; background: #f8f9fa; box-shadow: 0 2px 8px rgba(102,126,234,0.07); transition: border 0.2s, box-shadow 0.2s; outline: none; }
+        .filter-item input:focus,
+        .filter-item select:focus { border: 1.5px solid #667eea; box-shadow: 0 4px 16px rgba(102,126,234,0.13); }
+        .filter-item select { appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill="%23667eea" height="20" viewBox="0 0 20 20" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7.293 7.293a1 1 0 011.414 0L10 8.586l1.293-1.293a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z"/></svg>'); background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; }
+        .filter-item select::-ms-expand { display: none; }
+        .concert-date-text {
+            font-size: 0.97em;
+            color: #8ca0c7;
+            display: block;
+            margin-top: 2px;
+        }
+        /* Стили для сортируемых заголовков */
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            transition: background 0.15s, color 0.15s;
+        }
+        th.sortable:hover {
+            background: #dbeafe;
+            color: #4f5bd5;
+        }
+        th.sortable:after {
+            content: '';
+            position: absolute;
+            right: 10px;
+            font-size: 1em;
+        }
+        th.sorted-asc:after {
+            content: '▲';
+        }
+        th.sorted-desc:after {
+            content: '▼';
+        }
+        
+        /* Стили для заголовков дней */
+        .day-header td {
+            background: #f8f9fa !important;
+            border-bottom: 2px solid #dee2e6 !important;
+            padding: 12px 10px !important;
+            font-weight: 600 !important;
+            color: #495057 !important;
+            font-size: 1.1em !important;
+        }
+        
+        /* Hover эффект для заголовков дней */
+        .day-header:hover td {
+            background: #e3eafe !important;
+        }
+        
+        /* Отступ перед заголовком нового дня */
+        .day-header {
+            margin-top: 16px !important;
+        }
+        
+        /* Отступ для первого заголовка дня */
+        .day-header:first-of-type {
+            margin-top: 24px !important;
+        }
+        
+        /* Компактные заголовки дней с цветовой схемой (стиль как у номеров концертов) */
+        .day-header-day1 td:first-child {
+            background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%) !important;
+            color: white !important;
+            border-radius: 0 12px 12px 0 !important;
+            padding: 8px 16px !important;
+            font-weight: bold !important;
+            font-size: 1.08em !important;
+            display: inline-block !important;
+            width: auto !important;
+            min-width: 120px !important;
+            text-align: left !important;
+            line-height: 28px !important;
+            vertical-align: middle !important;
+        }
+        .day-header-day2 td:first-child {
+            background: linear-gradient(90deg, #6366f1 0%, #818cf8 100%) !important;
+            color: white !important;
+            border-radius: 0 12px 12px 0 !important;
+            padding: 8px 16px !important;
+            font-weight: bold !important;
+            font-size: 1.08em !important;
+            display: inline-block !important;
+            width: auto !important;
+            min-width: 120px !important;
+            text-align: left !important;
+            line-height: 28px !important;
+            vertical-align: middle !important;
+        }
+        .day-header-day3 td:first-child {
+            background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%) !important;
+            color: white !important;
+            border-radius: 0 12px 12px 0 !important;
+            padding: 8px 16px !important;
+            font-weight: bold !important;
+            font-size: 1.08em !important;
+            display: inline-block !important;
+            width: auto !important;
+            min-width: 120px !important;
+            text-align: left !important;
+            line-height: 28px !important;
+            vertical-align: middle !important;
+        }
+        .day-header-day4 td:first-child {
+            background: linear-gradient(90deg, #06b6d4 0%, #0ea5e9 100%) !important;
+            color: white !important;
+            border-radius: 0 12px 12px 0 !important;
+            padding: 8px 16px !important;
+            font-weight: bold !important;
+            font-size: 1.08em !important;
+            display: inline-block !important;
+            width: auto !important;
+            min-width: 120px !important;
+            text-align: left !important;
+            line-height: 28px !important;
+            vertical-align: middle !important;
+        }
+        .day-header-day5 td:first-child {
+            background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%) !important;
+            color: white !important;
+            border-radius: 0 12px 12px 0 !important;
+            padding: 8px 16px !important;
+            font-weight: bold !important;
+            font-size: 1.08em !important;
+            display: inline-block !important;
+            width: auto !important;
+            min-width: 120px !important;
+            text-align: left !important;
+            line-height: 28px !important;
+            vertical-align: middle !important;
+        }
+        .day-header-day6 td:first-child {
+            background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%) !important;
+            color: white !important;
+            border-radius: 0 12px 12px 0 !important;
+            padding: 8px 16px !important;
+            font-weight: bold !important;
+            font-size: 1.08em !important;
+            display: inline-block !important;
+            width: auto !important;
+            min-width: 120px !important;
+            text-align: left !important;
+            line-height: 28px !important;
+            vertical-align: middle !important;
+        }
+        .day-header-day7 td:first-child {
+            background: linear-gradient(90deg, #818cf8 0%, #3b82f6 100%) !important;
+            color: white !important;
+            border-radius: 0 12px 12px 0 !important;
+            padding: 8px 16px !important;
+            font-weight: bold !important;
+            font-size: 1.08em !important;
+            display: inline-block !important;
+            width: auto !important;
+            min-width: 120px !important;
+            text-align: left !important;
+            line-height: 28px !important;
+            vertical-align: middle !important;
+        }
+        
+        .day-group {
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .day-group:last-child {
+            border-bottom: none;
+        }
+        
+        @media (max-width: 900px) {
+            .admin-nav-flex { gap: 8px; }
+            .admin-menu-btn, .admin-menu-dropdown-btn { padding: 10px 12px; font-size: 1em; }
+            .admin-menu-dropdown-content { min-width: 120px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>Офф-программа</h1>
+                    <nav class="admin-nav-flex" id="adminNav">
+                <a href="/admin" class="admin-menu-btn">Главная</a>
+                <a href="/admin/users" class="admin-menu-btn">Пользователи</a>
+                <a href="/admin/customers" class="admin-menu-btn">Покупатели</a>
+                <a href="/admin/purchases" class="admin-menu-btn">Покупки</a>
+                <a href="/admin/concerts" class="admin-menu-btn">Концерты</a>
+                <a href="/admin/halls" class="admin-menu-btn">Залы</a>
+                <a href="/admin/routes" class="admin-menu-btn">Маршруты</a>
+                <a href="/admin/offprogram" class="admin-menu-btn active">Офф-программа</a>
+                <a href="/" class="admin-menu-btn"><span style="font-size:1.1em; margin-right:6px;">🌐</span>На сайт</a>
+                <div class="admin-menu-dropdown" id="adminMenuDropdown" style="display:none;">
+                    <button class="admin-menu-dropdown-btn" id="dropdownBtn">Ещё <span style="font-size:1.1em;">▼</span></button>
+                    <div class="admin-menu-dropdown-content" id="dropdownContent">
+                        <div class="admin-menu-dropdown-arrow">
+                            <svg width="24" height="12"><polygon points="12,12 0,0 24,0" fill="#f0f4ff"/></svg>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+    </div>
+    
+    <!-- Фильтры -->
+    <div class="filter-block">
+        <div class="filter-item" style="flex:2; min-width:200px;">
+            <label for="universal-search">Поиск</label>
+            <input type="text" id="universal-search" placeholder="Поиск по всем полям...">
+        </div>
+        <div class="filter-item" style="min-width:140px;">
+            <label for="hall-filter">Зал</label>
+            <select id="hall-filter">
+                <option value="">Все залы</option>
+                {% for hall in halls %}
+                <option value="{{ hall }}">{{ hall }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-item" style="min-width:140px;">
+            <label for="format-filter">Формат</label>
+            <select id="format-filter">
+                <option value="">Все форматы</option>
+                <option value="Не указан">Не указан</option>
+                {% for format in formats %}
+                {% if format != 'Не указан' %}
+                <option value="{{ format }}">{{ format }}</option>
+                {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-item" style="min-width:140px;">
+            <label for="recommend-filter">Рекомендуемость</label>
+            <select id="recommend-filter">
+                <option value="">Все мероприятия</option>
+                <option value="recommended">Рекомендуемые</option>
+                <option value="not-recommended">Не рекомендуемые</option>
+            </select>
+        </div>
+        <div style="display:flex; align-items:flex-end; padding-bottom:2px; margin-left:8px;">
+            <button id="reset-filters" type="button" style="height:44px; width:44px; display:flex; align-items:center; justify-content:center; border:none; border-radius:50%; background:#e0e7ff; color:#4f5bd5; font-size:1.5em; box-shadow:0 2px 8px rgba(102,126,234,0.07); cursor:pointer; transition:background 0.2s;">
+                <span title="Сбросить фильтры" style="display:inline-block; line-height:1;">&#8635;</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Фильтры по дням -->
+    <div class="filter-block" id="day-filters" style="margin-bottom: 18px; display: flex; align-items: center; gap: 18px; background: #f4f6fb; border-radius: 12px; padding: 14px 24px;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            {% set month_names = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'] %}
+            <!-- Отладка: {{ event_days|length if event_days else 'Нет данных' }} дней -->
+            {% if event_days %}
+                {% for day in event_days %}
+                    <a href="#" class="day-filter-link" data-day="{{ day.isoformat() }}" style="display:inline-block; padding:7px 18px; border-radius:8px; background:#e0e7ff; color:#4f5bd5; font-weight:500; text-decoration:none; font-size:1.05em; transition:background 0.15s, color 0.15s;">{{ day.day }} {{ month_names[day.month-1] }}</a>
+                {% endfor %}
+            {% else %}
+                <span style="color: #666; font-style: italic;">Нет данных о днях мероприятий</span>
+            {% endif %}
+        </div>
+        <button id="reset-day-filter" type="button" style="height:38px; width:38px; display:flex; align-items:center; justify-content:center; border:none; border-radius:50%; background:#e0e7ff; color:#4f5bd5; font-size:1.3em; margin-left:10px; box-shadow:0 2px 8px rgba(102,126,234,0.07); cursor:pointer; transition:background 0.2s;" title="Сбросить фильтр по дню">
+            &#8635;
+        </button>
+    </div>
+    
+    <!-- Счетчик результатов -->
+    <div style="margin: 8px 0 0 0; color: #aaa; font-size: 0.98em; text-align: right;">
+        Показано мероприятий: <span id="events-count-value">{{ events|length }}</span>, 
+        <span id="filter-recommended" style="margin-left: 18px; color: #aaa; font-weight: 500; cursor:pointer; user-select:none;">
+            рекомендовано: <span style="color:#388e3c; font-weight: 600;">{{ recommended_events }}</span>
+        </span>
+    </div>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+
+
+
+
+            <!-- Таблица мероприятий -->
+            <div class="card">
+
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="sortable">Событие</th>
+                                    <th class="sortable" style="width: 100px;">Начало</th>
+                                    <th class="sortable" style="width: 100px;">Длительность</th>
+                                    <th class="sortable" style="width: 120px;">Зал</th>
+                                    <th class="sortable" style="width: 120px;">Формат</th>
+                                    <th class="sortable text-center" style="width: 100px;" title="Мероприятия, которые будут предлагаться в дополнение к маршруту пользователя">Рекомендуется</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set month_names = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'] %}
+                                {% for day in sorted_days %}
+                                    {% set day_index = day.day %}
+                                    {% if day_index > 7 %}{% set day_index = 7 %}{% endif %}
+                                    {% if day_index < 1 %}{% set day_index = 1 %}{% endif %}
+                                    <tr class="day-header day-header-day{{ day_index }}" data-day="{{ day.isoformat() }}">
+                                        <td style="border-bottom: 2px solid #dee2e6; padding: 12px 10px; font-weight: 600; font-size: 1.1em; background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, rgba(102,126,234,0.05) 50%, transparent 100%);">
+                                            {{ day.day }} {{ month_names[day.month-1] }}
+                                        </td>
+                                        <td colspan="5" style="border-bottom: 2px solid #dee2e6; padding: 12px 10px; background: linear-gradient(90deg, rgba(102,126,234,0.05) 0%, rgba(102,126,234,0.02) 50%, transparent 100%);"></td>
+                                    </tr>
+                                    {% for event in events_by_day[day] %}
+                                    <tr class="event-row" data-day="{{ day.isoformat() }}">
+                                        <td>
+                                            <div class="fw-bold">{{ event.event_name }}</div>
+                                            {% if event.description and event.description != 'Описание отсутствует' %}
+                                            <small class="text-muted">{{ event.description[:300] }}{% if event.description|length > 300 %}...{% endif %}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div>
+                                                {{ event.event_date_display.split(' ')[1] if event.event_date_display and ' ' in event.event_date_display else event.event_date_display }}
+                                            </div>
+                                            <span class="concert-date-text" data-day="{{ event.event_date_display.split(' ')[0] if event.event_date_display else '' }}" style="display: none;">
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark">{{ event.duration_display }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="hall-badge">{{ event.hall_name }}</span>
+                                        </td>
+                                        <td>
+                                            {% if event.format and event.format != 'Не указан' %}
+                                            <span class="badge bg-outline-secondary">{{ event.format }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            {% if event.recommend %}
+                                            <span class="recommend-toggle text-warning" data-event-id="{{ event.id }}" data-current-state="true" title="Рекомендуется (кликните для изменения)" style="cursor: pointer;">🟩</span>
+                                            {% else %}
+                                            <span class="recommend-toggle text-muted" data-event-id="{{ event.id }}" data-current-state="false" title="Не рекомендуется (кликните для изменения)" style="cursor: pointer;">⬜️</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Выпадающее меню для переполнения
+document.addEventListener('DOMContentLoaded', function() {
+    const nav = document.getElementById('adminNav');
+    const dropdown = document.getElementById('adminMenuDropdown');
+    const dropdownBtn = document.getElementById('dropdownBtn');
+    const dropdownContent = document.getElementById('dropdownContent');
+    
+    function updateDropdown() {
+        // Сброс
+        dropdownContent.innerHTML = '<div class="admin-menu-dropdown-arrow">\n<svg width="24" height="12"><polygon points="12,12 0,0 24,0" fill="#f0f4ff"/></svg>\n</div>';
+        let linksWrapper = document.createElement('div');
+        linksWrapper.className = 'admin-menu-dropdown-links';
+        
+        const children = Array.from(nav.children).filter(el => el.classList.contains('admin-menu-btn'));
+        children.forEach(el => {
+            el.style.display = '';
+        });
+        
+        // Проверяем, какие кнопки не помещаются
+        let overflowed = [];
+        children.forEach(el => {
+            const rect = el.getBoundingClientRect();
+            const navRect = nav.getBoundingClientRect();
+            if (rect.right > navRect.right - 120) { // 120px запас под dropdown
+                overflowed.push(el);
+            }
+        });
+        
+        if (overflowed.length > 0) {
+            overflowed.forEach(el => {
+                let clone = el.cloneNode(true);
+                clone.classList.remove('admin-menu-btn');
+                if (clone.getAttribute('href') === '/') {
+                    clone.innerHTML = '<span style="font-size:1.1em; margin-right:6px;">🌐</span>На сайт';
+                } else {
+                    clone.innerHTML = clone.textContent.trim();
+                }
+                linksWrapper.appendChild(clone);
+                el.style.display = 'none';
+            });
+            dropdownContent.appendChild(linksWrapper);
+            dropdown.style.display = 'inline-block';
+        } else {
+            dropdown.style.display = 'none';
+        }
+    }
+    
+    window.addEventListener('resize', updateDropdown);
+    updateDropdown();
+    
+    // Открытие/закрытие dropdown
+    dropdownBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+        if (dropdown.classList.contains('open')) {
+            const btnRect = dropdownBtn.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const dropdownWidth = 150; // примерная ширина dropdown
+            
+            // Позиционируем dropdown так, чтобы он не выходил за пределы экрана
+            let left = btnRect.left;
+            if (left + dropdownWidth > viewportWidth) {
+                left = viewportWidth - dropdownWidth - 10;
+            }
+            
+            dropdownContent.style.left = left + 'px';
+            dropdownContent.style.top = (btnRect.bottom + 6) + 'px';
+        }
+    });
+    
+    document.body.addEventListener('click', function() {
+        dropdown.classList.remove('open');
+    });
+});
+
+// JS-сортировка таблицы по клику на заголовки
+document.addEventListener('DOMContentLoaded', function() {
+    const table = document.querySelector('table');
+    const headers = table.querySelectorAll('th.sortable');
+    let sortCol = null;
+    let sortDir = 1;
+    const month_names = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+
+    headers.forEach((th, idx) => {
+        th.addEventListener('click', function() {
+            if (sortCol === idx) {
+                sortDir = -sortDir;
+            } else {
+                sortCol = idx;
+                sortDir = 1;
+            }
+            headers.forEach(h => h.classList.remove('sorted-asc', 'sorted-desc'));
+            th.classList.add(sortDir === 1 ? 'sorted-asc' : 'sorted-desc');
+            sortTable(idx, sortDir);
+        });
+    });
+    
+    // Убираем сортировку по умолчанию, так как теперь у нас есть группировка по дням
+    // События уже отсортированы по дате в шаблоне
+    
+    function parseCell(cell, idx) {
+        let text = cell.textContent.trim();
+        
+        if (idx === 0) {
+            // Название
+            return text.toLowerCase();
+        }
+        if (idx === 1) {
+            // Время (формат HH:MM)
+            const timeMatch = text.match(/(\d{1,2}):(\d{2})/);
+            if (timeMatch) {
+                const [, hours, minutes] = timeMatch;
+                return parseInt(hours) * 60 + parseInt(minutes); // конвертируем в минуты для сортировки
+            }
+            return 0;
+        }
+        if (idx === 2) {
+            // Длительность
+            const hoursMatch = text.match(/(\d+)ч/);
+            const minutesMatch = text.match(/(\d+)м/);
+            
+            let hours = 0;
+            let minutes = 0;
+            
+            if (hoursMatch) hours = parseInt(hoursMatch[1]);
+            if (minutesMatch) minutes = parseInt(minutesMatch[1]);
+            
+            return hours + minutes / 60;
+        }
+        if (idx === 3) {
+            // Зал
+            return text.toLowerCase();
+        }
+        if (idx === 4) {
+            // Формат
+            return text.toLowerCase();
+        }
+        if (idx === 5) {
+            // Рекомендуется (🟩 = 1, ⬜️ = 0)
+            return text.includes('🟩') ? 1 : 0;
+        }
+        return text.toLowerCase();
+    }
+    
+    function sortTable(col, dir) {
+        const tbody = table.tBodies[0];
+        const rows = Array.from(tbody.rows);
+        
+        // Собираем заголовки дней и строки событий
+        const dayHeaders = [];
+        const eventRows = [];
+        
+        rows.forEach(row => {
+            if (row.classList.contains('day-header')) {
+                dayHeaders.push(row);
+            } else if (row.classList.contains('event-row')) {
+                eventRows.push(row);
+            }
+        });
+        
+        // Сортируем строки событий
+        eventRows.sort((a, b) => {
+            let A = parseCell(a.cells[col], col);
+            let B = parseCell(b.cells[col], col);
+            if (A < B) return -1 * dir;
+            if (A > B) return 1 * dir;
+            return 0;
+        });
+        
+        // Перегруппировываем события по дням
+        const newDayGroups = {};
+        eventRows.forEach(row => {
+            const eventDate = row.querySelector('.concert-date-text').getAttribute('data-day');
+            if (eventDate) {
+                const parts = eventDate.split('.');
+                if (parts.length === 3) {
+                    const dayKey = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                    if (!newDayGroups[dayKey]) {
+                        newDayGroups[dayKey] = [];
+                    }
+                    newDayGroups[dayKey].push(row);
+                }
+            }
+        });
+        
+        // Очищаем tbody и добавляем отсортированные группы
+        tbody.innerHTML = '';
+        const month_names = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+        Object.keys(newDayGroups).sort().forEach(dayKey => {
+            const eventRows = newDayGroups[dayKey];
+            if (eventRows.length > 0) {
+                const dayDate = dayKey.split('-');
+                const dayObj = {
+                    year: dayDate[0],
+                    month: parseInt(dayDate[1]),
+                    day: parseInt(dayDate[2])
+                };
+                
+                // Создаем заголовок дня
+                const dayHeader = document.createElement('tr');
+                let dayIndex = dayObj.day;
+                if (dayIndex > 7) dayIndex = 7;
+                if (dayIndex < 1) dayIndex = 1;
+                dayHeader.className = `day-header day-header-day${dayIndex}`;
+                dayHeader.setAttribute('data-day', dayKey);
+                dayHeader.innerHTML = `<td style="border-bottom: 2px solid #dee2e6; padding: 12px 10px; font-weight: 600; font-size: 1.1em; background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, rgba(102,126,234,0.05) 50%, transparent 100%);">${dayObj.day} ${month_names[dayObj.month-1]}</td><td colspan="5" style="border-bottom: 2px solid #dee2e6; padding: 12px 10px; background: linear-gradient(90deg, rgba(102,126,234,0.05) 0%, rgba(102,126,234,0.02) 50%, transparent 100%);"></td>`;
+                
+                tbody.appendChild(dayHeader);
+                
+                // Добавляем отсортированные строки событий
+                eventRows.forEach(row => {
+                    row.className = 'event-row';
+                    tbody.appendChild(row);
+                });
+            }
+        });
+    }
+});
+
+// Глобальная функция для восстановления исходной структуры таблицы
+function restoreOriginalTableStructure() {
+    const table = document.querySelector('table');
+    const tbody = table.tBodies[0];
+    const rows = Array.from(tbody.rows);
+    
+    // Показываем все строки
+    rows.forEach(row => {
+        row.style.display = '';
+    });
+    
+    // Сбрасываем сортировку
+    const headers = table.querySelectorAll('th.sortable');
+    headers.forEach(h => h.classList.remove('sorted-asc', 'sorted-desc'));
+    
+    // Восстанавливаем исходную группировку по дням
+    // Собираем все события и перегруппировываем их по дням
+    const eventRows = rows.filter(row => row.classList.contains('event-row'));
+    
+    // Создаем группы по дням
+    const dayGroups = {};
+    eventRows.forEach(row => {
+        const eventDate = row.querySelector('.concert-date-text').getAttribute('data-day');
+        if (eventDate) {
+            const parts = eventDate.split('.');
+            if (parts.length === 3) {
+                const dayKey = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                if (!dayGroups[dayKey]) {
+                    dayGroups[dayKey] = [];
+                }
+                dayGroups[dayKey].push(row);
+            }
+        }
+    });
+    
+    // Очищаем tbody и добавляем отсортированные группы
+    tbody.innerHTML = '';
+    const month_names = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+    Object.keys(dayGroups).sort().forEach(dayKey => {
+        const eventRows = dayGroups[dayKey];
+        if (eventRows.length > 0) {
+            const dayDate = dayKey.split('-');
+            const dayObj = {
+                year: dayDate[0],
+                month: parseInt(dayDate[1]),
+                day: parseInt(dayDate[2])
+            };
+            
+            // Создаем заголовок дня
+            const dayHeader = document.createElement('tr');
+            let dayIndex = dayObj.day;
+            if (dayIndex > 7) dayIndex = 7;
+            if (dayIndex < 1) dayIndex = 1;
+            dayHeader.className = `day-header day-header-day${dayIndex}`;
+            dayHeader.setAttribute('data-day', dayKey);
+            dayHeader.innerHTML = `<td style="border-bottom: 2px solid #dee2e6; padding: 12px 10px; font-weight: 600; font-size: 1.1em; background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, rgba(102,126,234,0.05) 50%, transparent 100%);">${dayObj.day} ${month_names[dayObj.month-1]}</td><td colspan="5" style="border-bottom: 2px solid #dee2e6; padding: 12px 10px; background: linear-gradient(90deg, rgba(102,126,234,0.05) 0%, rgba(102,126,234,0.02) 50%, transparent 100%);"></td>`;
+            
+            tbody.appendChild(dayHeader);
+            
+            // Добавляем отсортированные строки событий
+            eventRows.forEach(row => {
+                row.className = 'event-row';
+                tbody.appendChild(row);
+            });
+        }
+    });
+}
+
+// Фильтры для таблицы мероприятий
+document.addEventListener('DOMContentLoaded', function() {
+    const table = document.querySelector('table');
+    const universalSearch = document.getElementById('universal-search');
+    const hallFilter = document.getElementById('hall-filter');
+    const formatFilter = document.getElementById('format-filter');
+    const recommendFilter = document.getElementById('recommend-filter');
+    const resetFilters = document.getElementById('reset-filters');
+    const eventsCount = document.getElementById('events-count-value');
+    const filterRecommended = document.getElementById('filter-recommended');
+    window.recommendedFilter = null; // null, 'recommended', 'not-recommended'
+    
+    function applyFilters() {
+        const tbody = table.tBodies[0];
+        const rows = Array.from(tbody.rows);
+        let visibleCount = 0;
+        let recommendedCount = 0;
+        let currentDayHeader = null;
+        let dayHasVisibleEvents = false;
+        
+        rows.forEach(row => {
+            if (row.classList.contains('day-header')) {
+                // Если это заголовок дня, проверяем предыдущий день
+                if (currentDayHeader && !dayHasVisibleEvents) {
+                    currentDayHeader.style.display = 'none';
+                }
+                currentDayHeader = row;
+                dayHasVisibleEvents = false;
+                return;
+            }
+            
+            if (row.classList.contains('event-row')) {
+                const cells = row.cells;
+                
+                // Получаем значения из ячеек
+                const eventName = cells[0].textContent.trim();
+                const eventTime = cells[1].textContent.trim();
+                const duration = cells[2].textContent.trim();
+                const hall = cells[3].textContent.trim();
+                const format = cells[4].textContent.trim();
+                const recommend = cells[5].textContent.trim();
+                
+                // Универсальный поиск
+                const searchTerm = universalSearch.value.toLowerCase();
+                const searchMatch = !searchTerm || 
+                    eventName.toLowerCase().includes(searchTerm) ||
+                    eventTime.toLowerCase().includes(searchTerm) ||
+                    duration.toLowerCase().includes(searchTerm) ||
+                    hall.toLowerCase().includes(searchTerm) ||
+                    format.toLowerCase().includes(searchTerm);
+                
+                // Фильтр по залу
+                const hallMatch = !hallFilter.value || hall === hallFilter.value;
+                
+                // Фильтр по формату
+                let formatMatch = true;
+                if (formatFilter.value) {
+                    if (formatFilter.value === 'Не указан') {
+                        // Для "Не указан" ищем строки с пустым форматом
+                        formatMatch = !format || format === 'Не указан';
+                    } else {
+                        // Для остальных значений ищем точное совпадение
+                        formatMatch = format === formatFilter.value;
+                    }
+                }
+                
+                // Фильтр по рекомендуемости (из выпадающего списка)
+                let recommendMatch = true;
+                if (recommendFilter.value === 'recommended') {
+                    recommendMatch = recommend.includes('🟩');
+                } else if (recommendFilter.value === 'not-recommended') {
+                    recommendMatch = recommend.includes('⬜️');
+                }
+                
+                // Фильтр по рекомендуемости (клик по счетчику)
+                if (window.recommendedFilter === 'recommended') {
+                    recommendMatch = recommend.includes('🟩');
+                } else if (window.recommendedFilter === 'not-recommended') {
+                    recommendMatch = recommend.includes('⬜️');
+                }
+                
+                // Применяем все фильтры
+                const shouldShow = searchMatch && hallMatch && formatMatch && recommendMatch;
+                row.style.display = shouldShow ? '' : 'none';
+                
+                if (shouldShow) {
+                    visibleCount++;
+                    if (recommend.includes('🟩')) {
+                        recommendedCount++;
+                    }
+                    dayHasVisibleEvents = true;
+                }
+            }
+        });
+        
+        // Проверяем последний день
+        if (currentDayHeader && !dayHasVisibleEvents) {
+            currentDayHeader.style.display = 'none';
+        }
+        
+        // Обновляем счетчики
+        eventsCount.textContent = visibleCount;
+        document.getElementById('filter-recommended').querySelector('span').textContent = recommendedCount;
+    }
+    
+    // Обработчики событий для фильтров
+    universalSearch.addEventListener('input', applyFilters);
+    hallFilter.addEventListener('change', applyFilters);
+    formatFilter.addEventListener('change', applyFilters);
+    recommendFilter.addEventListener('change', applyFilters);
+    
+    // Фильтр по рекомендуемым мероприятиям (клик по счетчику)
+    filterRecommended.addEventListener('click', function() {
+        if (window.recommendedFilter === 'recommended') {
+            window.recommendedFilter = null;
+            filterRecommended.style.background = '';
+        } else {
+            window.recommendedFilter = 'recommended';
+            filterRecommended.style.background = '#e0e7ff';
+        }
+        applyFilters();
+    });
+    
+    // Кнопка сброса фильтров
+    resetFilters.addEventListener('click', function() {
+        universalSearch.value = '';
+        hallFilter.value = '';
+        formatFilter.value = '';
+        recommendFilter.value = '';
+        
+        // Сброс фильтра по рекомендуемым мероприятиям
+        window.recommendedFilter = null;
+        filterRecommended.style.background = '';
+        
+        // Просто показываем все строки и обновляем счетчики
+        const tbody = table.tBodies[0];
+        const rows = Array.from(tbody.rows);
+        let visibleCount = 0;
+        let recommendedCount = 0;
+        
+        rows.forEach(row => {
+            row.style.display = '';
+            if (row.classList.contains('event-row')) {
+                visibleCount++;
+                const recommendCell = row.cells[5];
+                const recommendToggle = recommendCell.querySelector('.recommend-toggle');
+                if (recommendToggle && recommendToggle.getAttribute('data-current-state') === 'true') {
+                    recommendedCount++;
+                }
+            }
+        });
+        
+        // Обновляем счетчики
+        eventsCount.textContent = visibleCount;
+        document.getElementById('filter-recommended').querySelector('span').textContent = recommendedCount;
+        
+        // Сбрасываем сортировку
+        const headers = table.querySelectorAll('th.sortable');
+        headers.forEach(h => h.classList.remove('sorted-asc', 'sorted-desc'));
+    });
+    
+
+    
+    // Применяем фильтры при загрузке страницы
+    applyFilters();
+    
+    // Обработчик клика для изменения состояния рекомендации
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('recommend-toggle')) {
+            const eventId = e.target.getAttribute('data-event-id');
+            const currentState = e.target.getAttribute('data-current-state') === 'true';
+            const newState = !currentState;
+            
+            // Показываем индикатор загрузки
+            e.target.style.opacity = '0.5';
+            e.target.style.pointerEvents = 'none';
+            
+            // Отправляем запрос на сервер
+            fetch('/api/offprogram/toggle-recommend', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    event_id: eventId,
+                    recommend: newState
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Обновляем отображение
+                    e.target.setAttribute('data-current-state', newState.toString());
+                    if (newState) {
+                        e.target.textContent = '🟩';
+                        e.target.className = 'recommend-toggle text-warning';
+                        e.target.title = 'Рекомендуется (кликните для изменения)';
+                    } else {
+                        e.target.textContent = '⬜️';
+                        e.target.className = 'recommend-toggle text-muted';
+                        e.target.title = 'Не рекомендуется (кликните для изменения)';
+                    }
+                    
+                    // Обновляем счетчики
+                    updateRecommendationCounters();
+                    
+                    // Показываем уведомление об успехе
+                    showNotification('Состояние рекомендации обновлено', 'success');
+                } else {
+                    // Возвращаем исходное состояние при ошибке
+                    e.target.setAttribute('data-current-state', currentState.toString());
+                    if (currentState) {
+                        e.target.textContent = '🟩';
+                        e.target.className = 'recommend-toggle text-warning';
+                        e.target.title = 'Рекомендуется (кликните для изменения)';
+                    } else {
+                        e.target.textContent = '⬜️';
+                        e.target.className = 'recommend-toggle text-muted';
+                        e.target.title = 'Не рекомендуется (кликните для изменения)';
+                    }
+                    
+                    showNotification('Ошибка при обновлении: ' + (data.error || 'Неизвестная ошибка'), 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при обновлении рекомендации:', error);
+                
+                // Возвращаем исходное состояние при ошибке
+                e.target.setAttribute('data-current-state', currentState.toString());
+                if (currentState) {
+                    e.target.textContent = '🟩';
+                    e.target.className = 'recommend-toggle text-warning';
+                    e.target.title = 'Рекомендуется (кликните для изменения)';
+                } else {
+                    e.target.textContent = '⬜️';
+                    e.target.className = 'recommend-toggle text-muted';
+                    e.target.title = 'Не рекомендуется (кликните для изменения)';
+                }
+                
+                showNotification('Ошибка сети при обновлении', 'error');
+            })
+            .finally(() => {
+                // Восстанавливаем отображение
+                e.target.style.opacity = '1';
+                e.target.style.pointerEvents = 'auto';
+            });
+        }
+    });
+    
+    // Функция для обновления счетчиков рекомендаций
+    function updateRecommendationCounters() {
+        const table = document.querySelector('table');
+        const rows = Array.from(table.tBodies[0].rows);
+        let totalCount = 0;
+        let recommendedCount = 0;
+        
+        rows.forEach(row => {
+            if (row.classList.contains('event-row') && row.style.display !== 'none') {
+                totalCount++;
+                const recommendCell = row.cells[5];
+                const recommendToggle = recommendCell.querySelector('.recommend-toggle');
+                if (recommendToggle && recommendToggle.getAttribute('data-current-state') === 'true') {
+                    recommendedCount++;
+                }
+            }
+        });
+        
+        // Обновляем счетчики
+        const eventsCount = document.getElementById('events-count-value');
+        const recommendedSpan = document.getElementById('filter-recommended').querySelector('span');
+        
+        if (eventsCount) {
+            eventsCount.textContent = totalCount;
+        }
+        if (recommendedSpan) {
+            recommendedSpan.textContent = recommendedCount;
+        }
+    }
+    
+    // Функция для показа уведомлений
+    function showNotification(message, type = 'info') {
+        // Создаем элемент уведомления
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 10000;
+            max-width: 300px;
+            word-wrap: break-word;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: opacity 0.3s, transform 0.3s;
+        `;
+        
+        if (type === 'success') {
+            notification.style.background = '#4caf50';
+        } else if (type === 'error') {
+            notification.style.background = '#f44336';
+        } else {
+            notification.style.background = '#2196f3';
+        }
+        
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        // Удаляем уведомление через 3 секунды
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
+    }
+});
+
+// Фильтр по дням мероприятий
+document.addEventListener('DOMContentLoaded', function() {
+    const table = document.querySelector('table');
+    const dayLinks = document.querySelectorAll('.day-filter-link');
+    const resetBtn = document.getElementById('reset-day-filter');
+    let activeDay = null;
+
+    function applyDayFilter() {
+        const tbody = table.tBodies[0];
+        const rows = Array.from(tbody.rows);
+        let visibleCount = 0;
+        let recommendedCount = 0;
+        
+        rows.forEach(row => {
+            if (row.classList.contains('day-header')) {
+                // Для заголовков дней определяем, нужно ли их показывать
+                let shouldShowHeader = true;
+                
+                if (activeDay) {
+                    // Если выбран конкретный день, проверяем атрибут data-day
+                    const headerDay = row.getAttribute('data-day');
+                    shouldShowHeader = (headerDay === activeDay);
+                }
+                
+                row.style.display = shouldShowHeader ? '' : 'none';
+                return;
+            }
+            
+            if (row.classList.contains('event-row')) {
+                // Фильтр по дню
+                let showByDay = true;
+                if (activeDay) {
+                    const eventDay = row.getAttribute('data-day');
+                    showByDay = (eventDay === activeDay);
+                }
+                
+                // Применяем фильтр по дню
+                if (!showByDay) {
+                    row.style.display = 'none';
+                } else {
+                    row.style.display = '';
+                    visibleCount++;
+                    
+                    // Считаем рекомендуемые мероприятия
+                    const recommendCell = row.cells[5];
+                    const recommendToggle = recommendCell.querySelector('.recommend-toggle');
+                    if (recommendToggle && recommendToggle.getAttribute('data-current-state') === 'true') {
+                        recommendedCount++;
+                    }
+                }
+            }
+        });
+        
+        // Обновляем счетчики
+        const countSpan = document.getElementById('events-count-value');
+        const recommendedSpan = document.getElementById('filter-recommended').querySelector('span');
+        if (countSpan) {
+            countSpan.textContent = visibleCount;
+        }
+        if (recommendedSpan) {
+            recommendedSpan.textContent = recommendedCount;
+        }
+    }
+
+    dayLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            dayLinks.forEach(l => l.style.background = '#e0e7ff');
+            dayLinks.forEach(l => l.style.color = '#4f5bd5');
+            this.style.background = '#4f5bd5';
+            this.style.color = '#fff';
+            activeDay = this.getAttribute('data-day');
+            applyDayFilter();
+        });
+    });
+    
+    resetBtn.addEventListener('click', function() {
+        dayLinks.forEach(l => l.style.background = '#e0e7ff');
+        dayLinks.forEach(l => l.style.color = '#4f5bd5');
+        activeDay = null;
+        
+        // Сброс фильтра по рекомендуемым мероприятиям
+        if (window.recommendedFilter !== undefined) {
+            window.recommendedFilter = null;
+            const filterRecommended = document.getElementById('filter-recommended');
+            if (filterRecommended) {
+                filterRecommended.style.background = '';
+            }
+        }
+        
+        // Просто показываем все строки и обновляем счетчики
+        const tbody = table.tBodies[0];
+        const rows = Array.from(tbody.rows);
+        let visibleCount = 0;
+        let recommendedCount = 0;
+        
+        rows.forEach(row => {
+            row.style.display = '';
+            if (row.classList.contains('event-row')) {
+                visibleCount++;
+                const recommendCell = row.cells[5];
+                const recommendToggle = recommendCell.querySelector('.recommend-toggle');
+                if (recommendToggle && recommendToggle.getAttribute('data-current-state') === 'true') {
+                    recommendedCount++;
+                }
+            }
+        });
+        
+        // Обновляем счетчики
+        const countSpan = document.getElementById('events-count-value');
+        const recommendedSpan = document.getElementById('filter-recommended').querySelector('span');
+        if (countSpan) {
+            countSpan.textContent = visibleCount;
+        }
+        if (recommendedSpan) {
+            recommendedSpan.textContent = recommendedCount;
+        }
+    });
+    
+    function updateEventsCount() {
+        const table = document.querySelector('table');
+        const countSpan = document.getElementById('events-count-value');
+        const recommendedSpan = document.getElementById('filter-recommended').querySelector('span');
+        if (!table || !countSpan || !recommendedSpan) return;
+        let visible = 0;
+        let recommended = 0;
+        const tbody = table.tBodies[0];
+        const rows = Array.from(tbody.rows);
+        rows.forEach(row => {
+            if (row.classList.contains('event-row') && row.style.display !== 'none') {
+                visible++;
+                const recommend = row.cells[5].textContent.trim();
+                if (recommend.includes('🟩')) {
+                    recommended++;
+                }
+            }
+        });
+        countSpan.textContent = visible;
+        recommendedSpan.textContent = recommended;
+    }
+});
+</script>
+</div>
+</body>
+</html> 

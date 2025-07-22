@@ -1,0 +1,3154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет - конструктор маршрутов фестиваля «Безумные дни»</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=1.8&t={{ range(1, 10000) | random }}">
+    <style>
+        .profile-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .profile-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .profile-header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.5em;
+            color: white;
+        }
+        
+        .user-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .info-card {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .info-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        
+        .info-card p {
+            margin: 0;
+            font-size: 1em;
+            font-weight: bold;
+        }
+        
+        /* Навигационные вкладки */
+        .tabs-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        
+        .tabs-nav {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .tab-button {
+            flex: 1;
+            padding: 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 500;
+            color: #6c757d;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .tab-button:hover {
+            background: #e9ecef;
+            color: #495057;
+        }
+        
+        .tab-button.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .tab-button .tab-icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .concerts-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .concerts-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .concerts-count {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+        }
+        
+        /* Переопределяем для маршрутного листа */
+        #route-tab .concerts-count {
+            background: none;
+            color: inherit;
+            padding: 0;
+            border-radius: 0;
+            font-weight: normal;
+        }
+        
+        /* Переопределяем для страницы "Мои концерты" */
+        #concerts-tab .concerts-count {
+            background: none;
+            color: inherit;
+            padding: 0;
+            border-radius: 0;
+            font-weight: normal;
+        }
+        
+        .concerts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 100%;
+        }
+        
+        .concert-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 4px solid #667eea;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            overflow: visible;
+        }
+        
+        .concert-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+
+        
+        /* Специальные стили для номеров концертов в профиле */
+        .concert-card .concert-number {
+            position: absolute;
+            top: 20px;
+            left: 0px;
+            width: 56px;
+            height: 36px;
+            padding-left: 12px;
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #fff;
+            border-radius: 0 18px 18px 0;
+            text-align: left;
+            line-height: 36px;
+            vertical-align: middle;
+            z-index: 2;
+        }
+        
+        /* Переопределяем стили из общего CSS для номеров концертов */
+        .concert-title-flex .concert-number {
+            display: inline-block;
+            width: 56px;
+            height: 36px;
+            padding-left: 12px;
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #fff;
+            border-radius: 0 18px 18px 0;
+            margin-right: 10px;
+            text-align: left;
+            line-height: 36px;
+            vertical-align: middle;
+        }
+        
+        /* Цвета номеров концертов по дням */
+        .concert-card .concert-number-day1 { background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); }
+        .concert-card .concert-number-day2 { background: linear-gradient(90deg, #6366f1 0%, #818cf8 100%); }
+        .concert-card .concert-number-day3 { background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%); }
+        .concert-card .concert-number-day4 { background: linear-gradient(90deg, #06b6d4 0%, #0ea5e9 100%); }
+        .concert-card .concert-number-day5 { background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%); }
+        .concert-card .concert-number-day6 { background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%); }
+        .concert-card .concert-number-day7 { background: linear-gradient(90deg, #818cf8 0%, #3b82f6 100%); }
+        
+        /* Цвета номеров концертов в маршрутном листе */
+        .concert-event .concert-number-day1 { background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); }
+        .concert-event .concert-number-day2 { background: linear-gradient(90deg, #6366f1 0%, #818cf8 100%); }
+        .concert-event .concert-number-day3 { background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%); }
+        .concert-event .concert-number-day4 { background: linear-gradient(90deg, #06b6d4 0%, #0ea5e9 100%); }
+        .concert-event .concert-number-day5 { background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%); }
+        .concert-event .concert-number-day6 { background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%); }
+        .concert-event .concert-number-day7 { background: linear-gradient(90deg, #818cf8 0%, #3b82f6 100%); }
+        
+        /* Стиль для конфликтующих концертов */
+        .concert-event .concert-number-conflict { background: linear-gradient(90deg, #dc2626 0%, #ef4444 100%); }
+        
+        .concert-event .concert-number {
+            display: inline-block;
+            width: 56px;
+            height: 32px;
+            padding-left: 12px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #fff;
+            border-radius: 0 16px 16px 0;
+            text-align: left;
+            line-height: 32px;
+            vertical-align: middle;
+            flex-shrink: 0;
+        }
+        
+
+        
+
+        
+
+        
+        /* Цветные подложки карточек по дням фестиваля */
+        .concert-card-day1 { 
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(37, 99, 235, 0.08) 100%);
+            border-left: 4px solid #3b82f6;
+        }
+        .concert-card-day2 { 
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(129, 140, 248, 0.08) 100%);
+            border-left: 4px solid #6366f1;
+        }
+        .concert-card-day3 { 
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.05) 0%, rgba(167, 139, 250, 0.08) 100%);
+            border-left: 4px solid #7c3aed;
+        }
+        .concert-card-day4 { 
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.05) 0%, rgba(14, 165, 233, 0.08) 100%);
+            border-left: 4px solid #06b6d4;
+        }
+        .concert-card-day5 { 
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.05) 0%, rgba(56, 189, 248, 0.08) 100%);
+            border-left: 4px solid #0ea5e9;
+        }
+        .concert-card-day6 { 
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(99, 102, 241, 0.08) 100%);
+            border-left: 4px solid #2563eb;
+        }
+        .concert-card-day7 { 
+            background: linear-gradient(135deg, rgba(129, 140, 248, 0.05) 0%, rgba(59, 130, 246, 0.08) 100%);
+            border-left: 4px solid #818cf8;
+        }
+        
+
+        
+        /* Блоки дней с цветовой привязкой */
+        .day-header-day1 {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        }
+        .day-header-day2 {
+            background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+        }
+        .day-header-day3 {
+            background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+        }
+        .day-header-day4 {
+            background: linear-gradient(135deg, #06b6d4 0%, #0ea5e9 100%);
+        }
+        .day-header-day5 {
+            background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+        }
+        .day-header-day6 {
+            background: linear-gradient(135deg, #2563eb 0%, #6366f1 100%);
+        }
+        .day-header-day7 {
+            background: linear-gradient(135deg, #818cf8 0%, #3b82f6 100%);
+        }
+        
+        .tickets-badge {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            background: none;
+            color: #222;
+            display: flex;
+            align-items: center;
+            font-size: 1.15em;
+            font-weight: bold;
+            gap: 6px;
+            cursor: help;
+            z-index: 10;
+            box-shadow: none;
+            padding: 0;
+        }
+        .tickets-badge .icon {
+            font-size: 1.25em;
+            line-height: 1;
+            color: #1976d2;
+        }
+        .tickets-badge::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: 120%;
+            right: 0;
+            left: auto;
+            background: #333;
+            color: white;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            z-index: 1001;
+            margin-top: 6px;
+            pointer-events: none;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+        }
+        .tickets-badge:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .concert-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .detail-label {
+            font-size: 0.85em;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .detail-value {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .concert-hall {
+            margin-top: 15px;
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .no-concerts {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .no-concerts h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .status-card-superuser {
+            background: rgba(255,193,7,0.2);
+            border: 1px solid rgba(255,193,7,0.5);
+            cursor: pointer;
+            transition: box-shadow 0.15s, background 0.15s;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .status-card-superuser:hover {
+            background: rgba(255,193,7,0.32);
+            box-shadow: 0 2px 12px rgba(255,193,7,0.10);
+            text-decoration: none;
+        }
+        
+        .status-card-user {
+            background: rgba(108,117,125,0.2);
+            border: 1px solid rgba(108,117,125,0.5);
+        }
+        
+        .concert-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            padding-right: 50px;
+            padding-left: 60px;
+            padding-top: 15px;
+        }
+        
+        /* Стили для маршрутного листа */
+        .route-timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+        
+        .timeline-line {
+            position: absolute;
+            left: 25px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(to bottom, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+        
+        /* Фильтры по дням */
+        .route-filters {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .filter-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .day-filters {
+            display: flex;
+            flex-direction: row;
+            gap: 8px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+        }
+        
+        .day-filter-btn {
+            padding: 6px 12px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+        
+        .day-filter-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .day-filter-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .day-filter-btn.all-days {
+            border-color: #28a745;
+            color: #28a745;
+        }
+        
+        .day-filter-btn.all-days:hover,
+        .day-filter-btn.all-days.active {
+            background: #28a745;
+            color: white;
+        }
+        
+        .day-section {
+            position: relative;
+            margin-bottom: 40px;
+            padding-left: 60px;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease forwards;
+        }
+        
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .day-section.hidden {
+            display: none;
+        }
+        
+        .day-dot {
+            position: absolute;
+            left: 12.5px;
+            top: 9px;
+            width: 20px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 50%;
+            border: 4px solid white;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.3);
+            z-index: 2;
+        }
+        
+        .day-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(102,126,234,0.2);
+        }
+        
+        .day-header h3 {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .day-concerts-count {
+            margin-left: auto;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        
+        /* Прогресс-бар дня */
+        .day-progress {
+            margin-top: 15px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            padding: 10px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4ade80, #22c55e);
+            border-radius: 4px;
+            transition: width 0.8s ease;
+            position: relative;
+        }
+        
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+        
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.85em;
+            opacity: 0.9;
+        }
+        
+        .concert-event {
+            position: relative;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-left: 4px solid #667eea;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-bottom: 15px;
+            opacity: 0;
+            transform: translateX(-20px);
+            animation: slideInLeft 0.5s ease forwards;
+        }
+        
+        .concert-event.compact {
+            padding: 8px 12px 8px 16px;
+            margin-bottom: 8px;
+            margin-left: 20px;
+            background: #fafafa;
+            border-left: 3px solid #ddd;
+            border-radius: 8px;
+        }
+        
+        /* Уменьшаем отступ у последней карточки концерта в дне */
+        .concert-event.compact:last-child {
+            margin-bottom: 4px;
+        }
+        
+        .concert-event.compact .concert-number {
+            position: absolute;
+            left: -40px;
+            top: 12px;
+            z-index: 10;
+            width: 50px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9em;
+            font-weight: 600;
+            border-radius: 15px 0 0 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
+        @keyframes slideInLeft {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .concert-event:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+        
+        /* Время перехода между концертами */
+        .transition-info {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 15px 0;
+            margin-left: 60px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9em;
+        }
+        
+        .transition-info.warning {
+            background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+            border-color: #ef4444;
+        }
+        
+        .transition-info.success {
+            background: linear-gradient(135deg, #f0fdf4 0%, #bbf7d0 100%);
+            border-color: #22c55e;
+        }
+        
+        .transition-icon {
+            font-size: 1.2em;
+        }
+        
+        .transition-details {
+            flex: 1;
+        }
+        
+        .transition-time {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .transition-walk-time {
+            color: #666;
+            font-size: 0.85em;
+        }
+        
+        .event-time {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #667eea;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+
+        
+
+        
+        .event-title {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 1.2em;
+            padding-right: 100px;
+            padding-left: 140px;
+        }
+        
+        .event-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .event-detail {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .event-detail-icon {
+            font-size: 1.2em;
+        }
+        
+        .event-detail-label {
+            font-size: 0.8em;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .event-detail-value {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .event-duration {
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: inline-block;
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        /* Раскрываемые блоки с деталями */
+        .concert-details-toggle {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .concert-details-toggle:hover {
+            background: #e9ecef;
+        }
+        
+        .toggle-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .toggle-icon {
+            transition: transform 0.3s ease;
+        }
+        
+        /* Стили для кнопки раскрытия */
+        .expand-btn:hover {
+            color: #999;
+        }
+        
+        .expand-btn.expanded {
+            transform: translateY(-4px) rotate(180deg) !important;
+        }
+        
+        /* Всплывающая подсказка */
+        .expand-btn[title]:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            white-space: nowrap;
+            z-index: 1000;
+            margin-bottom: 5px;
+        }
+        
+        /* Стили для карточек перехода */
+        .transition-card {
+            border-left: 3px solid;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            opacity: 0;
+            transform: translateX(-20px);
+            animation: slideInLeft 0.5s ease forwards;
+        }
+        
+        .transition-card.transition-warning {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+        }
+        
+        .transition-card.transition-success {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+        
+        .transition-card.transition-info {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+        }
+        
+        .transition-card.transition-tight {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+        }
+        
+        .transition-card.transition-same_hall {
+            background: #d1fae5;
+            border-left-color: #10b981;
+        }
+        
+        .transition-card.transition-same_building {
+            background: #dbeafe;
+            border-left-color: #3b82f6;
+        }
+        
+        .transition-card.transition-no_transition_data {
+            background: #fef2f2;
+            border-left-color: #dc2626;
+        }
+        
+        /* Стили для офф-программы */
+        .off-program-section {
+            margin: 0 0 12px 60px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
+            border-left: 2px dashed #3b82f6;
+            border-right: 2px dashed #3b82f6;
+            border-bottom: 2px dashed #3b82f6;
+            width: 90%;
+            opacity: 0;
+            transform: translateX(-20px);
+            animation: slideInLeft 0.5s ease forwards;
+        }
+        
+        /* Заголовок раскрывающегося блока офф-программы */
+        .off-program-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            padding: 4px 0;
+            transition: background-color 0.2s ease;
+            border-radius: 4px;
+        }
+        
+        .off-program-header:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        
+        .off-program-header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .off-program-toggle-btn {
+            background: none;
+            border: none;
+            color: #3b82f6;
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: transform 0.3s ease, background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+        }
+        
+        .off-program-toggle-btn:hover {
+            background-color: rgba(59, 130, 246, 0.2);
+        }
+        
+        .off-program-toggle-btn.rotated {
+            transform: rotate(180deg);
+        }
+        
+        /* Свернутое состояние офф-программы */
+        .off-program-collapsed {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 6px;
+            margin-bottom: 6px;
+        }
+        
+        .off-program-collapsed-event, .off-program-event {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            background: white;
+            border-radius: 6px;
+            gap: 0;
+            margin-bottom: 0;
+        }
+        
+        .off-program-collapsed-left, .off-program-event-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+        
+        .off-program-collapsed-title, .off-program-event-title {
+            font-weight: 500;
+            color: #333;
+            font-size: 0.9em;
+            margin-bottom: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .off-program-collapsed-time, .off-program-event-time .time {
+            font-size: 0.9em;
+            color: #666;
+            font-weight: 500;
+            min-width: 50px;
+        }
+        
+        .off-program-collapsed-duration, .off-program-event-details .duration {
+            font-size: 0.8em;
+            color: #666;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+        
+        .off-program-collapsed-format, .off-program-event-title .off-program-collapsed-format {
+            font-size: 0.8em;
+            color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+        
+        /* Развернутое состояние офф-программы */
+        .off-program-expanded {
+            display: none;
+        }
+        
+        .off-program-expanded.show {
+            display: block;
+        }
+        
+        .off-program-section.before-concert {
+            background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
+            border-left: 2px dashed #3b82f6;
+            border-right: 2px dashed #3b82f6;
+            border-top: 2px dashed #3b82f6;
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        .off-program-section.after-concert {
+            background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
+            border-left: 2px dashed #3b82f6;
+            border-right: 2px dashed #3b82f6;
+            border-bottom: 2px dashed #3b82f6;
+            margin: 0 0 4px 60px; /* Уменьшаем отступ снизу */
+        }
+        
+        .off-program-event {
+            background: white;
+            border-radius: 6px;
+            padding: 8px;
+            margin-bottom: 6px;
+        }
+        
+        .off-program-event.recommended {
+            border-left: 3px solid #10b981;
+        }
+        
+        /* Убираем зеленую полосу у вложенных блоков в развернутом состоянии */
+        .off-program-expanded .off-program-event.recommended {
+            border-left: none;
+        }
+        
+        .off-program-event-time {
+            min-width: 50px;
+            text-align: center;
+        }
+        
+        .off-program-event-time .time {
+            font-size: 0.9em;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .off-program-event-time .recommend-star {
+            font-size: 0.7em;
+            color: #10b981;
+            font-weight: 500;
+        }
+        
+        .off-program-event-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .off-program-event-title {
+            font-weight: 500;
+            color: #333;
+            font-size: 0.9em;
+            margin-bottom: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .off-program-event-description {
+            color: #666;
+            font-size: 0.8em;
+            margin-bottom: 4px;
+        }
+        
+        .off-program-event-details {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 2px !important;
+            font-size: 0.8em;
+            color: #666;
+        }
+        
+        .off-program-event-details-vertical {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 2px !important;
+        }
+        
+        .toggle-icon.rotated {
+            transform: rotate(180deg);
+        }
+        
+        .concert-details-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .concert-details-content.expanded {
+            max-height: 500px;
+            margin-top: 15px;
+        }
+        
+        .artists-section,
+        .compositions-section {
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .artists-list,
+        .compositions-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .artist-tag,
+        .composition-tag {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            border: 1px solid #bbdefb;
+        }
+        
+        .special-artist {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            color: #e65100;
+            border-color: #ffb74d;
+        }
+        
+        .composition-author {
+            color: #666;
+            font-size: 0.8em;
+            font-style: italic;
+        }
+        
+        .hall-address {
+            background: #f3e5f5;
+            color: #7b1fa2;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            margin-top: 10px;
+            border-left: 3px solid #9c27b0;
+        }
+        
+        /* Погода */
+        .weather-info {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .weather-icon {
+            font-size: 1.5em;
+        }
+        
+        .weather-details {
+            flex: 1;
+        }
+        
+        .weather-temp {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .weather-desc {
+            color: #666;
+            font-size: 0.85em;
+        }
+        
+        /* Экспорт в PDF */
+        .export-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid #e9ecef;
+            text-align: center;
+        }
+        
+        .export-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+        }
+        
+        .export-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Анимация загрузки */
+        .loading-animation {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Стили для ачивок */
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .achievement-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-left: 4px solid #667eea;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .achievement-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+        
+        .achievement-icon {
+            font-size: 2em;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .achievement-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .achievement-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .achievement-description {
+            font-size: 0.9em;
+            color: #666;
+            text-align: center;
+        }
+        
+        .route-match-card {
+            background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+            border: 2px solid #4caf50;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .route-match-card.error {
+            background: linear-gradient(135deg, #fff3e0 0%, #fef7e0 100%);
+            border-color: #ff9800;
+        }
+        
+        .route-match-title {
+            margin: 0 0 15px 0;
+            color: #2e7d32;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .route-match-title.error {
+            color: #e65100;
+        }
+        
+        .route-match-reason {
+            margin: 0 0 10px 0;
+            color: #2e7d32;
+        }
+        
+        .route-match-reason.error {
+            color: #e65100;
+        }
+        
+        .route-details {
+            background: rgba(255,255,255,0.7);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .route-details h4 {
+            margin: 0 0 10px 0;
+            color: #2e7d32;
+        }
+        
+        .route-details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        /* Специальный стиль для развернутого состояния */
+        .off-program-expanded .off-program-event-title {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+        }
+        
+        /* Специальный стиль для развернутого состояния */
+        .off-program-expanded .off-program-event-content {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+        }
+        
+        /* Специальный стиль для развернутого состояния */
+        .off-program-expanded .off-program-event-title {
+            flex-direction: row !important;
+            align-items: center !important;
+        }
+        
+        .off-program-event-walk-times {
+            text-align: right;
+            font-size: 0.8em;
+            color: #666;
+        }
+        
+        .off-program-event-duration {
+            text-align: right;
+            font-size: 0.9em;
+            color: #666;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 2px;
+            margin-left: 8px;
+            min-width: 80px;
+        }
+        
+        .off-program-event-duration {
+            text-align: right;
+            font-size: 0.9em;
+            color: #666;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 2px;
+            margin-left: 8px;
+            min-width: 80px;
+        }
+        
+        .off-program-event-container {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            width: 100%;
+        }
+        
+        .off-program-event-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .off-program-event-duration div[data-tooltip] {
+            cursor: help;
+            position: relative;
+        }
+        
+        /* Отключаем все кастомные tooltips */
+        .off-program-event-duration div[title]:hover::after,
+        .off-program-event-duration div[title]:hover::before {
+            display: none !important;
+        }
+        
+        /* Стили для вкладки "Характеристика" */
+        .characteristic-section {
+            position: relative;
+            margin-bottom: 40px;
+            padding-left: 60px;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease forwards;
+        }
+        
+        .characteristic-section:nth-child(2) { animation-delay: 0.1s; }
+        .characteristic-section:nth-child(3) { animation-delay: 0.2s; }
+        .characteristic-section:nth-child(4) { animation-delay: 0.3s; }
+        .characteristic-section:nth-child(5) { animation-delay: 0.4s; }
+        .characteristic-section:nth-child(6) { animation-delay: 0.5s; }
+        
+        .characteristic-section::before {
+            content: none;
+        }
+        
+        .characteristic-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(102,126,234,0.2);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .characteristic-icon {
+            font-size: 2em;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .characteristic-title {
+            flex: 1;
+        }
+        
+        .characteristic-title h3 {
+            margin: 0 0 5px 0;
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        
+        .characteristic-title p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 0.9em;
+        }
+        
+        .characteristic-count {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 1.1em;
+            font-weight: bold;
+            min-width: 40px;
+            text-align: center;
+        }
+        
+        .characteristic-content {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .characteristic-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s ease;
+        }
+        
+        .characteristic-item:last-child {
+            border-bottom: none;
+        }
+        
+        .characteristic-item:hover {
+            background: #f8f9ff;
+        }
+        
+        .item-info {
+            flex: 1;
+        }
+        
+        .item-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 1em;
+            margin-bottom: 4px;
+        }
+        
+        .item-description {
+            color: #666;
+            font-size: 0.85em;
+        }
+        
+        .item-count {
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        
+        .count-visited {
+            background: #10b981;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 16px;
+            min-width: 24px;
+            text-align: center;
+        }
+        
+        .count-not-visited {
+            background: #6b7280;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 16px;
+            min-width: 24px;
+            text-align: center;
+        }
+        
+        .no-characteristics {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .no-characteristics-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .no-characteristics h3 {
+            margin-bottom: 15px;
+            color: #4f5bd5;
+            font-size: 1.5em;
+        }
+        
+        .no-characteristics p {
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+        
+        .route-finish {
+            display: flex;
+            align-items: center;
+            margin: 40px 0 0 60px;
+            gap: 24px;
+            animation: fadeInUp 0.7s;
+        }
+        .finish-dot {
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 16px rgba(102,126,234,0.2);
+        }
+        .finish-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(102,126,234,0.08);
+            padding: 24px 32px;
+            min-width: 320px;
+        }
+        .finish-title {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #4f5bd5;
+            margin-bottom: 10px;
+        }
+        .finish-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 15px 0;
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .finish-stats-row {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .finish-stats-row span {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        
+        .finish-message {
+            color: #888;
+            font-size: 1em;
+            margin-top: 8px;
+        }
+        
+        .characteristics-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        
+        @media (max-width: 768px) {
+            .characteristics-row {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+        }
+        
+        .characteristic-item.inactive {
+            color: #6b7280;
+            background-color: #f8f9fa;
+        }
+        
+        .characteristic-item.inactive .item-name {
+            color: #6b7280;
+        }
+        
+        .characteristic-item.inactive .item-description {
+            color: #9ca3af;
+        }
+        
+        .visit-check {
+            color: #10b981;
+            font-size: 1.1em;
+            margin-left: 8px;
+        }
+        
+        /* Стили для таблиц дней фестиваля */
+        .day-table-container {
+            margin-bottom: 24px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        /* Контейнер для дней фестиваля */
+        .festival-days-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: stretch;
+        }
+        
+        .day-table-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px 20px;
+            font-weight: 600;
+            font-size: 1.1em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .day-concert-count {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        
+        .day-concerts-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .day-concerts-table th {
+            background: #f8f9fa;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .day-concerts-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .day-concerts-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .day-concerts-table tr:hover {
+            background: #f8f9ff;
+        }
+        
+        .day-concerts-table .concert-time {
+            font-weight: 500;
+            color: #6b7280;
+            min-width: 60px;
+        }
+        
+        .day-concerts-table .concert-time::before {
+            content: attr(data-time);
+            background: #f8f9fa;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        
+        .concert-name {
+            color: #374151;
+            font-size: 0.95em;
+        }
+        
+        /* Стили для блока дней фестиваля на вкладке "Мои концерты" */
+        .festival-days-section {
+            margin-bottom: 40px;
+            padding: 30px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+        
+        .festival-days-header {
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        
+        .festival-days-header h3 {
+            font-size: 1.8em;
+            font-weight: 600;
+            color: #333;
+            margin: 0 0 8px 0;
+        }
+        
+        .festival-days-header p {
+            color: #666;
+            font-size: 1.1em;
+            margin: 0;
+        }
+        
+        /* Выравнивание высоты карточек дней */
+        .day-table-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .day-concerts-table {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .day-concerts-table tbody {
+            flex: 1;
+        }
+        
+        /* Стили для блока детальной информации о концертах */
+        .concerts-details-section {
+            margin-bottom: 40px;
+        }
+        
+        .concerts-details-header {
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        
+        .concerts-details-header h3 {
+            font-size: 1.8em;
+            font-weight: 600;
+            color: #333;
+            margin: 0 0 8px 0;
+        }
+        
+        .concerts-details-header p {
+            color: #666;
+            font-size: 1.1em;
+            margin: 0;
+        }
+        
+        /* Стили для упрощенных карточек дней в характеристиках */
+        .festival-days-simple-container {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: stretch;
+        }
+        
+        .day-simple-card {
+            flex: 1;
+            min-width: 200px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .day-simple-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+        
+        .day-simple-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px 20px;
+            font-weight: 600;
+            font-size: 1.1em;
+            text-align: center;
+        }
+        
+        .day-simple-count {
+            padding: 24px 20px;
+            text-align: center;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .day-simple-count .count-visited {
+            font-size: 3em;
+            font-weight: 700;
+            line-height: 1;
+            color: #667eea;
+            background: none;
+            padding: 0;
+            border-radius: 0;
+            min-width: auto;
+            text-align: center;
+        }
+        
+        .day-simple-label {
+            color: #666;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        
+        /* Стили для неактивных карточек дней */
+        .day-simple-card.inactive {
+            opacity: 0.6;
+            filter: grayscale(0.3);
+        }
+        
+        .day-simple-card.inactive .day-simple-header {
+            background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+        }
+        
+        .day-simple-card.inactive .day-simple-count .count-not-visited {
+            color: #6b7280;
+            background: none;
+            padding: 0;
+            border-radius: 0;
+            min-width: auto;
+            text-align: center;
+            font-size: 3em;
+            font-weight: 700;
+            line-height: 1;
+        }
+        
+        .day-simple-card.inactive .day-simple-label {
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <a href="/" class="back-link">← Назад на главную</a>
+        
+        <div class="profile-header">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h1>Личный кабинет</h1>
+                    <p>Добро пожаловать, {{ user.name or user.email }}!</p>
+                </div>
+                <div class="header-actions">
+                    <a href="/logout" class="logout-btn">Выйти</a>
+                </div>
+            </div>
+            
+            <div class="user-info">
+                <div class="info-card">
+                    <h3>Email</h3>
+                    <p>{{ user.email }}</p>
+                </div>
+                <div class="info-card">
+                    <h3>Дата регистрации</h3>
+                    <p>{{ user.created_at.strftime('%d.%m.%Y') if user.created_at else 'Не указана' }}</p>
+                </div>
+                <div class="info-card">
+                    <h3>Всего концертов</h3>
+                    <p>{{ purchase_summary.total_concerts }}</p>
+                </div>
+                <div class="info-card">
+                    <h3>Потрачено</h3>
+                    <p>{{ "{:,}".format(purchase_summary.total_spent) }} ₽</p>
+                </div>
+                {% if user.is_superuser %}
+                <a href="/admin" class="info-card status-card-superuser" title="Перейти в админку">
+                    <h3>Статус</h3>
+                    <p>👑 Суперадмин</p>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Навигационные вкладки -->
+        <div class="tabs-container">
+            <div class="tabs-nav">
+                <button class="tab-button active" onclick="showTab('concerts'); updateUrlParameter('tab', 'concerts');">
+                    <span class="tab-icon">🎵</span>
+                    Мои концерты
+                </button>
+                <button class="tab-button" onclick="showTab('route'); updateUrlParameter('tab', 'route');">
+                    <span class="tab-icon">🗺️</span>
+                    Маршрутный лист
+                </button>
+                <button class="tab-button" onclick="showTab('characteristics'); updateUrlParameter('tab', 'characteristics');">
+                    <span class="tab-icon">📊</span>
+                    Характеристика
+                </button>
+                <button class="tab-button" onclick="showTab('achievements'); updateUrlParameter('tab', 'achievements');">
+                    <span class="tab-icon">🏆</span>
+                    Ачивки
+                </button>
+            </div>
+            
+            <!-- Вкладка "Мои концерты" -->
+            <div id="concerts-tab" class="tab-content active">
+                <div class="concerts-header">
+                    <h2>Мои концерты</h2>
+                    <div class="concerts-count">
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <div style="background: #667eea; color: white; padding: 10px 20px; border-radius: 25px; font-weight: bold;">
+                                {% set unique_days = concerts|map(attribute='concert_day_index')|unique|list %}
+                                {{ unique_days|length }}
+                                {% set days_count = unique_days|length %}
+                                {% if days_count == 1 %}
+                                    день
+                                {% elif days_count >= 2 and days_count <= 4 %}
+                                    дня
+                                {% else %}
+                                    дней
+                                {% endif %}
+                            </div>
+                            <div style="background: #667eea; color: white; padding: 10px 20px; border-radius: 25px; font-weight: bold;">
+                                {{ purchase_summary.total_concerts }}
+                                {% set n = purchase_summary.total_concerts %}
+                                {% if n == 1 %}
+                                    концерт
+                                {% elif n >= 2 and n <= 4 %}
+                                    концерта
+                                {% else %}
+                                    концертов
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                
+                {% if purchase_summary.total_concerts > 0 %}
+                    <!-- Дни фестиваля -->
+                    {% if route_sheet.concerts_by_day %}
+                    <div class="festival-days-section">
+                        <div class="festival-days-header">
+                            <h3>📅 Дни фестиваля</h3>
+                            <p>Ваша активность по дням</p>
+                        </div>
+                        <div class="festival-days-container">
+                        {% for day_index, day_concerts in route_sheet.concerts_by_day.items() %}
+                        <div class="day-table-container">
+                            <div class="day-table-header">
+                                {% if day_concerts and day_concerts[0].concert.datetime %}
+                                    {% set first_concert_date = day_concerts[0].concert.datetime %}
+                                    {% set month_names = {
+                                        'January': 'января', 'February': 'февраля', 'March': 'марта', 'April': 'апреля',
+                                        'May': 'мая', 'June': 'июня', 'July': 'июля', 'August': 'августа',
+                                        'September': 'сентября', 'October': 'октября', 'November': 'ноября', 'December': 'декабря'
+                                    } %}
+                                    {% set day_names = {
+                                        'Monday': 'пн', 'Tuesday': 'вт', 'Wednesday': 'ср', 'Thursday': 'чт',
+                                        'Friday': 'пт', 'Saturday': 'сб', 'Sunday': 'вс'
+                                    } %}
+                                    {{ first_concert_date.day }} {{ month_names[first_concert_date.strftime('%B')] }} ({{ day_names[first_concert_date.strftime('%A')] }})
+                                {% else %}
+                                    День {{ day_index }}
+                                {% endif %}
+                                <span class="day-concert-count">{{ day_concerts|length }} концерт{{ 'а' if day_concerts|length >= 2 and day_concerts|length <= 4 else 'ов' if day_concerts|length >= 5 else '' }}</span>
+                            </div>
+                            <table class="day-concerts-table">
+                                <tbody>
+                                    {% for concert_data in day_concerts %}
+                                    <tr>
+                                        <td class="concert-time" data-time="{{ concert_data.concert.datetime.strftime('%H:%M') if concert_data.concert.datetime else 'TBD' }}"></td>
+                                        <td class="concert-name">{{ concert_data.concert.id }}. {{ concert_data.concert.name }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Детальная информация о концертах -->
+                    <div class="concerts-details-section">
+                        <div class="concerts-details-header">
+                            <h3>🎵 Детальная информация</h3>
+                            <p>Подробности о каждом концерте</p>
+                        </div>
+                        <div class="concerts-grid">
+                            {% for concert_data in concerts %}
+                            <div class="concert-card concert-card-day{{ concert_data.concert_day_index }}">
+                                <!-- Номер концерта -->
+                                <div class="concert-number concert-number-day{{ concert_data.concert_day_index }}">{{ concert_data.concert.id }}</div>
+                                
+                                <div class="concert-name">{{ concert_data.concert.name }}</div>
+                                
+                                <!-- Бейдж с количеством билетов -->
+                                <div class="tickets-badge" data-tooltip="
+                                    {% set n = concert_data.tickets_count %}
+                                    {% if n == 1 %}
+                                        Куплен 1 билет
+                                    {% elif n >= 2 and n <= 4 %}
+                                        Куплено {{ n }} билета
+                                    {% else %}
+                                        Куплено {{ n }} билетов
+                                    {% endif %}">
+                                    <span class="icon">🎫</span>
+                                    {{ concert_data.tickets_count }}
+                                </div>
+                                
+                                <div class="concert-details">
+                                    <div class="detail-item">
+                                        <span class="detail-label">Дата:</span>
+                                        <span class="detail-value">
+                                            {% if concert_data.concert.datetime %}
+                                                {{ concert_data.concert.datetime.strftime('%d.%m.%Y %H:%M') }}
+                                            {% else %}
+                                                Не указана
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Длительность:</span>
+                                        <span class="detail-value">
+                                            {% if concert_data.concert.duration %}
+                                                {% if concert_data.concert.duration.seconds %}
+                                                    {{ (concert_data.concert.duration.seconds // 60) }} мин
+                                                {% else %}
+                                                    {{ concert_data.concert.duration }}
+                                                {% endif %}
+                                            {% else %}
+                                                Не указана
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Жанр:</span>
+                                        <span class="detail-value">{{ concert_data.concert.genre or 'Не указан' }}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Цена за билет:</span>
+                                        <span class="detail-value">{{ concert_data.concert.price or 0 }} ₽</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Потрачено:</span>
+                                        <span class="detail-value">{{ concert_data.total_spent }} ₽</span>
+                                    </div>
+                                </div>
+                                <div class="concert-hall">
+                                    🏛️ {{ concert_data.concert.hall.name if concert_data.concert.hall else 'Зал не указан' }}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="no-concerts">
+                        <h3>У вас пока нет купленных концертов</h3>
+                        <p>Посетите главную страницу, чтобы выбрать концерты фестиваля</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Вкладка "Маршрутный лист" -->
+            <div id="route-tab" class="tab-content">
+                <div class="concerts-header">
+                    <h2>Маршрутный лист</h2>
+                    <div class="concerts-count">
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <div style="background: #667eea; color: white; padding: 10px 20px; border-radius: 25px; font-weight: bold;">
+                                {{ route_sheet.concerts_by_day|length }}
+                                {% set days_count = route_sheet.concerts_by_day|length %}
+                                {% if days_count == 1 %}
+                                    день
+                                {% elif days_count >= 2 and days_count <= 4 %}
+                                    дня
+                                {% else %}
+                                    дней
+                                {% endif %}
+                            </div>
+                            <div style="background: #667eea; color: white; padding: 10px 20px; border-radius: 25px; font-weight: bold;">
+                                {{ route_sheet.summary.total_concerts }}
+                                {% set n = route_sheet.summary.total_concerts %}
+                                {% if n == 1 %}
+                                    концерт
+                                {% elif n >= 2 and n <= 4 %}
+                                    концерта
+                                {% else %}
+                                    концертов
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Экспорт в PDF -->
+                <div class="export-section">
+                    <button class="export-btn" onclick="exportToPDF()" id="export-btn">
+                        <span>📄</span>
+                        Экспорт в PDF
+                    </button>
+                    <p style="margin-top: 10px; color: #666; font-size: 0.9em;">
+                        Сохраните ваш маршрут в удобном формате для печати
+                    </p>
+                </div>
+                
+                <!-- Фильтры по дням -->
+                {% if route_sheet.concerts_by_day and route_sheet.concerts_by_day|length > 1 %}
+                <div class="route-filters">
+                    <div class="filter-title">
+                        <span>🔍</span>
+                        Фильтр по дням фестиваля
+                    </div>
+                    <div class="day-filters">
+                        <button class="day-filter-btn all-days active" onclick="filterByDay('all')">
+                            Все дни
+                        </button>
+                        {% for day_index in route_sheet.concerts_by_day.keys() %}
+                        <button class="day-filter-btn" onclick="filterByDay({{ day_index }})">
+                            День {{ day_index }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Дорожная карта событий -->
+                {% if route_sheet.concerts_by_day %}
+                    <div class="route-timeline">
+                        <!-- Вертикальная линия времени -->
+                        <div class="timeline-line"></div>
+                        
+                        {% for day_index, day_concerts in route_sheet.concerts_by_day.items() %}
+                            <div class="day-section" data-day="{{ day_index }}">
+                                <!-- Точка дня -->
+                                <div class="day-dot"></div>
+                                
+                                <!-- Заголовок дня -->
+                                {% set first_concert = day_concerts[0] if day_concerts else None %}
+                                {% set concert_date = first_concert.concert.datetime.date() if first_concert and first_concert.concert.datetime else None %}
+                                {% set month_names = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'] %}
+                                {% set day_names = ['пн','вт','ср','чт','пт','сб','вс'] %}
+                                <div class="day-header day-header-day{{ day_index }}" style="padding: 12px 16px; margin-bottom: 16px; border-radius: 8px;">
+                                    <h3 style="margin:0; font-size:1.2em; display:flex; justify-content:space-between; align-items:center; color:white;">
+                                        <span>
+                                            {% if concert_date %}
+                                                {{ concert_date.day }} {{ month_names[concert_date.month-1] }} ({{ day_names[concert_date.weekday()] }})
+                                            {% else %}
+                                                День {{ day_index }}
+                                            {% endif %}
+                                        </span>
+                                        <span style="font-size:0.9em; opacity:0.9;">{{ day_concerts|length }} концерт{{ 'а' if day_concerts|length >= 2 and day_concerts|length <= 4 else 'ов' if day_concerts|length > 4 else '' }}</span>
+                                    </h3>
+                                </div>
+                                
+                                <!-- События дня -->
+                                <div>
+                                    {% for concert in day_concerts %}
+                                    {% set is_conflict = false %}
+                                    {% if loop.index > 1 and day_concerts[loop.index - 2].transition_info and day_concerts[loop.index - 2].transition_info.status == 'overlap' %}
+                                        {% set is_conflict = true %}
+                                    {% endif %}
+                                    
+                                    <!-- Офф-программа до первого концерта -->
+                                    {% if loop.index == 1 and concert.before_concert_events and concert.before_concert_events|length > 0 %}
+                                    <div class="off-program-section before-concert" style="animation-delay: {{ (loop.index * 0.1) - 0.1 }}s;">
+                                        <!-- Заголовок с кнопкой раскрытия -->
+                                        <div class="off-program-header" onclick="toggleOffProgram('before-day{{ day_index }}-concert{{ concert.concert.id }}')">
+                                            <div class="off-program-header-left">
+                                                <span style="color: #3b82f6; font-size: 1.1em;">☀️</span>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 500; color: #3b82f6; font-size: 0.9em;">
+                                                        Начните день с офф-программы:
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button class="off-program-toggle-btn" id="off-program-toggle-before-day{{ day_index }}-concert{{ concert.concert.id }}" onclick="event.stopPropagation(); toggleOffProgram('before-day{{ day_index }}-concert{{ concert.concert.id }}')">▽</button>
+                                        </div>
+                                        
+                                        <!-- Свернутое состояние -->
+                                        <div class="off-program-collapsed" id="off-program-collapsed-before-day{{ day_index }}-concert{{ concert.concert.id }}">
+                                            {% for event in concert.before_concert_events %}
+                                            <div class="off-program-collapsed-event">
+                                                <div class="off-program-collapsed-left">
+                                                    <div class="off-program-collapsed-time">{{ event.event_date_display }}</div>
+                                                    <div class="off-program-collapsed-title">
+                                                        {{ event.event_name }}
+                                                        <div class="off-program-collapsed-format">{{ event.format }}</div>
+                                                        <span style="color: #666; font-size: 0.8em; margin-left: 8px;">📍 {{ event.hall_name }}</span>
+                                                    </div>
+                                                </div>
+                                                <div class="off-program-collapsed-duration">{{ event.duration }}</div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        
+                                        <!-- Развернутое состояние -->
+                                        <div class="off-program-expanded" id="off-program-expanded-before-day{{ day_index }}-concert{{ concert.concert.id }}">
+                                            <div style="display: flex; flex-direction: column; gap: 3px;">
+                                                {% for event in concert.before_concert_events %}
+                                                <div class="off-program-event{% if event.recommend %} recommended{% endif %}">
+                                                    <div class="off-program-event-container">
+                                                        <div class="off-program-event-time">
+                                                            <div class="time">{{ event.event_date_display }}</div>
+                                                        </div>
+                                                        
+                                                        <div class="off-program-event-content">
+                                                            <div class="off-program-event-title" style="flex-direction: row !important; align-items: center !important;">
+                                                                {{ event.event_name }}
+                                                                <div class="off-program-collapsed-format">{{ event.format }}</div>
+                                                                <span style="color: #666; font-size: 0.8em; margin-left: 8px;">📍 {{ event.hall_name }}</span>
+                                                            </div>
+                                                            
+                                                            {% if event.description %}
+                                                            <div class="off-program-event-description" style="margin-top: 4px;">
+                                                                {{ event.description }}
+                                                            </div>
+                                                            {% endif %}
+                                                        </div>
+                                                        
+                                                        <div class="off-program-event-duration">
+                                                            <div>{{ event.duration }}</div>
+                                                            <div title="Время перехода от офф-программы до следующего концерта">🚶 ~{{ event.walk_time_to_concert }} мин</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+    <div class="concert-event compact" style="animation-delay: {{ loop.index * 0.1 }}s; padding: 4px 8px 4px 12px; margin-bottom: 0px; {% if is_conflict %}background-color: #fef2f2; border-left: 4px solid #dc2626;{% endif %}">
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <!-- Время начала концерта в ярлычке -->
+            <div class="concert-number {% if is_conflict %}concert-number-conflict{% else %}concert-number-day{{ day_index }}{% endif %}">{{ concert.concert.datetime.strftime('%H:%M') if concert.concert.datetime else 'TBD' }}</div>
+            
+            <!-- Название концерта -->
+            <span style="font-weight:600; color:#333; font-size:1em; flex:1 1 200px; min-width:150px; margin-left:20px; margin-top:6px; display:inline-block;">{{ concert.concert.id }}. {{ concert.concert.name }}</span>
+            
+            <!-- Жанр и длительность справа -->
+            <div style="display: flex; flex-direction: column; align-items: flex-end; margin-top: 2px; margin-right: 10px;">
+                {% if concert.concert.genre %}<span style="color:#666; font-size:0.9em;">{{ concert.concert.genre }}</span>{% endif %}
+                {% if concert.concert.duration %}<span style="color:#666; font-size:0.9em; cursor: help;" title="Длительность концерта: {{ (concert.concert.duration.total_seconds() / 60) | int }} минут">⏱️ {{ (concert.concert.duration.total_seconds() / 60) | int }} мин</span>{% endif %}
+            </div>
+            
+            <!-- Адрес зала -->
+            <div style="color:#666; font-size:0.9em; width: 100%; margin-top: -6px; margin-left: 20px;">{{ concert.concert.hall.name if concert.concert.hall else '—' }} • {% if concert.concert.hall and concert.concert.hall.address %}{{ concert.concert.hall.address }}{% endif %}</div>
+
+            <!-- Кнопка подробнее -->
+            <button onclick="toggleConcertDetails({{ concert.concert.id }})" class="expand-btn" data-concert-id="{{ concert.concert.id }}" title="Показать подробности концерта" style="margin-left:6px; background:none; border:none; color:#dddddd; font-size:1.2em; cursor:pointer; padding:2px; transition:transform 0.2s ease; position:relative; transform:translateY(-4px);">▽</button>
+        </div>
+                                            <div class="concert-details-content" id="details-{{ concert.concert.id }}" style="margin-top:4px; display:none;">
+                                                {% if concert.concert.artists %}
+                                                <div class="artists-section">
+                                                    <div class="section-title">Артисты</div>
+                                                    <div class="artists-list">
+                                                        {% for artist in concert.concert.artists %}
+                                                        <span class="artist-tag{% if artist.is_special %} special-artist{% endif %}">{{ artist.name }}{% if artist.is_special %}⭐{% endif %}</span>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                                {% if concert.concert.compositions %}
+                                                <div class="compositions-section">
+                                                    <div class="section-title">Произведения</div>
+                                                    <div class="compositions-list">
+                                                        {% for composition in concert.concert.compositions %}
+                                                        <span class="composition-tag">{{ composition.name }} <span class="composition-author">({{ composition.author.name }})</span></span>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                                
+                                                <div class="weather-info"><div class="weather-icon">🌤️</div><div class="weather-details"><div class="weather-temp">+18°C</div><div class="weather-desc">Переменная облачность</div></div></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Информация о переходе к следующему концерту -->
+                                        {% set show_transition = true %}
+                                        {% if loop.index > 1 and day_concerts[loop.index - 2].transition_info and day_concerts[loop.index - 2].transition_info.status == 'overlap' %}
+                                            {% set show_transition = false %}
+                                        {% endif %}
+                                        {% if concert.transition_info and show_transition %}
+                                        <div class="transition-card transition-{{ concert.transition_info.status }}" style="margin: 0 0 {% if not concert.off_program_events or concert.off_program_events|length == 0 %}12px{% else %}0{% endif %} 60px; padding: 4px 12px; border-radius: 0 6px 6px 0; font-size: 0.85em; display: flex; align-items: center; gap: 8px; width: 90%; border-left: 3px solid; position: relative; animation-delay: {{ (loop.index * 0.1) + 0.2 }}s; 
+                                            {% if concert.transition_info.status == 'warning' %}border-left-color: #856404; background-color: #fff3cd;{% endif %}
+                                            {% if concert.transition_info.status == 'success' %}border-left-color: #155724; background-color: #d4edda;{% endif %}
+                                            {% if concert.transition_info.status == 'tight' %}border-left-color: #856404; background-color: #fff3cd;{% endif %}
+                                            {% if concert.transition_info.status == 'same_hall' %}border-left-color: #155724; background-color: #d4edda;{% endif %}
+                                            {% if concert.transition_info.status == 'same_building' %}border-left-color: #155724; background-color: #d4edda;{% endif %}
+                                            {% if concert.transition_info.status == 'overlap' %}border-left-color: #dc2626; background-color: #fee2e2;{% endif %}
+                                            {% if concert.transition_info.status == 'hurry' %}border-left-color: #f59e0b; background-color: #fef3c7;{% endif %}
+                                            {% if concert.transition_info.status == 'no_transition_data' %}border-left-color: #dc2626; background-color: #fef2f2;{% endif %}">
+                                            {% if concert.transition_info.status == 'overlap' %}
+                                                <span style="color: #dc2626;">{% if concert.transition_info.time_between < 0 %}🚫{% else %}⏰{% endif %}</span>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 500; color: #dc2626;">
+                                                        {% if concert.transition_info.time_between < 0 %}
+                                                            Концерты накладываются по времени • 
+                                                            <span style="color: #666; font-size: 0.9em; font-weight: normal;">Переход невозможен</span>
+                                                        {% else %}
+                                                            Недостаточно времени на переход между залами • 
+                                                            <span style="color: #666; font-size: 0.9em; font-weight: normal;">Нужно ~{{ concert.transition_info.walk_time }} мин, есть {{ concert.transition_info.time_between }} мин</span>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            {% elif concert.transition_info.status == 'warning' %}
+                                                <span style="color: #856404;">⚠️</span>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 500; color: #856404;">
+                                                        Мало времени до перехода в {{ day_concerts[loop.index].concert.hall.name if loop.index < day_concerts|length and day_concerts[loop.index].concert.hall else 'следующий зал' }} • 
+                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • ~{{ concert.transition_info.walk_time }} мин пешком</span>
+                                                    </div>
+                                                </div>
+                                            {% elif concert.transition_info.status == 'success' %}
+                                                <span style="color: #155724;">🚶🏼‍➡️</span>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 500; color: #155724;">
+                                                        Переходим в → {{ day_concerts[loop.index].concert.hall.name if loop.index < day_concerts|length and day_concerts[loop.index].concert.hall else 'следующий зал' }} • 
+                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">~{{ concert.transition_info.walk_time }} мин пешком • {{ concert.transition_info.time_between }} мин до следующего концерта </span>
+                                                    </div>
+                                                </div>
+                                            {% elif concert.transition_info.status == 'hurry' %}
+                                                <span style="color: #f59e0b;">🏃🏼‍➡️</span>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 500; color: #f59e0b;">
+                                                        Нужно поторопиться • 
+                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • ~{{ concert.transition_info.walk_time }} мин пешком</span>
+                                                    </div>
+                                                </div>
+                                            {% elif concert.transition_info.status == 'tight' %}
+                                                <span style="color: #856404;">⏱️</span>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 500; color: #856404;">
+                                                        Впритык по времени • 
+                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • ~{{ concert.transition_info.walk_time }} мин пешком</span>
+                                                    </div>
+                                                </div>
+                                            {% elif concert.transition_info.status == 'same_hall' %}
+                                                <span style="color: #155724;">📍</span>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 500; color: #155724;">
+                                                        Остаёмся в том же зале • 
+                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин до следующего концерта</span>
+                                                    </div>
+                                                </div>
+                                            {% elif concert.transition_info.status == 'same_building' %}
+                                                <span style="color: #155724;">🏛️</span>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 500; color: #155724;">
+                                                        Остаёмся в том же здании • 
+                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • Переход в другой зал: ~{{ concert.transition_info.walk_time }} мин</span>
+                                                    </div>
+                                                </div>
+                                            {% elif concert.transition_info.status == 'no_transition_data' %}
+                                                <span style="color: #dc2626;">❓</span>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 500; color: #dc2626;">
+                                                        Нет данных о переходе • 
+                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • Время перехода неизвестно</span>
+                                                    </div>
+                                                </div>
+                                            {% else %}
+                                                <span style="color: #856404;">⏱️</span>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 500; color: #856404;">
+                                                        Время перехода • 
+                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • 
+                                                        {% if concert.transition_info.walk_time is not none %}
+                                                            ~{{ concert.transition_info.walk_time }} мин пешком
+                                                        {% else %}
+                                                            <span style="color: #dc2626;">Время перехода неизвестно</span>
+                                                        {% endif %}</span>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        {% elif not show_transition %}
+                                        <!-- Пустой отступ для сохранения интервалов -->
+                                        <div style="margin: 0 0 12px 0; height: 0;"></div>
+                                        {% endif %}
+                                        
+                                        <!-- Доступные мероприятия офф-программы -->
+                                        {% if concert.off_program_events and concert.off_program_events|length > 0 %}
+                                        <div class="off-program-section" style="animation-delay: {{ (loop.index * 0.1) + 0.4 }}s;">
+                                            <!-- Заголовок с кнопкой раскрытия -->
+                                            <div class="off-program-header" onclick="toggleOffProgram('between-day{{ day_index }}-concert{{ concert.concert.id }}')">
+                                                <div class="off-program-header-left">
+                                                    <span style="color: #3b82f6; font-size: 1.1em;">👇</span>
+                                                    <div style="flex: 1;">
+                                                        <div style="font-weight: 500; color: #3b82f6; font-size: 0.9em;">
+                                                            У Вас есть время посетить события офф-программы:
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button class="off-program-toggle-btn" id="off-program-toggle-between-day{{ day_index }}-concert{{ concert.concert.id }}" onclick="event.stopPropagation(); toggleOffProgram('between-day{{ day_index }}-concert{{ concert.concert.id }}')">▽</button>
+                                            </div>
+                                            
+                                            <!-- Свернутое состояние -->
+                                            <div class="off-program-collapsed" id="off-program-collapsed-between-day{{ day_index }}-concert{{ concert.concert.id }}">
+                                                {% for event in concert.off_program_events %}
+                                                <div class="off-program-collapsed-event">
+                                                    <div class="off-program-collapsed-left">
+                                                        <div class="off-program-collapsed-time">{{ event.event_date_display }}</div>
+                                                        <div class="off-program-collapsed-title">
+                                                            {{ event.event_name }}
+                                                            <div class="off-program-collapsed-format">{{ event.format }}</div>
+                                                            <span style="color: #666; font-size: 0.8em; margin-left: 8px;">📍 {{ event.hall_name }}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="off-program-collapsed-duration">{{ event.duration }}</div>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                            
+                                            <!-- Развернутое состояние -->
+                                            <div class="off-program-expanded" id="off-program-expanded-between-day{{ day_index }}-concert{{ concert.concert.id }}">
+                                                <div style="display: flex; flex-direction: column; gap: 3px;">
+                                                    {% for event in concert.off_program_events %}
+                                                    <div class="off-program-event{% if event.recommend %} recommended{% endif %}">
+                                                        <div class="off-program-event-container">
+                                                            <div class="off-program-event-time">
+                                                                <div class="time">{{ event.event_date_display }}</div>
+                                                            </div>
+                                                            
+                                                            <div class="off-program-event-content">
+                                                                <div class="off-program-event-title" style="flex-direction: row !important; align-items: center !important;">
+                                                                    {{ event.event_name }}
+                                                                    <div class="off-program-collapsed-format">{{ event.format }}</div>
+                                                                    <span style="color: #666; font-size: 0.8em; margin-left: 8px;">📍 {{ event.hall_name }}</span>
+                                                                </div>
+                                                                
+                                                                {% if event.description %}
+                                                                <div class="off-program-event-description" style="margin-top: 4px;">
+                                                                    {{ event.description }}
+                                                                </div>
+                                                                {% endif %}
+                                                            </div>
+                                                            
+                                                            <div class="off-program-event-duration">
+                                                                <div>{{ event.duration }}</div>
+                                                                <div title="Время перехода от предыдущего зала до мероприятия офф-программы">🚶🏼‍➡️ ~{{ event.walk_time_from_event or 0 }} мин</div>
+                                                                <div title="Время перехода от площадки оффпрограммы до следующего концерта">🚶 ~{{ event.walk_time_to_event or 0 }} мин</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    <!-- Офф-программа после последнего концерта -->
+                                    {% if day_concerts|length > 0 and day_concerts[-1].after_concert_events and day_concerts[-1].after_concert_events|length > 0 %}
+                                    <div class="off-program-section after-concert" style="animation-delay: {{ (day_concerts|length + 1) * 0.1 }}s; margin-top: 4px;">
+                                        <!-- Заголовок с кнопкой раскрытия -->
+                                        <div class="off-program-header" onclick="toggleOffProgram('after-day{{ day_index }}-concert{{ day_concerts[-1].concert.id }}')">
+                                            <div class="off-program-header-left">
+                                                <span style="color: #3b82f6; font-size: 1.1em;">🌙</span>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 500; color: #3b82f6; font-size: 0.9em;">
+                                                        Продолжите маршрут оффпрограммой:
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button class="off-program-toggle-btn" id="off-program-toggle-after-day{{ day_index }}-concert{{ day_concerts[-1].concert.id }}" onclick="event.stopPropagation(); toggleOffProgram('after-day{{ day_index }}-concert{{ day_concerts[-1].concert.id }}')">▽</button>
+                                        </div>
+                                        
+                                        <!-- Свернутое состояние -->
+                                        <div class="off-program-collapsed" id="off-program-collapsed-after-day{{ day_index }}-concert{{ day_concerts[-1].concert.id }}">
+                                            {% for event in day_concerts[-1].after_concert_events %}
+                                            <div class="off-program-collapsed-event">
+                                                <div class="off-program-collapsed-left">
+                                                    <div class="off-program-collapsed-time">{{ event.event_date_display }}</div>
+                                                    <div class="off-program-collapsed-title">
+                                                        {{ event.event_name }}
+                                                        <div class="off-program-collapsed-format">{{ event.format }}</div>
+                                                        <span style="color: #666; font-size: 0.8em; margin-left: 8px;">📍 {{ event.hall_name }}</span>
+                                                    </div>
+                                                </div>
+                                                <div class="off-program-collapsed-duration">{{ event.duration }}</div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        
+                                        <!-- Развернутое состояние -->
+                                        <div class="off-program-expanded" id="off-program-expanded-after-day{{ day_index }}-concert{{ day_concerts[-1].concert.id }}">
+                                            <div style="display: flex; flex-direction: column; gap: 3px;">
+                                                {% for event in day_concerts[-1].after_concert_events %}
+                                                <div class="off-program-event{% if event.recommend %} recommended{% endif %}">
+                                                    <div class="off-program-event-container">
+                                                        <div class="off-program-event-time">
+                                                            <div class="time">{{ event.event_date_display }}</div>
+                                                        </div>
+                                                        
+                                                        <div class="off-program-event-content">
+                                                            <div class="off-program-event-title" style="flex-direction: row !important; align-items: center !important;">
+                                                                {{ event.event_name }}
+                                                                <div class="off-program-collapsed-format">{{ event.format }}</div>
+                                                                <span style="color: #666; font-size: 0.8em; margin-left: 8px;">📍 {{ event.hall_name }}</span>
+                                                            </div>
+                                                            
+                                                            {% if event.description %}
+                                                            <div class="off-program-event-description" style="margin-top: 4px;">
+                                                                {{ event.description }}
+                                                            </div>
+                                                            {% endif %}
+                                                        </div>
+                                                        
+                                                        <div class="off-program-event-duration">
+                                                            <div>{{ event.duration }}</div>
+                                                            <div title="Время перехода от предыдущего зала до мероприятия офф-программы">🚶🏼‍➡️ ~{{ event.walk_time_from_concert or 0 }} мин</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                        <!-- Финальный блок завершения маршрута -->
+                        <div class="route-finish">
+                            <div class="finish-dot">🏁</div>
+                            <div class="finish-card">
+                                <div class="finish-title">Маршрут завершён!</div>
+                                <div class="finish-stats">
+                                    <div class="finish-stats-row">
+                                        <span>Дней: {{ route_sheet.summary.total_days }}</span>
+                                        <span>Концертов: {{ route_sheet.summary.total_concerts }}</span>
+                                        <span>Залов: {{ route_sheet.summary.total_halls }}</span>
+                                        <span>Потрачено: {{ "{:,}".format(route_sheet.summary.total_spent) }} ₽</span>
+                                    </div>
+                                    <div class="finish-stats-row">
+                                        <span>Время концертов: {{ route_sheet.summary.total_concert_time_minutes }} мин</span>
+                                        <span>Время переходов: {{ route_sheet.summary.total_walk_time_minutes }} мин</span>
+                                        <span>Пройдено: {{ route_sheet.summary.total_distance_km }} км</span>
+                                    </div>
+                                    <div class="finish-stats-row">
+                                        <span>Произведений: {{ route_sheet.summary.unique_compositions }}</span>
+                                        <span>Авторов: {{ route_sheet.summary.unique_authors }}</span>
+                                        <span>Артистов: {{ route_sheet.summary.unique_artists }}</span>
+                                    </div>
+                                </div>
+                                <div class="finish-message">Спасибо, что выбрали наш фестиваль! До встречи на концертах!</div>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div style="text-align: center; padding: 60px 20px; color: #666;">
+                        <div style="font-size: 4em; margin-bottom: 20px;">🗺️</div>
+                        <h3 style="margin-bottom: 10px; color: #333;">Дорожная карта пуста</h3>
+                        <p>Ваш маршрутный лист появится здесь после покупки билетов на концерты</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Вкладка "Характеристика" -->
+            <div id="characteristics-tab" class="tab-content">
+                <div class="concerts-header">
+                    <h2>Характеристика вашего маршрута</h2>
+                    <div class="concerts-count">
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <div style="background: #667eea; color: white; padding: 10px 20px; border-radius: 25px; font-weight: bold;">
+                                {{ characteristics.total_concerts }}
+                                {% set n = characteristics.total_concerts %}
+                                {% if n == 1 %}
+                                    концерт
+                                {% elif n >= 2 and n <= 4 %}
+                                    концерта
+                                {% else %}
+                                    концертов
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if characteristics.total_concerts > 0 %}
+                    <!-- Дни фестиваля -->
+                    {% if festival_days %}
+                    <div class="characteristic-section">
+                        <div class="characteristic-content">
+                            <div class="festival-days-simple-container">
+                            {% for day_data in festival_days %}
+                            <div class="day-simple-card{% if not day_data.is_visited %} inactive{% endif %}">
+                                <div class="day-simple-header">
+                                    {% set month_names = {
+                                        'January': 'января', 'February': 'февраля', 'March': 'марта', 'April': 'апреля',
+                                        'May': 'мая', 'June': 'июня', 'July': 'июля', 'August': 'августа',
+                                        'September': 'сентября', 'October': 'октября', 'November': 'ноября', 'December': 'декабря'
+                                    } %}
+                                    {% set day_names = {
+                                        'Monday': 'пн', 'Tuesday': 'вт', 'Wednesday': 'ср', 'Thursday': 'чт',
+                                        'Friday': 'пт', 'Saturday': 'сб', 'Sunday': 'вс'
+                                    } %}
+                                    {{ day_data.day.day }} {{ month_names[day_data.day.strftime('%B')] }} ({{ day_names[day_data.day.strftime('%A')] }})
+                                </div>
+                                <div class="day-simple-count">
+                                    {% if day_data.is_visited %}
+                                        <span class="count-visited">{{ day_data.visit_count }}</span>
+                                        <div class="day-simple-label">
+                                            концерт{{ 'а' if day_data.visit_count >= 2 and day_data.visit_count <= 4 else 'ов' if day_data.visit_count >= 5 else '' }}
+                                        </div>
+                                    {% else %}
+                                        <span class="count-not-visited">0</span>
+                                        <div class="day-simple-label">
+                                            концертов
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Залы и Жанры в две колонки -->
+                    <div class="characteristics-row">
+                        <!-- Залы -->
+                        <div class="characteristic-section">
+                            <div class="characteristic-header">
+                                <div class="characteristic-icon">🏛️</div>
+                                <div class="characteristic-title">
+                                    <h3>Залы фестиваля</h3>
+                                    <p>Места проведения концертов</p>
+                                </div>
+                                <div class="characteristic-count">{{ characteristics.halls|selectattr('is_visited')|list|length }}</div>
+                            </div>
+                            <div class="characteristic-content">
+                                {% for hall in characteristics.halls %}
+                                <div class="characteristic-item{% if not hall.is_visited %} inactive{% endif %}">
+                                    <div class="item-info">
+                                        <div class="item-name">
+                                            {{ hall.name }}
+                                        </div>
+                                        <div class="item-description">
+                                            {% if hall.visit_count > 0 %}
+                                                {{ hall.visit_count }} концерт{{ 'а' if hall.visit_count >= 2 and hall.visit_count <= 4 else 'ов' if hall.visit_count >= 5 else '' }}
+                                            {% else %}
+                                                Не посещён
+                                            {% endif %}
+                                            {% if hall.address %} • {{ hall.address }}{% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="item-count">
+                                        {% if hall.visit_count > 0 %}
+                                            <span class="count-visited">{{ hall.visit_count }}</span>
+                                        {% else %}
+                                            <span class="count-not-visited">0</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- Жанры -->
+                        <div class="characteristic-section">
+                            <div class="characteristic-header">
+                                <div class="characteristic-icon">🎭</div>
+                                <div class="characteristic-title">
+                                    <h3>Музыкальные жанры</h3>
+                                    <p>Направления в вашем маршруте</p>
+                                </div>
+                                <div class="characteristic-count">{{ characteristics.genres|selectattr('is_visited')|list|length }}</div>
+                            </div>
+                            <div class="characteristic-content">
+                                {% for genre in characteristics.genres %}
+                                <div class="characteristic-item{% if not genre.is_visited %} inactive{% endif %}">
+                                    <div class="item-info">
+                                        <div class="item-name">
+                                            {{ genre.name }}
+                                        </div>
+                                        <div class="item-description">
+                                            {% if genre.visit_count > 0 %}
+                                                {{ genre.visit_count }} концерт{{ 'а' if genre.visit_count >= 2 and genre.visit_count <= 4 else 'ов' if genre.visit_count >= 5 else '' }}
+                                            {% else %}
+                                                Не посещён
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="item-count">
+                                        {% if genre.visit_count > 0 %}
+                                            <span class="count-visited">{{ genre.visit_count }}</span>
+                                        {% else %}
+                                            <span class="count-not-visited">0</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Артисты -->
+                    <div class="characteristic-section">
+                        <div class="characteristic-header">
+                            <div class="characteristic-icon">🎤</div>
+                            <div class="characteristic-title">
+                                <h3>Артисты и исполнители</h3>
+                                <p>Музыканты, которых вы увидите</p>
+                            </div>
+                            <div class="characteristic-count">{{ characteristics.artists|length }}</div>
+                        </div>
+                        <div class="characteristic-content">
+                            {% for artist in characteristics.artists %}
+                            <div class="characteristic-item">
+                                <div class="item-info">
+                                    <div class="item-name">{{ artist.name }}</div>
+                                    <div class="item-description">{{ artist.count }} концерт{{ 'а' if artist.count >= 2 and artist.count <= 4 else 'ов' if artist.count >= 5 else '' }}</div>
+                                </div>
+                                <div class="item-count">
+                                    <span class="count-visited">{{ artist.count }}</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Композиторы -->
+                    <div class="characteristic-section">
+                        <div class="characteristic-header">
+                            <div class="characteristic-icon">🎼</div>
+                            <div class="characteristic-title">
+                                <h3>Композиторы</h3>
+                                <p>Авторы музыкальных произведений</p>
+                            </div>
+                            <div class="characteristic-count">{{ characteristics.composers|length }}</div>
+                        </div>
+                        <div class="characteristic-content">
+                            {% for composer in characteristics.composers %}
+                            <div class="characteristic-item">
+                                <div class="item-info">
+                                    <div class="item-name">{{ composer.name }}</div>
+                                    <div class="item-description">{{ composer.count }} произведение{{ 'я' if composer.count >= 2 and composer.count <= 4 else 'ий' if composer.count >= 5 else 'е' }}</div>
+                                </div>
+                                <div class="item-count">
+                                    <span class="count-visited">{{ composer.count }}</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Произведения -->
+                    <div class="characteristic-section">
+                        <div class="characteristic-header">
+                            <div class="characteristic-icon">📜</div>
+                            <div class="characteristic-title">
+                                <h3>Музыкальные произведения</h3>
+                                <p>Композиции в программе</p>
+                            </div>
+                            <div class="characteristic-count">{{ characteristics.compositions|length }}</div>
+                        </div>
+                        <div class="characteristic-content">
+                            {% for composition in characteristics.compositions %}
+                            <div class="characteristic-item">
+                                <div class="item-info">
+                                    <div class="item-name">{{ composition.name }}</div>
+                                    <div class="item-description">{{ composition.count }} исполнение{{ 'я' if composition.count >= 2 and composition.count <= 4 else 'й' if composition.count >= 5 else 'е' }}</div>
+                                </div>
+                                <div class="item-count">
+                                    <span class="count-visited">{{ composition.count }}</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="no-characteristics">
+                        <div class="no-characteristics-icon">📊</div>
+                        <h3>У вас пока нет данных для характеристики</h3>
+                        <p>Купите билеты на концерты, чтобы увидеть статистику вашего маршрута</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Вкладка "Ачивки" -->
+            <div id="achievements-tab" class="tab-content">
+                <div class="concerts-header">
+                    <h2>Ачивки</h2>
+                    <div class="concerts-count">
+                        {{ route_sheet.summary.total_concerts }}
+                        {% set n = route_sheet.summary.total_concerts %}
+                        {% if n == 1 %}
+                            концерт
+                        {% elif n >= 2 and n <= 4 %}
+                            концерта
+                        {% else %}
+                            концертов
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Сводная информация о маршруте -->
+                <div class="achievements-grid">
+                    <div class="achievement-card">
+                        <div class="achievement-icon">📅</div>
+                        <div class="achievement-title">Дней фестиваля</div>
+                        <div class="achievement-value">{{ route_sheet.summary.total_days }}</div>
+                        <div class="achievement-description">Количество дней с концертами</div>
+                    </div>
+                    <div class="achievement-card">
+                        <div class="achievement-icon">🏛️</div>
+                        <div class="achievement-title">Залов посещено</div>
+                        <div class="achievement-value">{{ route_sheet.summary.total_halls }}</div>
+                        <div class="achievement-description">Уникальных залов</div>
+                    </div>
+                    <div class="achievement-card">
+                        <div class="achievement-icon">🎵</div>
+                        <div class="achievement-title">Жанров</div>
+                        <div class="achievement-value">{{ route_sheet.summary.total_genres }}</div>
+                        <div class="achievement-description">Различных музыкальных жанров</div>
+                    </div>
+                    <div class="achievement-card">
+                        <div class="achievement-icon">💰</div>
+                        <div class="achievement-title">Потрачено</div>
+                        <div class="achievement-value">{{ "{:,}".format(route_sheet.summary.total_spent) }} ₽</div>
+                        <div class="achievement-description">Общая сумма покупок</div>
+                    </div>
+                </div>
+                
+                <!-- Информация о соответствии маршруту -->
+                {% if route_sheet.match.found %}
+                    <div class="route-match-card">
+                        <h3 class="route-match-title">
+                            <span style="font-size: 1.5em;">🎯</span>
+                            {% if route_sheet.match.match_type == 'exact' %}
+                                Точное совпадение с маршрутом
+                            {% else %}
+                                Частичное совпадение с маршрутом
+                            {% endif %}
+                        </h3>
+                        <p class="route-match-reason">{{ route_sheet.match.reason }}</p>
+                        {% if route_sheet.match.best_route %}
+                            <div class="route-details">
+                                <h4>Маршрут №{{ route_sheet.match.best_route.id }}</h4>
+                                <div class="route-details-grid">
+                                    <div>
+                                        <strong>Дни:</strong> {{ route_sheet.match.best_route.days or 'Не указано' }}
+                                    </div>
+                                    <div>
+                                        <strong>Концерты:</strong> {{ route_sheet.match.best_route.concerts or 'Не указано' }}
+                                    </div>
+                                    <div>
+                                        <strong>Залы:</strong> {{ route_sheet.match.best_route.halls or 'Не указано' }}
+                                    </div>
+                                    <div>
+                                        <strong>Жанр:</strong> {{ route_sheet.match.best_route.genre or 'Не указано' }}
+                                    </div>
+                                    {% if route_sheet.match.best_route.comfort_score %}
+                                    <div>
+                                        <strong>Комфорт:</strong> {{ route_sheet.match.best_route.comfort_score }}/10 ({{ route_sheet.match.best_route.comfort_level or 'Не указано' }})
+                                    </div>
+                                    {% endif %}
+                                    {% if route_sheet.match.best_route.intellect_score %}
+                                    <div>
+                                        <strong>Интеллектуальность:</strong> {{ route_sheet.match.best_route.intellect_score }}/10 ({{ route_sheet.match.best_route.intellect_category or 'Не указано' }})
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="route-match-card error">
+                        <h3 class="route-match-title error">
+                            <span style="font-size: 1.5em;">🔍</span>
+                            Уникальный маршрут
+                        </h3>
+                        <p class="route-match-reason error">{{ route_sheet.match.reason }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Функция для получения параметра из URL
+        function getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+        
+        // Функция для обновления URL без перезагрузки страницы
+        function updateUrlParameter(name, value) {
+            const url = new URL(window.location);
+            url.searchParams.set(name, value);
+            window.history.pushState({}, '', url);
+        }
+        
+        function showTab(tabName) {
+            // Скрываем все вкладки
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Убираем активный класс со всех кнопок
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(button => button.classList.remove('active'));
+            
+            // Показываем выбранную вкладку
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // Добавляем активный класс к кнопке (находим кнопку по содержимому)
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => {
+                const buttonText = button.textContent.toLowerCase();
+                if (buttonText.includes('концерты') && tabName === 'concerts') {
+                    button.classList.add('active');
+                } else if (buttonText.includes('маршрут') && tabName === 'route') {
+                    button.classList.add('active');
+                } else if (buttonText.includes('характеристика') && tabName === 'characteristics') {
+                    button.classList.add('active');
+                } else if (buttonText.includes('ачивки') && tabName === 'achievements') {
+                    button.classList.add('active');
+                }
+            });
+            
+            // Если открываем маршрутный лист, инициализируем прогресс-бары
+            if (tabName === 'route') {
+                setTimeout(initializeProgressBars, 100);
+            }
+        }
+        
+        // Фильтрация по дням
+        function filterByDay(day) {
+            const daySections = document.querySelectorAll('.day-section');
+            const filterButtons = document.querySelectorAll('.day-filter-btn');
+            
+            // Убираем активный класс со всех кнопок
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // Добавляем активный класс к выбранной кнопке
+            event.target.classList.add('active');
+            
+            if (day === 'all') {
+                // Показываем все дни
+                daySections.forEach(section => {
+                    section.classList.remove('hidden');
+                });
+            } else {
+                // Скрываем все дни, кроме выбранного
+                daySections.forEach(section => {
+                    if (section.dataset.day == day) {
+                        section.classList.remove('hidden');
+                    } else {
+                        section.classList.add('hidden');
+                    }
+                });
+            }
+        }
+        
+        // Раскрытие/скрытие деталей концерта
+        function toggleConcertDetails(concertId) {
+            const content = document.getElementById('details-' + concertId);
+            const button = document.querySelector(`[data-concert-id="${concertId}"]`);
+            
+            console.log('Toggle details for concert:', concertId);
+            console.log('Content found:', content);
+            console.log('Button found:', button);
+            
+            if (content.classList.contains('expanded')) {
+                // Скрываем детали
+                content.classList.remove('expanded');
+                content.style.display = 'none';
+                button.classList.remove('expanded');
+                console.log('Hiding details, removing expanded class from button');
+            } else {
+                // Показываем детали
+                content.classList.add('expanded');
+                content.style.display = 'block';
+                button.classList.add('expanded');
+                console.log('Showing details, adding expanded class to button');
+            }
+        }
+        
+        // Раскрытие/скрытие блока офф-программы
+        function toggleOffProgram(offProgramId) {
+            const collapsedContent = document.getElementById('off-program-collapsed-' + offProgramId);
+            const expandedContent = document.getElementById('off-program-expanded-' + offProgramId);
+            const toggleBtn = document.getElementById('off-program-toggle-' + offProgramId);
+            
+            if (expandedContent.classList.contains('show')) {
+                // Скрываем развернутое содержимое
+                expandedContent.classList.remove('show');
+                collapsedContent.style.display = 'flex';
+                toggleBtn.classList.remove('rotated');
+            } else {
+                // Показываем развернутое содержимое
+                expandedContent.classList.add('show');
+                collapsedContent.style.display = 'none';
+                toggleBtn.classList.add('rotated');
+            }
+        }
+        
+        // Инициализация прогресс-баров
+        function initializeProgressBars() {
+            const progressBars = document.querySelectorAll('.progress-fill');
+            
+            progressBars.forEach(bar => {
+                const day = bar.dataset.day;
+                const daySection = document.querySelector(`[data-day="${day}"]`);
+                const concerts = daySection.querySelectorAll('.concert-event');
+                
+                if (concerts.length > 0) {
+                    // Рассчитываем прогресс на основе времени
+                    const firstConcert = concerts[0];
+                    const lastConcert = concerts[concerts.length - 1];
+                    
+                    // Простая логика: прогресс увеличивается с каждым концертом
+                    const progress = (concerts.length / Math.max(concerts.length, 1)) * 100;
+                    
+                    // Анимируем заполнение прогресс-бара
+                    setTimeout(() => {
+                        bar.style.width = progress + '%';
+                    }, 200);
+                }
+            });
+        }
+        
+        // Экспорт в PDF (заглушка)
+        function exportToPDF() {
+            const btn = document.getElementById('export-btn');
+            const originalText = btn.innerHTML;
+            
+            // Показываем состояние загрузки
+            btn.innerHTML = '<div class="loading-spinner" style="width: 16px; height: 16px; border-width: 2px;"></div> Экспорт...';
+            btn.disabled = true;
+            
+            // Имитируем процесс экспорта
+            setTimeout(() => {
+                alert('Функция экспорта в PDF будет реализована в ближайшее время!');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }, 2000);
+        }
+        
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            // Получаем активную вкладку из URL или используем 'concerts' по умолчанию
+            const activeTab = getUrlParameter('tab') || 'concerts';
+            
+            // Показываем активную вкладку
+            showTab(activeTab);
+            
+            // Если открыта вкладка маршрутного листа, инициализируем прогресс-бары
+            if (activeTab === 'route') {
+                setTimeout(initializeProgressBars, 100);
+            }
+        });
+    </script>
+</body>
+</html> 
+</body>
+</html> 

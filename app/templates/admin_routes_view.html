@@ -1,0 +1,742 @@
+{% extends "admin_routes_main.html" %}
+{% block routes_content %}
+
+<style>
+.routes-header {
+    margin-bottom: 12px;
+}
+
+.routes-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.routes-title {
+    font-size: 1.2em;
+    color: #4f5bd5;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.routes-description {
+    color: #787878;
+    margin: 0;
+    font-size: 0.5em;
+    line-height: 1.3;
+}
+
+
+
+.routes-table-container {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(60,60,120,0.04);
+    overflow-x: auto;
+    overflow-y: auto; /* Добавляем вертикальный скролл */
+    margin-bottom: 16px;
+    max-width: 100%;
+    height: 600px; /* Фиксированная высота для виртуализации */
+    position: relative;
+}
+
+.routes-table {
+    width: 100%;
+    min-width: 1400px;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+
+.routes-table th {
+    background: #f8f9ff;
+    color: #4f5bd5;
+    font-weight: 600;
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 2px solid #e0e7ff;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    position: relative;
+    white-space: nowrap;
+}
+
+.routes-table th:hover {
+    background: #e8f0ff;
+}
+
+.routes-table th.sortable::after {
+    content: '↕';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.8em;
+    opacity: 0.5;
+}
+
+.routes-table th.sort-asc::after {
+    content: '↑';
+    opacity: 1;
+}
+
+.routes-table th.sort-desc::after {
+    content: '↓';
+    opacity: 1;
+}
+
+.routes-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    color: #3a3a4a;
+}
+
+.routes-table tr:hover {
+    background: #f8f9ff;
+}
+
+.route-id {
+    font-weight: 600;
+    color: #4f5bd5;
+    font-family: 'Courier New', monospace;
+}
+
+.route-composition {
+    font-weight: 500;
+    color: #43A047;
+}
+
+.route-time {
+    font-family: 'Courier New', monospace;
+    color: #666;
+}
+
+.route-costs {
+    font-weight: 600;
+    color: #e53935;
+}
+
+.route-score {
+    font-weight: 500;
+    color: #4f5bd5;
+}
+
+.route-level {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.8em;
+    font-weight: 500;
+    text-align: center;
+}
+
+.route-level-high {
+    background: #e8f5e8;
+    color: #43A047;
+}
+
+.route-level-medium {
+    background: #fff3e0;
+    color: #ff9800;
+}
+
+.route-level-low {
+    background: #ffebee;
+    color: #e53935;
+}
+
+.route-last-check {
+    font-size: 0.8em;
+    color: #999;
+    font-style: italic;
+}
+
+.no-routes {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.no-routes-icon {
+    font-size: 2em;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.pagination {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.pagination-info {
+    font-size: 0.9em;
+    color: #666;
+}
+
+.pagination-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.pagination-dots {
+    padding: 8px 12px;
+    color: #666;
+}
+
+.pagination-btn {
+    padding: 8px 12px;
+    border: 1px solid #e0e7ff;
+    background: #fff;
+    color: #4f5bd5;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.pagination-btn:hover {
+    background: #f8f9ff;
+}
+
+.pagination-btn.active {
+    background: #4f5bd5;
+    color: #fff;
+    border-color: #4f5bd5;
+}
+
+.pagination-btn:disabled {
+    background: #f5f5f5;
+    color: #ccc;
+    cursor: not-allowed;
+    border-color: #f0f0f0;
+}
+
+/* Стили для виртуализации */
+.virtual-table {
+    height: 100%;
+    overflow-y: auto;
+    position: relative;
+}
+
+.virtual-table tbody {
+    position: relative;
+}
+
+.virtual-row {
+    position: absolute;
+    width: 100%;
+    left: 0;
+}
+
+.loading-indicator {
+    display: none;
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-size: 0.9em;
+}
+
+.loading-indicator.show {
+    display: block;
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #4f5bd5;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.scroll-sentinel {
+    height: 20px;
+    width: 100%;
+}
+
+/* Дополнительные стили для обеспечения скролла */
+.routes-table-container {
+    /* Убеждаемся, что контейнер может скроллиться */
+    overflow: auto !important;
+}
+
+.routes-table {
+    /* Убираем фиксированную высоту у таблицы, чтобы она могла расти */
+    height: auto;
+    min-height: 100%;
+}
+
+/* Стили для заголовка таблицы */
+.routes-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #f8f9ff;
+}
+
+</style>
+
+<div class="routes-header">
+    <div class="routes-header-content">
+        <div>
+            <p class="routes-description">Таблица всех фестивальных маршрутов, доступных для покупки на основе текущего статуса билетов концертов.</p>
+        </div>
+    </div>
+</div>
+
+{% if routes_count and routes_count > 0 %}
+    {% if routes_data and routes_data|length > 0 %}
+<div class="routes-table-container">
+    <table class="routes-table virtual-table">
+        <thead>
+            <tr>
+                <th class="sortable" data-sort="id">ID</th>
+                <th class="sortable" data-sort="composition">Состав</th>
+                <th class="sortable" data-sort="days" title="Количество дней">📅</th>
+                <th class="sortable" data-sort="concerts" title="Количество концертов">🎵</th>
+                <th class="sortable" data-sort="halls" title="Количество залов">🏛️</th>
+                <th class="sortable" data-sort="genre" title="Жанр">🎭</th>
+                <th class="sortable" data-sort="show_time" title="Длительность концерта">⏱️</th>
+                <th class="sortable" data-sort="trans_time" title="Время переходов">🚶</th>
+                <th class="sortable" data-sort="wait_time" title="Время ожидания">⏳</th>
+                <th class="sortable" data-sort="costs" title="Стоимость">💰</th>
+                <th class="sortable" data-sort="comfort_score" title="Оценка комфорта">😌</th>
+                <th class="sortable" data-sort="comfort_level" title="Уровень комфорта">Уровень</th>
+                <th class="sortable" data-sort="intellect_score" title="Интеллектуальная оценка">🧠</th>
+                <th class="sortable" data-sort="intellect_category" title="Интеллектуальная категория">Категория</th>
+            </tr>
+        </thead>
+        <tbody id="virtual-tbody">
+            <!-- Данные будут загружаться динамически -->
+        </tbody>
+    </table>
+    <div class="loading-indicator" id="loading-indicator">
+        <div class="loading-spinner"></div>
+        Загрузка данных...
+    </div>
+    <div class="scroll-sentinel" id="scroll-sentinel"></div>
+</div>
+
+<div class="pagination-info" style="text-align: center; margin-top: 16px; color: #666; font-size: 0.9em;">
+    Загружено <span id="loaded-count">0</span> из <span id="total-count">0</span> доступных маршрутов
+</div>
+
+    {% else %}
+    <div class="no-routes">
+        <div class="no-routes-icon">🗺️</div>
+        <div style="font-size: 1.2em; margin-bottom: 8px;">Доступные маршруты не найдены</div>
+        <div style="color: #999; margin-bottom: 16px;">
+            Возможно, все концерты в маршрутах недоступны для продажи или маршруты не были загружены.
+        </div>
+        <div style="font-size: 0.9em; color: #666;">
+            <a href="/admin/routes/upload" style="color: #4f5bd5; text-decoration: none;">Загрузить маршруты</a> | 
+            <a href="/admin/routes/concerts" style="color: #4f5bd5; text-decoration: none;">Проверить статус концертов</a>
+        </div>
+    </div>
+    {% endif %}
+{% else %}
+<div class="no-routes">
+    <div class="no-routes-icon">🗺️</div>
+    <div style="font-size: 1.2em; margin-bottom: 8px; color: #e53935;">Маршруты не загружены</div>
+    <div style="color: #999; margin-bottom: 16px;">
+        Для отображения доступных маршрутов необходимо сначала загрузить файл с маршрутами.
+    </div>
+    <div style="font-size: 0.9em; color: #666;">
+        <a href="/admin/routes/upload" style="color: #4f5bd5; text-decoration: none;">Загрузить маршруты</a>
+    </div>
+</div>
+{% endif %}
+
+<script>
+// Глобальные переменные для виртуализации
+let loadedData = [];
+let currentOffset = 0;
+let isLoading = false;
+let hasMoreData = true;
+let currentSortBy = 'concerts';
+let currentSortOrder = 'desc';
+let totalCount = 0;
+const BATCH_SIZE = 100; // Размер порции данных
+let scrollObserver = null; // Глобальный наблюдатель для скролла
+
+// Функция инициализации виртуализации
+function initializeVirtualization() {
+    console.log('Инициализация виртуализации...');
+    
+    // Получаем элементы
+    const table = document.querySelector('.routes-table');
+    const tbody = document.getElementById('virtual-tbody');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const scrollSentinel = document.getElementById('scroll-sentinel');
+    
+    if (!table || !tbody) {
+        console.error('Необходимые элементы не найдены!');
+        return false;
+    }
+    
+    // Инициализируем сортировку из URL
+    const urlParams = new URLSearchParams(window.location.search);
+    currentSortBy = urlParams.get('sort_by') || 'concerts';
+    currentSortOrder = urlParams.get('sort_order') || 'desc';
+    
+    console.log('Текущая сортировка:', { sortBy: currentSortBy, sortOrder: currentSortOrder });
+    
+    // Устанавливаем индикатор сортировки
+    updateSortIndicators(currentSortBy, currentSortOrder);
+    
+    // Добавляем обработчики сортировки
+    const headers = table.querySelectorAll('th.sortable');
+    headers.forEach(header => {
+        const sortField = header.getAttribute('data-sort');
+        header.addEventListener('click', function() {
+            console.log('Клик по заголовку:', sortField);
+            changeSort(sortField);
+        });
+    });
+    
+    // Создаем наблюдатель для бесконечного скролла
+    if (scrollObserver) {
+        scrollObserver.disconnect(); // Отключаем предыдущий наблюдатель
+    }
+    
+    scrollObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting && hasMoreData && !isLoading) {
+                console.log('Scroll sentinel видим, загружаем данные...');
+                loadMoreData();
+            }
+        });
+    });
+    
+    if (scrollSentinel) {
+        scrollObserver.observe(scrollSentinel);
+        console.log('Наблюдатель скролла установлен');
+    }
+    
+    // Загружаем первую порцию данных
+    loadMoreData();
+    
+    return true;
+}
+
+// Функция принудительной проверки наблюдателя скролла
+function forceCheckScrollObserver() {
+    console.log('Принудительная проверка наблюдателя скролла...');
+    
+    const scrollSentinel = document.getElementById('scroll-sentinel');
+    console.log('Scroll sentinel найден:', !!scrollSentinel);
+    
+    if (scrollObserver) {
+        console.log('Наблюдатель существует, проверяем состояние...');
+        // Отключаем и переподключаем наблюдатель
+        scrollObserver.disconnect();
+        if (scrollSentinel) {
+            scrollObserver.observe(scrollSentinel);
+            console.log('Наблюдатель переподключен к scroll sentinel');
+        }
+    } else {
+        console.error('Наблюдатель не существует!');
+    }
+}
+
+// Функция восстановления наблюдателя скролла
+function restoreScrollObserver() {
+    const scrollSentinel = document.getElementById('scroll-sentinel');
+    if (scrollSentinel && scrollObserver) {
+        // Сначала отключаем наблюдатель от всех элементов
+        scrollObserver.disconnect();
+        // Затем подключаем к scroll sentinel
+        scrollObserver.observe(scrollSentinel);
+        console.log('Наблюдатель скролла восстановлен для элемента:', scrollSentinel);
+    } else {
+        console.error('Не удалось восстановить наблюдатель скролла:', {
+            scrollSentinel: !!scrollSentinel,
+            scrollObserver: !!scrollObserver
+        });
+        // Пытаемся принудительно восстановить
+        forceCheckScrollObserver();
+    }
+}
+
+// Функция загрузки данных
+async function loadMoreData() {
+    if (isLoading || !hasMoreData) {
+        console.log('Загрузка пропущена:', { isLoading, hasMoreData });
+        return;
+    }
+    
+    console.log('Начинаем загрузку данных...');
+    isLoading = true;
+    showLoadingIndicator();
+    
+    try {
+        console.log(`Загружаем данные: offset=${currentOffset}, limit=${BATCH_SIZE}, sort_by=${currentSortBy}, sort_order=${currentSortOrder}`);
+        
+        const response = await fetch(`/api/routes?offset=${currentOffset}&limit=${BATCH_SIZE}&sort_by=${currentSortBy}&sort_order=${currentSortOrder}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            loadedData.push(...result.data);
+            appendRowsToTable(result.data);
+            
+            currentOffset += result.data.length;
+            totalCount = result.total_count;
+            hasMoreData = result.has_more;
+            
+            updateCounters();
+            console.log(`Загружено ${result.data.length} строк, всего: ${loadedData.length}/${totalCount}, есть еще: ${hasMoreData}`);
+            
+            // Проверяем, нужно ли восстановить наблюдатель скролла
+            if (hasMoreData) {
+                restoreScrollObserver();
+            }
+        } else {
+            console.error('Ошибка загрузки данных:', result.error);
+            throw new Error(result.error || 'Неизвестная ошибка');
+        }
+    } catch (error) {
+        console.error('Ошибка при загрузке данных:', error);
+        
+        // Показываем ошибку пользователю
+        const tbody = document.getElementById('virtual-tbody');
+        if (tbody && tbody.children.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="14" style="text-align: center; padding: 40px; color: #e53935;">
+                        <div style="font-size: 1.2em; margin-bottom: 10px;">❌</div>
+                        <div>Ошибка загрузки данных</div>
+                        <div style="font-size: 0.9em; margin-top: 8px;">${error.message}</div>
+                        <button onclick="retryLoad()" style="margin-top: 16px; padding: 8px 16px; background: #4f5bd5; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                            🔄 Повторить
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }
+    } finally {
+        isLoading = false;
+        hideLoadingIndicator();
+    }
+}
+
+// Функция повторной загрузки
+function retryLoad() {
+    console.log('Повторная загрузка данных...');
+    
+    // Сбрасываем состояние
+    loadedData = [];
+    currentOffset = 0;
+    hasMoreData = true;
+    
+    // Очищаем таблицу
+    const tbody = document.getElementById('virtual-tbody');
+    if (tbody) {
+        tbody.innerHTML = '';
+    }
+    
+    // Восстанавливаем наблюдатель скролла
+    restoreScrollObserver();
+    
+    // Загружаем данные заново
+    loadMoreData();
+}
+
+// Функция добавления строк в таблицу
+function appendRowsToTable(data) {
+    const tbody = document.getElementById('virtual-tbody');
+    if (!tbody) return;
+    
+    data.forEach(route => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="route-id">${route.id}</td>
+            <td class="route-composition" data-sort="${route.composition_count}">${route.composition}</td>
+            <td data-sort="${route.days}">${route.days}</td>
+            <td data-sort="${route.concerts}">${route.concerts}</td>
+            <td data-sort="${route.halls}">${route.halls}</td>
+            <td data-sort="${route.genre}">${route.genre}</td>
+            <td class="route-time" data-sort="${route.show_time}">${route.show_time_display}</td>
+            <td class="route-time" data-sort="${route.trans_time}">${route.trans_time_display}</td>
+            <td class="route-time" data-sort="${route.wait_time}">${route.wait_time_display}</td>
+            <td class="route-costs" data-sort="${route.costs}">${route.costs_display}</td>
+            <td class="route-score" data-sort="${route.comfort_score}">${route.comfort_score_display}</td>
+            <td data-sort="${route.comfort_level}">
+                ${getComfortLevelHtml(route.comfort_level)}
+            </td>
+            <td class="route-score" data-sort="${route.intellect_score}">${route.intellect_score_display}</td>
+            <td data-sort="${route.intellect_category}">${route.intellect_category}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Функция для HTML уровня комфорта
+function getComfortLevelHtml(level) {
+    if (level === 'High') {
+        return '<span class="route-level route-level-high">Высокий</span>';
+    } else if (level === 'Medium') {
+        return '<span class="route-level route-level-medium">Средний</span>';
+    } else if (level === 'Low') {
+        return '<span class="route-level route-level-low">Низкий</span>';
+    } else {
+        return `<span class="route-level">${level}</span>`;
+    }
+}
+
+// Функция смены сортировки
+function changeSort(sortField) {
+    console.log('Смена сортировки на:', sortField);
+    
+    let newSortOrder = 'desc';
+    if (currentSortBy === sortField) {
+        newSortOrder = currentSortOrder === 'desc' ? 'asc' : 'desc';
+    }
+    
+    console.log('Новые параметры сортировки:', { sortField, newSortOrder });
+    
+    // Сбрасываем состояние
+    loadedData = [];
+    currentOffset = 0;
+    hasMoreData = true;
+    currentSortBy = sortField;
+    currentSortOrder = newSortOrder;
+    
+    // Очищаем таблицу
+    const tbody = document.getElementById('virtual-tbody');
+    if (tbody) {
+        tbody.innerHTML = '';
+        console.log('Таблица очищена');
+    }
+    
+    // Обновляем URL
+    const currentUrl = new URL(window.location);
+    currentUrl.searchParams.set('sort_by', sortField);
+    currentUrl.searchParams.set('sort_order', newSortOrder);
+    window.history.replaceState({}, '', currentUrl.toString());
+    
+    // Обновляем индикаторы
+    updateSortIndicators(sortField, newSortOrder);
+    
+    // Восстанавливаем наблюдатель скролла
+    console.log('Восстанавливаем наблюдатель скролла...');
+    restoreScrollObserver();
+    
+    // Загружаем данные заново
+    console.log('Загружаем данные заново...');
+    loadMoreData();
+}
+
+// Функция обновления индикаторов сортировки
+function updateSortIndicators(sortBy, sortOrder) {
+    const table = document.querySelector('.routes-table');
+    if (!table) return;
+    
+    const headers = table.querySelectorAll('th.sortable');
+    headers.forEach(header => {
+        header.classList.remove('sort-asc', 'sort-desc');
+    });
+    
+    const currentHeader = table.querySelector(`th[data-sort="${sortBy}"]`);
+    if (currentHeader) {
+        currentHeader.classList.add(sortOrder === 'asc' ? 'sort-asc' : 'sort-desc');
+    }
+}
+
+// Функции для индикатора загрузки
+function showLoadingIndicator() {
+    const loadingIndicator = document.getElementById('loading-indicator');
+    if (loadingIndicator) {
+        loadingIndicator.classList.add('show');
+    }
+}
+
+function hideLoadingIndicator() {
+    const loadingIndicator = document.getElementById('loading-indicator');
+    if (loadingIndicator) {
+        loadingIndicator.classList.remove('show');
+    }
+}
+
+// Функция обновления счетчиков
+function updateCounters() {
+    const loadedCountElement = document.getElementById('loaded-count');
+    const totalCountElement = document.getElementById('total-count');
+    
+    if (loadedCountElement) loadedCountElement.textContent = loadedData.length;
+    if (totalCountElement) totalCountElement.textContent = totalCount;
+}
+
+// Инициализация при загрузке DOM
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM загружен, инициализируем виртуализацию...');
+    
+    // Пытаемся инициализировать виртуализацию
+    if (!initializeVirtualization()) {
+        console.error('Не удалось инициализировать виртуализацию');
+    }
+    
+    // Добавляем резервный обработчик скролла
+    const tableContainer = document.querySelector('.routes-table-container');
+    if (tableContainer) {
+        tableContainer.addEventListener('scroll', function() {
+            const scrollTop = tableContainer.scrollTop;
+            const scrollHeight = tableContainer.scrollHeight;
+            const clientHeight = tableContainer.clientHeight;
+            
+            // Если пользователь прокрутил до 80% от конца
+            if (scrollTop + clientHeight >= scrollHeight * 0.8) {
+                console.log('Резервный обработчик скролла: загружаем данные...');
+                if (hasMoreData && !isLoading) {
+                    loadMoreData();
+                }
+            }
+        });
+        console.log('Резервный обработчик скролла добавлен');
+    }
+});
+
+// Дополнительная инициализация при полной загрузке страницы
+window.addEventListener('load', function() {
+    console.log('Страница полностью загружена');
+    
+    // Проверяем, загрузились ли данные
+    const tbody = document.getElementById('virtual-tbody');
+    if (tbody && tbody.children.length === 0 && !isLoading) {
+        console.log('Данные не загружены, повторная инициализация...');
+        setTimeout(() => {
+            if (!initializeVirtualization()) {
+                console.error('Повторная инициализация не удалась');
+            }
+        }, 1000);
+    }
+});
+
+// Обработка ошибок
+window.addEventListener('error', function(event) {
+    console.error('JavaScript ошибка:', event.error);
+});
+
+// Обработка необработанных промисов
+window.addEventListener('unhandledrejection', function(event) {
+    console.error('Необработанная ошибка промиса:', event.reason);
+});
+</script>
+
+{% endblock %} 
