@@ -1088,4 +1088,154 @@
     }
 } 
 
+/* Призыв к действию на вкладке рекомендаций */
+.recommendations-cta {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.cta-content {
+    background: white;
+    border-radius: 20px;
+    padding: 50px 40px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.cta-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.cta-icon {
+    font-size: 4em;
+    margin-bottom: 20px;
+    display: block;
+}
+
+.cta-content h2 {
+    font-size: 2.2em;
+    color: #333;
+    margin: 0 0 20px 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.cta-content p {
+    font-size: 1.2em;
+    color: #666;
+    line-height: 1.6;
+    margin: 0 0 40px 0;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.cta-features {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+}
+
+.cta-feature {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: #555;
+}
+
+.cta-feature .feature-icon {
+    font-size: 1.5em;
+    margin: 0;
+}
+
+.cta-feature span:last-child {
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.cta-content .btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-size: 1.1em;
+    padding: 15px 30px;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.cta-content .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .recommendations-cta {
+        padding: 40px 15px;
+    }
+    
+    .cta-content {
+        padding: 40px 25px;
+    }
+    
+    .cta-icon {
+        font-size: 3em;
+    }
+    
+    .cta-content h2 {
+        font-size: 1.8em;
+    }
+    
+    .cta-content p {
+        font-size: 1.1em;
+    }
+    
+    .cta-features {
+        gap: 25px;
+    }
+    
+    .cta-feature .feature-icon {
+        font-size: 1.3em;
+    }
+    
+    .cta-feature span:last-child {
+        font-size: 0.85em;
+    }
+}
+
+@media (max-width: 480px) {
+    .cta-content {
+        padding: 30px 20px;
+    }
+    
+    .cta-content h2 {
+        font-size: 1.6em;
+    }
+    
+    .cta-content p {
+        font-size: 1em;
+    }
+    
+    .cta-features {
+        flex-direction: column;
+        gap: 20px;
+    }
+}
+
 /* Индикатор загрузки рекомендаций */ 

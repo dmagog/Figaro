@@ -348,7 +348,31 @@
             <!-- Вкладка Рекомендации -->
             <div class="tab-content" id="tab-recs" style="display:none;">
                 <div id="recommendations-spinner"></div>
-                <div id="recommendations-block"></div>
+                <div id="recommendations-block">
+                    <!-- Призыв к действию для неавторизованных пользователей -->
+                    <div id="recommendations-cta" class="recommendations-cta">
+                        <div class="cta-content">
+                            <div class="cta-icon">🎯</div>
+                            <h2>Получите персональные рекомендации</h2>
+                            <p>Заполните короткую анкету, чтобы мы могли подобрать для вас идеальные маршруты по фестивалю</p>
+                            <div class="cta-features">
+                                <div class="cta-feature">
+                                    <span class="feature-icon">⚡</span>
+                                    <span>Быстро и просто</span>
+                                </div>
+                                <div class="cta-feature">
+                                    <span class="feature-icon">🎵</span>
+                                    <span>Учитываем ваши вкусы</span>
+                                </div>
+                                <div class="cta-feature">
+                                    <span class="feature-icon">🧠</span>
+                                    <span>ИИ-алгоритмы</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-next" onclick="showTab('form')">📝 Заполнить анкету</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

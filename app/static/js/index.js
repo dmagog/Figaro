@@ -606,12 +606,19 @@ function renderRecommendations(recommendations) {
         return;
     }
     
-    // Удаляем старый блок, если есть
-    const oldBlock = document.getElementById('recommendations-block');
-    if (oldBlock) oldBlock.remove();
+    // Скрываем призыв к действию
+    const ctaElement = document.getElementById('recommendations-cta');
+    if (ctaElement) {
+        ctaElement.style.display = 'none';
+    }
+    
+    // Удаляем старый блок рекомендаций, если есть
+    const oldRecommendationsBlock = document.querySelector('.recommendations-block');
+    if (oldRecommendationsBlock) {
+        oldRecommendationsBlock.remove();
+    }
     
     const block = document.createElement('div');
-    block.id = 'recommendations-block';
     block.className = 'recommendations-block';
     block.innerHTML = `
         <h2>🎯 Персональные рекомендации</h2>
@@ -620,7 +627,7 @@ function renderRecommendations(recommendations) {
         ${renderGroup('🛋️ Комфортные маршруты', recommendations.top_comfort, 'comfort')}
         ${renderGroup('⚖️ Сбалансированные маршруты', recommendations.top_balanced, 'balanced')}
     `;
-    document.getElementById('tab-recs').appendChild(block);
+    document.getElementById('recommendations-block').appendChild(block);
 }
 
 // Рендеринг группы рекомендаций
@@ -735,6 +742,18 @@ function resetSurvey() {
     showSlide(1);
     updateSummary();
     updateTagClouds();
+    
+    // Показываем призыв к действию на вкладке рекомендаций
+    const ctaElement = document.getElementById('recommendations-cta');
+    if (ctaElement) {
+        ctaElement.style.display = 'block';
+    }
+    
+    // Удаляем блок с рекомендациями, если он есть
+    const recommendationsBlock = document.querySelector('.recommendations-block');
+    if (recommendationsBlock) {
+        recommendationsBlock.remove();
+    }
     
     console.log('Анкета сброшена');
 }
