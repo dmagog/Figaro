@@ -11,6 +11,7 @@ let allArtists = null;
 let selectedConcertsRange = null;
 
 let shuffledArtists = null;
+let shuffledComposers = null;
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
@@ -294,11 +295,16 @@ function toggleConcert(concertId) {
 // Обновление облаков тегов
 function updateTagClouds() {
     if (surveyData) {
-        // Перемешиваем артистов только один раз при обновлении данных
+        // Перемешиваем артистов и композиторов только один раз при обновлении данных
         shuffledArtists = [...surveyData.artists];
         for (let i = shuffledArtists.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [shuffledArtists[i], shuffledArtists[j]] = [shuffledArtists[j], shuffledArtists[i]];
+        }
+        shuffledComposers = [...surveyData.composers];
+        for (let i = shuffledComposers.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffledComposers[i], shuffledComposers[j]] = [shuffledComposers[j], shuffledComposers[i]];
         }
         renderComposersCloud();
         renderArtistsCloud();
@@ -317,13 +323,9 @@ function renderComposersCloud() {
     cloud.className = '';
     cloud.classList.add('composers-cloud');
     cloud.innerHTML = '';
-    // Случайный порядок
-    const shuffled = [...surveyData.composers];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    shuffled.forEach(composer => {
+    // Используем заранее перемешанный массив
+    const composers = shuffledComposers || surveyData.composers;
+    composers.forEach(composer => {
         const tag = document.createElement('span');
         tag.className = 'tag';
         tag.textContent = composer.name;
