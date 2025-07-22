@@ -22,7 +22,13 @@ def get_recommendations(
     # TODO: join с концертами, артистами, композиторами для фильтрации
 
     # 2. Фильтрация по max_concerts
-    filtered = [r for r in routes if getattr(r, 'Concerts', 0) <= int(preferences.get('max_concerts', 5))]
+    max_concerts = preferences.get('max_concerts', '5')
+    if max_concerts == '5':
+        # Для "5+ концертов" - показываем все маршруты с 5+ концертами (без ограничения сверху)
+        filtered = [r for r in routes if getattr(r, 'Concerts', 0) >= 5]
+    else:
+        # Для остальных значений - ограничиваем сверху
+        filtered = [r for r in routes if getattr(r, 'Concerts', 0) <= int(max_concerts)]
 
     # 3. Фильтрация по diversity (уникальные композиторы и доля главного)
     # TODO: реализовать через связи

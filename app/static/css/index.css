@@ -1,0 +1,695 @@
+/* Основные стили для главной страницы */
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.header {
+    max-width: 1100px;
+    margin: 40px auto 0 auto;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 36px;
+    padding: 48px 40px 36px 40px;
+    box-shadow: 0 8px 32px rgba(102,126,234,0.13);
+    text-align: center;
+}
+
+.header-title {
+    margin: 0 0 10px 0;
+    font-size: 2.5em;
+    color: white;
+}
+
+.header-subtitle {
+    font-size: 1.2em;
+    opacity: 0.9;
+    margin-bottom: 20px;
+    color: white;
+}
+
+.user-section {
+    background: rgba(255,255,255,0.1);
+    padding: 20px;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    color: white;
+}
+
+.user-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-primary {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+.btn-primary:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+.btn-secondary {
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.btn-secondary:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+.btn-prev {
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+    margin-bottom: 20px;
+}
+
+.btn-prev:hover {
+    background: #e9ecef;
+}
+
+.auth-section {
+    text-align: center;
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+}
+
+.auth-section h2 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.auth-links {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+}
+
+.auth-links a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 10px 20px;
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.auth-links a:hover {
+    background: #667eea;
+    color: white;
+}
+
+/* Вкладки */
+.tabs-container {
+    max-width: 1100px;
+    margin: 40px auto;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.tabs {
+    display: flex;
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 15px 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    color: #6c757d;
+    transition: all 0.2s;
+}
+
+.tab-btn:hover {
+    background: #e9ecef;
+    color: #495057;
+}
+
+.tab-btn.active {
+    background: white;
+    color: #667eea;
+    border-bottom: 3px solid #667eea;
+}
+
+.tab-content {
+    padding: 30px;
+}
+
+/* Секция анкеты */
+.survey-section {
+    max-width: 1000px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.survey-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.survey-header h2 {
+    font-size: 2em;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.survey-header p {
+    font-size: 1.1em;
+    color: #6c757d;
+}
+
+.survey-form {
+    max-width: 950px;
+    margin: 0 auto;
+    position: relative;
+}
+
+@media (min-width: 1400px) {
+  .survey-section {
+    max-width: 1200px;
+  }
+  .survey-form {
+    max-width: 1100px;
+  }
+}
+
+/* Прогресс-бар */
+.survey-progress {
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.progress-text {
+    font-size: 14px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* Слайды */
+.survey-slide {
+    display: none;
+    animation: slideIn 0.3s ease;
+}
+
+.survey-slide.active {
+    display: block;
+}
+
+.slide-content {
+    text-align: center;
+}
+
+.slide-title {
+    font-size: 1.8em;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.slide-description {
+    font-size: 1.1em;
+    color: #6c757d;
+    margin-bottom: 30px;
+    line-height: 1.5;
+}
+
+/* Радио группы */
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.radio-group.compact {
+    flex-direction: row;
+    justify-content: center;
+    gap: 20px;
+}
+
+.radio-option {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+}
+
+.radio-option:hover {
+    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(102,126,234,0.1);
+}
+
+.radio-option.selected {
+    border-color: #667eea;
+    background: #f8f9ff;
+    box-shadow: 0 4px 12px rgba(102,126,234,0.15);
+}
+
+.radio-option input[type="radio"] {
+    display: none;
+}
+
+.radio-content {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 15px;
+}
+
+.radio-icon {
+    font-size: 2em;
+    min-width: 50px;
+    text-align: center;
+}
+
+.radio-number {
+    font-size: 2em;
+    font-weight: bold;
+    color: #667eea;
+    min-width: 50px;
+    text-align: center;
+}
+
+.radio-text {
+    flex: 1;
+    text-align: left;
+}
+
+.radio-title {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.radio-description {
+    font-size: 0.9em;
+    color: #6c757d;
+    line-height: 1.4;
+}
+
+/* Компактные радио опции */
+.radio-option.compact {
+    flex-direction: column;
+    text-align: center;
+    padding: 15px;
+    min-width: 120px;
+}
+
+.radio-option.compact .radio-content {
+    flex-direction: column;
+    gap: 10px;
+}
+
+.radio-option.compact .radio-text {
+    text-align: center;
+}
+
+/* Облако тегов */
+.tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin: 20px 0;
+    min-height: 100px;
+    align-items: center;
+}
+
+.tag {
+    padding: 8px 16px;
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+    color: #495057;
+    white-space: nowrap;
+}
+
+.tag:hover {
+    border-color: #667eea;
+    background: #f8f9ff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(102,126,234,0.1);
+}
+
+.tag.selected {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+    box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+}
+
+/* Поиск артистов */
+.tag-cloud-search {
+    text-align: center;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.tag-cloud-search input {
+    padding: 10px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 25px;
+    font-size: 14px;
+    width: 300px;
+    max-width: 80%;
+    transition: border-color 0.2s;
+}
+
+.tag-cloud-search input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+#artists-search-dropdown {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 100%;
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 10;
+    min-width: 300px;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+}
+
+.search-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f3f4;
+    transition: background-color 0.2s;
+}
+
+.search-item:hover {
+    background: #f8f9fa;
+}
+
+.search-item:last-child {
+    border-bottom: none;
+}
+
+/* Выбранные теги */
+.selected-tags {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.selected-count {
+    font-size: 14px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* Навигация */
+.survey-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #e9ecef;
+    gap: 20px;
+}
+
+.btn-prev, .btn-next, .btn-submit {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    font-size: 14px;
+    min-width: 120px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-prev {
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+}
+
+.btn-prev:hover {
+    background: #e9ecef;
+}
+
+.btn-next {
+    background: #667eea;
+    color: white;
+}
+
+.btn-next:hover {
+    background: #5a6fd8;
+}
+
+.btn-submit {
+    background: #28a745;
+    color: white;
+}
+
+.btn-submit:hover {
+    background: #218838;
+}
+
+/* Резюме */
+.summary-container {
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: left;
+}
+
+.summary-section {
+    margin-bottom: 25px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+.summary-section h4 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 1.1em;
+}
+
+.summary-item {
+    color: #6c757d;
+    font-size: 0.95em;
+    line-height: 1.4;
+}
+
+/* Рекомендации */
+#recommendations-block {
+    padding: 20px;
+}
+
+.recommendations-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.recommendations-header h2 {
+    color: #333;
+    font-size: 1.8em;
+}
+
+.recommendation-group {
+    margin-bottom: 30px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.group-title {
+    background: #667eea;
+    color: white;
+    padding: 15px 20px;
+    margin: 0;
+    font-size: 1.2em;
+}
+
+.routes-list {
+    padding: 20px;
+}
+
+.route-item {
+    padding: 15px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.route-item:hover {
+    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(102,126,234,0.1);
+}
+
+.route-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.route-title {
+    font-weight: 600;
+    color: #333;
+    font-size: 1.1em;
+}
+
+.route-stats {
+    display: flex;
+    gap: 15px;
+    font-size: 0.9em;
+    color: #6c757d;
+}
+
+.route-description {
+    color: #6c757d;
+    line-height: 1.4;
+}
+
+/* Загрузка и ошибки */
+.loading {
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+    padding: 20px;
+}
+
+.error {
+    text-align: center;
+    color: #dc3545;
+    padding: 20px;
+    background: #f8d7da;
+    border-radius: 8px;
+    border: 1px solid #f5c6cb;
+}
+
+.no-recommendations {
+    text-align: center;
+    color: #6c757d;
+    padding: 40px;
+    font-style: italic;
+}
+
+/* Анимации */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .header {
+        padding: 30px 20px;
+        margin: 20px auto 0 auto;
+    }
+    
+    .header-title {
+        font-size: 2em;
+    }
+    
+    .survey-section {
+        padding: 0 10px;
+    }
+    
+    .tab-content {
+        padding: 20px 15px;
+    }
+    
+    .radio-group {
+        gap: 10px;
+    }
+    
+    .radio-group.compact {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .tag-cloud {
+        gap: 8px;
+    }
+    
+    .tag {
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+    
+    .survey-navigation {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .btn-prev, .btn-next, .btn-submit {
+        width: 100%;
+    }
+} 
