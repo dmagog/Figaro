@@ -967,20 +967,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     const percentLeft = ticketInfo.availability_percent;
                     const ticketsLeft = ticketInfo.tickets_left;
                     const totalSeats = ticketInfo.total_seats;
-                    
+
                     // Определяем цвет
                     let statusColor;
-                    if (percentLeft <= 10) {
-                        statusColor = '#e53935'; // красный
-                    } else if (percentLeft <= 20) {
-                        statusColor = '#ffb300'; // жёлтый
+                    if (typeof percentLeft === 'number' && !isNaN(percentLeft)) {
+                        if (percentLeft <= 10) {
+                            statusColor = '#e53935'; // красный
+                        } else if (percentLeft <= 20) {
+                            statusColor = '#ffb300'; // жёлтый
+                        } else {
+                            statusColor = '#43a047'; // зелёный
+                        }
+                        percentElement.style.color = statusColor;
+                        percentElement.textContent = `${percentLeft.toFixed(1)}%`;
                     } else {
-                        statusColor = '#43a047'; // зелёный
+                        percentElement.style.color = '#888';
+                        percentElement.textContent = '—';
                     }
-                    
-                    percentElement.style.color = statusColor;
-                    percentElement.textContent = `${percentLeft.toFixed(1)}%`;
-                    countElement.textContent = `(${ticketsLeft}/${totalSeats})`;
+                    countElement.textContent =
+                        (typeof ticketsLeft === 'number' && typeof totalSeats === 'number')
+                            ? `(${ticketsLeft}/${totalSeats})`
+                            : '(—/—)';
                 }
             }
         });
