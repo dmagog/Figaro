@@ -465,6 +465,7 @@
     padding-top: 20px;
     border-top: 1px solid #e9ecef;
     gap: 20px;
+    min-height: 60px;
 }
 
 .btn-prev, .btn-next, .btn-submit {
@@ -480,6 +481,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    line-height: 1;
+    vertical-align: middle;
+    box-sizing: border-box;
+    margin: 0;
+    position: relative;
+    top: 0;
 }
 
 .btn-prev {
@@ -490,15 +497,16 @@
 
 .btn-prev:hover {
     background: #e9ecef;
+    color: #495057;
 }
 
 .btn-next {
-    background: #667eea;
+    background: #28a745;
     color: white;
 }
 
 .btn-next:hover {
-    background: #5a6fd8;
+    background: #218838;
 }
 
 .btn-submit {
