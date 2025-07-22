@@ -376,37 +376,29 @@
 
 /* Радио группы */
 .radio-group {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 20px;
-    max-width: 900px;
-    margin: 0 auto;
-    flex-wrap: wrap;
+    margin: 30px 0;
 }
 
 .radio-group.compact {
-    flex-direction: row;
-    justify-content: center;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 15px;
-    max-width: 600px;
 }
 
 .radio-option {
-    display: flex;
-    align-items: stretch;
-    padding: 0;
-    border: 1px solid #e9ecef;
+    position: relative;
+    background: white;
+    border: 2px solid #e9ecef;
     border-radius: 16px;
+    padding: 20px;
     cursor: pointer;
     transition: all 0.3s ease;
-    background: white;
-    flex: 1;
-    min-width: 250px;
-    max-width: 300px;
-    position: relative;
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    min-width: 180px;
+    max-width: 280px;
 }
 
 .radio-option::before {
@@ -423,7 +415,7 @@
 
 .radio-option:hover {
     border-color: #667eea;
-    box-shadow: 0 4px 16px rgba(102,126,234,0.15);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.15);
     transform: translateY(-2px);
 }
 
@@ -433,9 +425,9 @@
 
 .radio-option.selected {
     border-color: #667eea;
-    background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
-    box-shadow: 0 6px 20px rgba(102,126,234,0.2);
-    transform: translateY(-2px);
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.2);
+    transform: translateY(-3px);
 }
 
 .radio-option.selected::before {
@@ -448,19 +440,17 @@
 
 .radio-content {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    width: 100%;
-    gap: 16px;
-    padding: 20px;
+    gap: 12px;
+    padding: 8px;
 }
 
 .radio-icon {
-    font-size: 2.2em;
-    min-width: 50px;
-    text-align: center;
+    font-size: 2.5em;
     color: #667eea;
-    opacity: 0.8;
     transition: all 0.3s ease;
+    opacity: 0.7;
 }
 
 .radio-option:hover .radio-icon,
@@ -471,12 +461,10 @@
 
 .radio-number {
     font-size: 2.2em;
-    font-weight: bold;
+    font-weight: 700;
     color: #667eea;
-    min-width: 50px;
-    text-align: center;
-    opacity: 0.8;
     transition: all 0.3s ease;
+    opacity: 0.8;
 }
 
 .radio-option:hover .radio-number,
@@ -486,15 +474,14 @@
 }
 
 .radio-text {
-    flex: 1;
-    text-align: left;
+    text-align: center;
 }
 
 .radio-title {
     font-size: 1.1em;
     font-weight: 600;
     color: #333;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     line-height: 1.3;
 }
 
@@ -503,6 +490,30 @@
     color: #6c757d;
     line-height: 1.4;
     margin: 0;
+}
+
+.radio-option.compact {
+    padding: 16px;
+    min-width: 160px;
+    max-width: 240px;
+}
+
+.radio-option.compact .radio-content {
+    gap: 8px;
+    padding: 4px;
+}
+
+.radio-option.compact .radio-text {
+    text-align: center;
+}
+
+.radio-option.compact .radio-title {
+    font-size: 1em;
+    margin-bottom: 2px;
+}
+
+.radio-option.compact .radio-description {
+    font-size: 0.85em;
 }
 
 /* Компактные радио опции */
@@ -1078,45 +1089,43 @@
 /* Адаптивность */
 @media (max-width: 768px) {
     .survey-section {
-        padding: 0 10px;
+        padding: 20px;
     }
     
     .tab-content {
-        padding: 20px 15px;
+        padding: 15px;
     }
     
     .radio-group {
-        flex-direction: column;
-        gap: 12px;
-        max-width: 100%;
+        grid-template-columns: 1fr;
+        gap: 15px;
+        margin: 20px 0;
     }
     
     .radio-group.compact {
-        flex-direction: row;
-        gap: 10px;
-        flex-wrap: wrap;
+        grid-template-columns: 1fr;
+        gap: 12px;
     }
     
     .radio-option {
         min-width: auto;
         max-width: none;
-        flex: 1;
+        padding: 16px;
     }
     
     .radio-option.compact {
-        min-width: 100px;
-        max-width: 140px;
-        flex: 1;
+        padding: 14px;
+        min-width: auto;
+        max-width: none;
     }
     
     .radio-content {
-        padding: 16px;
-        gap: 12px;
+        gap: 10px;
+        padding: 6px;
     }
     
     .radio-icon, .radio-number {
-        font-size: 1.8em;
-        min-width: 40px;
+        font-size: 2em;
     }
     
     .radio-title {
@@ -1132,7 +1141,7 @@
     }
     
     .tag {
-        font-size: 12px;
+        font-size: 0.85em;
         padding: 6px 12px;
     }
     
@@ -1143,31 +1152,32 @@
     
     .btn-prev, .btn-next, .btn-submit {
         width: 100%;
+        max-width: 200px;
     }
     
     .summary-container {
         grid-template-columns: 1fr;
         gap: 15px;
-        padding: 15px 0;
     }
     
     .summary-section {
-        padding: 20px;
+        padding: 15px;
     }
     
     .summary-section h4 {
         font-size: 1em;
-        margin-bottom: 12px;
+        gap: 8px;
     }
     
     .summary-section h4::before {
-        width: 4px;
-        height: 16px;
+        width: 24px;
+        height: 24px;
+        font-size: 0.8em;
     }
     
     .summary-item {
-        font-size: 0.9em;
-        padding: 10px 14px;
+        font-size: 0.85em;
+        padding: 8px 10px;
     }
     
     .summary-pills {
@@ -1486,82 +1496,86 @@
 
 @media (max-width: 480px) {
     .cta-content {
-        padding: 30px 20px;
+        padding: 20px;
     }
     
     .cta-content h2 {
-        font-size: 1.6em;
+        font-size: 1.5em;
     }
     
     .cta-content p {
-        font-size: 1em;
+        font-size: 0.95em;
     }
     
     .cta-features {
         flex-direction: column;
-        gap: 20px;
+        gap: 15px;
     }
     
     .radio-group {
-        gap: 8px;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin: 15px 0;
     }
     
     .radio-group.compact {
-        gap: 6px;
+        grid-template-columns: 1fr;
+        gap: 10px;
     }
     
     .radio-option {
+        padding: 14px;
         min-width: auto;
         max-width: none;
     }
     
     .radio-option.compact {
-        min-width: 80px;
-        max-width: 110px;
+        padding: 12px;
+        min-width: auto;
+        max-width: none;
     }
     
     .radio-content {
-        padding: 12px;
         gap: 8px;
+        padding: 4px;
     }
     
     .radio-icon, .radio-number {
-        font-size: 1.5em;
-        min-width: 30px;
+        font-size: 1.8em;
     }
     
     .radio-title {
-        font-size: 0.9em;
-        margin-bottom: 4px;
+        font-size: 0.95em;
+        margin-bottom: 2px;
     }
     
     .radio-description {
         font-size: 0.8em;
-        line-height: 1.3;
     }
     
     .summary-container {
+        grid-template-columns: 1fr;
         gap: 12px;
-        padding: 10px 0;
     }
     
     .summary-section {
-        padding: 16px;
+        padding: 12px;
     }
     
     .summary-section h4 {
-        font-size: 0.95em;
-        margin-bottom: 10px;
+        font-size: 0.9em;
+        gap: 6px;
     }
     
     .summary-section h4::before {
-        width: 3px;
-        height: 14px;
+        width: 20px;
+        height: 20px;
+        font-size: 0.7em;
     }
     
     .summary-item {
-        font-size: 0.85em;
-        padding: 8px 12px;
+        font-size: 0.8em;
+        padding: 6px 8px;
     }
     
     .summary-pills {
@@ -1575,13 +1589,11 @@
     }
     
     .slide-title {
-        font-size: 1.6em;
-        margin-bottom: 8px;
+        font-size: 1.4em;
     }
     
     .slide-description {
-        font-size: 0.95em;
-        margin-bottom: 20px;
+        font-size: 0.9em;
     }
 } 
 
