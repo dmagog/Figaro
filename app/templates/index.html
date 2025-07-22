@@ -22,9 +22,9 @@
                     <span class="user-greeting">Привет, {{ user.name or user.email }}!</span>
                     <div class="nav-actions">
                         {% if user.is_superuser %}
-                        <a href="/admin" class="nav-btn nav-btn-admin">⚙️ Админка</a>
+                        <a href="/admin" class="nav-btn nav-btn-admin">Админка</a>
                         {% endif %}
-                        <a href="/profile" class="nav-btn nav-btn-primary">👤 Профиль</a>
+                        <a href="/profile" class="nav-btn nav-btn-primary">Личный кабинет</a>
                         <a href="/logout" class="nav-btn nav-btn-secondary">🚪 Выйти</a>
                     </div>
                 </div>

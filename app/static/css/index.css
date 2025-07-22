@@ -641,29 +641,77 @@
 
 /* Резюме */
 .summary-container {
-    max-width: 600px;
+    max-width: 800px;
     margin: 0 auto;
     text-align: left;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 15px;
 }
 
 .summary-section {
-    margin-bottom: 25px;
-    padding: 20px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border-left: 4px solid #667eea;
+    margin-bottom: 0;
+    padding: 18px;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.summary-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.summary-section:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
 }
 
 .summary-section h4 {
     margin: 0 0 10px 0;
     color: #333;
-    font-size: 1.1em;
+    font-size: 1em;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+}
+
+.summary-section h4::before {
+    content: '';
+    width: 4px;
+    height: 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 2px;
+    display: inline-block;
+    flex-shrink: 0;
 }
 
 .summary-item {
     color: #6c757d;
-    font-size: 0.95em;
+    font-size: 0.9em;
     line-height: 1.4;
+    margin: 0;
+    padding-left: 14px;
+    position: relative;
+}
+
+.summary-item::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: #667eea;
+    font-weight: bold;
 }
 
 /* Рекомендации */
@@ -956,6 +1004,29 @@
     
     .btn-prev, .btn-next, .btn-submit {
         width: 100%;
+    }
+    
+    .summary-container {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .summary-section {
+        padding: 15px;
+    }
+    
+    .summary-section h4 {
+        font-size: 0.95em;
+    }
+    
+    .summary-section h4::before {
+        width: 3px;
+        height: 14px;
+    }
+    
+    .summary-item {
+        font-size: 0.85em;
+        padding-left: 12px;
     }
 } 
 
@@ -1309,6 +1380,28 @@
     
     .radio-description {
         font-size: 0.8em;
+    }
+    
+    .summary-container {
+        gap: 8px;
+    }
+    
+    .summary-section {
+        padding: 12px;
+    }
+    
+    .summary-section h4 {
+        font-size: 0.9em;
+    }
+    
+    .summary-section h4::before {
+        width: 3px;
+        height: 12px;
+    }
+    
+    .summary-item {
+        font-size: 0.8em;
+        padding-left: 10px;
     }
 } 
 
