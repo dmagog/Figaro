@@ -824,7 +824,8 @@ function renderRouteRow(route) {
         }
         concertsList = concertsArr.join(', ');
     }
-    
+    // Ссылка на маршрутный лист пользователя (фиксированная)
+    const routeUrl = '/profile?tab=route';
     return `
         <tr>
             <td class="rec-table-title">#${route.id}</td>
@@ -836,7 +837,7 @@ function renderRouteRow(route) {
             <td>${route.trans_time} мин</td>
             <td>${route.wait_time} мин</td>
             <td>${route.costs}₽</td>
-            <td><button class="rec-details-btn" onclick="showRouteDetails(${route.id}, '${concertsArr.join(',')}')">Подробнее</button></td>
+            <td><a class="rec-details-btn" href="${routeUrl}">Подробнее</a></td>
         </tr>
     `;
 }
