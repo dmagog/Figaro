@@ -579,128 +579,105 @@ async function loadRecommendations() {
 
 // Рендеринг рекомендаций
 function renderRecommendations(recommendations) {
-    const block = document.getElementById('recommendations-block');
-    if (!block) return;
-    
     console.log('renderRecommendations получил:', recommendations);
     console.log('Тип recommendations:', typeof recommendations);
     
     if (!recommendations) {
-        block.innerHTML = '<div class="no-recommendations">К сожалению, не удалось найти подходящие маршруты. Попробуйте изменить критерии поиска.</div>';
+        const block = document.getElementById('recommendations-block');
+        if (block) {
+            block.innerHTML = '<div class="no-recommendations">К сожалению, не удалось найти подходящие маршруты. Попробуйте изменить критерии поиска.</div>';
+        }
         return;
     }
     
-    let html = '<div class="recommendations-header"><h2>🎯 Ваши персональные рекомендации</h2></div>';
+    // Удаляем старый блок, если есть
+    const oldBlock = document.getElementById('recommendations-block');
+    if (oldBlock) oldBlock.remove();
     
-    // Проверяем, есть ли рекомендации в разных категориях
-    const topWeighted = recommendations.top_weighted || [];
-    const topIntellect = recommendations.top_intellect || [];
-    const topComfort = recommendations.top_comfort || [];
-    const topBalanced = recommendations.top_balanced || [];
-    const alternatives = recommendations.alternatives || [];
-    
-    console.log('Категории рекомендаций:', {
-        topWeighted: topWeighted.length,
-        topIntellect: topIntellect.length,
-        topComfort: topComfort.length,
-        topBalanced: topBalanced.length,
-        alternatives: alternatives.length
-    });
-    
-    // Если есть взвешенные рекомендации, показываем их
-    if (topWeighted.length > 0) {
-        html += renderGroup('🎯 Лучшие рекомендации для вас', topWeighted, 'weighted');
-    }
-    
-    // Если есть интеллектуальные рекомендации, показываем их
-    if (topIntellect.length > 0) {
-        html += renderGroup('🧠 Интеллектуально насыщенные', topIntellect, 'intellect');
-    }
-    
-    // Если есть комфортные рекомендации, показываем их
-    if (topComfort.length > 0) {
-        html += renderGroup('🛋️ Комфортные маршруты', topComfort, 'comfort');
-    }
-    
-    // Если есть сбалансированные рекомендации, показываем их
-    if (topBalanced.length > 0) {
-        html += renderGroup('⚖️ Сбалансированные маршруты', topBalanced, 'balanced');
-    }
-    
-    // Если есть альтернативы, показываем их
-    if (alternatives.length > 0) {
-        html += renderGroup('🔄 Альтернативные варианты', alternatives, 'alternatives');
-    }
-    
-    // Если нет рекомендаций вообще
-    if (topWeighted.length === 0 && topIntellect.length === 0 && 
-        topComfort.length === 0 && topBalanced.length === 0 && alternatives.length === 0) {
-        html = '<div class="no-recommendations">К сожалению, не удалось найти подходящие маршруты. Попробуйте изменить критерии поиска.</div>';
-    }
-    
-    block.innerHTML = html;
+    const block = document.createElement('div');
+    block.id = 'recommendations-block';
+    block.className = 'recommendations-block';
+    block.innerHTML = `
+        <h2>🎯 Персональные рекомендации</h2>
+        ${renderGroup('Топ по вашему профилю', recommendations.top_weighted, 'weighted')}
+        ${renderGroup('🧠 Интеллектуальные маршруты', recommendations.top_intellect, 'intellect')}
+        ${renderGroup('🛋️ Комфортные маршруты', recommendations.top_comfort, 'comfort')}
+        ${renderGroup('⚖️ Сбалансированные маршруты', recommendations.top_balanced, 'balanced')}
+    `;
+    document.getElementById('tab-recs').appendChild(block);
 }
 
 // Рендеринг группы рекомендаций
 function renderGroup(title, routes, groupType) {
-    let html = `<div class="recommendation-group">
-        <h3 class="group-title">${title}</h3>
-        <div class="routes-list">`;
+    if (!routes || !routes.length) return '';
     
-    // Проверяем, что routes является массивом
-    if (Array.isArray(routes)) {
-        routes.forEach(route => {
-            html += renderRouteRow(route);
-        });
-    } else {
-        console.warn('routes не является массивом:', routes);
+    // Выбираем топ-3 по главному параметру группы
+    let sorted = [...routes];
+    if (groupType === 'weighted') {
+        sorted.sort((a, b) => (b.weighted || 0) - (a.weighted || 0));
+    } else if (groupType === 'intellect') {
+        sorted.sort((a, b) => (b.intellect || 0) - (a.intellect || 0));
+    } else if (groupType === 'comfort') {
+        sorted.sort((a, b) => (b.comfort || 0) - (a.comfort || 0));
+    } else if (groupType === 'balanced') {
+        sorted.sort((a, b) => Math.abs((b.intellect || 0) - (b.comfort || 0)) - Math.abs((a.intellect || 0) - (a.comfort || 0)));
     }
+    const top3 = sorted.slice(0, 3);
     
-    html += '</div></div>';
-    return html;
+    return `
+        <div class="rec-group">
+            <h3>${title}</h3>
+            <div class="rec-table-wrapper">
+                <table class="rec-table">
+                    <thead>
+                        <tr>
+                            <th>Маршрут</th>
+                            <th>Концерты</th>
+                            <th>Состав</th>
+                            <th>🧠</th>
+                            <th>🛋️</th>
+                            <th>🎯</th>
+                            <th>🚶</th>
+                            <th>⏱️</th>
+                            <th>💰</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${top3.map(renderRouteRow).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
 }
 
 // Рендеринг строки маршрута
 function renderRouteRow(route) {
-    const concerts = route.concerts_count || 0;
-    const intellect = route.intellect || 0;
-    const comfort = route.comfort || 0;
-    const weighted = route.weighted || 0;
-    const transTime = route.trans_time || 0;
-    const waitTime = route.wait_time || 0;
-    const costs = route.costs || 0;
-    
-    let scoreText = '';
-    if (weighted !== null && weighted !== undefined) {
-        scoreText = `Оценка: ${weighted.toFixed(1)}`;
-    } else {
-        scoreText = `Интеллект: ${intellect.toFixed(1)}, Комфорт: ${comfort.toFixed(1)}`;
+    let concertsList = '-';
+    let concertsArr = [];
+    if (route.concerts) {
+        if (Array.isArray(route.concerts)) {
+            concertsArr = route.concerts.map(x => +x).sort((a, b) => a - b);
+        } else if (typeof route.concerts === 'string') {
+            concertsArr = route.concerts.split(',').map(x => +x).sort((a, b) => a - b);
+        }
+        concertsList = concertsArr.join(', ');
     }
     
-    // Обрабатываем concerts как строку
-    const concertsStr = route.concerts || '';
-    
     return `
-        <div class="route-item" onclick="showRouteDetails('${route.id}', '${concertsStr}')">
-            <div class="route-header">
-                <div class="route-title">Маршрут ${route.id}</div>
-                <div class="route-stats">
-                    <span class="concerts-count">${concerts} концертов</span>
-                    <span class="route-score">${scoreText}</span>
-                </div>
-            </div>
-            <div class="route-description">
-                <div class="route-details">
-                    <span>Время в пути: ${formatTime(transTime)}</span>
-                    <span>Время ожидания: ${formatTime(waitTime)}</span>
-                    <span>Стоимость: ${costs} ₽</span>
-                </div>
-                ${concertsStr ? 
-                    `<div class="route-concerts">Концерты: ${concertsStr}</div>` : 
-                    '<div class="route-concerts">Состав концертов недоступен</div>'
-                }
-            </div>
-        </div>
+        <tr>
+            <td class="rec-table-title">#${route.id}</td>
+            <td>${route.concerts_count}</td>
+            <td>${concertsList}</td>
+            <td class="score-intellect">${route.intellect}</td>
+            <td class="score-comfort">${route.comfort}</td>
+            <td class="score-weighted">${route.weighted !== null && route.weighted !== undefined ? route.weighted.toFixed(1) : ''}</td>
+            <td>${route.trans_time} мин</td>
+            <td>${route.wait_time} мин</td>
+            <td>${route.costs}₽</td>
+            <td><button class="rec-details-btn" onclick="showRouteDetails(${route.id}, '${concertsArr.join(',')}')">Подробнее</button></td>
+        </tr>
     `;
 }
 
@@ -720,7 +697,7 @@ function formatTime(minutes) {
 
 // Показать детали маршрута
 function showRouteDetails(routeId, concertsStr) {
-    alert(`Детали маршрута ${routeId}:\n${concertsStr}`);
+    alert(`Детали маршрута ${routeId}:\nКонцерты: ${concertsStr}`);
 }
 
 // Сброс анкеты

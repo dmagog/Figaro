@@ -652,6 +652,136 @@
     font-style: italic;
 }
 
+/* Стили для рекомендаций */
+.recommendations-block {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.recommendations-block h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 30px;
+    font-size: 2em;
+}
+
+.rec-group {
+    margin-bottom: 40px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.rec-group h3 {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    margin: 0;
+    padding: 20px;
+    font-size: 1.3em;
+}
+
+.rec-table-wrapper {
+    overflow-x: auto;
+    padding: 20px;
+}
+
+.rec-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+
+.rec-table th {
+    background: #f8f9fa;
+    padding: 12px 8px;
+    text-align: center;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
+}
+
+.rec-table td {
+    padding: 12px 8px;
+    text-align: center;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+}
+
+.rec-table-title {
+    font-weight: 600;
+    color: #667eea;
+    font-size: 1.1em;
+}
+
+.score-intellect {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.score-comfort {
+    color: #17a2b8;
+    font-weight: 600;
+}
+
+.score-weighted {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.rec-details-btn {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: background 0.2s;
+}
+
+.rec-details-btn:hover {
+    background: #5a6fd8;
+}
+
+.no-recommendations {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+    font-size: 1.1em;
+}
+
+/* Спиннер загрузки */
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+}
+
+#recommendations-spinner {
+    text-align: center;
+    padding: 20px;
+    display: none;
+}
+
+#recommendations-spinner::after {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 /* Анимации */
 @keyframes slideIn {
     from {
