@@ -884,11 +884,15 @@ async function loadUserPreferences() {
             } else {
                 selectedConcertsRange = 'any';
             }
-            // Восстанавливаем композиторов, артистов, концерты
             selectedComposers = new Set(prefs.composers || []);
             selectedArtists = new Set(prefs.artists || []);
             selectedConcerts = new Set(prefs.concerts || []);
             updateSummary();
+            // --- Если мы на вкладке рекомендаций, сразу загружаем рекомендации ---
+            const recsTab = document.getElementById('tab-recs-btn');
+            if (recsTab && recsTab.classList.contains('active')) {
+                loadRecommendationsWithPreferences(prefs);
+            }
         }
     } catch (e) {
         console.warn('Не удалось загрузить preferences:', e);
