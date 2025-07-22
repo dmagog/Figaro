@@ -10,6 +10,8 @@ let allArtists = null;
 // --- Новые переменные для диапазона концертов ---
 let selectedConcertsRange = null;
 
+let shuffledArtists = null;
+
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing...');
@@ -243,8 +245,7 @@ function toggleComposer(composerId) {
     
     console.log('Вызываем updateComposersSummary...');
     updateComposersSummary();
-    console.log('Вызываем updateTagClouds...');
-    updateTagClouds();
+    renderComposersCloud(); // Добавлено для обновления выделения
     console.log('Вызываем updateSummary...');
     updateSummary();
 }
@@ -265,8 +266,7 @@ function toggleArtist(artistId) {
     
     console.log('Вызываем updateArtistsSummary...');
     updateArtistsSummary();
-    console.log('Вызываем updateTagClouds...');
-    updateTagClouds();
+    renderArtistsCloud(); // Добавлено для обновления выделения
     console.log('Вызываем updateSummary...');
     updateSummary();
 }
@@ -294,6 +294,12 @@ function toggleConcert(concertId) {
 // Обновление облаков тегов
 function updateTagClouds() {
     if (surveyData) {
+        // Перемешиваем артистов только один раз при обновлении данных
+        shuffledArtists = [...surveyData.artists];
+        for (let i = shuffledArtists.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffledArtists[i], shuffledArtists[j]] = [shuffledArtists[j], shuffledArtists[i]];
+        }
         renderComposersCloud();
         renderArtistsCloud();
         renderConcertsCloud();
@@ -338,25 +344,29 @@ function renderComposersCloud() {
 function renderArtistsCloud() {
     const cloud = document.getElementById('artists-cloud');
     if (!cloud || !surveyData.artists) return;
-    
+    cloud.className = '';
+    cloud.classList.add('artists-cloud');
     cloud.innerHTML = '';
-    surveyData.artists.forEach(artist => {
+    // Используем заранее перемешанный массив
+    const artists = shuffledArtists || surveyData.artists;
+    artists.forEach(artist => {
         const tag = document.createElement('span');
         tag.className = 'tag';
-        tag.style.fontSize = artist.size + 'px';
         tag.textContent = artist.name;
-        
+        tag.style.fontSize = artist.size + 'px';
+        const pad = Math.round(artist.size * 0.7);
+        tag.style.padding = `0.18em ${pad}px`;
+        tag.style.minWidth = Math.round(artist.size * 2.1) + 'px';
         if (artist.is_special) {
             tag.innerHTML += ' ⭐️';
         }
-        
         if (selectedArtists.has(artist.id)) {
             tag.classList.add('selected');
         }
-        
         tag.onclick = () => toggleArtist(artist.id);
         cloud.appendChild(tag);
     });
+    updateArtistsSummary();
 }
 
 // --- Сортировка концертов по возрастанию номеров ---

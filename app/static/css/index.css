@@ -1753,7 +1753,7 @@
     pointer-events: none;
 } 
 
-.composers-cloud {
+.artists-cloud {
     display: flex;
     flex-wrap: wrap;
     gap: 10px 18px;
@@ -1763,7 +1763,8 @@
     padding: 0 0 0 0;
     min-height: 30px;
 }
-.composers-cloud .tag {
+
+.artists-cloud .tag {
     /* Размеры будут задаваться через JS */
     font-size: 1em;
     padding: 0.32em 1.1em;
@@ -1785,7 +1786,7 @@
     line-height: 1.1;
     white-space: nowrap;
 }
-.composers-cloud .tag:hover {
+.artists-cloud .tag:hover {
     background: linear-gradient(135deg, #e9eafc 60%, #d1d5fa 100%);
     color: #333;
     border-color: #bfc6e0;
@@ -1793,7 +1794,7 @@
     z-index: 2;
     box-shadow: 0 4px 16px rgba(102,126,234,0.13);
 }
-.composers-cloud .tag.selected {
+.artists-cloud .tag.selected {
     background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
     color: #fff;
     border-color: #667eea;
