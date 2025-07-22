@@ -350,7 +350,7 @@ function renderArtistsCloud() {
     });
 }
 
-// Рендеринг облака концертов
+// --- Сортировка концертов по возрастанию номеров ---
 function renderConcertsCloud() {
     let cloud = document.getElementById('concerts-cloud');
     if (!cloud || !surveyData || !surveyData.concerts) return;
@@ -358,25 +358,31 @@ function renderConcertsCloud() {
     cloud.classList.add('concerts-cloud');
     cloud.innerHTML = '';
     const purchased = new Set(surveyData.purchased_concert_ids || []);
-    surveyData.concerts.forEach(concert => {
-        const btn = document.createElement('button');
-        btn.className = 'tag';
-        btn.textContent = concert.id;
-        btn.type = 'button';
+    const sortedConcerts = [...surveyData.concerts].sort((a, b) => a.id - b.id);
+    sortedConcerts.forEach(concert => {
+        let el;
         if (concert.tickets_available === false) {
-            btn.classList.add('concert-unavailable');
-            btn.disabled = true;
-            btn.setAttribute('data-tooltip', 'Билеты на этот концерт закончились');
+            // Недоступные — <span>
+            el = document.createElement('span');
+            el.className = 'tag concert-unavailable';
+            el.textContent = concert.id;
+            el.setAttribute('data-tooltip', 'Билеты на этот концерт закончились');
+        } else {
+            // Доступные — <button>
+            el = document.createElement('button');
+            el.className = 'tag';
+            el.textContent = concert.id;
+            el.type = 'button';
+            el.addEventListener('click', () => toggleConcert(concert.id));
         }
         if (purchased.has(concert.id)) {
-            btn.classList.add('concert-purchased');
-            btn.setAttribute('data-tooltip', 'Вы уже купили билет на этот концерт');
+            el.classList.add('concert-purchased');
+            el.setAttribute('data-tooltip', 'Вы уже купили билет на этот концерт');
         }
         if (selectedConcerts.has(concert.id)) {
-            btn.classList.add('selected');
+            el.classList.add('selected');
         }
-        btn.addEventListener('click', () => toggleConcert(concert.id));
-        cloud.appendChild(btn);
+        cloud.appendChild(el);
     });
     updateConcertsSummary();
 }
@@ -921,11 +927,23 @@ function onTabShow(tab) {
         loadUserPreferences();
     }
 }
-// Переопределяем showTab, чтобы вызывать onTabShow
+// --- Учитываем hash вкладки в URL ---
+function activateTabFromHash() {
+    const hash = window.location.hash.replace('#', '');
+    if (hash === 'form' || hash === 'recs' || hash === 'about') {
+        showTab(hash);
+    } else {
+        showTab('form'); // По умолчанию анкета
+    }
+}
+window.addEventListener('DOMContentLoaded', activateTabFromHash);
+
+// Обновляем hash при переключении вкладок
 const origShowTab = window.showTab;
 window.showTab = function(tab) {
     origShowTab(tab);
     onTabShow(tab);
+    window.location.hash = tab;
 };
 
  

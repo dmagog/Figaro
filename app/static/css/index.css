@@ -1716,3 +1716,39 @@
     margin: 6px 8px;
     padding: 0 14px;
 } 
+
+.concerts-cloud .tag[data-tooltip]:hover:after,
+.concert-unavailable[data-tooltip]:hover:after,
+.concert-purchased[data-tooltip]:hover:after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    bottom: 120%;
+    transform: translateX(-50%);
+    background: #f8f9ff;
+    color: #333;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.98em;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0.97;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(60,60,120,0.10);
+    border: 1.5px solid #e0e7ef;
+    transition: opacity 0.2s;
+}
+.concerts-cloud .tag[data-tooltip]:hover:before,
+.concert-unavailable[data-tooltip]:hover:before,
+.concert-purchased[data-tooltip]:hover:before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 112%;
+    transform: translateX(-50%);
+    border-width: 7px 7px 0 7px;
+    border-style: solid;
+    border-color: #f8f9ff transparent transparent transparent;
+    z-index: 11;
+    pointer-events: none;
+} 
