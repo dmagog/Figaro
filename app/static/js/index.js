@@ -924,6 +924,7 @@ async function loadUserPreferences() {
             if (formTab && formTab.classList.contains('active')) {
                 showSlide(7);
             }
+            updateTagClouds(); // <--- ДОБАВЛЕНО: обновляем облака тегов после восстановления
         }
     } catch (e) {
         console.warn('Не удалось загрузить preferences:', e);
