@@ -539,8 +539,8 @@ async function submitSurvey() {
 
 // Загрузка рекомендаций с предпочтениями
 async function loadRecommendationsWithPreferences(preferences) {
-    const spinner = document.getElementById('recommendations-spinner');
-    if (spinner) spinner.style.display = 'block';
+    // Показываем индикатор загрузки
+    showRecommendationsLoading();
     
     try {
         console.log('Загружаем рекомендации с предпочтениями:', preferences);
@@ -558,23 +558,34 @@ async function loadRecommendationsWithPreferences(preferences) {
             console.error('Ошибка загрузки рекомендаций:', data.message || 'Неизвестная ошибка');
             const block = document.getElementById('recommendations-block');
             if (block) {
-                block.innerHTML = '<div class="no-recommendations">К сожалению, не удалось загрузить рекомендации. Попробуйте позже.</div>';
+                block.innerHTML = '<div class="no-recommendations">К сожалению, не удалось загрузить рекомендации. Попробуйте еще раз.</div>';
             }
         }
     } catch (error) {
-        console.error('Ошибка загрузки рекомендаций:', error);
+        console.error('Ошибка при загрузке рекомендаций:', error);
         const block = document.getElementById('recommendations-block');
         if (block) {
-            block.innerHTML = '<div class="no-recommendations">Ошибка соединения с сервером. Проверьте подключение к интернету.</div>';
+            block.innerHTML = '<div class="no-recommendations">Ошибка сети. Проверьте подключение к интернету.</div>';
         }
-    } finally {
-        if (spinner) spinner.style.display = 'none';
     }
 }
 
 // Загрузка рекомендаций (старая функция для совместимости)
 async function loadRecommendations() {
     await loadRecommendationsWithPreferences({});
+}
+
+// Индикатор загрузки рекомендаций
+function showRecommendationsLoading() {
+    let recsBlock = document.getElementById('recommendations-block');
+    if (!recsBlock) {
+        recsBlock = document.createElement('div');
+        recsBlock.id = 'recommendations-block';
+        recsBlock.className = 'recommendations-block';
+        document.getElementById('tab-recs').innerHTML = '';
+        document.getElementById('tab-recs').appendChild(recsBlock);
+    }
+    recsBlock.innerHTML = `<div class='recs-loading'><div class='spinner'></div>Загрузка рекомендаций...</div>`;
 }
 
 // Рендеринг рекомендаций
