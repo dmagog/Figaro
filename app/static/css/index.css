@@ -469,7 +469,7 @@
 }
 
 .btn-prev, .btn-next, .btn-submit {
-    padding: 12px 24px;
+    padding: 6px 16px;
     border-radius: 8px;
     font-weight: 500;
     cursor: pointer;
@@ -477,16 +477,19 @@
     border: none;
     font-size: 14px;
     min-width: 120px;
-    height: 44px;
-    display: flex;
+    height: 32px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    line-height: 1;
-    vertical-align: middle;
+    line-height: 1.2;
+    text-align: center;
     box-sizing: border-box;
     margin: 0;
     position: relative;
     top: 0;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 .btn-prev {
@@ -498,6 +501,8 @@
 .btn-prev:hover {
     background: #e9ecef;
     color: #495057;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .btn-next {
@@ -507,6 +512,8 @@
 
 .btn-next:hover {
     background: #218838;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .btn-submit {
@@ -516,6 +523,8 @@
 
 .btn-submit:hover {
     background: #218838;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 /* Резюме */

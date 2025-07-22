@@ -6,6 +6,10 @@ from models.artist import Artist
 from models.concert import Concert
 from models.hall import Hall
 from models.user import User
+import logging
+
+# Настройка логирования
+logger = logging.getLogger(__name__)
 
 # --- Основная функция рекомендаций ---
 def get_recommendations(
@@ -17,18 +21,34 @@ def get_recommendations(
     Возвращает подборки маршрутов по анкете пользователя.
     preferences: dict (priority, max_concerts, diversity, composers, artists, planned_concerts)
     """
+    logger.info(f"Получение рекомендаций с предпочтениями: {preferences}")
+    
     # 1. Получаем все маршруты
     routes = session.exec(select(Route)).all()
-    # TODO: join с концертами, артистами, композиторами для фильтрации
-
+    logger.info(f"Найдено маршрутов в базе: {len(routes)}")
+    
+    if not routes:
+        logger.warning("В базе данных нет маршрутов")
+        return {
+            "top_weighted": [],
+            "top_intellect": [],
+            "top_comfort": [],
+            "top_balanced": [],
+            "alternatives": []
+        }
+    
     # 2. Фильтрация по max_concerts
     max_concerts = preferences.get('max_concerts', '5')
+    logger.info(f"Фильтрация по max_concerts: {max_concerts}")
+    
     if max_concerts == '5':
         # Для "5+ концертов" - показываем все маршруты с 5+ концертами (без ограничения сверху)
         filtered = [r for r in routes if getattr(r, 'Concerts', 0) >= 5]
     else:
         # Для остальных значений - ограничиваем сверху
         filtered = [r for r in routes if getattr(r, 'Concerts', 0) <= int(max_concerts)]
+    
+    logger.info(f"После фильтрации по количеству концертов: {len(filtered)} маршрутов")
 
     # 3. Фильтрация по diversity (уникальные композиторы и доля главного)
     # TODO: реализовать через связи
@@ -43,6 +63,8 @@ def get_recommendations(
         "balance": (0.5, 0.5)
     }
     w_i, w_c = weights.get(preferences.get('priority', 'balance'), (0.5, 0.5))
+    logger.info(f"Веса для ранжирования: intellect={w_i}, comfort={w_c}")
+    
     weighted_routes = [
         (r, w_i * getattr(r, 'IntellectScore', 0) + w_c * getattr(r, 'ComfortScore', 0))
         for r in filtered
@@ -57,6 +79,8 @@ def get_recommendations(
     # 7. Альтернативы (по planned_concerts)
     # TODO: реализовать Jaccard-поиск альтернатив
     alternatives = []
+
+    logger.info(f"Результат: top_weighted={len(top_weighted)}, top_intellect={len(top_intellect)}, top_comfort={len(top_comfort)}, top_balanced={len(top_balanced)}")
 
     # 8. Формируем результат
     return {

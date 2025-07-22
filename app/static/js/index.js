@@ -539,37 +539,36 @@ async function submitSurvey() {
 
 // Загрузка рекомендаций с предпочтениями
 async function loadRecommendationsWithPreferences(preferences) {
-    const recommendationsBlock = document.getElementById('recommendations-block');
-    if (recommendationsBlock) {
-        recommendationsBlock.innerHTML = '<div class="loading">Загружаем рекомендации...</div>';
-    }
-    
-    console.log('Загружаем рекомендации с предпочтениями:', preferences);
+    const spinner = document.getElementById('recommendations-spinner');
+    if (spinner) spinner.style.display = 'block';
     
     try {
+        console.log('Загружаем рекомендации с предпочтениями:', preferences);
         const response = await fetch('/api/recommendations', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({preferences: preferences})
         });
-        
         const data = await response.json();
         console.log('Ответ от API recommendations:', data);
         
-        if (data.success && recommendationsBlock) {
+        if (data.success && data.recommendations) {
             renderRecommendations(data.recommendations);
         } else {
-            if (recommendationsBlock) {
-                recommendationsBlock.innerHTML = '<div class="error">Ошибка загрузки рекомендаций: ' + (data.message || 'Неизвестная ошибка') + '</div>';
+            console.error('Ошибка загрузки рекомендаций:', data.message || 'Неизвестная ошибка');
+            const block = document.getElementById('recommendations-block');
+            if (block) {
+                block.innerHTML = '<div class="no-recommendations">К сожалению, не удалось загрузить рекомендации. Попробуйте позже.</div>';
             }
         }
     } catch (error) {
         console.error('Ошибка загрузки рекомендаций:', error);
-        if (recommendationsBlock) {
-            recommendationsBlock.innerHTML = '<div class="error">Ошибка загрузки рекомендаций. Попробуйте еще раз.</div>';
+        const block = document.getElementById('recommendations-block');
+        if (block) {
+            block.innerHTML = '<div class="no-recommendations">Ошибка соединения с сервером. Проверьте подключение к интернету.</div>';
         }
+    } finally {
+        if (spinner) spinner.style.display = 'none';
     }
 }
 
@@ -583,27 +582,61 @@ function renderRecommendations(recommendations) {
     const block = document.getElementById('recommendations-block');
     if (!block) return;
     
-    if (!recommendations || recommendations.length === 0) {
+    console.log('renderRecommendations получил:', recommendations);
+    console.log('Тип recommendations:', typeof recommendations);
+    
+    if (!recommendations) {
         block.innerHTML = '<div class="no-recommendations">К сожалению, не удалось найти подходящие маршруты. Попробуйте изменить критерии поиска.</div>';
         return;
     }
     
     let html = '<div class="recommendations-header"><h2>🎯 Ваши персональные рекомендации</h2></div>';
     
-    // Группируем рекомендации по дням
-    const routesByDay = {};
-    recommendations.forEach(route => {
-        const day = route.Day || 'Неизвестный день';
-        if (!routesByDay[day]) {
-            routesByDay[day] = [];
-        }
-        routesByDay[day].push(route);
+    // Проверяем, есть ли рекомендации в разных категориях
+    const topWeighted = recommendations.top_weighted || [];
+    const topIntellect = recommendations.top_intellect || [];
+    const topComfort = recommendations.top_comfort || [];
+    const topBalanced = recommendations.top_balanced || [];
+    const alternatives = recommendations.alternatives || [];
+    
+    console.log('Категории рекомендаций:', {
+        topWeighted: topWeighted.length,
+        topIntellect: topIntellect.length,
+        topComfort: topComfort.length,
+        topBalanced: topBalanced.length,
+        alternatives: alternatives.length
     });
     
-    // Рендерим каждую группу
-    Object.keys(routesByDay).forEach(day => {
-        html += renderGroup(day, routesByDay[day], 'day');
-    });
+    // Если есть взвешенные рекомендации, показываем их
+    if (topWeighted.length > 0) {
+        html += renderGroup('🎯 Лучшие рекомендации для вас', topWeighted, 'weighted');
+    }
+    
+    // Если есть интеллектуальные рекомендации, показываем их
+    if (topIntellect.length > 0) {
+        html += renderGroup('🧠 Интеллектуально насыщенные', topIntellect, 'intellect');
+    }
+    
+    // Если есть комфортные рекомендации, показываем их
+    if (topComfort.length > 0) {
+        html += renderGroup('🛋️ Комфортные маршруты', topComfort, 'comfort');
+    }
+    
+    // Если есть сбалансированные рекомендации, показываем их
+    if (topBalanced.length > 0) {
+        html += renderGroup('⚖️ Сбалансированные маршруты', topBalanced, 'balanced');
+    }
+    
+    // Если есть альтернативы, показываем их
+    if (alternatives.length > 0) {
+        html += renderGroup('🔄 Альтернативные варианты', alternatives, 'alternatives');
+    }
+    
+    // Если нет рекомендаций вообще
+    if (topWeighted.length === 0 && topIntellect.length === 0 && 
+        topComfort.length === 0 && topBalanced.length === 0 && alternatives.length === 0) {
+        html = '<div class="no-recommendations">К сожалению, не удалось найти подходящие маршруты. Попробуйте изменить критерии поиска.</div>';
+    }
     
     block.innerHTML = html;
 }
@@ -614,9 +647,14 @@ function renderGroup(title, routes, groupType) {
         <h3 class="group-title">${title}</h3>
         <div class="routes-list">`;
     
-    routes.forEach(route => {
-        html += renderRouteRow(route);
-    });
+    // Проверяем, что routes является массивом
+    if (Array.isArray(routes)) {
+        routes.forEach(route => {
+            html += renderRouteRow(route);
+        });
+    } else {
+        console.warn('routes не является массивом:', routes);
+    }
     
     html += '</div></div>';
     return html;
@@ -624,23 +662,60 @@ function renderGroup(title, routes, groupType) {
 
 // Рендеринг строки маршрута
 function renderRouteRow(route) {
-    const concerts = route.Concerts || 0;
-    const score = route.Score || 0;
+    const concerts = route.concerts_count || 0;
+    const intellect = route.intellect || 0;
+    const comfort = route.comfort || 0;
+    const weighted = route.weighted || 0;
+    const transTime = route.trans_time || 0;
+    const waitTime = route.wait_time || 0;
+    const costs = route.costs || 0;
+    
+    let scoreText = '';
+    if (weighted !== null && weighted !== undefined) {
+        scoreText = `Оценка: ${weighted.toFixed(1)}`;
+    } else {
+        scoreText = `Интеллект: ${intellect.toFixed(1)}, Комфорт: ${comfort.toFixed(1)}`;
+    }
+    
+    // Обрабатываем concerts как строку
+    const concertsStr = route.concerts || '';
     
     return `
-        <div class="route-item" onclick="showRouteDetails('${route.RouteID}', '${route.ConcertsStr || ''}')">
+        <div class="route-item" onclick="showRouteDetails('${route.id}', '${concertsStr}')">
             <div class="route-header">
-                <div class="route-title">Маршрут ${route.RouteID}</div>
+                <div class="route-title">Маршрут ${route.id}</div>
                 <div class="route-stats">
                     <span class="concerts-count">${concerts} концертов</span>
-                    <span class="route-score">Оценка: ${score.toFixed(1)}</span>
+                    <span class="route-score">${scoreText}</span>
                 </div>
             </div>
             <div class="route-description">
-                ${route.Description || 'Описание маршрута недоступно'}
+                <div class="route-details">
+                    <span>Время в пути: ${formatTime(transTime)}</span>
+                    <span>Время ожидания: ${formatTime(waitTime)}</span>
+                    <span>Стоимость: ${costs} ₽</span>
+                </div>
+                ${concertsStr ? 
+                    `<div class="route-concerts">Концерты: ${concertsStr}</div>` : 
+                    '<div class="route-concerts">Состав концертов недоступен</div>'
+                }
             </div>
         </div>
     `;
+}
+
+// Функция форматирования времени
+function formatTime(minutes) {
+    if (!minutes || minutes === 0) return '0м';
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0 && mins > 0) {
+        return `${hours}ч ${mins}м`;
+    } else if (hours > 0) {
+        return `${hours}ч`;
+    } else {
+        return `${mins}м`;
+    }
 }
 
 // Показать детали маршрута

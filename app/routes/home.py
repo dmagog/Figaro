@@ -1667,12 +1667,21 @@ async def get_recommendations_api(
     try:
         data = await request.json()
         preferences = data.get("preferences")
+        print(f"DEBUG: Получены предпочтения: {preferences}")
+        
         if not preferences:
+            print("DEBUG: Предпочтения не переданы")
             return {"success": False, "message": "Не переданы предпочтения"}
+        
         from services import recommendation
         result = recommendation.get_recommendations(session, preferences)
+        print(f"DEBUG: Результат рекомендаций: {result}")
+        
         return {"success": True, "recommendations": result}
     except Exception as e:
+        print(f"DEBUG: Ошибка в get_recommendations_api: {e}")
+        import traceback
+        traceback.print_exc()
         return {"success": False, "message": str(e)}
 
 home_route.include_router(admin_customers_router)
