@@ -1,49 +1,196 @@
+/* Верхнее навигационное меню */
+.top-navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+    padding: 0;
+    height: 70px;
+}
+
+.nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+}
+
+.nav-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.nav-title {
+    font-size: 1.8em;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1;
+}
+
+.nav-subtitle {
+    font-size: 0.9em;
+    opacity: 0.9;
+    margin-top: 2px;
+}
+
+.nav-menu {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.nav-user {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-greeting {
+    font-size: 0.95em;
+    opacity: 0.9;
+}
+
+.nav-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.nav-auth {
+    display: flex;
+    gap: 10px;
+}
+
+.nav-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.9em;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.nav-btn-primary {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.nav-btn-primary:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.nav-btn-secondary {
+    background: transparent;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.nav-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+}
+
+/* Отступ для основного контента под фиксированным меню */
+.container {
+    margin-top: 90px;
+    padding-top: 20px;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .top-navbar {
+        height: 60px;
+    }
+    
+    .nav-container {
+        padding: 0 15px;
+    }
+    
+    .nav-title {
+        font-size: 1.5em;
+    }
+    
+    .nav-subtitle {
+        font-size: 0.8em;
+    }
+    
+    .nav-menu {
+        gap: 10px;
+    }
+    
+    .nav-user {
+        flex-direction: column;
+        gap: 5px;
+        align-items: flex-end;
+    }
+    
+    .user-greeting {
+        font-size: 0.8em;
+    }
+    
+    .nav-actions {
+        gap: 5px;
+    }
+    
+    .nav-auth {
+        gap: 5px;
+    }
+    
+    .nav-btn {
+        padding: 6px 12px;
+        font-size: 0.8em;
+    }
+    
+    .container {
+        margin-top: 80px;
+    }
+}
+
+@media (max-width: 480px) {
+    .nav-brand {
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .nav-subtitle {
+        margin-top: 0;
+    }
+    
+    .nav-user {
+        flex-direction: column;
+        gap: 3px;
+    }
+    
+    .nav-btn {
+        padding: 5px 10px;
+        font-size: 0.75em;
+    }
+}
+
 /* Основные стили для главной страницы */
 
-.container {
+.tabs-container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
 }
 
-.header {
-    max-width: 1100px;
-    margin: 40px auto 0 auto;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 36px;
-    padding: 48px 40px 36px 40px;
-    box-shadow: 0 8px 32px rgba(102,126,234,0.13);
-    text-align: center;
-}
-
-.header-title {
-    margin: 0 0 10px 0;
-    font-size: 2.5em;
-    color: white;
-}
-
-.header-subtitle {
-    font-size: 1.2em;
-    opacity: 0.9;
-    margin-bottom: 20px;
-    color: white;
-}
-
-.user-section {
-    background: rgba(255,255,255,0.1);
-    padding: 20px;
-    border-radius: 10px;
-    backdrop-filter: blur(10px);
-    color: white;
-}
-
-.user-actions {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    margin-top: 15px;
-}
-
+/* Стили для кнопок */
 .btn {
     padding: 10px 20px;
     border-radius: 8px;
@@ -53,26 +200,6 @@
     border: none;
     cursor: pointer;
     font-size: 14px;
-}
-
-.btn-primary {
-    background: rgba(255,255,255,0.2);
-    color: white;
-    border: 1px solid rgba(255,255,255,0.3);
-}
-
-.btn-primary:hover {
-    background: rgba(255,255,255,0.3);
-}
-
-.btn-secondary {
-    background: rgba(255,255,255,0.1);
-    color: white;
-    border: 1px solid rgba(255,255,255,0.2);
-}
-
-.btn-secondary:hover {
-    background: rgba(255,255,255,0.2);
 }
 
 .btn-prev {
@@ -86,50 +213,7 @@
     background: #e9ecef;
 }
 
-.auth-section {
-    text-align: center;
-    background: white;
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-}
-
-.auth-section h2 {
-    margin-bottom: 20px;
-    color: #333;
-}
-
-.auth-links {
-    display: flex;
-    gap: 20px;
-    justify-content: center;
-}
-
-.auth-links a {
-    color: #667eea;
-    text-decoration: none;
-    font-weight: 500;
-    padding: 10px 20px;
-    border: 2px solid #667eea;
-    border-radius: 8px;
-    transition: all 0.2s;
-}
-
-.auth-links a:hover {
-    background: #667eea;
-    color: white;
-}
-
 /* Вкладки */
-.tabs-container {
-    max-width: 1100px;
-    margin: 40px auto;
-    background: white;
-    border-radius: 15px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-    overflow: hidden;
-}
-
 .tabs {
     display: flex;
     background: #f8f9fa;
@@ -796,15 +880,6 @@
 
 /* Адаптивность */
 @media (max-width: 768px) {
-    .header {
-        padding: 30px 20px;
-        margin: 20px auto 0 auto;
-    }
-    
-    .header-title {
-        font-size: 2em;
-    }
-    
     .survey-section {
         padding: 0 10px;
     }

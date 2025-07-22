@@ -8,31 +8,34 @@
     <link rel="stylesheet" href="/static/css/index.css">
 </head>
 <body>
-    <div class="container">
-        <!-- Заголовок -->
-        <div class="header">
-            <h1 class="header-title">🎵 Figaro</h1>
-            <p class="header-subtitle">Конструктор маршрутов фестиваля «Безумные дни в Екатеринбурге»</p>
+    <!-- Верхнее навигационное меню -->
+    <nav class="top-navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h1 class="nav-title">🎵 Figaro</h1>
+                <span class="nav-subtitle">Конструктор маршрутов</span>
+            </div>
             
-            {% if user %}
-            <div class="user-section">
-                <p>Добро пожаловать, {{ user.name or user.email }}!</p>
-                <div class="user-actions">
-                    <a href="/profile" class="btn btn-primary">Профиль</a>
-                    <a href="/logout" class="btn btn-secondary">Выйти</a>
+            <div class="nav-menu">
+                {% if user %}
+                <div class="nav-user">
+                    <span class="user-greeting">Привет, {{ user.name or user.email }}!</span>
+                    <div class="nav-actions">
+                        <a href="/profile" class="nav-btn nav-btn-primary">👤 Профиль</a>
+                        <a href="/logout" class="nav-btn nav-btn-secondary">🚪 Выйти</a>
+                    </div>
                 </div>
-            </div>
-            {% else %}
-            <div class="auth-section">
-                <h2>Добро пожаловать в Figaro!</h2>
-                <div class="auth-links">
-                    <a href="/login">Войти</a>
-                    <a href="/register">Регистрация</a>
+                {% else %}
+                <div class="nav-auth">
+                    <a href="/login" class="nav-btn nav-btn-primary">🔑 Войти</a>
+                    <a href="/register" class="nav-btn nav-btn-secondary">📝 Регистрация</a>
                 </div>
+                {% endif %}
             </div>
-            {% endif %}
         </div>
+    </nav>
 
+    <div class="container">
         <!-- Основной контент -->
         <div class="tabs-container">
             <div class="tabs">
