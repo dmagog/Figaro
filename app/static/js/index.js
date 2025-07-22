@@ -21,6 +21,10 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
         showSlide(1);
         console.log('Первый слайд активирован');
+        
+        // Обновляем резюме при инициализации
+        console.log('Обновляем резюме при инициализации...');
+        updateSummary();
     }, 100);
     
     // Инициализация поиска
@@ -111,6 +115,12 @@ function showSlide(step) {
     
     updateProgress();
     updateNavigation();
+    
+    // Обновляем резюме при переходе на слайд 7
+    if (step === 7) {
+        console.log('Переход на слайд резюме, обновляем итоги...');
+        updateSummary();
+    }
 }
 
 function hideSlide(step) {
@@ -213,35 +223,66 @@ function handleRadioChange(name, value) {
 
 // Обработка выбора композиторов
 function toggleComposer(composerId) {
+    console.log('Переключаем композитора:', composerId, 'текущий размер:', selectedComposers.size);
+    
     if (selectedComposers.has(composerId)) {
         selectedComposers.delete(composerId);
+        console.log('Композитор удален, новый размер:', selectedComposers.size);
     } else if (selectedComposers.size < 5) {
         selectedComposers.add(composerId);
+        console.log('Композитор добавлен, новый размер:', selectedComposers.size);
+    } else {
+        console.log('Достигнут лимит в 5 композиторов');
     }
+    
+    console.log('Вызываем updateComposersSummary...');
     updateComposersSummary();
+    console.log('Вызываем updateTagClouds...');
     updateTagClouds();
+    console.log('Вызываем updateSummary...');
+    updateSummary();
 }
 
 // Обработка выбора артистов
 function toggleArtist(artistId) {
+    console.log('Переключаем артиста:', artistId, 'текущий размер:', selectedArtists.size);
+    
     if (selectedArtists.has(artistId)) {
         selectedArtists.delete(artistId);
+        console.log('Артист удален, новый размер:', selectedArtists.size);
     } else if (selectedArtists.size < 5) {
         selectedArtists.add(artistId);
+        console.log('Артист добавлен, новый размер:', selectedArtists.size);
+    } else {
+        console.log('Достигнут лимит в 5 артистов');
     }
+    
+    console.log('Вызываем updateArtistsSummary...');
     updateArtistsSummary();
+    console.log('Вызываем updateTagClouds...');
     updateTagClouds();
+    console.log('Вызываем updateSummary...');
+    updateSummary();
 }
 
 // Обработка выбора концертов
 function toggleConcert(concertId) {
+    console.log('Переключаем концерт:', concertId, 'текущий размер:', selectedConcerts.size);
+    
     if (selectedConcerts.has(concertId)) {
         selectedConcerts.delete(concertId);
+        console.log('Концерт удален, новый размер:', selectedConcerts.size);
     } else {
         selectedConcerts.add(concertId);
+        console.log('Концерт добавлен, новый размер:', selectedConcerts.size);
     }
+    
+    console.log('Вызываем updateConcertsSummary...');
     updateConcertsSummary();
+    console.log('Вызываем updateTagClouds...');
     updateTagClouds();
+    console.log('Вызываем updateSummary...');
+    updateSummary();
 }
 
 // Обновление облаков тегов
@@ -250,6 +291,10 @@ function updateTagClouds() {
         renderComposersCloud();
         renderArtistsCloud();
         renderConcertsCloud();
+        
+        // Обновляем счетчики при инициализации
+        updateComposersSummary();
+        updateArtistsSummary();
     }
 }
 
@@ -378,40 +423,67 @@ function updateSummary() {
 // Обновление итогов композиторов
 function updateComposersSummary() {
     const summary = document.getElementById('composers-summary');
+    const countElement = document.getElementById('composers-count');
+    
     if (!summary) { console.error('Элемент итогов композиторов не найден'); return; }
     
     console.log('Обновляем итоги композиторов, выбрано:', selectedComposers.size);
     
+    // Обновляем счетчик
+    if (countElement) {
+        countElement.textContent = selectedComposers.size;
+        console.log('Счетчик композиторов обновлен:', selectedComposers.size);
+    } else {
+        console.error('Элемент счетчика композиторов не найден');
+    }
+    
     if (selectedComposers.size === 0) {
-        summary.textContent = 'Не выбрано';
+        summary.innerHTML = '<span>Не выбрано</span>';
+        console.log('Устанавливаем "Не выбрано" для композиторов');
         return;
     }
     
-    const composerNames = [];
+    // Создаем пилюли
+    let pillsHtml = '<div class="summary-pills">';
     selectedComposers.forEach(id => {
         const composer = surveyData.composers.find(c => c.id === id);
         if (composer) {
-            composerNames.push(composer.name);
+            pillsHtml += `<span class="summary-pill">${composer.name}</span>`;
             console.log('Добавлен композитор в итоги:', composer.name);
         }
     });
+    pillsHtml += '</div>';
     
-    summary.textContent = composerNames.join(', ');
+    console.log('HTML для композиторов:', pillsHtml);
+    summary.innerHTML = pillsHtml;
+    console.log('HTML установлен для композиторов');
 }
 
 // Обновление итогов артистов
 function updateArtistsSummary() {
     const summary = document.getElementById('artists-summary');
+    const countElement = document.getElementById('artists-count');
+    
     if (!summary) { console.error('Элемент итогов артистов не найден'); return; }
     
     console.log('Обновляем итоги артистов, выбрано:', selectedArtists.size);
     
+    // Обновляем счетчик
+    if (countElement) {
+        countElement.textContent = selectedArtists.size;
+        console.log('Счетчик артистов обновлен:', selectedArtists.size);
+    } else {
+        console.error('Элемент счетчика артистов не найден');
+    }
+    
     if (selectedArtists.size === 0) {
-        summary.textContent = 'Не выбрано';
+        summary.innerHTML = '<span>Не выбрано</span>';
+        console.log('Устанавливаем "Не выбрано" для артистов');
         return;
     }
     
-    const artistNames = [];
+    // Создаем пилюли
+    let pillsHtml = '<div class="summary-pills">';
     selectedArtists.forEach(id => {
         // Сначала ищем в основном списке артистов
         let artist = surveyData.artists.find(a => a.id === id);
@@ -420,12 +492,15 @@ function updateArtistsSummary() {
             artist = allArtists.find(a => a.id === id);
         }
         if (artist) {
-            artistNames.push(artist.name);
+            pillsHtml += `<span class="summary-pill">${artist.name}</span>`;
             console.log('Добавлен артист в итоги:', artist.name);
         }
     });
+    pillsHtml += '</div>';
     
-    summary.textContent = artistNames.join(', ');
+    console.log('HTML для артистов:', pillsHtml);
+    summary.innerHTML = pillsHtml;
+    console.log('HTML установлен для артистов');
 }
 
 // Обновление итогов концертов
@@ -433,20 +508,28 @@ function updateConcertsSummary() {
     const summary = document.getElementById('planned-concerts-summary');
     if (!summary) { console.error('Элемент итогов концертов не найден'); return; }
     
+    console.log('Обновляем итоги концертов, выбрано:', selectedConcerts.size);
+    
     if (selectedConcerts.size === 0) {
-        summary.textContent = 'Не выбрано';
+        summary.innerHTML = '<span>Не выбрано</span>';
+        console.log('Устанавливаем "Не выбрано" для концертов');
         return;
     }
     
-    const concertNumbers = [];
+    // Создаем пилюли с номерами концертов (без символа №)
+    let pillsHtml = '<div class="summary-pills">';
     selectedConcerts.forEach(id => {
         const concert = surveyData.concerts.find(c => c.id === id);
         if (concert) {
-            concertNumbers.push(`№${concert.id}`);
+            pillsHtml += `<span class="summary-pill">${concert.id}</span>`;
+            console.log('Добавлен концерт в итоги:', concert.id);
         }
     });
+    pillsHtml += '</div>';
     
-    summary.textContent = concertNumbers.join(', ');
+    console.log('HTML для концертов:', pillsHtml);
+    summary.innerHTML = pillsHtml;
+    console.log('HTML установлен для концертов');
 }
 
 // Обновление итогов предпочтений

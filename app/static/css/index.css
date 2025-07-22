@@ -349,17 +349,29 @@
     text-align: center;
 }
 
+/* Стили для заголовка секции резюме */
 .slide-title {
     font-size: 1.8em;
-    color: #333;
-    margin-bottom: 15px;
+    color: #2d3748;
+    margin-bottom: 10px;
+    font-weight: 700;
+    text-align: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.02em;
 }
 
 .slide-description {
-    font-size: 1.1em;
-    color: #6c757d;
-    margin-bottom: 30px;
+    font-size: 1em;
+    color: #718096;
+    text-align: center;
+    margin-bottom: 25px;
     line-height: 1.5;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* Радио группы */
@@ -367,7 +379,7 @@
     display: flex;
     flex-direction: row;
     justify-content: center;
-    gap: 15px;
+    gap: 20px;
     max-width: 900px;
     margin: 0 auto;
     flex-wrap: wrap;
@@ -382,27 +394,52 @@
 
 .radio-option {
     display: flex;
-    align-items: center;
-    padding: 15px;
-    border: 2px solid #e9ecef;
-    border-radius: 12px;
+    align-items: stretch;
+    padding: 0;
+    border: 1px solid #e9ecef;
+    border-radius: 16px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
     background: white;
     flex: 1;
-    min-width: 200px;
-    max-width: 280px;
+    min-width: 250px;
+    max-width: 300px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.radio-option::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
 }
 
 .radio-option:hover {
     border-color: #667eea;
-    box-shadow: 0 2px 8px rgba(102,126,234,0.1);
+    box-shadow: 0 4px 16px rgba(102,126,234,0.15);
+    transform: translateY(-2px);
+}
+
+.radio-option:hover::before {
+    transform: scaleX(1);
 }
 
 .radio-option.selected {
     border-color: #667eea;
-    background: #f8f9ff;
-    box-shadow: 0 4px 12px rgba(102,126,234,0.15);
+    background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
+    box-shadow: 0 6px 20px rgba(102,126,234,0.2);
+    transform: translateY(-2px);
+}
+
+.radio-option.selected::before {
+    transform: scaleX(1);
 }
 
 .radio-option input[type="radio"] {
@@ -413,21 +450,39 @@
     display: flex;
     align-items: center;
     width: 100%;
-    gap: 12px;
+    gap: 16px;
+    padding: 20px;
 }
 
 .radio-icon {
-    font-size: 1.8em;
-    min-width: 40px;
+    font-size: 2.2em;
+    min-width: 50px;
     text-align: center;
+    color: #667eea;
+    opacity: 0.8;
+    transition: all 0.3s ease;
+}
+
+.radio-option:hover .radio-icon,
+.radio-option.selected .radio-icon {
+    opacity: 1;
+    transform: scale(1.1);
 }
 
 .radio-number {
-    font-size: 1.8em;
+    font-size: 2.2em;
     font-weight: bold;
     color: #667eea;
-    min-width: 40px;
+    min-width: 50px;
     text-align: center;
+    opacity: 0.8;
+    transition: all 0.3s ease;
+}
+
+.radio-option:hover .radio-number,
+.radio-option.selected .radio-number {
+    opacity: 1;
+    transform: scale(1.1);
 }
 
 .radio-text {
@@ -436,34 +491,47 @@
 }
 
 .radio-title {
-    font-size: 1em;
+    font-size: 1.1em;
     font-weight: 600;
     color: #333;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
+    line-height: 1.3;
 }
 
 .radio-description {
-    font-size: 0.85em;
+    font-size: 0.9em;
     color: #6c757d;
-    line-height: 1.3;
+    line-height: 1.4;
+    margin: 0;
 }
 
 /* Компактные радио опции */
 .radio-option.compact {
     flex-direction: column;
     text-align: center;
-    padding: 12px;
-    min-width: 100px;
-    max-width: 150px;
+    padding: 0;
+    min-width: 120px;
+    max-width: 180px;
 }
 
 .radio-option.compact .radio-content {
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
+    padding: 16px;
 }
 
 .radio-option.compact .radio-text {
     text-align: center;
+}
+
+.radio-option.compact .radio-title {
+    font-size: 1em;
+    margin-bottom: 4px;
+}
+
+.radio-option.compact .radio-description {
+    font-size: 0.85em;
+    line-height: 1.3;
 }
 
 /* Облако тегов */
@@ -712,6 +780,59 @@
     left: 0;
     color: #667eea;
     font-weight: bold;
+}
+
+/* Стили для пилюль в резюме */
+.summary-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.summary-pill {
+    display: inline-block;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+    transition: all 0.3s ease;
+    cursor: default;
+}
+
+.summary-pill:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* Специфичные цвета для разных типов пилюль */
+.summary-section[data-type="composers"] .summary-pill {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.summary-section[data-type="artists"] .summary-pill {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.summary-section[data-type="concerts"] .summary-pill {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+/* Скрываем псевдоэлемент ::before для элементов с пилюлями */
+.summary-section[data-type="composers"] .summary-item::before,
+.summary-section[data-type="artists"] .summary-item::before,
+.summary-section[data-type="concerts"] .summary-item::before {
+    display: none;
+}
+
+/* Убираем отступ слева для элементов с пилюлями */
+.summary-section[data-type="composers"] .summary-item,
+.summary-section[data-type="artists"] .summary-item,
+.summary-section[data-type="concerts"] .summary-item {
+    padding-left: 0;
 }
 
 /* Рекомендации */
@@ -966,13 +1087,13 @@
     
     .radio-group {
         flex-direction: column;
-        gap: 10px;
+        gap: 12px;
         max-width: 100%;
     }
     
     .radio-group.compact {
         flex-direction: row;
-        gap: 8px;
+        gap: 10px;
         flex-wrap: wrap;
     }
     
@@ -983,9 +1104,27 @@
     }
     
     .radio-option.compact {
-        min-width: 80px;
-        max-width: 120px;
+        min-width: 100px;
+        max-width: 140px;
         flex: 1;
+    }
+    
+    .radio-content {
+        padding: 16px;
+        gap: 12px;
+    }
+    
+    .radio-icon, .radio-number {
+        font-size: 1.8em;
+        min-width: 40px;
+    }
+    
+    .radio-title {
+        font-size: 1em;
+    }
+    
+    .radio-description {
+        font-size: 0.85em;
     }
     
     .tag-cloud {
@@ -1008,25 +1147,37 @@
     
     .summary-container {
         grid-template-columns: 1fr;
-        gap: 10px;
+        gap: 15px;
+        padding: 15px 0;
     }
     
     .summary-section {
-        padding: 15px;
+        padding: 20px;
     }
     
     .summary-section h4 {
-        font-size: 0.95em;
+        font-size: 1em;
+        margin-bottom: 12px;
     }
     
     .summary-section h4::before {
-        width: 3px;
-        height: 14px;
+        width: 4px;
+        height: 16px;
     }
     
     .summary-item {
-        font-size: 0.85em;
-        padding-left: 12px;
+        font-size: 0.9em;
+        padding: 10px 14px;
+    }
+    
+    .summary-pills {
+        gap: 6px;
+        margin-top: 6px;
+    }
+    
+    .summary-pill {
+        padding: 5px 10px;
+        font-size: 0.8em;
     }
 } 
 
@@ -1360,13 +1511,18 @@
     }
     
     .radio-option {
-        padding: 12px;
+        min-width: auto;
+        max-width: none;
     }
     
     .radio-option.compact {
-        padding: 10px;
-        min-width: 70px;
-        max-width: 100px;
+        min-width: 80px;
+        max-width: 110px;
+    }
+    
+    .radio-content {
+        padding: 12px;
+        gap: 8px;
     }
     
     .radio-icon, .radio-number {
@@ -1376,32 +1532,56 @@
     
     .radio-title {
         font-size: 0.9em;
+        margin-bottom: 4px;
     }
     
     .radio-description {
         font-size: 0.8em;
+        line-height: 1.3;
     }
     
     .summary-container {
-        gap: 8px;
+        gap: 12px;
+        padding: 10px 0;
     }
     
     .summary-section {
-        padding: 12px;
+        padding: 16px;
     }
     
     .summary-section h4 {
-        font-size: 0.9em;
+        font-size: 0.95em;
+        margin-bottom: 10px;
     }
     
     .summary-section h4::before {
         width: 3px;
-        height: 12px;
+        height: 14px;
     }
     
     .summary-item {
-        font-size: 0.8em;
-        padding-left: 10px;
+        font-size: 0.85em;
+        padding: 8px 12px;
+    }
+    
+    .summary-pills {
+        gap: 4px;
+        margin-top: 4px;
+    }
+    
+    .summary-pill {
+        padding: 4px 8px;
+        font-size: 0.75em;
+    }
+    
+    .slide-title {
+        font-size: 1.6em;
+        margin-bottom: 8px;
+    }
+    
+    .slide-description {
+        font-size: 0.95em;
+        margin-bottom: 20px;
     }
 } 
 
