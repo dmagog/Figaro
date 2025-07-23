@@ -12,6 +12,7 @@ from routes.auth import auth_route
 from routes.user import user_route
 from routes.purchase import purchase_route
 from routes.tickets import tickets_route
+from routes.admin_telegram import admin_telegram_router
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from worker.tasks import send_telegram_message
@@ -119,7 +120,7 @@ def create_application() -> FastAPI:
     app.include_router(user_route, tags=['User'])
     app.include_router(purchase_route, tags=['Purchase'])
     app.include_router(tickets_route, tags=['Tickets'])
-    # app.include_router(admin_route, tags=['Admin'])
+    app.include_router(admin_telegram_router)
     
 
 

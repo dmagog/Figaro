@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from services.crud import user as UsersService
 from database.config import get_settings
@@ -7,6 +7,10 @@ from database.database import get_session
 from auth.authenticate import authenticate_cookie
 import logging
 from sqlalchemy import select, func
+import asyncio
+import sys
+sys.path.append("../../bot")
+from bot.utils import send_telegram_message
 
 settings = get_settings()
 admin_users_router = APIRouter()
@@ -125,4 +129,6 @@ async def admin_users(request: Request, session=Depends(get_session)):
         "route_matches": route_matches,
         "request": request
     }
-    return templates.TemplateResponse("admin_users.html", context) 
+    return templates.TemplateResponse("admin_users.html", context)
+
+# Удалены endpoints /admin/telegram и /admin/send-telegram, теперь они в admin_telegram.py 

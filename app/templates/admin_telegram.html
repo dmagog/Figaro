@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Отправка сообщений в Telegram</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="admin-section" style="margin: 40px auto; max-width: 600px;">
+        <a href="/admin/users" class="back-link">← Назад к пользователям</a>
+        <h2>Отправить сообщение в Telegram</h2>
+        <form id="tg-send-form" style="background:#f8f9fa; border-radius:10px; padding:20px; max-width:500px;">
+            <div style="margin-bottom:12px;">
+                <label for="tg-user-id">User ID:</label>
+                <input type="number" id="tg-user-id" name="user_id" style="width:120px; margin-right:10px;">
+                <span style="color:#888;">или</span>
+                <label for="tg-telegram-id" style="margin-left:10px;">Telegram ID:</label>
+                <input type="number" id="tg-telegram-id" name="telegram_id" style="width:150px;">
+            </div>
+            <div style="margin-bottom:12px;">
+                <label for="tg-message">Сообщение:</label><br>
+                <textarea id="tg-message" name="message" rows="3" style="width:100%;"></textarea>
+            </div>
+            <button type="submit" style="background:#667eea; color:white; border:none; padding:10px 24px; border-radius:6px; font-weight:600; cursor:pointer;">Отправить</button>
+            <span id="tg-send-status" style="margin-left:16px; font-weight:500;"></span>
+        </form>
+    </div>
+    <script>
+    document.getElementById('tg-send-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const user_id = document.getElementById('tg-user-id').value;
+      const telegram_id = document.getElementById('tg-telegram-id').value;
+      const message = document.getElementById('tg-message').value;
+      const status = document.getElementById('tg-send-status');
+      status.textContent = 'Отправка...';
+      const resp = await fetch('/admin/send-telegram', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: user_id || undefined, telegram_id: telegram_id || undefined, message })
+      });
+      const data = await resp.json();
+      if (data.success) {
+        status.textContent = '✅ Сообщение отправлено!';
+        status.style.color = '#10b981';
+      } else {
+        status.textContent = '❌ ' + (data.error || 'Ошибка отправки');
+        status.style.color = '#dc2626';
+      }
+    });
+    </script>
+</body>
+</html> 
