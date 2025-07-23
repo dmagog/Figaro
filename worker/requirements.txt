@@ -1,0 +1,6 @@
+celery
+aiogram==2.25.2
+python-dotenv
+sqlmodel
+psycopg2-binary
+pandas 

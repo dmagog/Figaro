@@ -1934,6 +1934,16 @@
     </style>
 </head>
 <body>
+{% if not characteristics or 'total_concerts' not in characteristics %}
+  {% set characteristics = {
+    'total_concerts': 0,
+    'halls': [],
+    'genres': [],
+    'artists': [],
+    'composers': [],
+    'compositions': []
+  } %}
+{% endif %}
     <div class="profile-container">
         <a href="/" class="back-link">← Назад на главную</a>
         
@@ -1959,11 +1969,11 @@
                 </div>
                 <div class="info-card">
                     <h3>Всего концертов</h3>
-                    <p>{{ purchase_summary.total_concerts }}</p>
+                    <p>{{ purchase_summary['total_concerts'] }}</p>
                 </div>
                 <div class="info-card">
                     <h3>Потрачено</h3>
-                    <p>{{ "{:,}".format(purchase_summary.total_spent) }} ₽</p>
+                    <p>{{ "{:,}".format(purchase_summary['total_spent']) }} ₽</p>
                 </div>
                 <!-- Блок Telegram -->
                 <div class="info-card">
@@ -2033,8 +2043,8 @@
                                 {% endif %}
                             </div>
                             <div style="background: #667eea; color: white; padding: 10px 20px; border-radius: 25px; font-weight: bold;">
-                                {{ purchase_summary.total_concerts }}
-                                {% set n = purchase_summary.total_concerts %}
+                                {{ purchase_summary['total_concerts'] }}
+                                {% set n = purchase_summary['total_concerts'] %}
                                 {% if n == 1 %}
                                     концерт
                                 {% elif n >= 2 and n <= 4 %}
@@ -2048,7 +2058,7 @@
                 </div>
                 
                 
-                {% if purchase_summary.total_concerts > 0 %}
+                {% if purchase_summary['total_concerts'] > 0 %}
                     <!-- Дни фестиваля -->
                     {% if route_sheet.concerts_by_day %}
                     <div class="festival-days-section">
@@ -2678,8 +2688,8 @@
                     <div class="concerts-count">
                         <div style="display: flex; gap: 12px; align-items: center;">
                             <div style="background: #667eea; color: white; padding: 10px 20px; border-radius: 25px; font-weight: bold;">
-                                {{ characteristics.total_concerts }}
-                                {% set n = characteristics.total_concerts %}
+                                {{ characteristics.get('total_concerts', 0) }}
+                                {% set n = characteristics.get('total_concerts', 0) %}
                                 {% if n == 1 %}
                                     концерт
                                 {% elif n >= 2 and n <= 4 %}
@@ -2692,7 +2702,7 @@
                     </div>
                 </div>
                 
-                {% if characteristics.total_concerts > 0 %}
+                {% if characteristics.get('total_concerts', 0) > 0 %}
                     <!-- Дни фестиваля -->
                     {% if festival_days %}
                     <div class="characteristic-section">
@@ -2742,10 +2752,10 @@
                                     <h3>Залы фестиваля</h3>
                                     <p>Места проведения концертов</p>
                                 </div>
-                                <div class="characteristic-count">{{ characteristics.halls|selectattr('is_visited')|list|length }}</div>
+                                <div class="characteristic-count">{{ characteristics.get('halls', [])|selectattr('is_visited')|list|length }}</div>
                             </div>
                             <div class="characteristic-content">
-                                {% for hall in characteristics.halls %}
+                                {% for hall in characteristics.get('halls', []) %}
                                 <div class="characteristic-item{% if not hall.is_visited %} inactive{% endif %}">
                                     <div class="item-info">
                                         <div class="item-name">
@@ -2780,10 +2790,10 @@
                                     <h3>Музыкальные жанры</h3>
                                     <p>Направления в вашем маршруте</p>
                                 </div>
-                                <div class="characteristic-count">{{ characteristics.genres|selectattr('is_visited')|list|length }}</div>
+                                <div class="characteristic-count">{{ characteristics.get('genres', [])|selectattr('is_visited')|list|length }}</div>
                             </div>
                             <div class="characteristic-content">
-                                {% for genre in characteristics.genres %}
+                                {% for genre in characteristics.get('genres', []) %}
                                 <div class="characteristic-item{% if not genre.is_visited %} inactive{% endif %}">
                                     <div class="item-info">
                                         <div class="item-name">
@@ -2818,10 +2828,10 @@
                                 <h3>Артисты и исполнители</h3>
                                 <p>Музыканты, которых вы увидите</p>
                             </div>
-                            <div class="characteristic-count">{{ characteristics.artists|length }}</div>
+                                                            <div class="characteristic-count">{{ characteristics.get('artists', [])|length }}</div>
                         </div>
                         <div class="characteristic-content">
-                            {% for artist in characteristics.artists %}
+                            {% for artist in characteristics.get('artists', []) %}
                             <div class="characteristic-item">
                                 <div class="item-info">
                                     <div class="item-name">{{ artist.name }}</div>
@@ -2843,10 +2853,10 @@
                                 <h3>Композиторы</h3>
                                 <p>Авторы музыкальных произведений</p>
                             </div>
-                            <div class="characteristic-count">{{ characteristics.composers|length }}</div>
+                                                            <div class="characteristic-count">{{ characteristics.get('composers', [])|length }}</div>
                         </div>
                         <div class="characteristic-content">
-                            {% for composer in characteristics.composers %}
+                            {% for composer in characteristics.get('composers', []) %}
                             <div class="characteristic-item">
                                 <div class="item-info">
                                     <div class="item-name">{{ composer.name }}</div>
@@ -2868,10 +2878,10 @@
                                 <h3>Музыкальные произведения</h3>
                                 <p>Композиции в программе</p>
                             </div>
-                            <div class="characteristic-count">{{ characteristics.compositions|length }}</div>
+                                                            <div class="characteristic-count">{{ characteristics.get('compositions', [])|length }}</div>
                         </div>
                         <div class="characteristic-content">
-                            {% for composition in characteristics.compositions %}
+                            {% for composition in characteristics.get('compositions', []) %}
                             <div class="characteristic-item">
                                 <div class="item-info">
                                     <div class="item-name">{{ composition.name }}</div>
@@ -2992,6 +3002,11 @@
             </div>
         </div>
     </div>
+    
+    <!-- DEBUG BLOCK -->
+    <pre>
+    {{ characteristics | tojson }}
+    </pre>
     
     <script>
         // Функция для получения параметра из URL

@@ -131,7 +131,7 @@ app = create_application()
 def on_startup():
     try:
         logger.info("Инициализация базы данных...")
-        init_db(demostart = True)
+        init_db(demostart = False)
         logger.info("Запуск приложения успешно завершен")
     except Exception as e:
         logger.error(f"Ошибка при запуске: {str(e)}")

@@ -149,6 +149,11 @@ async def profile_page(
     request: Request,
     session=Depends(get_session)
 ):
+    logger.info("=== PROFILE PAGE START ===")
+    logger.info("=== PROFILE PAGE START ===")
+    logger.info("=== PROFILE PAGE START ===")
+    logger.info("=== PROFILE PAGE START ===")
+    logger.info("=== PROFILE PAGE START ===")
     """
     Страница личного кабинета пользователя
     
@@ -177,25 +182,62 @@ async def profile_page(
         
         # Отладочная информация
         logger.info(f"User found: {current_user.email}, external_id: {current_user.external_id}")
+        logger.info(f"User external_id type: {type(current_user.external_id)}")
+        logger.info(f"User external_id value: {current_user.external_id}")
         
         # Получаем данные о покупках пользователя
         # Используем external_id пользователя для поиска покупок
         user_external_id = current_user.external_id
         
         if not user_external_id:
-            # Если у пользователя нет external_id, показываем пустую страницу
+            # Если у пользователя нет external_id, показываем пустую страницу с базовыми данными
             logger.warning(f"User {current_user.email} has no external_id")
+            
+            # Создаём базовые данные для шаблона
+            basic_route_sheet = {
+                "summary": {
+                    "total_concerts": 0,
+                    "total_days": 0,
+                    "total_halls": 0,
+                    "total_genres": 0,
+                    "total_spent": 0
+                },
+                "match": {
+                    "found": False,
+                    "match_type": "no_external_id",
+                    "reason": "Для анализа маршрутов требуется external_id",
+                    "match_percentage": 0.0,
+                    "total_routes_checked": 0,
+                    "customer_concerts": [],
+                    "best_route": None
+                },
+                "concerts_by_day": {}
+            }
+            
+            # Для пользователей без external_id не предлагаем привязку к Telegram
+            telegram_linked = False
+            telegram_id = None
+            telegram_link_code = None
+            telegram_link_code_expires = None
+            
             context = {
                 "request": request,
                 "user": current_user,
-                "purchases": [],
+                "concerts": [],
                 "purchase_summary": {
                     "total_purchases": 0,
                     "total_spent": 0,
                     "total_concerts": 0,
                     "unique_halls": 0,
                     "genres": []
-                }
+                },
+                "route_sheet": basic_route_sheet,
+                "characteristics": {},
+                "festival_days": [],
+                "telegram_linked": telegram_linked,
+                "telegram_id": telegram_id,
+                "telegram_link_code": telegram_link_code,
+                "telegram_link_code_expires": telegram_link_code_expires
             }
             return templates.TemplateResponse("profile.html", context)
         
@@ -242,7 +284,6 @@ async def profile_page(
                 concert_copy = concert_data.copy()
                 
                 # Проверяем тип данных перед преобразованием
-                from datetime import datetime
                 
                 # Обрабатываем concert datetime
                 if isinstance(concert_data['concert']['datetime'], str):
@@ -251,7 +292,6 @@ async def profile_page(
                     concert_copy['concert']['datetime'] = concert_data['concert']['datetime']
                 
                 # Преобразуем duration обратно в timedelta
-                from datetime import timedelta
                 duration_str = concert_data['concert']['duration']
                 if isinstance(duration_str, (int, float)):
                     # Если duration в секундах
@@ -308,31 +348,105 @@ async def profile_page(
         # Получаем все дни фестиваля с информацией о посещении
         festival_days_data = get_all_festival_days_with_visit_status(session, concerts_for_template)
         
-        # Получаем данные для маршрутного листа
-        route_sheet_data = get_user_route_sheet(session, user_external_id, concerts_for_template, festival_days_data)
+        # Получаем данные для маршрутного листа и характеристик
+        if user_external_id:
+            # Если есть external_id, получаем полные данные
+            try:
+                route_sheet_data = get_user_route_sheet(session, user_external_id, concerts_for_template, festival_days_data)
+                logger.info(f"Route sheet data: {route_sheet_data}")
+                logger.info(f"Concerts by day: {route_sheet_data.get('concerts_by_day', {})}")
+            except Exception as e:
+                logger.error(f"Error getting route sheet data: {e}")
+                route_sheet_data = {
+                    "summary": {
+                        "total_concerts": len(concerts_for_template),
+                        "total_days": 0,
+                        "total_halls": 0,
+                        "total_genres": 0,
+                        "total_spent": 0
+                    },
+                    "match": {
+                        "found": False,
+                        "match_type": "error",
+                        "reason": f"Ошибка при анализе маршрутов: {str(e)}",
+                        "match_percentage": 0.0,
+                        "total_routes_checked": 0,
+                        "customer_concerts": [],
+                        "best_route": None
+                    },
+                    "concerts_by_day": {}
+                }
+            
+            # Получаем данные для характеристик
+            try:
+                logger.info(f"Calling get_user_characteristics with external_id: {user_external_id}")
+                characteristics_data = get_user_characteristics(session, user_external_id, concerts_for_template)
+            except Exception as e:
+                logger.error(f"Error getting characteristics data: {e}")
+                characteristics_data = {
+                    "total_concerts": 0,
+                    "halls": [],
+                    "genres": [],
+                    "artists": [],
+                    "composers": [],
+                    "compositions": []
+                }
+        else:
+            # Если нет external_id, создаём базовые данные
+            logger.info("No external_id, creating basic route sheet and characteristics data")
+            route_sheet_data = {
+                "summary": {
+                    "total_concerts": len(concerts_for_template),
+                    "total_days": 0,
+                    "total_halls": 0,
+                    "total_genres": 0,
+                    "total_spent": sum(c.get('total_spent', 0) for c in concerts_for_template)
+                },
+                "match": {
+                    "found": False,
+                    "match_type": "no_external_id",
+                    "reason": "Для анализа маршрутов требуется external_id",
+                    "match_percentage": 0.0,
+                    "total_routes_checked": 0,
+                    "customer_concerts": [],
+                    "best_route": None
+                },
+                "concerts_by_day": {}
+            }
+            characteristics_data = {
+                "total_concerts": 0,
+                "halls": [],
+                "genres": [],
+                "artists": [],
+                "composers": [],
+                "compositions": []
+            }
         
-        # Получаем данные для характеристик
-        characteristics_data = get_user_characteristics(session, user_external_id, concerts_for_template)
-        
-        # Отладочная информация для маршрутного листа
-        logger.info(f"Route sheet data: {route_sheet_data}")
-        logger.info(f"Concerts by day: {route_sheet_data.get('concerts_by_day', {})}")
         logger.info(f"Festival days data: {festival_days_data}")
+        logger.info(f"Characteristics data type: {type(characteristics_data)}")
+        logger.info(f"Characteristics data: {characteristics_data}")
         
-        # Добавляем статус привязки Telegram
-        telegram_linked = current_user.telegram_id is not None
-        telegram_id = current_user.telegram_id
-        # Проверяем, есть ли активный код привязки
-        from models.user import TelegramLinkCode
-        from sqlmodel import select
-        now = datetime.utcnow()
-        link_code_obj = session.exec(
-            select(TelegramLinkCode)
-            .where(TelegramLinkCode.user_id == current_user.id)
-            .where(TelegramLinkCode.expires_at > now)
-        ).first()
-        telegram_link_code = link_code_obj.code if link_code_obj else None
-        telegram_link_code_expires = link_code_obj.expires_at if link_code_obj else None
+        # Добавляем статус привязки Telegram (только для пользователей с external_id)
+        if user_external_id:
+            telegram_linked = current_user.telegram_id is not None
+            telegram_id = current_user.telegram_id
+            # Проверяем, есть ли активный код привязки
+            from models.user import TelegramLinkCode
+            from sqlmodel import select
+            now = datetime.utcnow()
+            link_code_obj = session.exec(
+                select(TelegramLinkCode)
+                .where(TelegramLinkCode.user_id == current_user.id)
+                .where(TelegramLinkCode.expires_at > now)
+            ).first()
+            telegram_link_code = link_code_obj.code if link_code_obj else None
+            telegram_link_code_expires = link_code_obj.expires_at if link_code_obj else None
+        else:
+            # Для пользователей без external_id не предлагаем привязку к Telegram
+            telegram_linked = False
+            telegram_id = None
+            telegram_link_code = None
+            telegram_link_code_expires = None
         context = {
             "request": request,
             "user": current_user,
@@ -346,10 +460,15 @@ async def profile_page(
             "telegram_link_code": telegram_link_code,
             "telegram_link_code_expires": telegram_link_code_expires
         }
+        logger.info(f"Context characteristics type: {type(context['characteristics'])}")
+        logger.info(f"Context characteristics: {context['characteristics']}")
+        logger.info(f"Context characteristics keys: {list(context['characteristics'].keys()) if hasattr(context['characteristics'], 'keys') else 'No keys method'}")
+        logger.info(f"About to render template with characteristics: {context['characteristics']}")
         return templates.TemplateResponse("profile.html", context)
         
     except Exception as e:
         logger.error(f"Error loading profile page: {str(e)}")
+        logger.error(f"Full traceback: ", exc_info=True)
         # В случае ошибки перенаправляем на главную
         return RedirectResponse(url="/", status_code=302)
     
@@ -463,7 +582,7 @@ def get_user_route_sheet(session, user_external_id: str, concerts_data: list, fe
     
     Args:
         session: Сессия базы данных
-        user_external_id: Внешний ID пользователя
+        user_external_id: Внешний ID пользователя (может быть None)
         concerts_data: Список концертов пользователя
         
     Returns:
@@ -472,6 +591,29 @@ def get_user_route_sheet(session, user_external_id: str, concerts_data: list, fe
     try:
         from models import Route, CustomerRouteMatch
         from sqlalchemy import select
+        
+        # Если нет external_id, создаём базовую структуру без анализа маршрутов
+        if not user_external_id:
+            logger.info("No external_id provided, creating basic route sheet data")
+            return {
+                "summary": {
+                    "total_concerts": len(concerts_data),
+                    "total_days": 0,
+                    "total_halls": 0,
+                    "total_genres": 0,
+                    "total_spent": sum(c.get('total_spent', 0) for c in concerts_data)
+                },
+                "match": {
+                    "found": False,
+                    "match_type": "no_external_id",
+                    "reason": "Для анализа маршрутов требуется external_id",
+                    "match_percentage": 0.0,
+                    "total_routes_checked": 0,
+                    "customer_concerts": [],
+                    "best_route": None
+                },
+                "concerts_by_day": {}
+            }
         
         # Получаем ID концертов пользователя
         user_concert_ids = [c['concert']['id'] for c in concerts_data]
@@ -557,66 +699,65 @@ def get_user_route_sheet(session, user_external_id: str, concerts_data: list, fe
                             "comfort_score": route.ComfortScore,
                             "comfort_level": route.ComfortLevel,
                             "intellect_score": route.IntellectScore,
-                            "intellect_category": route.IntellectCategory,
-                            "match_type": "exact",
-                            "match_percentage": 100.0
+                            "intellect_category": route.IntellectCategory
                         })
                     
-                    # Проверяем частичное совпадение
-                    elif set(user_concert_ids).issubset(set(route_concert_ids)):
-                        match_percentage = (len(user_concert_ids) / len(route_concert_ids)) * 100
-                        partial_matches.append({
-                            "id": route.id,
-                            "composition": route.Sostav,
-                            "days": route.Days,
-                            "concerts": route.Concerts,
-                            "halls": route.Halls,
-                            "genre": route.Genre,
-                            "show_time": route.ShowTime,
-                            "trans_time": route.TransTime,
-                            "wait_time": route.WaitTime,
-                            "costs": route.Costs,
-                            "comfort_score": route.ComfortScore,
-                            "comfort_level": route.ComfortLevel,
-                            "intellect_score": route.IntellectScore,
-                            "intellect_category": route.IntellectCategory,
-                            "match_type": "partial",
-                            "match_percentage": match_percentage,
-                            "missing_concerts": list(set(route_concert_ids) - set(user_concert_ids))
-                        })
-                        
-                except (ValueError, AttributeError) as e:
-                    logger.warning(f"Ошибка при парсинге маршрута {route.id}: {e}")
+                    # Проверяем частичное совпадение (если есть хотя бы 2 концерта)
+                    if len(user_concert_ids) >= 2:
+                        common_concerts = set(route_concert_ids) & set(user_concert_ids)
+                        if len(common_concerts) >= 2:
+                            match_percentage = len(common_concerts) / len(user_concert_ids) * 100
+                            partial_matches.append({
+                                "id": route.id,
+                                "composition": route.Sostav,
+                                "days": route.Days,
+                                "concerts": route.Concerts,
+                                "halls": route.Halls,
+                                "genre": route.Genre,
+                                "show_time": route.ShowTime,
+                                "trans_time": route.TransTime,
+                                "wait_time": route.WaitTime,
+                                "costs": route.Costs,
+                                "comfort_score": route.ComfortScore,
+                                "comfort_level": route.ComfortLevel,
+                                "intellect_score": route.IntellectScore,
+                                "intellect_category": route.IntellectCategory,
+                                "match_percentage": match_percentage,
+                                "common_concerts": list(common_concerts)
+                            })
+                            
+                except Exception as e:
+                    logger.warning(f"Ошибка при анализе маршрута {route.id}: {e}")
                     continue
             
-            # Сортируем частичные совпадения по проценту совпадения
-            partial_matches.sort(key=lambda x: x["match_percentage"], reverse=True)
-            
-            # Формируем результат
+            # Определяем тип соответствия
             if exact_matches:
                 match_data = {
                     "found": True,
                     "match_type": "exact",
-                    "reason": "Найдено точное совпадение с маршрутом",
+                    "reason": f"Найдено {len(exact_matches)} точных совпадений",
                     "match_percentage": 100.0,
                     "total_routes_checked": len(all_routes),
                     "customer_concerts": user_concert_ids,
-                    "best_route": exact_matches[0]
+                    "best_route": exact_matches[0]  # Берём первый точный матч
                 }
             elif partial_matches:
+                # Сортируем по проценту совпадения
+                partial_matches.sort(key=lambda x: x['match_percentage'], reverse=True)
+                best_partial = partial_matches[0]
                 match_data = {
                     "found": True,
                     "match_type": "partial",
-                    "reason": f"Найдено частичное совпадение с маршрутом ({partial_matches[0]['match_percentage']:.1f}%)",
-                    "match_percentage": partial_matches[0]["match_percentage"],
+                    "reason": f"Найдено {len(partial_matches)} частичных совпадений, лучшее: {best_partial['match_percentage']:.1f}%",
+                    "match_percentage": best_partial['match_percentage'],
                     "total_routes_checked": len(all_routes),
                     "customer_concerts": user_concert_ids,
-                    "best_route": partial_matches[0]
+                    "best_route": {k: v for k, v in best_partial.items() if k != 'match_percentage' and k != 'common_concerts'}
                 }
             else:
                 match_data = {
                     "found": False,
-                    "match_type": "none",
+                    "match_type": "no_match",
                     "reason": "Не найдено подходящих маршрутов",
                     "match_percentage": 0.0,
                     "total_routes_checked": len(all_routes),
@@ -624,78 +765,16 @@ def get_user_route_sheet(session, user_external_id: str, concerts_data: list, fe
                     "best_route": None
                 }
         
-        # Отладочная информация
-        logger.info(f"Processing route sheet for {len(concerts_data)} concerts")
-        logger.info(f"Concert day indices: {[c.get('concert_day_index', 0) for c in concerts_data]}")
-        
-        # Проверяем структуру данных концертов
-        for i, concert in enumerate(concerts_data):
-            logger.info(f"Concert {i}: day_index={concert.get('concert_day_index', 0)}, "
-                       f"hall={concert['concert'].get('hall', 'No hall')}, "
-                       f"genre={concert['concert'].get('genre', 'No genre')}")
-        
         # Группируем концерты по дням
-        concerts_by_day = group_concerts_by_day(concerts_data, festival_days_data)
-        logger.info(f"Concerts grouped by day: {concerts_by_day}")
+        concerts_by_day_with_transitions = group_concerts_by_day(concerts_data, festival_days_data)
         
-        # Добавляем информацию о переходах между концертами и доступных мероприятиях офф-программы
-        concerts_by_day_with_transitions = {}
-        for day_index, day_concerts in concerts_by_day.items():
-            concerts_with_transitions = []
-            
-            for i, concert in enumerate(day_concerts):
-                concert_with_transition = concert.copy()
-                
-                # Добавляем информацию о переходе к следующему концерту
-                if i < len(day_concerts) - 1:
-                    next_concert = day_concerts[i + 1]
-                    transition_info = calculate_transition_time(session, concert, next_concert)
-                    concert_with_transition['transition_info'] = transition_info
-                    
-                    # Ищем доступные мероприятия офф-программы между концертами
-                    off_program_events = find_available_off_program_events(session, concert, next_concert)
-                    concert_with_transition['off_program_events'] = off_program_events
-                else:
-                    concert_with_transition['transition_info'] = None
-                    concert_with_transition['off_program_events'] = []
-                
-                # Добавляем офф-программу до первого концерта
-                if i == 0:
-                    before_concert_events = find_available_off_program_events_before_first_concert(session, concert)
-                    concert_with_transition['before_concert_events'] = before_concert_events
-                else:
-                    concert_with_transition['before_concert_events'] = []
-                
-                # Добавляем офф-программу после последнего концерта
-                if i == len(day_concerts) - 1:
-                    after_concert_events = find_available_off_program_events_after_last_concert(session, concert)
-                    concert_with_transition['after_concert_events'] = after_concert_events
-                else:
-                    concert_with_transition['after_concert_events'] = []
-                
-                concerts_with_transitions.append(concert_with_transition)
-            
-            concerts_by_day_with_transitions[day_index] = concerts_with_transitions
-        
-        # Безопасный подсчет статистики
-        total_days = len(set(c.get('concert_day_index', 0) for c in concerts_data if c.get('concert_day_index', 0) > 0))
-        
-        hall_ids = set()
-        for c in concerts_data:
-            hall = c['concert'].get('hall')
-            if hall and isinstance(hall, dict) and 'id' in hall:
-                hall_ids.add(hall['id'])
-        total_halls = len(hall_ids)
-        
-        genres = set()
-        for c in concerts_data:
-            genre = c['concert'].get('genre')
-            if genre:
-                genres.add(genre)
-        total_genres = len(genres)
-        
-        # Рассчитываем дополнительную статистику
+        # Рассчитываем статистику маршрута
         route_stats = calculate_route_statistics(session, concerts_data, concerts_by_day_with_transitions)
+        
+        # Подсчитываем общую статистику
+        total_days = len(set(c['concert'].get('date', '').split()[0] for c in concerts_data if c['concert'].get('date')))
+        total_halls = len(set(c['concert'].get('hall', {}).get('id') for c in concerts_data if c['concert'].get('hall')))
+        total_genres = len(set(g['id'] for c in concerts_data for g in c['concert'].get('genres', [])))
         
         return {
             "summary": {

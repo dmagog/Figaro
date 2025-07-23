@@ -1,9 +1,20 @@
 version: "3"
-services: 
+services:
+  # Базовый образ с общими зависимостями
+  base:
+    build:
+      context: .
+      dockerfile: Dockerfile.base
+    image: figaro-base:latest
+    profiles:
+      - build-only 
   app:
     build:
       context: .
       dockerfile: ./app/Dockerfile
+      cache_from:
+        - figaro-base:latest
+        - figaro-api:latest
     image: figaro-api:latest 
     restart: unless-stopped
     env_file:
@@ -24,6 +35,9 @@ services:
     build:
       context: .
       dockerfile: ./worker/Dockerfile
+      cache_from:
+        - figaro-base:latest
+        - figaro-worker:latest
     image: figaro-worker:latest
     restart: unless-stopped
     env_file:
@@ -45,6 +59,9 @@ services:
     build:
       context: .
       dockerfile: ./bot/Dockerfile
+      cache_from:
+        - figaro-base:latest
+        - figaro-bot:latest
     image: figaro-bot:latest
     restart: unless-stopped
     env_file:
@@ -67,6 +84,10 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+    environment:
+      - CELERY_BROKER_URL=amqp://${RABBITMQ_USER:-user}:${RABBITMQ_PASS:-password}@rabbitmq:5672//
+    command: >
+      flower --broker=amqp://${RABBITMQ_USER:-user}:${RABBITMQ_PASS:-password}@rabbitmq:5672//
     networks:
       - figaro-network
 
