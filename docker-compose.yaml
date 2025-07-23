@@ -86,8 +86,6 @@ services:
         condition: service_healthy
     environment:
       - CELERY_BROKER_URL=amqp://${RABBITMQ_USER:-user}:${RABBITMQ_PASS:-password}@rabbitmq:5672//
-    command: >
-      flower --broker=amqp://${RABBITMQ_USER:-user}:${RABBITMQ_PASS:-password}@rabbitmq:5672//
     networks:
       - figaro-network
 
