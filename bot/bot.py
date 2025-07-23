@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+BOT_LINK = os.getenv("BOT_LINK", "https://t.me/Figaro_FestivalBot")
 
 bot = Bot(token=TELEGRAM_TOKEN, parse_mode=ParseMode.HTML)
 dp = Dispatcher(bot)
@@ -39,8 +40,12 @@ async def handle_link_code(message: types.Message):
         if not user:
             await message.reply("❌ Пользователь не найден. Обратитесь в поддержку.")
             return
-        # Привязываем telegram_id
+        # Привязываем telegram_id и username
         user.telegram_id = message.from_user.id
+        if hasattr(message.from_user, 'username') and message.from_user.username:
+            user.telegram_username = message.from_user.username
+        else:
+            user.telegram_username = None
         session.add(user)
         # Удаляем использованный код
         session.delete(link_code)

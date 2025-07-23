@@ -13,6 +13,7 @@ class UserBase(SQLModel):
     preferences: Optional[dict] = Field(default=None, sa_column=Column(JSON))
     role: str = Field(default="user")
     telegram_id: Optional[int] = Field(default=None, description="Telegram user ID")
+    telegram_username: Optional[str] = Field(default=None, description="Telegram username")
 
 
 class UserCreate(UserBase):

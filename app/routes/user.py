@@ -15,7 +15,8 @@ from database.config import get_settings
 from fastapi.responses import JSONResponse
 from uuid import uuid4
 from datetime import datetime, timedelta
-from sqlmodel import select
+from sqlmodel import select, delete
+import os
 
 logger = get_logger(logger_name=__name__)
 
@@ -149,6 +150,7 @@ async def profile_page(
     request: Request,
     session=Depends(get_session)
 ):
+    bot_link = os.environ.get('BOT_LINK', 'https://t.me/Figaro_FestivalBot')
     logger.info("=== PROFILE PAGE START ===")
     logger.info("=== PROFILE PAGE START ===")
     logger.info("=== PROFILE PAGE START ===")
@@ -217,6 +219,7 @@ async def profile_page(
             # Для пользователей без external_id не предлагаем привязку к Telegram
             telegram_linked = False
             telegram_id = None
+            telegram_username = None
             telegram_link_code = None
             telegram_link_code_expires = None
             
@@ -236,8 +239,10 @@ async def profile_page(
                 "festival_days": [],
                 "telegram_linked": telegram_linked,
                 "telegram_id": telegram_id,
+                "telegram_username": telegram_username,
                 "telegram_link_code": telegram_link_code,
-                "telegram_link_code_expires": telegram_link_code_expires
+                "telegram_link_code_expires": telegram_link_code_expires,
+                "bot_link": bot_link
             }
             return templates.TemplateResponse("profile.html", context)
         
@@ -430,6 +435,7 @@ async def profile_page(
         if user_external_id:
             telegram_linked = current_user.telegram_id is not None
             telegram_id = current_user.telegram_id
+            telegram_username = current_user.telegram_username
             # Проверяем, есть ли активный код привязки
             from models.user import TelegramLinkCode
             from sqlmodel import select
@@ -445,6 +451,7 @@ async def profile_page(
             # Для пользователей без external_id не предлагаем привязку к Telegram
             telegram_linked = False
             telegram_id = None
+            telegram_username = None
             telegram_link_code = None
             telegram_link_code_expires = None
         context = {
@@ -457,8 +464,10 @@ async def profile_page(
             "festival_days": festival_days_data,
             "telegram_linked": telegram_linked,
             "telegram_id": telegram_id,
+            "telegram_username": telegram_username,
             "telegram_link_code": telegram_link_code,
-            "telegram_link_code_expires": telegram_link_code_expires
+            "telegram_link_code_expires": telegram_link_code_expires,
+            "bot_link": bot_link
         }
         logger.info(f"Context characteristics type: {type(context['characteristics'])}")
         logger.info(f"Context characteristics: {context['characteristics']}")
@@ -4188,10 +4197,10 @@ async def generate_telegram_link_code(request: Request, session=Depends(get_sess
         return JSONResponse({"success": False, "error": "Пользователь не найден"}, status_code=404)
     # Удаляем старые коды
     session.exec(
-        select(TelegramLinkCode).where(
+        delete(TelegramLinkCode).where(
             TelegramLinkCode.user_id == user.id
         )
-    ).delete()
+    )
     # Генерируем новый код
     code = str(uuid4())
     expires_at = datetime.utcnow() + timedelta(minutes=10)
