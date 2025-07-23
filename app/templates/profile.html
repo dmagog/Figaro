@@ -1978,7 +1978,9 @@
                 <!-- Блок Telegram -->
                 <div class="info-card">
                     <h3>Telegram</h3>
-                    {% if telegram_linked %}
+                    {% if not user.external_id %}
+                        <p style="color: #888;">Привязка Telegram недоступна для этого пользователя</p>
+                    {% elif telegram_linked %}
                         <p style="color: #10b981; font-weight: bold;">Привязан ✅<br>ID: {{ telegram_id }}</p>
                     {% else %}
                         <p style="color: #dc2626;">Не привязан</p>
