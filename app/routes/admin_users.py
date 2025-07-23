@@ -149,21 +149,66 @@ async def admin_telegram_page(request: Request, session=Depends(get_session)):
 
 @admin_users_router.post("/admin/send-telegram")
 async def send_telegram(request: Request, session=Depends(get_session)):
-    data = await request.json()
-    user_id = data.get("user_id")
-    telegram_id = data.get("telegram_id")
-    message = data.get("message")
-    if not message:
-        return JSONResponse({"success": False, "error": "Не задан текст сообщения"}, status_code=400)
-    if not telegram_id:
-        if not user_id:
-            return JSONResponse({"success": False, "error": "Нужно указать user_id или telegram_id"}, status_code=400)
-        user = session.exec(select(UsersService.User).where(UsersService.User.id == user_id)).first()
-        if not user or not user.telegram_id:
-            return JSONResponse({"success": False, "error": "Пользователь не найден или не привязан к Telegram"}, status_code=404)
-        telegram_id = user.telegram_id
-    try:
-        await send_telegram_message(telegram_id, message)
-        return JSONResponse({"success": True})
-    except Exception as e:
-        return JSONResponse({"success": False, "error": str(e)}, status_code=500) 
+    form = await request.form()
+    # Получаем данные из формы
+    user_ids = form.getlist("user_ids")
+    user_id = form.get("user_id")
+    telegram_id = form.get("telegram_id")
+    message = form.get("message")
+    markdown = form.get("markdown") == '1'
+    file = form.get("file")
+    file_path = None
+    file_type = None
+    # Сохраняем файл, если он есть
+    if file and hasattr(file, 'filename') and file.filename:
+        import tempfile
+        suffix = '.' + file.filename.split('.')[-1] if '.' in file.filename else ''
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            tmp.write(await file.read())
+            file_path = tmp.name
+        # Определяем тип файла
+        if file.content_type.startswith('image/'):
+            file_type = 'photo'
+        else:
+            file_type = 'document'
+    # Собираем список telegram_id для рассылки
+    telegram_ids = []
+    if user_ids:
+        for uid in user_ids:
+            if not uid or not str(uid).isdigit():
+                continue
+            user = session.exec(select(UsersService.User).where(UsersService.User.id == int(uid))).first()
+            if user and hasattr(user, 'telegram_id') and user.telegram_id:
+                telegram_ids.append(user.telegram_id)
+    if telegram_id:
+        telegram_ids.append(telegram_id)
+    if user_id and not telegram_ids:
+        if str(user_id).isdigit():
+            user = session.exec(select(UsersService.User).where(UsersService.User.id == int(user_id))).first()
+            if user and hasattr(user, 'telegram_id') and user.telegram_id:
+                telegram_ids.append(user.telegram_id)
+    if not telegram_ids:
+        return JSONResponse({"success": False, "error": "Не выбран ни один пользователь с Telegram ID"}, status_code=400)
+    # Отправляем сообщение каждому
+    errors = []
+    for tg_id in set(telegram_ids):
+        try:
+            await send_telegram_message(
+                tg_id,
+                text=message,
+                file_path=file_path,
+                file_type=file_type,
+                parse_mode='Markdown' if markdown else None
+            )
+        except Exception as e:
+            errors.append(str(e))
+    # Удаляем временный файл
+    if file_path:
+        import os
+        try:
+            os.remove(file_path)
+        except Exception:
+            pass
+    if errors:
+        return JSONResponse({"success": False, "error": "; ".join(errors)}, status_code=500)
+    return JSONResponse({"success": True}) 

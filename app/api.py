@@ -41,7 +41,7 @@ async def send_test_telegram_message(request: Request, session=Depends(get_sessi
     if not user or not user.telegram_id:
         raise HTTPException(status_code=404, detail="Telegram не привязан")
     # Ставим задачу в очередь
-    send_telegram_message.delay(user.telegram_id, "Тестовое сообщение из FastAPI через Celery!")
+    send_telegram_message.delay(user.telegram_id, "Тестовое сообщение из FastAPI через Celery!", None, None, "Markdown")
     return {"success": True, "message": "Задача на отправку сообщения поставлена в очередь."}
 
 @api_router.post("/admin/telegram/broadcast")
@@ -75,7 +75,7 @@ async def broadcast_telegram_message(
         file_path = temp_file.name
     count = 0
     for u in users:
-        send_telegram_message.delay(u.telegram_id, text, file_path, file_type)
+        send_telegram_message.delay(u.telegram_id, text, file_path, file_type, "Markdown")
         count += 1
     # Удаляем временный файл после рассылки (если был)
     if temp_file:
