@@ -22,7 +22,7 @@ from fastapi import UploadFile, File, Form
 import shutil
 from tempfile import NamedTemporaryFile
 from sqlalchemy import select
-from app.models.user import User
+from models.user import User
 
 logger = get_logger(logger_name=__name__)
 settings = get_settings()

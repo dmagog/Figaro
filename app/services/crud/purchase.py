@@ -1,9 +1,9 @@
 # services/crud/purchase.py
 from sqlmodel import Session, select
 from models import Purchase, Concert, Hall
-from typing import List, Optional
+from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone
-from models import User
+from models.user import User
 from sqlalchemy import func
 from models.hall import Hall
 from models.statistics import Statistics

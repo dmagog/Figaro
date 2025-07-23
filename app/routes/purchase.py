@@ -5,7 +5,7 @@ from datetime import datetime
 from database.database import get_session
 from services.crud import purchase as PurchaseService
 from auth.authenticate import authenticate_cookie
-from models import User
+from models.user import User
 
 # Создаем экземпляр роутера
 purchase_route = APIRouter()

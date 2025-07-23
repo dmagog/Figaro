@@ -1,6 +1,6 @@
 # services/crud/user.py
 from sqlmodel import Session, select
-from models import User
+from models.user import User
 from typing import Optional
 from auth.hash_password import HashPassword
 

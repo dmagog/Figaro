@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from database.database import get_session
-from models.user import *
+from models.user import User, UserCreate, TelegramLinkCode
 from services.crud import user as UserService
 from services.crud import purchase as PurchaseService
 from typing import List, Dict
@@ -11,7 +11,6 @@ from services.logging.logging import get_logger
 from auth.hash_password import HashPassword
 from auth.jwt_handler import create_access_token
 from auth.authenticate import authenticate_cookie
-from models import User
 from database.config import get_settings
 from fastapi.responses import JSONResponse
 from uuid import uuid4
