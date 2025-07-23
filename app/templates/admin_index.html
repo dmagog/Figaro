@@ -281,6 +281,53 @@
                 </div>
             </a>
         </div>
+        <!-- Форма рассылки Telegram -->
+        <div style="margin-top:40px; padding:24px; background:#f8f9ff; border-radius:12px; box-shadow:0 2px 8px rgba(102,126,234,0.07); max-width:600px;">
+            <h2 style="margin-top:0;">Массовая рассылка в Telegram</h2>
+            <form id="tg-broadcast-form" method="post" enctype="multipart/form-data" action="/admin/telegram/broadcast" onsubmit="return sendBroadcast(event);">
+                <div style="margin-bottom:12px;">
+                    <label for="tg-broadcast-text"><b>Текст сообщения:</b></label><br>
+                    <textarea id="tg-broadcast-text" name="text" rows="3" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ccc;"></textarea>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label for="tg-broadcast-file"><b>Вложение (фото или документ):</b></label><br>
+                    <input type="file" id="tg-broadcast-file" name="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx">
+                    <select name="file_type" id="tg-broadcast-filetype" style="margin-left:8px;">
+                        <option value="">Без вложения</option>
+                        <option value="photo">Фото</option>
+                        <option value="document">Документ</option>
+                    </select>
+                </div>
+                <button type="submit" style="background:#667eea; color:white; border:none; padding:10px 24px; border-radius:8px; font-size:1.1em; cursor:pointer;">Отправить рассылку</button>
+            </form>
+            <div id="tg-broadcast-result" style="margin-top:16px; font-size:1.1em;"></div>
+        </div>
+        <script>
+        function sendBroadcast(event) {
+            event.preventDefault();
+            const form = document.getElementById('tg-broadcast-form');
+            const result = document.getElementById('tg-broadcast-result');
+            const formData = new FormData(form);
+            result.innerHTML = '⏳ Отправка...';
+            fetch('/admin/telegram/broadcast', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    result.innerHTML = `✅ ${data.message}`;
+                } else {
+                    result.innerHTML = `<span style='color:#dc2626;'>❌ ${data.message || 'Ошибка рассылки'}</span>`;
+                }
+            })
+            .catch(() => {
+                result.innerHTML = '<span style="color:#dc2626;">❌ Ошибка отправки запроса</span>';
+            });
+            return false;
+        }
+        </script>
         {% endblock %}
     </div>
     <script>

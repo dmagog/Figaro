@@ -1965,6 +1965,25 @@
                     <h3>Потрачено</h3>
                     <p>{{ "{:,}".format(purchase_summary.total_spent) }} ₽</p>
                 </div>
+                <!-- Блок Telegram -->
+                <div class="info-card">
+                    <h3>Telegram</h3>
+                    {% if telegram_linked %}
+                        <p style="color: #10b981; font-weight: bold;">Привязан ✅<br>ID: {{ telegram_id }}</p>
+                    {% else %}
+                        <p style="color: #dc2626;">Не привязан</p>
+                        <form id="tg-link-form" method="post" action="/telegram/link-code" onsubmit="return generateTelegramCode(event);">
+                            <button type="submit" style="margin-top: 8px; background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Привязать Telegram</button>
+                        </form>
+                        <div id="tg-link-status" style="margin-top: 8px; color: #333; font-size: 0.95em;">
+                            {% if telegram_link_code %}
+                                <div>Ваш код: <b>{{ telegram_link_code }}</b></div>
+                                <div style="font-size:0.9em; color:#888;">Действителен до: {{ telegram_link_code_expires.strftime('%H:%M:%S') }}</div>
+                                <div style="margin-top:6px;">Отправьте этот код нашему <a href="https://t.me/YOUR_BOT_USERNAME" target="_blank" style="color:#667eea; text-decoration:underline;">Telegram-боту</a></div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
                 {% if user.is_superuser %}
                 <a href="/admin" class="info-card status-card-superuser" title="Перейти в админку">
                     <h3>Статус</h3>
@@ -3147,8 +3166,21 @@
                 setTimeout(initializeProgressBars, 100);
             }
         });
+
+        function generateTelegramCode(event) {
+            event.preventDefault();
+            fetch('/telegram/link-code', {method: 'POST', credentials: 'same-origin'})
+                .then(r => r.json())
+                .then(data => {
+                    let status = document.getElementById('tg-link-status');
+                    if (data.success) {
+                        status.innerHTML = `<div>Ваш код: <b>${data.code}</b></div><div style='font-size:0.9em; color:#888;'>Действителен до: ${new Date(data.expires_at).toLocaleTimeString()}</div><div style='margin-top:6px;'>Отправьте этот код нашему <a href='https://t.me/YOUR_BOT_USERNAME' target='_blank' style='color:#667eea; text-decoration:underline;'>Telegram-боту</a></div>`;
+                    } else {
+                        status.innerHTML = `<span style='color:#dc2626;'>Ошибка: ${data.error || 'Не удалось сгенерировать код'}</span>`;
+                    }
+                });
+            return false;
+        }
     </script>
-</body>
-</html> 
 </body>
 </html> 

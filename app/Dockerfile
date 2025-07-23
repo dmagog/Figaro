@@ -12,12 +12,16 @@ RUN apt-get update && apt-get install -y \
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
-COPY requirements.txt /app/
+ENV PYTHONPATH=/:/app:/worker:/bot
+
+COPY app/requirements.txt /app/
 
 RUN pip install --upgrade pip && pip install -r /app/requirements.txt
 
 EXPOSE 8080
 
 COPY ./ /app
+COPY ./worker /worker
+COPY ./bot /bot
 
 CMD ["python", "api.py"]

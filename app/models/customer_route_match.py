@@ -3,7 +3,7 @@ from sqlmodel import SQLModel, Field
 from datetime import datetime
 
 
-class CustomerRouteMatch(SQLModel, table=True):
+class CustomerRouteMatch(SQLModel, table=True, extend_existing=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_external_id: str = Field(index=True, description="Внешний ID покупателя")
     

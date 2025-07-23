@@ -14,7 +14,7 @@ class EventFormat(str, Enum):
     EVENT = "Событие"  # Добавлено для поддержки формата 'Событие'
 
 
-class OffProgram(SQLModel, table=True):
+class OffProgram(SQLModel, table=True, extend_existing=True):
     """Модель данных для мероприятий Офф-программы фестиваля"""
     
     __tablename__ = "off_program"

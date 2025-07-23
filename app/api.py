@@ -13,8 +13,75 @@ from routes.user import user_route
 from routes.purchase import purchase_route
 from routes.tickets import tickets_route
 
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+from worker.tasks import send_telegram_message
+from app.services.crud import user as UserService
+from app.database.database import get_session
+from app.auth.authenticate import authenticate_cookie
+from fastapi import UploadFile, File, Form
+import shutil
+from tempfile import NamedTemporaryFile
+from sqlalchemy import select
+from app.models.user import User
+
 logger = get_logger(logger_name=__name__)
 settings = get_settings()
+
+api_router = APIRouter()
+
+@api_router.post("/telegram/send-test")
+async def send_test_telegram_message(request: Request, session=Depends(get_session)):
+    token = request.cookies.get("access_token") or request.cookies.get("Authorization")
+    if not token:
+        raise HTTPException(status_code=401, detail="Не авторизован")
+    user_email = await authenticate_cookie(token)
+    if not user_email:
+        raise HTTPException(status_code=401, detail="Не авторизован")
+    user = UserService.get_user_by_email(user_email, session)
+    if not user or not user.telegram_id:
+        raise HTTPException(status_code=404, detail="Telegram не привязан")
+    # Ставим задачу в очередь
+    send_telegram_message.delay(user.telegram_id, "Тестовое сообщение из FastAPI через Celery!")
+    return {"success": True, "message": "Задача на отправку сообщения поставлена в очередь."}
+
+@api_router.post("/admin/telegram/broadcast")
+async def broadcast_telegram_message(
+    request: Request,
+    session=Depends(get_session),
+    text: str = Form(None),
+    file: UploadFile = File(None),
+    file_type: str = Form(None)
+):
+    token = request.cookies.get("access_token") or request.cookies.get("Authorization")
+    if not token:
+        raise HTTPException(status_code=401, detail="Не авторизован")
+    user_email = await authenticate_cookie(token)
+    if not user_email:
+        raise HTTPException(status_code=401, detail="Не авторизован")
+    user = UserService.get_user_by_email(user_email, session)
+    if not user or not user.is_superuser:
+        raise HTTPException(status_code=403, detail="Доступ запрещён")
+    # Получаем всех пользователей с telegram_id
+    users = session.exec(select(User).where(User.telegram_id.is_not(None))).all()
+    if not users:
+        return {"success": False, "message": "Нет пользователей с привязанным Telegram."}
+    file_path = None
+    temp_file = None
+    if file:
+        suffix = ".jpg" if file_type == "photo" else ".pdf" if file_type == "document" else ""
+        temp_file = NamedTemporaryFile(delete=False, suffix=suffix)
+        with temp_file as f:
+            shutil.copyfileobj(file.file, f)
+        file_path = temp_file.name
+    count = 0
+    for u in users:
+        send_telegram_message.delay(u.telegram_id, text, file_path, file_type)
+        count += 1
+    # Удаляем временный файл после рассылки (если был)
+    if temp_file:
+        temp_file.close()
+    return {"success": True, "message": f"Поставлено задач: {count}", "users": count}
+
 
 def create_application() -> FastAPI:
     """
@@ -64,7 +131,7 @@ app = create_application()
 def on_startup():
     try:
         logger.info("Инициализация базы данных...")
-        init_db(demostart = False)
+        init_db(demostart = True)
         logger.info("Запуск приложения успешно завершен")
     except Exception as e:
         logger.error(f"Ошибка при запуске: {str(e)}")
