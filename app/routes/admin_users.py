@@ -131,4 +131,39 @@ async def admin_users(request: Request, session=Depends(get_session)):
     }
     return templates.TemplateResponse("admin_users.html", context)
 
-# Удалены endpoints /admin/telegram и /admin/send-telegram, теперь они в admin_telegram.py 
+@admin_users_router.get("/admin/telegram", response_class=HTMLResponse)
+async def admin_telegram_page(request: Request, session=Depends(get_session)):
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return RedirectResponse(url="/login", status_code=302)
+    context = {"request": request}
+    return templates.TemplateResponse("admin_telegram.html", context)
+
+@admin_users_router.post("/admin/send-telegram")
+async def send_telegram(request: Request, session=Depends(get_session)):
+    data = await request.json()
+    user_id = data.get("user_id")
+    telegram_id = data.get("telegram_id")
+    message = data.get("message")
+    if not message:
+        return JSONResponse({"success": False, "error": "Не задан текст сообщения"}, status_code=400)
+    if not telegram_id:
+        if not user_id:
+            return JSONResponse({"success": False, "error": "Нужно указать user_id или telegram_id"}, status_code=400)
+        user = session.exec(select(UsersService.User).where(UsersService.User.id == user_id)).first()
+        if not user or not user.telegram_id:
+            return JSONResponse({"success": False, "error": "Пользователь не найден или не привязан к Telegram"}, status_code=404)
+        telegram_id = user.telegram_id
+    try:
+        await send_telegram_message(telegram_id, message)
+        return JSONResponse({"success": True})
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500) 
