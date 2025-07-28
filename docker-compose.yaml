@@ -53,7 +53,7 @@ services:
       - db
     networks:
       - figaro-network
-    command: celery -A celery_worker worker --loglevel=info
+    command: celery -A celery_worker worker --loglevel=info -Q telegram
 
   bot:
     build:

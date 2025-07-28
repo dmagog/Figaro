@@ -10,6 +10,7 @@ from .statistics import Statistics
 from .festival_day import FestivalDay
 from .customer_route_match import CustomerRouteMatch
 from .off_program import OffProgram, EventFormat
+from .telegram_stats import MessageTemplate, TelegramMessage, TelegramCampaign, MessageStatus
 
 __all__ = [
     "Hall",
@@ -30,5 +31,9 @@ __all__ = [
     "CustomerRouteMatch",
     "OffProgram",
     "EventFormat",
-    "HallTransition"
+    "HallTransition",
+    "MessageTemplate",
+    "TelegramMessage", 
+    "TelegramCampaign",
+    "MessageStatus"
 ]

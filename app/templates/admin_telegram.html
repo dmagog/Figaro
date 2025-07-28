@@ -7,24 +7,70 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <style>
         body { background: #f6f7fb; font-family: 'Segoe UI', 'Arial', sans-serif; margin: 0; }
-        .admin-container { max-width: 1200px; margin: 40px auto; padding: 30px; background: white; border-radius: 18px; box-shadow: 0 8px 32px rgba(60,60,120,0.08); }
+        .admin-container { max-width: 1400px; margin: 40px auto; padding: 30px; background: white; border-radius: 18px; box-shadow: 0 8px 32px rgba(60,60,120,0.08); }
         .admin-header { margin-bottom: 30px; }
         .admin-nav-flex { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; position: relative; overflow-x: auto; padding-bottom: 4px; }
         .admin-menu-btn { background: #e0e7ff; color: #4f5bd5; padding: 10px 22px; border-radius: 10px; text-decoration: none; font-weight: 500; font-size: 1.08em; border: none; transition: background 0.18s, color 0.18s; display: inline-block; text-align: center; cursor: pointer; white-space: nowrap; }
         .admin-menu-btn:hover, .admin-menu-btn.active { background: #667eea; color: #fff; }
-        .admin-section { margin: 0 auto; max-width: 600px; }
-        .tg-form-card { background:#f8f9fa; border-radius:18px; padding:32px 32px 24px 32px; box-shadow:0 4px 24px rgba(102,126,234,0.13); animation: fadeIn 0.7s; }
-        .tg-form-card label { font-weight:500; color:#4f5bd5; font-size:1.04em; }
-        .tg-form-card input, .tg-form-card textarea { border:1.5px solid #d1d5db; border-radius:8px; padding:10px 14px; margin-top:6px; margin-bottom:16px; width:100%; font-size:1.08em; background:#fff; transition: border 0.18s; }
-        .tg-form-card input:focus, .tg-form-card textarea:focus { border:1.5px solid #667eea; outline:none; }
-        .tg-form-card button { background:#667eea; color:white; border:none; padding:13px 0; border-radius:8px; font-weight:600; cursor:pointer; margin-top:10px; width:100%; font-size:1.08em; box-shadow:0 2px 8px rgba(102,126,234,0.07); transition: background 0.18s; }
-        .tg-form-card button:hover { background:#4f5bd5; }
-        #tg-send-status { display:inline-block; margin-top:18px; font-weight:500; min-height:24px; opacity:0; transition:opacity 0.3s; }
-        #tg-send-status.visible { opacity:1; }
-        .tg-form-title { display:flex; align-items:center; gap:10px; font-size:1.35em; font-weight:600; color:#222; margin-bottom:18px; }
-        .tg-form-title .tg-ico { font-size:1.3em; color:#229ed9; }
-        @keyframes fadeIn { from { opacity:0; transform:translateY(20px);} to { opacity:1; transform:translateY(0);} }
-        @media (max-width: 700px) { .admin-container { padding: 10px; } .tg-form-card { padding: 16px 6px 12px 6px; } }
+        
+        .tg-dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+        .tg-stats-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; text-align: center; }
+        .tg-stats-card h3 { margin: 0 0 10px 0; font-size: 1.2em; opacity: 0.9; }
+        .tg-stats-card .number { font-size: 2.5em; font-weight: bold; margin-bottom: 5px; }
+        .tg-stats-card .label { font-size: 0.9em; opacity: 0.8; }
+        
+        .tg-main-content { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .tg-form-section { background: #f8f9fa; border-radius: 15px; padding: 25px; }
+        .tg-form-section h3 { margin: 0 0 20px 0; color: #333; font-size: 1.3em; }
+        
+        .tg-form-group { margin-bottom: 20px; }
+        .tg-form-group label { display: block; font-weight: 500; color: #4f5bd5; margin-bottom: 8px; font-size: 1.05em; }
+        .tg-form-group input, .tg-form-group select, .tg-form-group textarea { width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 1em; transition: border-color 0.2s; }
+        .tg-form-group input:focus, .tg-form-group select:focus, .tg-form-group textarea:focus { border-color: #667eea; outline: none; }
+        
+        .tg-categories { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .tg-category-card { background: white; border: 2px solid #e1e5e9; border-radius: 10px; padding: 15px; cursor: pointer; transition: all 0.2s; }
+        .tg-category-card:hover { border-color: #667eea; transform: translateY(-2px); }
+        .tg-category-card.selected { border-color: #667eea; background: #f0f4ff; }
+        .tg-category-card h4 { margin: 0 0 8px 0; color: #333; font-size: 1.1em; }
+        .tg-category-card .count { color: #667eea; font-weight: bold; font-size: 1.2em; }
+        .tg-category-card .desc { color: #666; font-size: 0.9em; margin-top: 5px; }
+        
+        .tg-users-grid { max-height: 300px; overflow-y: auto; border: 2px solid #e1e5e9; border-radius: 8px; padding: 15px; background: white; }
+        .tg-user-item { display: flex; align-items: center; padding: 8px; border-radius: 6px; margin-bottom: 5px; transition: background 0.2s; }
+        .tg-user-item:hover { background: #f8f9fa; }
+        .tg-user-item input[type="checkbox"] { margin-right: 12px; transform: scale(1.2); }
+        .tg-user-info { flex: 1; }
+        .tg-user-name { font-weight: 500; color: #333; }
+        .tg-user-details { font-size: 0.85em; color: #666; margin-top: 2px; }
+        
+        .tg-template-selector { margin-bottom: 20px; }
+        .tg-template-preview { background: white; border: 1px solid #e1e5e9; border-radius: 8px; padding: 15px; margin-top: 10px; font-size: 0.9em; color: #666; }
+        
+        .tg-send-btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 15px 30px; border-radius: 10px; font-size: 1.1em; font-weight: 600; cursor: pointer; width: 100%; transition: transform 0.2s; }
+        .tg-send-btn:hover { transform: translateY(-2px); }
+        .tg-send-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        
+        .tg-status { margin-top: 15px; padding: 12px; border-radius: 8px; font-weight: 500; text-align: center; opacity: 0; transition: opacity 0.3s; }
+        .tg-status.visible { opacity: 1; }
+        .tg-status.success { background: #d1fae5; color: #065f46; }
+        .tg-status.error { background: #fee2e2; color: #991b1b; }
+        
+        .tg-campaigns { margin-top: 30px; }
+        .tg-campaign-item { background: white; border: 1px solid #e1e5e9; border-radius: 10px; padding: 20px; margin-bottom: 15px; }
+        .tg-campaign-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .tg-campaign-name { font-weight: 600; color: #333; font-size: 1.1em; }
+        .tg-campaign-date { color: #666; font-size: 0.9em; }
+        .tg-campaign-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        .tg-stat-item { text-align: center; }
+        .tg-stat-number { font-size: 1.5em; font-weight: bold; color: #667eea; }
+        .tg-stat-label { font-size: 0.8em; color: #666; margin-top: 5px; }
+        
+        .tg-search-box { margin-bottom: 15px; }
+        .tg-search-box input { width: 100%; padding: 10px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 1em; }
+        
+        @media (max-width: 1200px) { .tg-main-content { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) { .tg-dashboard { grid-template-columns: 1fr; } .admin-container { padding: 15px; } }
     </style>
 </head>
 <body>
@@ -48,99 +94,250 @@
                 <a href="/" class="admin-menu-btn"><span style="font-size:1.1em; margin-right:6px;">🌐</span>На сайт</a>
             </nav>
         </div>
-        <div class="admin-section">
-            <a href="/admin/users" class="back-link" style="display:inline-block; margin-bottom:18px; color:#4f5bd5; text-decoration:underline;">← Назад к пользователям</a>
-            <div class="tg-form-title"><span class="tg-ico">&#128241;</span> Отправить сообщение в Telegram</div>
-            <form id="tg-send-form" class="tg-form-card" enctype="multipart/form-data">
-                <div style="margin-bottom:18px; display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
-                    <div style="flex:2; min-width:220px;">
-                        <label for="tg-users">Выбрать пользователей:</label>
-                        <input type="text" id="tg-users-search" placeholder="Поиск пользователя..." style="width:100%; margin-bottom:6px; border-radius:8px; border:1.5px solid #d1d5db; padding:7px 10px; font-size:1em;">
-                        <select id="tg-users" name="user_ids" multiple size="6" style="width:100%; border-radius:8px; box-shadow:0 2px 8px rgba(102,126,234,0.07); border:1.5px solid #d1d5db; background:#fff; font-size:1.04em; padding:6px 0; transition:border 0.18s;">
-                            <option disabled selected value="">— Выберите пользователя —</option>
-                            {% for u in users %}
-                                <option value="{{ u.id }}">[{{ u.id }}] {{ u.name or u.email }}{% if u.telegram_id %} (TG: {{ u.telegram_id }}){% endif %}</option>
+
+        <!-- Статистика -->
+        <div class="tg-dashboard">
+            <div class="tg-stats-card">
+                <h3>Всего пользователей</h3>
+                <div class="number">{{ total_users }}</div>
+                <div class="label">с Telegram</div>
+            </div>
+            <div class="tg-stats-card">
+                <h3>Активные покупатели</h3>
+                <div class="number">{{ users_with_purchases }}</div>
+                <div class="label">с покупками</div>
+            </div>
+            <div class="tg-stats-card">
+                <h3>Новые пользователи</h3>
+                <div class="number">{{ new_users }}</div>
+                <div class="label">за 30 дней</div>
+            </div>
+            <div class="tg-stats-card">
+                <h3>Активные пользователи</h3>
+                <div class="number">{{ active_users }}</div>
+                <div class="label">за 90 дней</div>
+            </div>
+        </div>
+
+        <div class="tg-main-content">
+            <!-- Форма отправки -->
+            <div class="tg-form-section">
+                <h3>📤 Отправить сообщение</h3>
+                <form id="tg-send-form">
+                    <!-- Категории пользователей -->
+                    <div class="tg-form-group">
+                        <label>Выберите категорию пользователей:</label>
+                        <div class="tg-categories">
+                            <div class="tg-category-card" data-category="all">
+                                <h4>Все пользователи</h4>
+                                <div class="count">{{ total_users }}</div>
+                                <div class="desc">Все с Telegram</div>
+                            </div>
+                            <div class="tg-category-card" data-category="with_purchases">
+                                <h4>С покупками</h4>
+                                <div class="count">{{ users_with_purchases }}</div>
+                                <div class="desc">Покупали билеты</div>
+                            </div>
+                            <div class="tg-category-card" data-category="without_purchases">
+                                <h4>Без покупок</h4>
+                                <div class="count">{{ users_without_purchases }}</div>
+                                <div class="desc">Еще не покупали</div>
+                            </div>
+                            <div class="tg-category-card" data-category="new_users">
+                                <h4>Новые</h4>
+                                <div class="count">{{ new_users }}</div>
+                                <div class="desc">Зарегистрировались недавно</div>
+                            </div>
+                            <div class="tg-category-card" data-category="active_users">
+                                <h4>Активные</h4>
+                                <div class="count">{{ active_users }}</div>
+                                <div class="desc">Покупали недавно</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Шаблоны -->
+                    <div class="tg-form-group">
+                        <label for="template-select">Шаблон сообщения:</label>
+                        <select id="template-select" class="tg-template-selector">
+                            <option value="">— Выберите шаблон —</option>
+                            {% for template in templates %}
+                                <option value="{{ template.id }}" data-content="{{ template.content }}">{{ template.name }}</option>
                             {% endfor %}
                         </select>
-                        <div style="font-size:0.93em; color:#888; margin-top:2px;">Можно выбрать несколько (Ctrl/Shift)</div>
+                        <div id="template-preview" class="tg-template-preview" style="display: none;"></div>
                     </div>
-                    <div style="flex:1; min-width:120px;">
-                        <label for="tg-user-id">User ID:</label>
-                        <input type="number" id="tg-user-id" name="user_id" placeholder="ID пользователя">
+
+                    <!-- Сообщение -->
+                    <div class="tg-form-group">
+                        <label for="message-text">Сообщение:</label>
+                        <textarea id="message-text" name="message" rows="6" placeholder="Введите текст сообщения или выберите шаблон..."></textarea>
+                        <div style="font-size: 0.85em; color: #666; margin-top: 5px;">
+                            Доступные переменные: {name}, {email}, {tickets_count}, {total_spent}, {concerts_count}
+                        </div>
                     </div>
-                    <span style="color:#888;">или</span>
-                    <div style="flex:1; min-width:120px;">
-                        <label for="tg-telegram-id">Telegram ID:</label>
-                        <input type="number" id="tg-telegram-id" name="telegram_id" placeholder="ID в Telegram">
+
+                    <!-- Название кампании -->
+                    <div class="tg-form-group">
+                        <label for="campaign-name">Название кампании:</label>
+                        <input type="text" id="campaign-name" name="campaign_name" placeholder="Введите название кампании (опционально)">
                     </div>
+
+                    <!-- Файл -->
+                    <div class="tg-form-group">
+                        <label for="file-upload">Прикрепить файл:</label>
+                        <input type="file" id="file-upload" name="file" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar">
+                    </div>
+
+                    <!-- Markdown -->
+                    <div class="tg-form-group" style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="use-markdown" name="markdown" checked style="width: 18px; height: 18px;">
+                        <label for="use-markdown" style="margin: 0;">Использовать Markdown</label>
+                    </div>
+
+                    <button type="submit" class="tg-send-btn">🚀 Отправить кампанию</button>
+                    <div id="send-status" class="tg-status"></div>
+                </form>
+            </div>
+
+            <!-- Последние кампании -->
+            <div class="tg-form-section">
+                <h3>📊 Последние кампании</h3>
+                <div id="campaigns-list">
+                    {% for campaign in recent_campaigns %}
+                        <div class="tg-campaign-item">
+                            <div class="tg-campaign-header">
+                                <div class="tg-campaign-name">{{ campaign.name }}</div>
+                                <div class="tg-campaign-date">{{ campaign.created_at.strftime('%d.%m.%Y %H:%M') if campaign.created_at else '' }}</div>
+                            </div>
+                            <div class="tg-campaign-stats">
+                                <div class="tg-stat-item">
+                                    <div class="tg-stat-number">{{ campaign.target_users_count }}</div>
+                                    <div class="tg-stat-label">Целевых</div>
+                                </div>
+                                <div class="tg-stat-item">
+                                    <div class="tg-stat-number">{{ campaign.sent_count }}</div>
+                                    <div class="tg-stat-label">Отправлено</div>
+                                </div>
+                                <div class="tg-stat-item">
+                                    <div class="tg-stat-number">{{ campaign.delivered_count }}</div>
+                                    <div class="tg-stat-label">Доставлено</div>
+                                </div>
+                                <div class="tg-stat-item">
+                                    <div class="tg-stat-number">{{ campaign.failed_count }}</div>
+                                    <div class="tg-stat-label">Ошибок</div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p style="color: #666; text-align: center; padding: 20px;">Пока нет кампаний</p>
+                    {% endfor %}
                 </div>
-                <div style="margin-bottom:12px;">
-                    <label for="tg-message">Сообщение:</label><br>
-                    <textarea id="tg-message" name="message" rows="3" placeholder="Текст сообщения..."></textarea>
-                </div>
-                <div style="margin-bottom:12px; display:flex; gap:18px; align-items:center; flex-wrap:wrap;">
-                    <div style="flex:2; min-width:180px;">
-                        <label for="tg-file">Прикрепить файл:</label>
-                        <input type="file" id="tg-file" name="file" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar">
-                        <div style="font-size:0.93em; color:#888; margin-top:2px;">Фото или документ (опционально)</div>
-                    </div>
-                    <div style="flex:1; min-width:120px; display:flex; align-items:center; gap:8px;">
-                        <input type="checkbox" id="tg-markdown" name="markdown" style="width:18px; height:18px;" checked>
-                        <label for="tg-markdown" style="margin:0; font-size:1em;">Использовать Markdown</label>
-                    </div>
-                </div>
-                <div style="font-size:0.93em; color:#888; margin-bottom:10px;">Поддерживается <a href="https://core.telegram.org/bots/api#markdown-style" target="_blank" style="color:#4f5bd5; text-decoration:underline;">Markdown</a>-разметка Telegram</div>
-                <button type="submit">Отправить</button>
-                <span id="tg-send-status"></span>
-            </form>
+            </div>
         </div>
     </div>
+
     <script>
-    // Фильтр пользователей по поиску
-    document.getElementById('tg-users-search').addEventListener('input', function() {
-      const search = this.value.toLowerCase();
-      const select = document.getElementById('tg-users');
-      Array.from(select.options).forEach(opt => {
-        if (!opt.value) return; // placeholder
-        const text = opt.textContent.toLowerCase();
-        opt.style.display = text.includes(search) ? '' : 'none';
-      });
-    });
-    document.getElementById('tg-send-form').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const form = e.target;
-      const formData = new FormData(form);
-      // Собираем выбранные user_ids
-      const usersSelect = document.getElementById('tg-users');
-      const selectedUserIds = Array.from(usersSelect.selectedOptions).map(opt => opt.value);
-      formData.delete('user_ids');
-      selectedUserIds.forEach(id => formData.append('user_ids', id));
-      // Остальные поля
-      const user_id = document.getElementById('tg-user-id').value;
-      const telegram_id = document.getElementById('tg-telegram-id').value;
-      if (user_id) formData.set('user_id', user_id);
-      if (telegram_id) formData.set('telegram_id', telegram_id);
-      const markdown = document.getElementById('tg-markdown').checked;
-      formData.set('markdown', markdown ? '1' : '0');
-      const status = document.getElementById('tg-send-status');
-      status.textContent = 'Отправка...';
-      status.style.color = '#222';
-      status.classList.add('visible');
-      const resp = await fetch('/admin/send-telegram', {
-        method: 'POST',
-        body: formData
-      });
-      const data = await resp.json();
-      if (data.success) {
-        status.textContent = '✅ Сообщение отправлено!';
-        status.style.color = '#10b981';
-      } else {
-        status.textContent = '❌ ' + (data.error || 'Ошибка отправки');
-        status.style.color = '#dc2626';
-      }
-      status.classList.add('visible');
-      setTimeout(() => status.classList.remove('visible'), 3500);
-    });
+        // Выбор категории
+        document.querySelectorAll('.tg-category-card').forEach(card => {
+            card.addEventListener('click', function() {
+                document.querySelectorAll('.tg-category-card').forEach(c => c.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+
+        // Шаблоны
+        document.getElementById('template-select').addEventListener('change', function() {
+            const preview = document.getElementById('template-preview');
+            const messageText = document.getElementById('message-text');
+            
+            if (this.value) {
+                const selectedOption = this.options[this.selectedIndex];
+                const content = selectedOption.getAttribute('data-content');
+                preview.textContent = content;
+                preview.style.display = 'block';
+                messageText.value = content;
+            } else {
+                preview.style.display = 'none';
+            }
+        });
+
+        // Отправка формы
+        document.getElementById('tg-send-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const selectedCategory = document.querySelector('.tg-category-card.selected');
+            if (!selectedCategory) {
+                alert('Выберите категорию пользователей');
+                return;
+            }
+            
+            const messageText = document.getElementById('message-text').value.trim();
+            if (!messageText) {
+                alert('Введите текст сообщения');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('category', selectedCategory.dataset.category);
+            formData.append('message', messageText);
+            formData.append('campaign_name', document.getElementById('campaign-name').value);
+            formData.append('markdown', document.getElementById('use-markdown').checked ? '1' : '0');
+            
+            const fileInput = document.getElementById('file-upload');
+            if (fileInput.files[0]) {
+                formData.append('file', fileInput.files[0]);
+            }
+            
+            const templateSelect = document.getElementById('template-select');
+            if (templateSelect.value) {
+                formData.append('template_id', templateSelect.value);
+            }
+            
+            const sendBtn = document.querySelector('.tg-send-btn');
+            const status = document.getElementById('send-status');
+            
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Отправка...';
+            status.textContent = 'Запуск кампании...';
+            status.className = 'tg-status visible';
+            
+            try {
+                const response = await fetch('/admin/send-telegram', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    status.textContent = `✅ ${data.message}`;
+                    status.className = 'tg-status visible success';
+                    
+                    // Очищаем форму
+                    document.getElementById('message-text').value = '';
+                    document.getElementById('campaign-name').value = '';
+                    document.getElementById('file-upload').value = '';
+                    document.getElementById('template-select').value = '';
+                    document.getElementById('template-preview').style.display = 'none';
+                    document.querySelectorAll('.tg-category-card').forEach(c => c.classList.remove('selected'));
+                    
+                    // Обновляем список кампаний через 2 секунды
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    status.textContent = `❌ ${data.error}`;
+                    status.className = 'tg-status visible error';
+                }
+            } catch (error) {
+                status.textContent = '❌ Ошибка отправки';
+                status.className = 'tg-status visible error';
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = '🚀 Отправить кампанию';
+            }
+        });
     </script>
 </body>
 </html> 

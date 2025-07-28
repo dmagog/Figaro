@@ -2356,175 +2356,246 @@
                                     </div>
                                     {% endif %}
                                     
-                                    <div class="concert-event compact" style="animation-delay: {{ loop.index * 0.1 }}s; padding: 4px 8px 4px 12px; margin-bottom: 0px; {% if is_conflict %}background-color: #fef2f2; border-left: 4px solid #dc2626;{% endif %}">
-                                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                                            <!-- Время начала концерта в ярлычке -->
-                                            <div class="concert-number {% if is_conflict %}concert-number-conflict{% else %}concert-number-day{{ day_index }}{% endif %}">{{ concert.concert.datetime.strftime('%H:%M') if concert.concert.datetime else 'TBD' }}</div>
-                                            
-                                            <!-- Название концерта -->
-                                            <span style="font-weight:600; color:#333; font-size:1em; flex:1 1 200px; min-width:150px; margin-left:20px; margin-top:6px; display:inline-block;">{{ concert.concert.id }}. {{ concert.concert.name }}</span>
-                                            
-                                            <!-- Жанр и длительность справа -->
-                                            <div style="display: flex; flex-direction: column; align-items: flex-end; margin-top: 2px; margin-right: 10px;">
-                                                {% if concert.concert.genre %}<span style="color:#666; font-size:0.9em;">{{ concert.concert.genre }}</span>{% endif %}
-                                                {% if concert.concert.duration %}<span style="color:#666; font-size:0.9em; cursor: help;" title="Длительность концерта: {{ (concert.concert.duration.total_seconds() / 60) | int }} минут">⏱️ {{ (concert.concert.duration.total_seconds() / 60) | int }} мин</span>{% endif %}
+    <div class="concert-event compact" style="animation-delay: {{ loop.index * 0.1 }}s; padding: 4px 8px 4px 12px; margin-bottom: 0px; {% if is_conflict %}background-color: #fef2f2; border-left: 4px solid #dc2626;{% endif %}">
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <!-- Время начала концерта в ярлычке -->
+            <div class="concert-number {% if is_conflict %}concert-number-conflict{% else %}concert-number-day{{ day_index }}{% endif %}">{{ concert.concert.datetime.strftime('%H:%M') if concert.concert.datetime else 'TBD' }}</div>
+            
+            <!-- Название концерта -->
+            <span style="font-weight:600; color:#333; font-size:1em; flex:1 1 200px; min-width:150px; margin-left:20px; margin-top:6px; display:inline-block;">{{ concert.concert.id }}. {{ concert.concert.name }}</span>
+            
+            <!-- Жанр и длительность справа -->
+            <div style="display: flex; flex-direction: column; align-items: flex-end; margin-top: 2px; margin-right: 10px;">
+                {% if concert.concert.genre %}<span style="color:#666; font-size:0.9em;">{{ concert.concert.genre }}</span>{% endif %}
+                {% if concert.concert.duration %}<span style="color:#666; font-size:0.9em; cursor: help;" title="Длительность концерта: {{ (concert.concert.duration.total_seconds() / 60) | int }} минут">⏱️ {{ (concert.concert.duration.total_seconds() / 60) | int }} мин</span>{% endif %}
+            </div>
+            
+            <!-- Адрес зала -->
+            <div style="color:#666; font-size:0.9em; width: 100%; margin-top: -6px; margin-left: 20px;">{{ concert.concert.hall.name if concert.concert.hall else '—' }} • {% if concert.concert.hall and concert.concert.hall.address %}{{ concert.concert.hall.address }}{% endif %}</div>
+
+            <!-- Кнопка подробнее -->
+            <button onclick="toggleConcertDetails({{ concert.concert.id }})" class="expand-btn" data-concert-id="{{ concert.concert.id }}" title="Показать подробности концерта" style="margin-left:6px; background:none; border:none; color:#dddddd; font-size:1.2em; cursor:pointer; padding:2px; transition:transform 0.2s ease; position:relative; transform:translateY(-4px);">▽</button>
+        </div>
+                                            <div class="concert-details-content" id="details-{{ concert.concert.id }}" style="margin-top:4px; display:none;">
+                                                {% if concert.concert.artists %}
+                                                <div class="artists-section">
+                                                    <div class="section-title">Артисты</div>
+                                                    <div class="artists-list">
+                                                        {% for artist in concert.concert.artists %}
+                                                        <span class="artist-tag{% if artist.is_special %} special-artist{% endif %}">{{ artist.name }}{% if artist.is_special %}⭐{% endif %}</span>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                                {% if concert.concert.compositions %}
+                                                <div class="compositions-section">
+                                                    <div class="section-title">Произведения</div>
+                                                    <div class="compositions-list">
+                                                        {% for composition in concert.concert.compositions %}
+                                                        <span class="composition-tag">{{ composition.name }} <span class="composition-author">({{ composition.author.name }})</span></span>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                                
+                                                <div class="weather-info"><div class="weather-icon">🌤️</div><div class="weather-details"><div class="weather-temp">+18°C</div><div class="weather-desc">Переменная облачность</div></div></div>
                                             </div>
-                                            
-                                            <!-- Адрес зала -->
-                                            <div style="color:#666; font-size:0.9em; width: 100%; margin-top: -6px; margin-left: 20px;">{{ concert.concert.hall.name if concert.concert.hall else '—' }} • {% if concert.concert.hall and concert.concert.hall.address %}{{ concert.concert.hall.address }}{% endif %}</div>
-                                            
-                                            <!-- Кнопка подробнее -->
-                                            <button onclick="toggleConcertDetails({{ concert.concert.id }})" class="expand-btn" data-concert-id="{{ concert.concert.id }}" title="Показать подробности концерта" style="margin-left:6px; background:none; border:none; color:#dddddd; font-size:1.2em; cursor:pointer; padding:2px; transition:transform 0.2s ease; position:relative; transform:translateY(-4px);">▽</button>
                                         </div>
-                                        <div class="concert-details-content" id="details-{{ concert.concert.id }}" style="margin-top:4px; display:none;">
-                                            {% if concert.concert.artists %}
-                                            <div class="artists-section">
-                                                <div class="section-title">Артисты</div>
-                                                <div class="artists-list">
-                                                    {% for artist in concert.concert.artists %}
-                                                    <span class="artist-tag{% if artist.is_special %} special-artist{% endif %}">{{ artist.name }}{% if artist.is_special %}⭐{% endif %}</span>
-                                                    {% endfor %}
-                                                </div>
-                                            </div>
-                                            {% endif %}
-                                            {% if concert.concert.compositions %}
-                                            <div class="compositions-section">
-                                                <div class="section-title">Произведения</div>
-                                                <div class="compositions-list">
-                                                    {% for composition in concert.concert.compositions %}
-                                                    <span class="composition-tag">{{ composition.name }} <span class="composition-author">({{ composition.author.name }})</span></span>
-                                                    {% endfor %}
-                                                </div>
-                                            </div>
-                                            {% endif %}
-                                            
-                                            <div class="weather-info"><div class="weather-icon">🌤️</div><div class="weather-details"><div class="weather-temp">+18°C</div><div class="weather-desc">Переменная облачность</div></div></div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Информация о переходе к следующему концерту -->
-                                    {% set show_transition = true %}
-                                    {% if loop.index > 1 and day_concerts[loop.index - 2].transition_info and day_concerts[loop.index - 2].transition_info.status == 'overlap' %}
-                                        {% set show_transition = false %}
-                                    {% endif %}
-                                    {% if concert.transition_info and show_transition %}
-                                    <div class="transition-card transition-{{ concert.transition_info.status }}" style="margin: 0 0 {% if not concert.off_program_events or concert.off_program_events|length == 0 %}12px{% else %}0{% endif %} 60px; padding: 4px 12px; border-radius: 0 6px 6px 0; font-size: 0.85em; display: flex; align-items: center; gap: 8px; width: 90%; border-left: 3px solid; position: relative; animation-delay: {{ (loop.index * 0.1) + 0.2 }}s; 
-                                        {% if concert.transition_info.status == 'warning' %}border-left-color: #856404; background-color: #fff3cd;{% endif %}
-                                        {% if concert.transition_info.status == 'success' %}border-left-color: #155724; background-color: #d4edda;{% endif %}
-                                        {% if concert.transition_info.status == 'tight' %}border-left-color: #856404; background-color: #fff3cd;{% endif %}
-                                        {% if concert.transition_info.status == 'same_hall' %}border-left-color: #155724; background-color: #d4edda;{% endif %}
-                                        {% if concert.transition_info.status == 'same_building' %}border-left-color: #155724; background-color: #d4edda;{% endif %}
-                                        {% if concert.transition_info.status == 'overlap' %}border-left-color: #dc2626; background-color: #fee2e2;{% endif %}
-                                        {% if concert.transition_info.status == 'hurry' %}border-left-color: #f59e0b; background-color: #fef3c7;{% endif %}
-                                        {% if concert.transition_info.status == 'no_transition_data' %}border-left-color: #dc2626; background-color: #fef2f2;{% endif %}">
-                                        {% if concert.transition_info.status == 'overlap' %}
-                                            <span style="color: #dc2626;">{% if concert.transition_info.time_between < 0 %}🚫{% else %}⏰{% endif %}</span>
-                                            <div style="flex: 1;">
-                                                <div style="font-weight: 500; color: #dc2626;">
-                                                    {% if concert.transition_info.time_between < 0 %}
-                                                        Концерты накладываются по времени • 
-                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">Переход невозможен</span>
-                                                    {% else %}
-                                                        Недостаточно времени на переход между залами • 
-                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">Нужно ~{{ concert.transition_info.walk_time }} мин, есть {{ concert.transition_info.time_between }} мин</span>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
-                                        {% elif concert.transition_info.status == 'warning' %}
-                                            <span style="color: #856404;">⚠️</span>
-                                            <div style="flex: 1;">
-                                                <div style="font-weight: 500; color: #856404;">
-                                                    Мало времени до перехода в {{ day_concerts[loop.index].concert.hall.name if loop.index < day_concerts|length and day_concerts[loop.index].concert.hall else 'следующий зал' }} • 
-                                                    <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • ~{{ concert.transition_info.walk_time }} мин пешком</span>
-                                                </div>
-                                            </div>
-                                        {% elif concert.transition_info.status == 'success' %}
-                                            <span style="color: #155724;">🚶🏼‍➡️</span>
-                                            <div style="flex: 1;">
-                                                <div style="font-weight: 500; color: #155724;">
-                                                    Переходим в → {{ day_concerts[loop.index].concert.hall.name if loop.index < day_concerts|length and day_concerts[loop.index].concert.hall else 'следующий зал' }} • 
-                                                    <span style="color: #666; font-size: 0.9em; font-weight: normal;">~{{ concert.transition_info.walk_time }} мин пешком • {{ concert.transition_info.time_between }} мин до следующего концерта </span>
-                                                </div>
-                                            </div>
-                                        {% elif concert.transition_info.status == 'hurry' %}
-                                            <span style="color: #f59e0b;">🏃🏼‍➡️</span>
-                                            <div style="flex: 1;">
-                                                <div style="font-weight: 500; color: #f59e0b;">
-                                                    Нужно поторопиться • 
-                                                    <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • ~{{ concert.transition_info.walk_time }} мин пешком</span>
-                                                </div>
-                                            </div>
-                                        {% elif concert.transition_info.status == 'tight' %}
-                                            <span style="color: #856404;">⏱️</span>
-                                            <div style="flex: 1;">
-                                                <div style="font-weight: 500; color: #856404;">
-                                                    Впритык по времени • 
-                                                    <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • ~{{ concert.transition_info.walk_time }} мин пешком</span>
-                                                </div>
-                                            </div>
-                                        {% elif concert.transition_info.status == 'same_hall' %}
-                                            <span style="color: #155724;">📍</span>
-                                            <div style="flex: 1;">
-                                                <div style="font-weight: 500; color: #155724;">
-                                                    Остаёмся в том же зале • 
-                                                    <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин до следующего концерта</span>
-                                                </div>
-                                            </div>
-                                        {% elif concert.transition_info.status == 'same_building' %}
-                                            <span style="color: #155724;">🏛️</span>
-                                            <div style="flex: 1;">
-                                                <div style="font-weight: 500; color: #155724;">
-                                                    Остаёмся в том же здании • 
-                                                    <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • Переход в другой зал: ~{{ concert.transition_info.walk_time }} мин</span>
-                                                </div>
-                                            </div>
-                                        {% elif concert.transition_info.status == 'no_transition_data' %}
-                                            <span style="color: #dc2626;">❓</span>
-                                            <div style="flex: 1;">
-                                                <div style="font-weight: 500; color: #dc2626;">
-                                                    Нет данных о переходе • 
-                                                    <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • Время перехода неизвестно</span>
-                                                </div>
-                                            </div>
-                                        {% else %}
-                                            <span style="color: #856404;">⏱️</span>
-                                            <div style="flex: 1;">
-                                                <div style="font-weight: 500; color: #856404;">
-                                                    Время перехода • 
-                                                    <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • 
-                                                    {% if concert.transition_info.walk_time is not none %}
-                                                        ~{{ concert.transition_info.walk_time }} мин пешком
-                                                    {% else %}
-                                                        <span style="color: #dc2626;">Время перехода неизвестно</span>
-                                                    {% endif %}</span>
-                                                </div>
-                                            </div>
+                                        
+                                        <!-- Информация о переходе к следующему концерту -->
+                                        {% set show_transition = true %}
+                                        {% if loop.index > 1 and day_concerts[loop.index - 2].transition_info and day_concerts[loop.index - 2].transition_info.status == 'overlap' %}
+                                            {% set show_transition = false %}
                                         {% endif %}
-                                    </div>
-                                    {% elif not show_transition %}
-                                    <!-- Пустой отступ для сохранения интервалов -->
-                                    <div style="margin: 0 0 12px 0; height: 0;"></div>
-                                    {% endif %}
+                                        {% if concert.transition_info and show_transition %}
+                                        <div class="transition-card transition-{{ concert.transition_info.status }}" style="margin: 0 0 {% if not concert.off_program_events or concert.off_program_events|length == 0 %}12px{% else %}0{% endif %} 60px; padding: 4px 12px; border-radius: 0 6px 6px 0; font-size: 0.85em; display: flex; align-items: center; gap: 8px; width: 90%; border-left: 3px solid; position: relative; animation-delay: {{ (loop.index * 0.1) + 0.2 }}s; 
+                                            {% if concert.transition_info.status == 'warning' %}border-left-color: #856404; background-color: #fff3cd;{% endif %}
+                                            {% if concert.transition_info.status == 'success' %}border-left-color: #155724; background-color: #d4edda;{% endif %}
+                                            {% if concert.transition_info.status == 'tight' %}border-left-color: #856404; background-color: #fff3cd;{% endif %}
+                                            {% if concert.transition_info.status == 'same_hall' %}border-left-color: #155724; background-color: #d4edda;{% endif %}
+                                            {% if concert.transition_info.status == 'same_building' %}border-left-color: #155724; background-color: #d4edda;{% endif %}
+                                            {% if concert.transition_info.status == 'overlap' %}border-left-color: #dc2626; background-color: #fee2e2;{% endif %}
+                                            {% if concert.transition_info.status == 'hurry' %}border-left-color: #f59e0b; background-color: #fef3c7;{% endif %}
+                                            {% if concert.transition_info.status == 'no_transition_data' %}border-left-color: #dc2626; background-color: #fef2f2;{% endif %}">
+                                            {% if concert.transition_info.status == 'overlap' %}
+                                                <span style="color: #dc2626;">{% if concert.transition_info.time_between < 0 %}🚫{% else %}⏰{% endif %}</span>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 500; color: #dc2626;">
+                                                        {% if concert.transition_info.time_between < 0 %}
+                                                            Концерты накладываются по времени • 
+                                                            <span style="color: #666; font-size: 0.9em; font-weight: normal;">Переход невозможен</span>
+                                                        {% else %}
+                                                            Недостаточно времени на переход между залами • 
+                                                            <span style="color: #666; font-size: 0.9em; font-weight: normal;">Нужно ~{{ concert.transition_info.walk_time }} мин, есть {{ concert.transition_info.time_between }} мин</span>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            {% elif concert.transition_info.status == 'warning' %}
+                                                <span style="color: #856404;">⚠️</span>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 500; color: #856404;">
+                                                        Мало времени до перехода в {{ day_concerts[loop.index].concert.hall.name if loop.index < day_concerts|length and day_concerts[loop.index].concert.hall else 'следующий зал' }} • 
+                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • ~{{ concert.transition_info.walk_time }} мин пешком</span>
+                                                    </div>
+                                                </div>
+                                            {% elif concert.transition_info.status == 'success' %}
+                                                <span style="color: #155724;">🚶🏼‍➡️</span>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 500; color: #155724;">
+                                                        Переходим в → {{ day_concerts[loop.index].concert.hall.name if loop.index < day_concerts|length and day_concerts[loop.index].concert.hall else 'следующий зал' }} • 
+                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">~{{ concert.transition_info.walk_time }} мин пешком • {{ concert.transition_info.time_between }} мин до следующего концерта </span>
+                                                    </div>
+                                                </div>
+                                            {% elif concert.transition_info.status == 'hurry' %}
+                                                <span style="color: #f59e0b;">🏃🏼‍➡️</span>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 500; color: #f59e0b;">
+                                                        Нужно поторопиться • 
+                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • ~{{ concert.transition_info.walk_time }} мин пешком</span>
+                                                    </div>
+                                                </div>
+                                            {% elif concert.transition_info.status == 'tight' %}
+                                                <span style="color: #856404;">⏱️</span>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 500; color: #856404;">
+                                                        Впритык по времени • 
+                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • ~{{ concert.transition_info.walk_time }} мин пешком</span>
+                                                    </div>
+                                                </div>
+                                            {% elif concert.transition_info.status == 'same_hall' %}
+                                                <span style="color: #155724;">📍</span>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 500; color: #155724;">
+                                                        Остаёмся в том же зале • 
+                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин до следующего концерта</span>
+                                                    </div>
+                                                </div>
+                                            {% elif concert.transition_info.status == 'same_building' %}
+                                                <span style="color: #155724;">🏛️</span>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 500; color: #155724;">
+                                                        Остаёмся в том же здании • 
+                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • Переход в другой зал: ~{{ concert.transition_info.walk_time }} мин</span>
+                                                    </div>
+                                                </div>
+                                            {% elif concert.transition_info.status == 'no_transition_data' %}
+                                                <span style="color: #dc2626;">❓</span>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 500; color: #dc2626;">
+                                                        Нет данных о переходе • 
+                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • Время перехода неизвестно</span>
+                                                    </div>
+                                                </div>
+                                            {% else %}
+                                                <span style="color: #856404;">⏱️</span>
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 500; color: #856404;">
+                                                        Время перехода • 
+                                                        <span style="color: #666; font-size: 0.9em; font-weight: normal;">{{ concert.transition_info.time_between }} мин между концертами • 
+                                                        {% if concert.transition_info.walk_time is not none %}
+                                                            ~{{ concert.transition_info.walk_time }} мин пешком
+                                                        {% else %}
+                                                            <span style="color: #dc2626;">Время перехода неизвестно</span>
+                                                        {% endif %}</span>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        {% elif not show_transition %}
+                                        <!-- Пустой отступ для сохранения интервалов -->
+                                        <div style="margin: 0 0 12px 0; height: 0;"></div>
+                                        {% endif %}
+                                        
+                                        <!-- Доступные мероприятия офф-программы -->
+                                        {% if concert.off_program_events and concert.off_program_events|length > 0 %}
+                                        <div class="off-program-section" style="animation-delay: {{ (loop.index * 0.1) + 0.4 }}s;">
+                                            <!-- Заголовок с кнопкой раскрытия -->
+                                            <div class="off-program-header" onclick="toggleOffProgram('between-day{{ day_index }}-concert{{ concert.concert.id }}')">
+                                                <div class="off-program-header-left">
+                                                    <span style="color: #3b82f6; font-size: 1.1em;">👇</span>
+                                                    <div style="flex: 1;">
+                                                        <div style="font-weight: 500; color: #3b82f6; font-size: 0.9em;">
+                                                            У Вас есть время посетить события офф-программы:
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button class="off-program-toggle-btn" id="off-program-toggle-between-day{{ day_index }}-concert{{ concert.concert.id }}" onclick="event.stopPropagation(); toggleOffProgram('between-day{{ day_index }}-concert{{ concert.concert.id }}')">▽</button>
+                                            </div>
+                                            
+                                            <!-- Свернутое состояние -->
+                                            <div class="off-program-collapsed" id="off-program-collapsed-between-day{{ day_index }}-concert{{ concert.concert.id }}">
+                                                {% for event in concert.off_program_events %}
+                                                <div class="off-program-collapsed-event">
+                                                    <div class="off-program-collapsed-left">
+                                                        <div class="off-program-collapsed-time">{{ event.event_date_display }}</div>
+                                                        <div class="off-program-collapsed-title">
+                                                            {{ event.event_name }}
+                                                            <div class="off-program-collapsed-format">{{ event.format }}</div>
+                                                            <span style="color: #666; font-size: 0.8em; margin-left: 8px;">📍 {{ event.hall_name }}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="off-program-collapsed-duration">{{ event.duration }}</div>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                            
+                                            <!-- Развернутое состояние -->
+                                            <div class="off-program-expanded" id="off-program-expanded-between-day{{ day_index }}-concert{{ concert.concert.id }}">
+                                                <div style="display: flex; flex-direction: column; gap: 3px;">
+                                                    {% for event in concert.off_program_events %}
+                                                    <div class="off-program-event{% if event.recommend %} recommended{% endif %}">
+                                                        <div class="off-program-event-container">
+                                                            <div class="off-program-event-time">
+                                                                <div class="time">{{ event.event_date_display }}</div>
+                                                            </div>
+                                                            
+                                                            <div class="off-program-event-content">
+                                                                <div class="off-program-event-title" style="flex-direction: row !important; align-items: center !important;">
+                                                                    {{ event.event_name }}
+                                                                    <div class="off-program-collapsed-format">{{ event.format }}</div>
+                                                                <span style="color: #666; font-size: 0.8em; margin-left: 8px;">�� {{ event.hall_name }}</span>
+                                                                </div>
+                                                                
+                                                                {% if event.description %}
+                                                                <div class="off-program-event-description" style="margin-top: 4px;">
+                                                                    {{ event.description }}
+                                                                </div>
+                                                                {% endif %}
+                                                            </div>
+                                                            
+                                                            <div class="off-program-event-duration">
+                                                                <div>{{ event.duration }}</div>
+                                                                <div title="Время перехода от предыдущего зала до мероприятия офф-программы">🚶🏼‍➡️ ~{{ event.walk_time_from_event or 0 }} мин</div>
+                                                                <div title="Время перехода от площадки оффпрограммы до следующего концерта">🚶 ~{{ event.walk_time_to_event or 0 }} мин</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
                                     
-                                    <!-- Доступные мероприятия офф-программы -->
-                                    {% if concert.off_program_events and concert.off_program_events|length > 0 %}
-                                    <div class="off-program-section" style="animation-delay: {{ (loop.index * 0.1) + 0.4 }}s;">
+                                    <!-- Офф-программа после последнего концерта -->
+                                    {% if day_concerts|length > 0 and day_concerts[-1].after_concert_events and day_concerts[-1].after_concert_events|length > 0 %}
+                                    <div class="off-program-section after-concert" style="animation-delay: {{ (day_concerts|length + 1) * 0.1 }}s; margin-top: 4px;">
                                         <!-- Заголовок с кнопкой раскрытия -->
-                                        <div class="off-program-header" onclick="toggleOffProgram('between-day{{ day_index }}-concert{{ concert.concert.id }}')">
+                                        <div class="off-program-header" onclick="toggleOffProgram('after-day{{ day_index }}-concert{{ day_concerts[-1].concert.id }}')">
                                             <div class="off-program-header-left">
-                                                <span style="color: #3b82f6; font-size: 1.1em;">👇</span>
+                                                <span style="color: #3b82f6; font-size: 1.1em;">🌙</span>
                                                 <div style="flex: 1;">
                                                     <div style="font-weight: 500; color: #3b82f6; font-size: 0.9em;">
-                                                        У Вас есть время посетить события офф-программы:
+                                                        Продолжите маршрут оффпрограммой:
                                                     </div>
                                                 </div>
                                             </div>
-                                            <button class="off-program-toggle-btn" id="off-program-toggle-between-day{{ day_index }}-concert{{ concert.concert.id }}" onclick="event.stopPropagation(); toggleOffProgram('between-day{{ day_index }}-concert{{ concert.concert.id }}')">▽</button>
+                                            <button class="off-program-toggle-btn" id="off-program-toggle-after-day{{ day_index }}-concert{{ day_concerts[-1].concert.id }}" onclick="event.stopPropagation(); toggleOffProgram('after-day{{ day_index }}-concert{{ day_concerts[-1].concert.id }}')">▽</button>
                                         </div>
                                         
                                         <!-- Свернутое состояние -->
-                                        <div class="off-program-collapsed" id="off-program-collapsed-between-day{{ day_index }}-concert{{ concert.concert.id }}">
-                                            {% for event in concert.off_program_events %}
+                                        <div class="off-program-collapsed" id="off-program-collapsed-after-day{{ day_index }}-concert{{ day_concerts[-1].concert.id }}">
+                                            {% for event in day_concerts[-1].after_concert_events %}
                                             <div class="off-program-collapsed-event">
                                                 <div class="off-program-collapsed-left">
                                                     <div class="off-program-collapsed-time">{{ event.event_date_display }}</div>
@@ -2540,9 +2611,9 @@
                                         </div>
                                         
                                         <!-- Развернутое состояние -->
-                                        <div class="off-program-expanded" id="off-program-expanded-between-day{{ day_index }}-concert{{ concert.concert.id }}">
+                                        <div class="off-program-expanded" id="off-program-expanded-after-day{{ day_index }}-concert{{ day_concerts[-1].concert.id }}">
                                             <div style="display: flex; flex-direction: column; gap: 3px;">
-                                                {% for event in concert.off_program_events %}
+                                                {% for event in day_concerts[-1].after_concert_events %}
                                                 <div class="off-program-event{% if event.recommend %} recommended{% endif %}">
                                                     <div class="off-program-event-container">
                                                         <div class="off-program-event-time">
@@ -2553,7 +2624,7 @@
                                                             <div class="off-program-event-title" style="flex-direction: row !important; align-items: center !important;">
                                                                 {{ event.event_name }}
                                                                 <div class="off-program-collapsed-format">{{ event.format }}</div>
-                                                                <span style="color: #666; font-size: 0.8em; margin-left: 8px;">�� {{ event.hall_name }}</span>
+                                                                <span style="color: #666; font-size: 0.8em; margin-left: 8px;">📍 {{ event.hall_name }}</span>
                                                             </div>
                                                             
                                                             {% if event.description %}
@@ -2565,8 +2636,7 @@
                                                         
                                                         <div class="off-program-event-duration">
                                                             <div>{{ event.duration }}</div>
-                                                            <div title="Время перехода от предыдущего зала до мероприятия офф-программы">🚶🏼‍➡️ ~{{ event.walk_time_from_event or 0 }} мин</div>
-                                                            <div title="Время перехода от площадки оффпрограммы до следующего концерта">🚶 ~{{ event.walk_time_to_event or 0 }} мин</div>
+                                                            <div title="Время перехода от предыдущего зала до мероприятия офф-программы">🚶🏼‍➡️ ~{{ event.walk_time_from_concert or 0 }} мин</div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -2575,436 +2645,366 @@
                                         </div>
                                     </div>
                                     {% endif %}
-                                {% endfor %}
-                                
-                                <!-- Офф-программа после последнего концерта -->
-                                {% if day_concerts|length > 0 and day_concerts[-1].after_concert_events and day_concerts[-1].after_concert_events|length > 0 %}
-                                <div class="off-program-section after-concert" style="animation-delay: {{ (day_concerts|length + 1) * 0.1 }}s; margin-top: 4px;">
-                                    <!-- Заголовок с кнопкой раскрытия -->
-                                    <div class="off-program-header" onclick="toggleOffProgram('after-day{{ day_index }}-concert{{ day_concerts[-1].concert.id }}')">
-                                        <div class="off-program-header-left">
-                                            <span style="color: #3b82f6; font-size: 1.1em;">🌙</span>
-                                            <div style="flex: 1;">
-                                                <div style="font-weight: 500; color: #3b82f6; font-size: 0.9em;">
-                                                    Продолжите маршрут оффпрограммой:
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <button class="off-program-toggle-btn" id="off-program-toggle-after-day{{ day_index }}-concert{{ day_concerts[-1].concert.id }}" onclick="event.stopPropagation(); toggleOffProgram('after-day{{ day_index }}-concert{{ day_concerts[-1].concert.id }}')">▽</button>
-                                    </div>
-                                    
-                                    <!-- Свернутое состояние -->
-                                    <div class="off-program-collapsed" id="off-program-collapsed-after-day{{ day_index }}-concert{{ day_concerts[-1].concert.id }}">
-                                        {% for event in day_concerts[-1].after_concert_events %}
-                                        <div class="off-program-collapsed-event">
-                                            <div class="off-program-collapsed-left">
-                                                <div class="off-program-collapsed-time">{{ event.event_date_display }}</div>
-                                                <div class="off-program-collapsed-title">
-                                                    {{ event.event_name }}
-                                                    <div class="off-program-collapsed-format">{{ event.format }}</div>
-                                                    <span style="color: #666; font-size: 0.8em; margin-left: 8px;">📍 {{ event.hall_name }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="off-program-collapsed-duration">{{ event.duration }}</div>
-                                        </div>
-                                        {% endfor %}
-                                    </div>
-                                    
-                                    <!-- Развернутое состояние -->
-                                    <div class="off-program-expanded" id="off-program-expanded-after-day{{ day_index }}-concert{{ day_concerts[-1].concert.id }}">
-                                        <div style="display: flex; flex-direction: column; gap: 3px;">
-                                            {% for event in day_concerts[-1].after_concert_events %}
-                                            <div class="off-program-event{% if event.recommend %} recommended{% endif %}">
-                                                <div class="off-program-event-container">
-                                                    <div class="off-program-event-time">
-                                                        <div class="time">{{ event.event_date_display }}</div>
-                                                    </div>
-                                                    
-                                                    <div class="off-program-event-content">
-                                                        <div class="off-program-event-title" style="flex-direction: row !important; align-items: center !important;">
-                                                            {{ event.event_name }}
-                                                            <div class="off-program-collapsed-format">{{ event.format }}</div>
-                                                            <span style="color: #666; font-size: 0.8em; margin-left: 8px;">📍 {{ event.hall_name }}</span>
-                                                        </div>
-                                                        
-                                                        {% if event.description %}
-                                                        <div class="off-program-event-description" style="margin-top: 4px;">
-                                                            {{ event.description }}
-                                                        </div>
-                                                        {% endif %}
-                                                    </div>
-                                                    
-                                                    <div class="off-program-event-duration">
-                                                        <div>{{ event.duration }}</div>
-                                                        <div title="Время перехода от предыдущего зала до мероприятия офф-программы">🚶🏼‍➡️ ~{{ event.walk_time_from_concert or 0 }} мин</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    {% endfor %}
-                    <!-- Финальный блок завершения маршрута -->
-                    <div class="route-finish">
-                        <div class="finish-dot">🏁</div>
-                        <div class="finish-card">
-                            <div class="finish-title">Маршрут завершён!</div>
-                            <div class="finish-stats">
-                                <div class="finish-stats-row">
-                                    <span>Дней: {{ route_sheet.summary.total_days }}</span>
-                                    <span>Концертов: {{ route_sheet.summary.total_concerts }}</span>
-                                    <span>Залов: {{ route_sheet.summary.total_halls }}</span>
-                                    <span>Потрачено: {{ "{:,}".format(route_sheet.summary.total_spent) }} ₽</span>
-                                </div>
-                                <div class="finish-stats-row">
-                                    <span>Время концертов: {{ route_sheet.summary.total_concert_time_minutes }} мин</span>
-                                    <span>Время переходов: {{ route_sheet.summary.total_walk_time_minutes }} мин</span>
-                                    <span>Пройдено: {{ route_sheet.summary.total_distance_km }} км</span>
-                                </div>
-                                <div class="finish-stats-row">
-                                    <span>Произведений: {{ route_sheet.summary.unique_compositions }}</span>
-                                    <span>Авторов: {{ route_sheet.summary.unique_authors }}</span>
-                                    <span>Артистов: {{ route_sheet.summary.unique_artists }}</span>
                                 </div>
                             </div>
-                            <div class="finish-message">Спасибо, что выбрали наш фестиваль! До встречи на концертах!</div>
+                        {% endfor %}
+                        <!-- Финальный блок завершения маршрута -->
+                        <div class="route-finish">
+                            <div class="finish-dot">🏁</div>
+                            <div class="finish-card">
+                                <div class="finish-title">Маршрут завершён!</div>
+                                <div class="finish-stats">
+                                    <div class="finish-stats-row">
+                                        <span>Дней: {{ route_sheet.summary.total_days }}</span>
+                                        <span>Концертов: {{ route_sheet.summary.total_concerts }}</span>
+                                        <span>Залов: {{ route_sheet.summary.total_halls }}</span>
+                                        <span>Потрачено: {{ "{:,}".format(route_sheet.summary.total_spent) }} ₽</span>
+                                    </div>
+                                    <div class="finish-stats-row">
+                                        <span>Время концертов: {{ route_sheet.summary.total_concert_time_minutes }} мин</span>
+                                        <span>Время переходов: {{ route_sheet.summary.total_walk_time_minutes }} мин</span>
+                                        <span>Пройдено: {{ route_sheet.summary.total_distance_km }} км</span>
+                                    </div>
+                                    <div class="finish-stats-row">
+                                        <span>Произведений: {{ route_sheet.summary.unique_compositions }}</span>
+                                        <span>Авторов: {{ route_sheet.summary.unique_authors }}</span>
+                                        <span>Артистов: {{ route_sheet.summary.unique_artists }}</span>
+                                    </div>
+                                </div>
+                                <div class="finish-message">Спасибо, что выбрали наш фестиваль! До встречи на концертах!</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            {% else %}
-                <div style="text-align: center; padding: 60px 20px; color: #666;">
-                    <div style="font-size: 4em; margin-bottom: 20px;">🗺️</div>
-                    <h3 style="margin-bottom: 10px; color: #333;">Дорожная карта пуста</h3>
-                    <p>Ваш маршрутный лист появится здесь после покупки билетов на концерты</p>
-                </div>
-            {% endif %}
-        </div>
-        
-        <!-- Вкладка "Характеристика" -->
-        <div id="characteristics-tab" class="tab-content">
-            <div class="concerts-header">
-                <h2>Характеристика вашего маршрута</h2>
-                <div class="concerts-count">
-                    <div style="display: flex; gap: 12px; align-items: center;">
-                        <div style="background: #667eea; color: white; padding: 10px 20px; border-radius: 25px; font-weight: bold;">
-                            {{ characteristics.get('total_concerts', 0) }}
-                            {% set n = characteristics.get('total_concerts', 0) %}
-                            {% if n == 1 %}
-                                концерт
-                            {% elif n >= 2 and n <= 4 %}
-                                концерта
-                            {% else %}
-                                концертов
-                            {% endif %}
-                        </div>
+                {% else %}
+                    <div style="text-align: center; padding: 60px 20px; color: #666;">
+                        <div style="font-size: 4em; margin-bottom: 20px;">🗺️</div>
+                        <h3 style="margin-bottom: 10px; color: #333;">Дорожная карта пуста</h3>
+                        <p>Ваш маршрутный лист появится здесь после покупки билетов на концерты</p>
                     </div>
-                </div>
+                {% endif %}
             </div>
             
-            {% if characteristics.get('total_concerts', 0) > 0 %}
-                <!-- Дни фестиваля -->
-                {% if festival_days %}
-                <div class="characteristic-section">
-                    <div class="characteristic-content">
-                        <div class="festival-days-simple-container">
-                        {% for day_data in festival_days %}
-                        <div class="day-simple-card{% if not day_data.is_visited %} inactive{% endif %}">
-                            <div class="day-simple-header">
-                                {% set month_names = {
-                                    'January': 'января', 'February': 'февраля', 'March': 'марта', 'April': 'апреля',
-                                    'May': 'мая', 'June': 'июня', 'July': 'июля', 'August': 'августа',
-                                    'September': 'сентября', 'October': 'октября', 'November': 'ноября', 'December': 'декабря'
-                                } %}
-                                {% set day_names = {
-                                    'Monday': 'пн', 'Tuesday': 'вт', 'Wednesday': 'ср', 'Thursday': 'чт',
-                                    'Friday': 'пт', 'Saturday': 'сб', 'Sunday': 'вс'
-                                } %}
-                                {{ day_data.day.day }} {{ month_names[day_data.day.strftime('%B')] }} ({{ day_names[day_data.day.strftime('%A')] }})
-                            </div>
-                            <div class="day-simple-count">
-                                {% if day_data.is_visited %}
-                                    <span class="count-visited">{{ day_data.visit_count }}</span>
-                                    <div class="day-simple-label">
-                                        концерт{{ 'а' if day_data.visit_count >= 2 and day_data.visit_count <= 4 else 'ов' if day_data.visit_count >= 5 else '' }}
-                                    </div>
+            <!-- Вкладка "Характеристика" -->
+            <div id="characteristics-tab" class="tab-content">
+                <div class="concerts-header">
+                    <h2>Характеристика вашего маршрута</h2>
+                    <div class="concerts-count">
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <div style="background: #667eea; color: white; padding: 10px 20px; border-radius: 25px; font-weight: bold;">
+                            {{ characteristics.get('total_concerts', 0) }}
+                            {% set n = characteristics.get('total_concerts', 0) %}
+                                {% if n == 1 %}
+                                    концерт
+                                {% elif n >= 2 and n <= 4 %}
+                                    концерта
                                 {% else %}
-                                    <span class="count-not-visited">0</span>
-                                    <div class="day-simple-label">
-                                        концертов
-                                    </div>
+                                    концертов
                                 {% endif %}
                             </div>
                         </div>
-                        {% endfor %}
-                        </div>
                     </div>
                 </div>
-                {% endif %}
                 
-                <!-- Залы и Жанры в две колонки -->
-                <div class="characteristics-row">
-                    <!-- Залы -->
+            {% if characteristics.get('total_concerts', 0) > 0 %}
+                    <!-- Дни фестиваля -->
+                    {% if festival_days %}
                     <div class="characteristic-section">
-                        <div class="characteristic-header">
-                            <div class="characteristic-icon">🏛️</div>
-                            <div class="characteristic-title">
-                                <h3>Залы фестиваля</h3>
-                                <p>Места проведения концертов</p>
-                            </div>
-                            <div class="characteristic-count">{{ characteristics.get('halls', [])|selectattr('is_visited')|list|length }}</div>
-                        </div>
                         <div class="characteristic-content">
-                            {% for hall in characteristics.get('halls', []) %}
-                            <div class="characteristic-item{% if not hall.is_visited %} inactive{% endif %}">
-                                <div class="item-info">
-                                    <div class="item-name">
-                                        {{ hall.name }}
-                                    </div>
-                                    <div class="item-description">
-                                        {% if hall.visit_count > 0 %}
-                                            {{ hall.visit_count }} концерт{{ 'а' if hall.visit_count >= 2 and hall.visit_count <= 4 else 'ов' if hall.visit_count >= 5 else '' }}
-                                        {% else %}
-                                            Не посещён
-                                        {% endif %}
-                                        {% if hall.address %} • {{ hall.address }}{% endif %}
-                                    </div>
+                            <div class="festival-days-simple-container">
+                            {% for day_data in festival_days %}
+                            <div class="day-simple-card{% if not day_data.is_visited %} inactive{% endif %}">
+                                <div class="day-simple-header">
+                                    {% set month_names = {
+                                        'January': 'января', 'February': 'февраля', 'March': 'марта', 'April': 'апреля',
+                                        'May': 'мая', 'June': 'июня', 'July': 'июля', 'August': 'августа',
+                                        'September': 'сентября', 'October': 'октября', 'November': 'ноября', 'December': 'декабря'
+                                    } %}
+                                    {% set day_names = {
+                                        'Monday': 'пн', 'Tuesday': 'вт', 'Wednesday': 'ср', 'Thursday': 'чт',
+                                        'Friday': 'пт', 'Saturday': 'сб', 'Sunday': 'вс'
+                                    } %}
+                                    {{ day_data.day.day }} {{ month_names[day_data.day.strftime('%B')] }} ({{ day_names[day_data.day.strftime('%A')] }})
                                 </div>
-                                <div class="item-count">
-                                    {% if hall.visit_count > 0 %}
-                                        <span class="count-visited">{{ hall.visit_count }}</span>
+                                <div class="day-simple-count">
+                                    {% if day_data.is_visited %}
+                                        <span class="count-visited">{{ day_data.visit_count }}</span>
+                                        <div class="day-simple-label">
+                                            концерт{{ 'а' if day_data.visit_count >= 2 and day_data.visit_count <= 4 else 'ов' if day_data.visit_count >= 5 else '' }}
+                                        </div>
                                     {% else %}
                                         <span class="count-not-visited">0</span>
+                                        <div class="day-simple-label">
+                                            концертов
+                                        </div>
                                     {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Залы и Жанры в две колонки -->
+                    <div class="characteristics-row">
+                        <!-- Залы -->
+                        <div class="characteristic-section">
+                            <div class="characteristic-header">
+                                <div class="characteristic-icon">🏛️</div>
+                                <div class="characteristic-title">
+                                    <h3>Залы фестиваля</h3>
+                                    <p>Места проведения концертов</p>
+                                </div>
+                            <div class="characteristic-count">{{ characteristics.get('halls', [])|selectattr('is_visited')|list|length }}</div>
+                            </div>
+                            <div class="characteristic-content">
+                            {% for hall in characteristics.get('halls', []) %}
+                                <div class="characteristic-item{% if not hall.is_visited %} inactive{% endif %}">
+                                    <div class="item-info">
+                                        <div class="item-name">
+                                            {{ hall.name }}
+                                        </div>
+                                        <div class="item-description">
+                                            {% if hall.visit_count > 0 %}
+                                                {{ hall.visit_count }} концерт{{ 'а' if hall.visit_count >= 2 and hall.visit_count <= 4 else 'ов' if hall.visit_count >= 5 else '' }}
+                                            {% else %}
+                                                Не посещён
+                                            {% endif %}
+                                            {% if hall.address %} • {{ hall.address }}{% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="item-count">
+                                        {% if hall.visit_count > 0 %}
+                                            <span class="count-visited">{{ hall.visit_count }}</span>
+                                        {% else %}
+                                            <span class="count-not-visited">0</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- Жанры -->
+                        <div class="characteristic-section">
+                            <div class="characteristic-header">
+                                <div class="characteristic-icon">🎭</div>
+                                <div class="characteristic-title">
+                                    <h3>Музыкальные жанры</h3>
+                                    <p>Направления в вашем маршруте</p>
+                                </div>
+                            <div class="characteristic-count">{{ characteristics.get('genres', [])|selectattr('is_visited')|list|length }}</div>
+                            </div>
+                            <div class="characteristic-content">
+                            {% for genre in characteristics.get('genres', []) %}
+                                <div class="characteristic-item{% if not genre.is_visited %} inactive{% endif %}">
+                                    <div class="item-info">
+                                        <div class="item-name">
+                                            {{ genre.name }}
+                                        </div>
+                                        <div class="item-description">
+                                            {% if genre.visit_count > 0 %}
+                                                {{ genre.visit_count }} концерт{{ 'а' if genre.visit_count >= 2 and genre.visit_count <= 4 else 'ов' if genre.visit_count >= 5 else '' }}
+                                            {% else %}
+                                                Не посещён
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="item-count">
+                                        {% if genre.visit_count > 0 %}
+                                            <span class="count-visited">{{ genre.visit_count }}</span>
+                                        {% else %}
+                                            <span class="count-not-visited">0</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Артисты -->
+                    <div class="characteristic-section">
+                        <div class="characteristic-header">
+                            <div class="characteristic-icon">🎤</div>
+                            <div class="characteristic-title">
+                                <h3>Артисты и исполнители</h3>
+                                <p>Музыканты, которых вы увидите</p>
+                            </div>
+                                                    <div class="characteristic-count">{{ characteristics.get('artists', [])|length }}</div>
+                        </div>
+                        <div class="characteristic-content">
+                        {% for artist in characteristics.get('artists', []) %}
+                            <div class="characteristic-item">
+                                <div class="item-info">
+                                    <div class="item-name">{{ artist.name }}</div>
+                                    <div class="item-description">{{ artist.count }} концерт{{ 'а' if artist.count >= 2 and artist.count <= 4 else 'ов' if artist.count >= 5 else '' }}</div>
+                                </div>
+                                <div class="item-count">
+                                    <span class="count-visited">{{ artist.count }}</span>
                                 </div>
                             </div>
                             {% endfor %}
                         </div>
                     </div>
                     
-                    <!-- Жанры -->
+                    <!-- Композиторы -->
                     <div class="characteristic-section">
                         <div class="characteristic-header">
-                            <div class="characteristic-icon">🎭</div>
+                            <div class="characteristic-icon">🎼</div>
                             <div class="characteristic-title">
-                                <h3>Музыкальные жанры</h3>
-                                <p>Направления в вашем маршруте</p>
+                                <h3>Композиторы</h3>
+                                <p>Авторы музыкальных произведений</p>
                             </div>
-                            <div class="characteristic-count">{{ characteristics.get('genres', [])|selectattr('is_visited')|list|length }}</div>
+                                                    <div class="characteristic-count">{{ characteristics.get('composers', [])|length }}</div>
                         </div>
                         <div class="characteristic-content">
-                            {% for genre in characteristics.get('genres', []) %}
-                            <div class="characteristic-item{% if not genre.is_visited %} inactive{% endif %}">
+                        {% for composer in characteristics.get('composers', []) %}
+                            <div class="characteristic-item">
                                 <div class="item-info">
-                                    <div class="item-name">
-                                        {{ genre.name }}
-                                    </div>
-                                    <div class="item-description">
-                                        {% if genre.visit_count > 0 %}
-                                            {{ genre.visit_count }} концерт{{ 'а' if genre.visit_count >= 2 and genre.visit_count <= 4 else 'ов' if genre.visit_count >= 5 else '' }}
-                                        {% else %}
-                                            Не посещён
-                                        {% endif %}
-                                    </div>
+                                    <div class="item-name">{{ composer.name }}</div>
+                                    <div class="item-description">{{ composer.count }} произведение{{ 'я' if composer.count >= 2 and composer.count <= 4 else 'ий' if composer.count >= 5 else 'е' }}</div>
                                 </div>
                                 <div class="item-count">
-                                    {% if genre.visit_count > 0 %}
-                                        <span class="count-visited">{{ genre.visit_count }}</span>
-                                    {% else %}
-                                        <span class="count-not-visited">0</span>
-                                    {% endif %}
+                                    <span class="count-visited">{{ composer.count }}</span>
                                 </div>
                             </div>
                             {% endfor %}
                         </div>
                     </div>
-                </div>
-                
-                <!-- Артисты -->
-                <div class="characteristic-section">
-                    <div class="characteristic-header">
-                        <div class="characteristic-icon">🎤</div>
-                        <div class="characteristic-title">
-                            <h3>Артисты и исполнители</h3>
-                            <p>Музыканты, которых вы увидите</p>
-                        </div>
-                                                    <div class="characteristic-count">{{ characteristics.get('artists', [])|length }}</div>
-                    </div>
-                    <div class="characteristic-content">
-                        {% for artist in characteristics.get('artists', []) %}
-                        <div class="characteristic-item">
-                            <div class="item-info">
-                                <div class="item-name">{{ artist.name }}</div>
-                                <div class="item-description">{{ artist.count }} концерт{{ 'а' if artist.count >= 2 and artist.count <= 4 else 'ов' if artist.count >= 5 else '' }}</div>
+                    
+                    <!-- Произведения -->
+                    <div class="characteristic-section">
+                        <div class="characteristic-header">
+                            <div class="characteristic-icon">📜</div>
+                            <div class="characteristic-title">
+                                <h3>Музыкальные произведения</h3>
+                                <p>Композиции в программе</p>
                             </div>
-                            <div class="item-count">
-                                <span class="count-visited">{{ artist.count }}</span>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                
-                <!-- Композиторы -->
-                <div class="characteristic-section">
-                    <div class="characteristic-header">
-                        <div class="characteristic-icon">🎼</div>
-                        <div class="characteristic-title">
-                            <h3>Композиторы</h3>
-                            <p>Авторы музыкальных произведений</p>
-                        </div>
-                                                    <div class="characteristic-count">{{ characteristics.get('composers', [])|length }}</div>
-                    </div>
-                    <div class="characteristic-content">
-                        {% for composer in characteristics.get('composers', []) %}
-                        <div class="characteristic-item">
-                            <div class="item-info">
-                                <div class="item-name">{{ composer.name }}</div>
-                                <div class="item-description">{{ composer.count }} произведение{{ 'я' if composer.count >= 2 and composer.count <= 4 else 'ий' if composer.count >= 5 else 'е' }}</div>
-                            </div>
-                            <div class="item-count">
-                                <span class="count-visited">{{ composer.count }}</span>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                
-                <!-- Произведения -->
-                <div class="characteristic-section">
-                    <div class="characteristic-header">
-                        <div class="characteristic-icon">📜</div>
-                        <div class="characteristic-title">
-                            <h3>Музыкальные произведения</h3>
-                            <p>Композиции в программе</p>
-                        </div>
                                                     <div class="characteristic-count">{{ characteristics.get('compositions', [])|length }}</div>
-                    </div>
-                    <div class="characteristic-content">
+                        </div>
+                        <div class="characteristic-content">
                         {% for composition in characteristics.get('compositions', []) %}
-                        <div class="characteristic-item">
-                            <div class="item-info">
-                                <div class="item-name">{{ composition.name }}</div>
-                                <div class="item-description">{{ composition.count }} исполнение{{ 'я' if composition.count >= 2 and composition.count <= 4 else 'й' if composition.count >= 5 else 'е' }}</div>
+                            <div class="characteristic-item">
+                                <div class="item-info">
+                                    <div class="item-name">{{ composition.name }}</div>
+                                    <div class="item-description">{{ composition.count }} исполнение{{ 'я' if composition.count >= 2 and composition.count <= 4 else 'й' if composition.count >= 5 else 'е' }}</div>
+                                </div>
+                                <div class="item-count">
+                                    <span class="count-visited">{{ composition.count }}</span>
+                                </div>
                             </div>
-                            <div class="item-count">
-                                <span class="count-visited">{{ composition.count }}</span>
-                            </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="no-characteristics">
+                        <div class="no-characteristics-icon">📊</div>
+                        <h3>У вас пока нет данных для характеристики</h3>
+                        <p>Купите билеты на концерты, чтобы увидеть статистику вашего маршрута</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Вкладка "Ачивки" -->
+            <div id="achievements-tab" class="tab-content">
+                <div class="concerts-header">
+                    <h2>Ачивки</h2>
+                    <div class="concerts-count">
+                        {{ route_sheet.summary.total_concerts }}
+                        {% set n = route_sheet.summary.total_concerts %}
+                        {% if n == 1 %}
+                            концерт
+                        {% elif n >= 2 and n <= 4 %}
+                            концерта
+                        {% else %}
+                            концертов
+                        {% endif %}
                     </div>
                 </div>
-            {% else %}
-                <div class="no-characteristics">
-                    <div class="no-characteristics-icon">📊</div>
-                    <h3>У вас пока нет данных для характеристики</h3>
-                    <p>Купите билеты на концерты, чтобы увидеть статистику вашего маршрута</p>
+                
+                <!-- Сводная информация о маршруте -->
+                <div class="achievements-grid">
+                    <div class="achievement-card">
+                        <div class="achievement-icon">📅</div>
+                        <div class="achievement-title">Дней фестиваля</div>
+                        <div class="achievement-value">{{ route_sheet.summary.total_days }}</div>
+                        <div class="achievement-description">Количество дней с концертами</div>
+                    </div>
+                    <div class="achievement-card">
+                        <div class="achievement-icon">🏛️</div>
+                        <div class="achievement-title">Залов посещено</div>
+                        <div class="achievement-value">{{ route_sheet.summary.total_halls }}</div>
+                        <div class="achievement-description">Уникальных залов</div>
+                    </div>
+                    <div class="achievement-card">
+                        <div class="achievement-icon">🎵</div>
+                        <div class="achievement-title">Жанров</div>
+                        <div class="achievement-value">{{ route_sheet.summary.total_genres }}</div>
+                        <div class="achievement-description">Различных музыкальных жанров</div>
+                    </div>
+                    <div class="achievement-card">
+                        <div class="achievement-icon">💰</div>
+                        <div class="achievement-title">Потрачено</div>
+                        <div class="achievement-value">{{ "{:,}".format(route_sheet.summary.total_spent) }} ₽</div>
+                        <div class="achievement-description">Общая сумма покупок</div>
+                    </div>
                 </div>
-            {% endif %}
-        </div>
-        
-        <!-- Вкладка "Ачивки" -->
-        <div id="achievements-tab" class="tab-content">
-            <div class="concerts-header">
-                <h2>Ачивки</h2>
-                <div class="concerts-count">
-                    {{ route_sheet.summary.total_concerts }}
-                    {% set n = route_sheet.summary.total_concerts %}
-                    {% if n == 1 %}
-                        концерт
-                    {% elif n >= 2 and n <= 4 %}
-                        концерта
-                    {% else %}
-                        концертов
-                    {% endif %}
-                </div>
-            </div>
-            
-            <!-- Сводная информация о маршруте -->
-            <div class="achievements-grid">
-                <div class="achievement-card">
-                    <div class="achievement-icon">📅</div>
-                    <div class="achievement-title">Дней фестиваля</div>
-                    <div class="achievement-value">{{ route_sheet.summary.total_days }}</div>
-                    <div class="achievement-description">Количество дней с концертами</div>
-                </div>
-                <div class="achievement-card">
-                    <div class="achievement-icon">🏛️</div>
-                    <div class="achievement-title">Залов посещено</div>
-                    <div class="achievement-value">{{ route_sheet.summary.total_halls }}</div>
-                    <div class="achievement-description">Уникальных залов</div>
-                </div>
-                <div class="achievement-card">
-                    <div class="achievement-icon">🎵</div>
-                    <div class="achievement-title">Жанров</div>
-                    <div class="achievement-value">{{ route_sheet.summary.total_genres }}</div>
-                    <div class="achievement-description">Различных музыкальных жанров</div>
-                </div>
-                <div class="achievement-card">
-                    <div class="achievement-icon">💰</div>
-                    <div class="achievement-title">Потрачено</div>
-                    <div class="achievement-value">{{ "{:,}".format(route_sheet.summary.total_spent) }} ₽</div>
-                    <div class="achievement-description">Общая сумма покупок</div>
-                </div>
-            </div>
-            
-            <!-- Информация о соответствии маршруту -->
-            {% if route_sheet.match.found %}
-                <div class="route-match-card">
-                    <h3 class="route-match-title">
-                        <span style="font-size: 1.5em;">🎯</span>
-                        {% if route_sheet.match.match_type == 'exact' %}
-                            Точное совпадение с маршрутом
-                        {% else %}
-                            Частичное совпадение с маршрутом
-                        {% endif %}
-                    </h3>
-                    <p class="route-match-reason">{{ route_sheet.match.reason }}</p>
-                    {% if route_sheet.match.best_route %}
-                        <div class="route-details">
-                            <h4>Маршрут №{{ route_sheet.match.best_route.id }}</h4>
-                            <div class="route-details-grid">
-                                <div>
-                                    <strong>Дни:</strong> {{ route_sheet.match.best_route.days or 'Не указано' }}
+                
+                <!-- Информация о соответствии маршруту -->
+                {% if route_sheet.match.found %}
+                    <div class="route-match-card">
+                        <h3 class="route-match-title">
+                            <span style="font-size: 1.5em;">🎯</span>
+                            {% if route_sheet.match.match_type == 'exact' %}
+                                Точное совпадение с маршрутом
+                            {% else %}
+                                Частичное совпадение с маршрутом
+                            {% endif %}
+                        </h3>
+                        <p class="route-match-reason">{{ route_sheet.match.reason }}</p>
+                        {% if route_sheet.match.best_route %}
+                            <div class="route-details">
+                                <h4>Маршрут №{{ route_sheet.match.best_route.id }}</h4>
+                                <div class="route-details-grid">
+                                    <div>
+                                        <strong>Дни:</strong> {{ route_sheet.match.best_route.days or 'Не указано' }}
+                                    </div>
+                                    <div>
+                                        <strong>Концерты:</strong> {{ route_sheet.match.best_route.concerts or 'Не указано' }}
+                                    </div>
+                                    <div>
+                                        <strong>Залы:</strong> {{ route_sheet.match.best_route.halls or 'Не указано' }}
+                                    </div>
+                                    <div>
+                                        <strong>Жанр:</strong> {{ route_sheet.match.best_route.genre or 'Не указано' }}
+                                    </div>
+                                    {% if route_sheet.match.best_route.comfort_score %}
+                                    <div>
+                                        <strong>Комфорт:</strong> {{ route_sheet.match.best_route.comfort_score }}/10 ({{ route_sheet.match.best_route.comfort_level or 'Не указано' }})
+                                    </div>
+                                    {% endif %}
+                                    {% if route_sheet.match.best_route.intellect_score %}
+                                    <div>
+                                        <strong>Интеллектуальность:</strong> {{ route_sheet.match.best_route.intellect_score }}/10 ({{ route_sheet.match.best_route.intellect_category or 'Не указано' }})
+                                    </div>
+                                    {% endif %}
                                 </div>
-                                <div>
-                                    <strong>Концерты:</strong> {{ route_sheet.match.best_route.concerts or 'Не указано' }}
-                                </div>
-                                <div>
-                                    <strong>Залы:</strong> {{ route_sheet.match.best_route.halls or 'Не указано' }}
-                                </div>
-                                <div>
-                                    <strong>Жанр:</strong> {{ route_sheet.match.best_route.genre or 'Не указано' }}
-                                </div>
-                                {% if route_sheet.match.best_route.comfort_score %}
-                                <div>
-                                    <strong>Комфорт:</strong> {{ route_sheet.match.best_route.comfort_score }}/10 ({{ route_sheet.match.best_route.comfort_level or 'Не указано' }})
-                                </div>
-                                {% endif %}
-                                {% if route_sheet.match.best_route.intellect_score %}
-                                <div>
-                                    <strong>Интеллектуальность:</strong> {{ route_sheet.match.best_route.intellect_score }}/10 ({{ route_sheet.match.best_route.intellect_category or 'Не указано' }})
-                                </div>
-                                {% endif %}
                             </div>
-                        </div>
-                    {% endif %}
-                </div>
-            {% else %}
-                <div class="route-match-card error">
-                    <h3 class="route-match-title error">
-                        <span style="font-size: 1.5em;">🔍</span>
-                        Уникальный маршрут
-                    </h3>
-                    <p class="route-match-reason error">{{ route_sheet.match.reason }}</p>
-                </div>
-            {% endif %}
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="route-match-card error">
+                        <h3 class="route-match-title error">
+                            <span style="font-size: 1.5em;">🔍</span>
+                            Уникальный маршрут
+                        </h3>
+                        <p class="route-match-reason error">{{ route_sheet.match.reason }}</p>
+                    </div>
+                {% endif %}
+            </div>
         </div>
     </div>
-</div>
 
     
     <script>

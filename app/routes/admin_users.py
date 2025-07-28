@@ -144,22 +144,50 @@ async def admin_telegram_page(request: Request, session=Depends(get_session)):
         user_obj = UsersService.get_user_by_email(user, session)
     if not user_obj or not getattr(user_obj, 'is_superuser', False):
         return RedirectResponse(url="/login", status_code=302)
-    context = {"request": request}
+    
+    # Инициализируем шаблоны по умолчанию
+    from services.telegram_service import TelegramService
+    TelegramService.initialize_default_templates(session)
+    
+    # Получаем данные для страницы
+    message_templates = TelegramService.get_templates(session)
+    user_categories = TelegramService.get_user_categories(session)
+    
+    # Получаем последние кампании
+    from models import TelegramCampaign
+    recent_campaigns = session.exec(
+        select(TelegramCampaign).order_by(TelegramCampaign.created_at.desc()).limit(5)
+    ).all()
+    
+    context = {
+        "request": request, 
+        "templates": message_templates,
+        "user_categories": user_categories,
+        "recent_campaigns": recent_campaigns,
+        "total_users": len(user_categories["all"]),
+        "users_with_purchases": len(user_categories["with_purchases"]),
+        "users_without_purchases": len(user_categories["without_purchases"]),
+        "new_users": len(user_categories["new_users"]),
+        "active_users": len(user_categories["active_users"])
+    }
     return templates.TemplateResponse("admin_telegram.html", context)
 
 @admin_users_router.post("/admin/send-telegram")
 async def send_telegram(request: Request, session=Depends(get_session)):
     form = await request.form()
+    
     # Получаем данные из формы
     user_ids = form.getlist("user_ids")
-    user_id = form.get("user_id")
-    telegram_id = form.get("telegram_id")
+    category = form.get("category")
     message = form.get("message")
+    template_id = form.get("template_id")
+    campaign_name = form.get("campaign_name")
     markdown = form.get("markdown") == '1'
     file = form.get("file")
+    
+    # Сохраняем файл, если он есть
     file_path = None
     file_type = None
-    # Сохраняем файл, если он есть
     if file and hasattr(file, 'filename') and file.filename:
         import tempfile
         suffix = '.' + file.filename.split('.')[-1] if '.' in file.filename else ''
@@ -171,37 +199,41 @@ async def send_telegram(request: Request, session=Depends(get_session)):
             file_type = 'photo'
         else:
             file_type = 'document'
-    # Собираем список telegram_id для рассылки
-    telegram_ids = []
-    if user_ids:
+    
+    # Определяем пользователей для отправки
+    users_to_send = []
+    
+    if category:
+        # Отправка по категории
+        from services.telegram_service import TelegramService
+        user_categories = TelegramService.get_user_categories(session)
+        if category in user_categories:
+            users_to_send = user_categories[category]
+    elif user_ids:
+        # Отправка по выбранным пользователям
         for uid in user_ids:
             if not uid or not str(uid).isdigit():
                 continue
             user = session.exec(select(UsersService.User).where(UsersService.User.id == int(uid))).first()
             if user and hasattr(user, 'telegram_id') and user.telegram_id:
-                telegram_ids.append(user.telegram_id)
-    if telegram_id:
-        telegram_ids.append(telegram_id)
-    if user_id and not telegram_ids:
-        if str(user_id).isdigit():
-            user = session.exec(select(UsersService.User).where(UsersService.User.id == int(user_id))).first()
-            if user and hasattr(user, 'telegram_id') and user.telegram_id:
-                telegram_ids.append(user.telegram_id)
-    if not telegram_ids:
+                users_to_send.append(user)
+    
+    if not users_to_send:
         return JSONResponse({"success": False, "error": "Не выбран ни один пользователь с Telegram ID"}, status_code=400)
-    # Отправляем сообщение каждому
-    errors = []
-    for tg_id in set(telegram_ids):
-        try:
-            await send_telegram_message(
-                tg_id,
-                text=message,
-                file_path=file_path,
-                file_type=file_type,
-                parse_mode='Markdown' if markdown else None
-            )
-        except Exception as e:
-            errors.append(str(e))
+    
+    # Отправляем кампанию через сервис
+    from services.telegram_service import TelegramService
+    campaign_id = TelegramService.send_campaign(
+        session=session,
+        users=users_to_send,
+        message_text=message,
+        campaign_name=campaign_name,
+        template_id=int(template_id) if template_id else None,
+        file_path=file_path,
+        file_type=file_type,
+        parse_mode='Markdown' if markdown else None
+    )
+    
     # Удаляем временный файл
     if file_path:
         import os
@@ -209,6 +241,63 @@ async def send_telegram(request: Request, session=Depends(get_session)):
             os.remove(file_path)
         except Exception:
             pass
-    if errors:
-        return JSONResponse({"success": False, "error": "; ".join(errors)}, status_code=500)
-    return JSONResponse({"success": True}) 
+    
+    return JSONResponse({
+        "success": True, 
+        "campaign_id": campaign_id,
+        "users_count": len(users_to_send),
+        "message": f"Кампания запущена! Отправка {len(users_to_send)} сообщений через Celery."
+    }) 
+
+@admin_users_router.get("/admin/telegram/campaign/{campaign_id}/stats")
+async def get_campaign_stats(campaign_id: str, request: Request, session=Depends(get_session)):
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
+    
+    from services.telegram_service import TelegramService
+    stats = TelegramService.get_campaign_stats(session, campaign_id)
+    
+    return JSONResponse({"success": True, "stats": stats})
+
+@admin_users_router.get("/admin/telegram/campaigns")
+async def get_campaigns(request: Request, session=Depends(get_session)):
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
+    
+    from models import TelegramCampaign
+    campaigns = session.exec(
+        select(TelegramCampaign).order_by(TelegramCampaign.created_at.desc()).limit(20)
+    ).all()
+    
+    campaigns_data = []
+    for campaign in campaigns:
+        from services.telegram_service import TelegramService
+        stats = TelegramService.get_campaign_stats(session, str(campaign.id))
+        campaigns_data.append({
+            "id": campaign.id,
+            "name": campaign.name,
+            "created_at": campaign.created_at.isoformat() if campaign.created_at else None,
+            "sent_at": campaign.sent_at.isoformat() if campaign.sent_at else None,
+            "target_users_count": campaign.target_users_count,
+            "stats": stats
+        })
+    
+    return JSONResponse({"success": True, "campaigns": campaigns_data}) 
