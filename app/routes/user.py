@@ -1952,13 +1952,25 @@ def get_top_festival_composers(session, user_composers: list = None) -> list:
         user_composer_names = {composer['name'] for composer in user_composers}
     
     # Преобразуем в список с сортировкой по количеству и добавляем статус активности
+    most_common = composers_counter.most_common(10)
+    
+    # Определяем позиции с учетом равных мест
     top_composers = []
-    for name, count in composers_counter.most_common(10):
+    current_position = 1
+    current_count = None
+    
+    for i, (name, count) in enumerate(most_common):
+        # Если это первый элемент или количество изменилось, обновляем позицию
+        if current_count is None or count != current_count:
+            current_position = i + 1
+            current_count = count
+        
         is_active = name in user_composer_names
         top_composers.append({
             "name": name, 
             "count": count, 
-            "is_active": is_active
+            "is_active": is_active,
+            "position": current_position
         })
     
     return top_composers
