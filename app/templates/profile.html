@@ -1692,6 +1692,12 @@
             margin-left: 8px;
         }
         
+        .not-visited {
+            color: #9ca3af;
+            font-size: 1.1em;
+            margin-left: 8px;
+        }
+        
         /* Стили для таблиц дней фестиваля */
         .day-table-container {
             margin-bottom: 24px;
@@ -2887,13 +2893,23 @@
                             </div>
                             <div class="characteristic-content">
                             {% for composer in top_festival_composers %}
-                                <div class="characteristic-item">
+                                <div class="characteristic-item{% if not composer.is_active %} inactive{% endif %}">
                                     <div class="item-info">
                                         <div class="item-name">{{ composer.name }}</div>
-                                        <div class="item-description">{{ composer.count }} произведение{{ 'я' if composer.count >= 2 and composer.count <= 4 else 'ий' if composer.count >= 5 else 'е' }}</div>
+                                        <div class="item-description">
+                                            {% if composer.is_active %}
+                                                {{ composer.count }} произведение{{ 'я' if composer.count >= 2 and composer.count <= 4 else 'ий' if composer.count >= 5 else 'е' }}
+                                            {% else %}
+                                                Не в вашем маршруте
+                                            {% endif %}
+                                        </div>
                                     </div>
                                     <div class="item-count">
-                                        <span class="count-visited">{{ composer.count }}</span>
+                                        {% if composer.is_active %}
+                                            <span class="visit-check">✓</span>
+                                        {% else %}
+                                            <span class="not-visited">○</span>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 {% endfor %}

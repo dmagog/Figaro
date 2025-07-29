@@ -542,7 +542,8 @@ async def profile_page(
         logger.info(f"Context characteristics keys: {list(context['characteristics'].keys()) if hasattr(context['characteristics'], 'keys') else 'No keys method'}")
         # Получаем топ композиторов фестиваля
         try:
-            top_festival_composers = get_top_festival_composers(session)
+            user_composers = characteristics_data.get('composers', [])
+            top_festival_composers = get_top_festival_composers(session, user_composers)
         except Exception as e:
             logger.error(f"Error getting top festival composers: {e}")
             top_festival_composers = []
@@ -1908,15 +1909,16 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
     return characteristics
 
 
-def get_top_festival_composers(session) -> list:
+def get_top_festival_composers(session, user_composers: list = None) -> list:
     """
     Получает топ композиторов фестиваля по количеству произведений
     
     Args:
         session: Сессия базы данных
+        user_composers: Список композиторов пользователя для проверки активности
         
     Returns:
-        Список топ композиторов с количеством произведений
+        Список топ композиторов с количеством произведений и статусом активности
     """
     from models.concert import Concert
     from models.composition import Composition, Author
@@ -1944,8 +1946,20 @@ def get_top_festival_composers(session) -> list:
             logger.warning(f"Error getting concert compositions for {concert.id}: {e}")
             continue
     
-    # Преобразуем в список с сортировкой по количеству
-    top_composers = [{"name": name, "count": count} for name, count in composers_counter.most_common(10)]
+    # Создаем список имен композиторов пользователя для быстрой проверки
+    user_composer_names = set()
+    if user_composers:
+        user_composer_names = {composer['name'] for composer in user_composers}
+    
+    # Преобразуем в список с сортировкой по количеству и добавляем статус активности
+    top_composers = []
+    for name, count in composers_counter.most_common(10):
+        is_active = name in user_composer_names
+        top_composers.append({
+            "name": name, 
+            "count": count, 
+            "is_active": is_active
+        })
     
     return top_composers
 
