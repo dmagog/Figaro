@@ -1951,19 +1951,28 @@ def get_top_festival_composers(session, user_composers: list = None) -> list:
     if user_composers:
         user_composer_names = {composer['name'] for composer in user_composers}
     
-    # Преобразуем в список с сортировкой по количеству и добавляем статус активности
-    most_common = composers_counter.most_common(10)
+    # Получаем всех композиторов, отсортированных по количеству произведений
+    all_composers_sorted = composers_counter.most_common()
     
-    # Определяем позиции с учетом равных мест
+    # Фильтруем композиторов, исключая "_Прочее"
+    filtered_composers = [(name, count) for name, count in all_composers_sorted if name != "_Прочее"]
+    
+    # Добавляем отладочную информацию
+    logger.info(f"All composers sorted: {all_composers_sorted[:15]}")
+    logger.info(f"Filtered composers: {filtered_composers[:15]}")
+    
+    # Определяем позиции с учетом равных мест (без пропусков)
     top_composers = []
     current_position = 1
     current_count = None
     
-    for i, (name, count) in enumerate(most_common):
+    for i, (name, count) in enumerate(filtered_composers[:10]):  # Берем только топ-10
         # Если это первый элемент или количество изменилось, обновляем позицию
         if current_count is None or count != current_count:
-            current_position = i + 1
+            current_position = current_position + 1 if current_count is not None else 1
             current_count = count
+        
+        logger.info(f"Position {current_position}: {name} - {count} compositions")
         
         is_active = name in user_composer_names
         top_composers.append({
