@@ -2098,6 +2098,8 @@
             font-weight: bold;
         }
         
+
+        
         .composer-tag.inactive .tag-check {
             color: #9ca3af;
         }
@@ -2946,7 +2948,7 @@
                                     </div>
                                     <div class="item-count">
                                         {% if hall.visit_count > 0 %}
-                                            <span class="count-visited">{{ hall.visit_count }}</span>
+                                            <span class="count-visited" {% if hall.concerts %}title="Концерты: {{ hall.concerts|join(', ') }}"{% endif %}>{{ hall.visit_count }}</span>
                                         {% else %}
                                             <span class="count-not-visited">0</span>
                                         {% endif %}
@@ -2983,7 +2985,7 @@
                                     </div>
                                     <div class="item-count">
                                         {% if genre.visit_count > 0 %}
-                                            <span class="count-visited">{{ genre.visit_count }}</span>
+                                            <span class="count-visited" {% if genre.concerts %}title="Концерты: {{ genre.concerts|join(', ') }}"{% endif %}>{{ genre.visit_count }}</span>
                                         {% else %}
                                             <span class="count-not-visited">0</span>
                                         {% endif %}
@@ -3011,17 +3013,14 @@
                             <div class="characteristic-content">
                             {% for artist in characteristics.get('artists', []) %}
                                 <div class="characteristic-item{% if loop.index > 10 %} hidden-artist{% endif %}">
-                                    <div class="item-info">
+                                                                        <div class="item-info">
                                         <div class="item-name">{{ artist.name }}</div>
                                         <div class="item-description">
                                             {{ artist.count }} концерт{{ 'а' if artist.count >= 2 and artist.count <= 4 else 'ов' if artist.count >= 5 else '' }}
-                                            {% if artist.concerts %}
-                                                 • {{ artist.concerts|join('·') }}
-                                            {% endif %}
                                         </div>
                                     </div>
                                     <div class="item-count">
-                                        <span class="count-visited">{{ artist.count }}</span>
+                                        <span class="count-visited" {% if artist.concerts %}title="Концерты: {{ artist.concerts|join(', ') }}"{% endif %}>{{ artist.count }}</span>
                                     </div>
                                 </div>
                                 {% endfor %}
@@ -3055,10 +3054,12 @@
                                 <div class="characteristic-item{% if loop.index > 10 %} hidden-composition{% endif %}">
                                     <div class="item-info">
                                         <div class="item-name">{{ composition.name }}</div>
-                                        <div class="item-description">{{ composition.count }} исполнени{{ 'е' if composition.count % 10 == 1 and composition.count % 100 != 11 else 'я' if composition.count % 10 >= 2 and composition.count % 10 <= 4 and (composition.count % 100 < 10 or composition.count % 100 >= 20) else 'й' }}</div>
+                                        <div class="item-description">
+                                            {{ composition.count }} исполнени{{ 'е' if composition.count % 10 == 1 and composition.count % 100 != 11 else 'я' if composition.count % 10 >= 2 and composition.count % 10 <= 4 and (composition.count % 100 < 10 or composition.count % 100 >= 20) else 'й' }}
+                                        </div>
                                     </div>
                                     <div class="item-count">
-                                        <span class="count-visited">{{ composition.count }}</span>
+                                        <span class="count-visited" {% if composition.concerts %}title="Концерты: {{ composition.concerts|join(', ') }}"{% endif %}>{{ composition.count }}</span>
                                     </div>
                                 </div>
                                 {% endfor %}
@@ -3098,7 +3099,7 @@
                                         <div class="item-description">{{ composer.count }} произведени{{ 'е' if composer.count % 10 == 1 and composer.count % 100 != 11 else 'я' if composer.count % 10 >= 2 and composer.count % 10 <= 4 and (composer.count % 100 < 10 or composer.count % 100 >= 20) else 'й' }}</div>
                                     </div>
                                     <div class="item-count">
-                                        <span class="count-visited">{{ composer.count }}</span>
+                                        <span class="count-visited" {% if composer.concerts %}title="Концерты: {{ composer.concerts|join(', ') }}"{% endif %}>{{ composer.count }}</span>
                                     </div>
                                 </div>
                                 {% endfor %}
@@ -3669,6 +3670,8 @@
                 }
             });
         }
+        
+
         
         // Экспорт в PDF (заглушка)
         function exportToPDF() {

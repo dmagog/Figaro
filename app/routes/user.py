@@ -1792,6 +1792,7 @@ def group_concerts_by_day(concerts_data: list, festival_days_data: list = None) 
             # Если не удалось отсортировать, оставляем как есть
             pass
     
+    logger.info(f"Final grouped concerts by festival day: {concerts_by_day}")
     return concerts_by_day
     
 
@@ -1894,7 +1895,9 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
     artists_counter = Counter()
     artists_concerts = defaultdict(list)  # Для хранения номеров концертов артистов
     composers_counter = Counter()
+    composers_concerts = defaultdict(list)  # Для хранения номеров концертов композиторов
     compositions_counter = Counter()
+    compositions_concerts = defaultdict(list)  # Для хранения номеров концертов произведений
     
     # Обрабатываем каждый концерт
     for concert_data in concerts_data:
@@ -1906,10 +1909,10 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
             if 'artists' in concert:
                 for artist in concert['artists']:
                     artists_counter[artist['name']] += 1
-                    # Сохраняем номер концерта для артиста
-                    concert_number = concert_data.get('concert_number', 0)
-                    if concert_number > 0:
-                        artists_concerts[artist['name']].append(concert_number)
+                    # Сохраняем ID концерта для артиста
+                    concert_id = concert.get('id', 0)
+                    if concert_id > 0:
+                        artists_concerts[artist['name']].append(concert_id)
                     logger.debug(f"Found artist: {artist['name']} for concert {concert['id']}")
             
             # Композиции и их авторы (уже загружены в данных)
@@ -1927,7 +1930,16 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
                         composition_key = f"{composition['name']} (Автор неизвестен)"
                     
                     compositions_counter[composition_key] += 1
+                    # Сохраняем ID концерта для произведения
+                    concert_id = concert.get('id', 0)
+                    if concert_id > 0:
+                        compositions_concerts[composition_key].append(concert_id)
                     logger.debug(f"Found composition: {composition_key} for concert {concert['id']}")
+                    
+                    # Сохраняем ID концерта для композитора
+                    if 'author' in composition and composition['author'] and composition['author']['name'] != '_Прочее':
+                        if concert_id > 0:
+                            composers_concerts[composition['author']['name']].append(concert_id)
                 
         except Exception as e:
             logger.warning(f"Error processing concert data for {concert['id']}: {e}")
@@ -1952,8 +1964,8 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
         "halls": halls_and_genres["halls"],
         "genres": halls_and_genres["genres"],
         "artists": counter_to_list(artists_counter, None, artists_concerts),  # Показываем всех артистов с номерами концертов
-        "composers": counter_to_list(composers_counter, None),  # Показываем всех композиторов
-        "compositions": counter_to_list(compositions_counter, None)  # Показываем все произведения
+        "composers": counter_to_list(composers_counter, None, composers_concerts),  # Показываем всех композиторов с номерами концертов
+        "compositions": counter_to_list(compositions_counter, None, compositions_concerts)  # Показываем все произведения с номерами концертов
     }
     
     # Логирование результатов
@@ -3093,7 +3105,7 @@ def get_all_halls_and_genres_with_visit_status(session, user_external_id: str, c
     Returns:
         Словарь с залами и жанрами и их статусом посещения
     """
-    from collections import Counter
+    from collections import Counter, defaultdict
     
     logger.info(f"[DEBUG] get_all_halls_and_genres_with_visit_status called with {len(concerts_data)} concerts")
     
@@ -3123,18 +3135,25 @@ def get_all_halls_and_genres_with_visit_status(session, user_external_id: str, c
     # Счетчики посещений залов и жанров
     halls_counter = Counter()
     genres_counter = Counter()
+    halls_concerts = defaultdict(list)  # Для хранения номеров концертов залов
+    genres_concerts = defaultdict(list)  # Для хранения номеров концертов жанров
     
     # Обрабатываем концерты пользователя
     for concert_data in concerts_data:
         concert = concert_data['concert']
+        concert_id = concert.get('id', 0)
         
         # Добавляем зал в счетчик
         if concert.get('hall') and concert['hall'].get('name'):
             halls_counter[concert['hall']['name']] += 1
+            if concert_id > 0:
+                halls_concerts[concert['hall']['name']].append(concert_id)
         
         # Добавляем жанр в счетчик
         if concert.get('genre'):
             genres_counter[concert['genre']] += 1
+            if concert_id > 0:
+                genres_concerts[concert['genre']].append(concert_id)
     
     logger.info(f"[DEBUG] Halls counter: {dict(halls_counter)}")
     logger.info(f"[DEBUG] Genres counter: {dict(genres_counter)}")
@@ -3143,13 +3162,16 @@ def get_all_halls_and_genres_with_visit_status(session, user_external_id: str, c
     halls_with_status = []
     for hall_name in all_halls:
         visit_count = halls_counter.get(hall_name, 0)
-        halls_with_status.append({
+        hall_data = {
             "name": hall_name,
             "visit_count": visit_count,
             "is_visited": visit_count > 0,
             "address": "",  # Адрес не доступен из данных концертов
             "seats": 0      # Количество мест не доступно из данных концертов
-        })
+        }
+        if hall_name in halls_concerts:
+            hall_data["concerts"] = sorted(halls_concerts[hall_name])
+        halls_with_status.append(hall_data)
     
     # Сортируем залы по убыванию количества посещений
     halls_with_status.sort(key=lambda x: x['visit_count'], reverse=True)
@@ -3158,11 +3180,14 @@ def get_all_halls_and_genres_with_visit_status(session, user_external_id: str, c
     genres_with_status = []
     for genre in all_genres:
         visit_count = genres_counter.get(genre, 0)
-        genres_with_status.append({
+        genre_data = {
             "name": genre,
             "visit_count": visit_count,
             "is_visited": visit_count > 0
-        })
+        }
+        if genre in genres_concerts:
+            genre_data["concerts"] = sorted(genres_concerts[genre])
+        genres_with_status.append(genre_data)
     
     # Сортируем жанры по убыванию количества посещений
     genres_with_status.sort(key=lambda x: x['visit_count'], reverse=True)
