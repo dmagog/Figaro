@@ -3012,8 +3012,8 @@
                             </div>
                             <div class="characteristic-content">
                             {% for artist in characteristics.get('artists', []) %}
-                                <div class="characteristic-item{% if loop.index > 10 %} hidden-artist{% endif %}">
-                                                                        <div class="item-info">
+                                <div class="characteristic-item{% if loop.index > 5 %} hidden-artist{% endif %}">
+                                    <div class="item-info">
                                         <div class="item-name">{{ artist.name }}</div>
                                         <div class="item-description">
                                             {{ artist.count }} концерт{{ 'а' if artist.count >= 2 and artist.count <= 4 else 'ов' if artist.count >= 5 else '' }}
@@ -3026,7 +3026,7 @@
                                 {% endfor %}
                                 
                                 <!-- Кнопка разворачивания для артистов -->
-                                {% if characteristics.get('artists', [])|length > 10 %}
+                                {% if characteristics.get('artists', [])|length > 5 %}
                                 <div class="expand-button-container">
                                     <button id="expand-artists" class="expand-button">
                                         <span class="expand-text">Показать всех артистов</span>
@@ -3051,7 +3051,7 @@
                             </div>
                             <div class="characteristic-content">
                             {% for composition in characteristics.get('compositions', []) %}
-                                <div class="characteristic-item{% if loop.index > 10 %} hidden-composition{% endif %}">
+                                <div class="characteristic-item{% if loop.index > 5 %} hidden-composition{% endif %}">
                                     <div class="item-info">
                                         <div class="item-name">{{ composition.name }}</div>
                                         <div class="item-description">
@@ -3065,7 +3065,7 @@
                                 {% endfor %}
                                 
                                 <!-- Кнопка разворачивания для произведений -->
-                                {% if characteristics.get('compositions', [])|length > 10 %}
+                                {% if characteristics.get('compositions', [])|length > 5 %}
                                 <div class="expand-button-container">
                                     <button id="expand-compositions" class="expand-button">
                                         <span class="expand-text">Показать все произведения</span>
@@ -3526,7 +3526,7 @@
                 expandIcon.textContent = '▲';
                 button.classList.add('expanded');
             } else {
-                // Сворачиваем до первых 10
+                // Сворачиваем до первых 5
                 hiddenArtists.forEach(artist => {
                     artist.style.display = 'none';
                 });
@@ -3605,7 +3605,7 @@
                 expandIcon.textContent = '▲';
                 button.classList.add('expanded');
             } else {
-                // Сворачиваем до первых 10
+                // Сворачиваем до первых 5
                 hiddenCompositions.forEach(composition => {
                     composition.style.display = 'none';
                 });
