@@ -2966,7 +2966,7 @@
                                             {{ composer.name }}
                                         </div>
                                         <div class="item-description">
-                                            {{ composer.count }} произведение{{ 'я' if composer.count >= 2 and composer.count <= 4 else 'ий' if composer.count >= 5 else 'е' }}
+                                            {{ composer.count }} произведени{{ 'е' if composer.count % 10 == 1 and composer.count % 100 != 11 else 'я' if composer.count % 10 >= 2 and composer.count % 10 <= 4 and (composer.count % 100 < 10 or composer.count % 100 >= 20) else 'й' }}
                                             {% if not composer.is_active %}
                                                 • Нет в вашем маршруте
                                             {% endif %}
