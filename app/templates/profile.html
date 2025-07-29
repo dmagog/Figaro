@@ -2848,28 +2848,56 @@
                         </div>
                     </div>
                     
-                    <!-- Композиторы -->
-                    <div class="characteristic-section">
-                        <div class="characteristic-header">
-                            <div class="characteristic-icon">🎼</div>
-                            <div class="characteristic-title">
-                                <h3>Композиторы</h3>
-                                <p>Авторы музыкальных произведений</p>
+                    <!-- Композиторы и ТОП композиторов в две колонки -->
+                    <div class="characteristics-row">
+                        <!-- Композиторы -->
+                        <div class="characteristic-section">
+                            <div class="characteristic-header">
+                                <div class="characteristic-icon">🎼</div>
+                                <div class="characteristic-title">
+                                    <h3>Композиторы</h3>
+                                    <p>Авторы музыкальных произведений</p>
+                                </div>
+                                <div class="characteristic-count">{{ characteristics.get('composers', [])|length }}</div>
                             </div>
-                                                    <div class="characteristic-count">{{ characteristics.get('composers', [])|length }}</div>
+                            <div class="characteristic-content">
+                            {% for composer in characteristics.get('composers', []) %}
+                                <div class="characteristic-item">
+                                    <div class="item-info">
+                                        <div class="item-name">{{ composer.name }}</div>
+                                        <div class="item-description">{{ composer.count }} произведение{{ 'я' if composer.count >= 2 and composer.count <= 4 else 'ий' if composer.count >= 5 else 'е' }}</div>
+                                    </div>
+                                    <div class="item-count">
+                                        <span class="count-visited">{{ composer.count }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
                         </div>
-                        <div class="characteristic-content">
-                        {% for composer in characteristics.get('composers', []) %}
-                            <div class="characteristic-item">
-                                <div class="item-info">
-                                    <div class="item-name">{{ composer.name }}</div>
-                                    <div class="item-description">{{ composer.count }} произведение{{ 'я' if composer.count >= 2 and composer.count <= 4 else 'ий' if composer.count >= 5 else 'е' }}</div>
+                        
+                        <!-- ТОП композиторов фестиваля -->
+                        <div class="characteristic-section">
+                            <div class="characteristic-header">
+                                <div class="characteristic-icon">🏆</div>
+                                <div class="characteristic-title">
+                                    <h3>ТОП композиторов фестиваля</h3>
+                                    <p>Самые исполняемые авторы</p>
                                 </div>
-                                <div class="item-count">
-                                    <span class="count-visited">{{ composer.count }}</span>
-                                </div>
+                                <div class="characteristic-count">{{ top_festival_composers|length }}</div>
                             </div>
-                            {% endfor %}
+                            <div class="characteristic-content">
+                            {% for composer in top_festival_composers %}
+                                <div class="characteristic-item">
+                                    <div class="item-info">
+                                        <div class="item-name">{{ composer.name }}</div>
+                                        <div class="item-description">{{ composer.count }} произведение{{ 'я' if composer.count >= 2 and composer.count <= 4 else 'ий' if composer.count >= 5 else 'е' }}</div>
+                                    </div>
+                                    <div class="item-count">
+                                        <span class="count-visited">{{ composer.count }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
                     

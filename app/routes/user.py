@@ -384,11 +384,7 @@ async def profile_page(
         
         # Получаем данные для характеристик
         try:
-            logger.info(f"Calling get_user_characteristics with external_id: {user_external_id}")
-            logger.info(f"concerts_for_template length: {len(concerts_for_template)}")
             characteristics_data = get_user_characteristics(session, user_external_id, concerts_for_template)
-            logger.info(f"get_user_characteristics returned: {characteristics_data}")
-            logger.info(f"characteristics_data keys: {list(characteristics_data.keys()) if hasattr(characteristics_data, 'keys') else 'No keys method'}")
         except Exception as e:
                 logger.error(f"Error getting characteristics data: {e}")
                 characteristics_data = {
@@ -544,7 +540,16 @@ async def profile_page(
         logger.info(f"Context characteristics type: {type(context['characteristics'])}")
         logger.info(f"Context characteristics: {context['characteristics']}")
         logger.info(f"Context characteristics keys: {list(context['characteristics'].keys()) if hasattr(context['characteristics'], 'keys') else 'No keys method'}")
-        logger.info(f"About to render template with characteristics: {context['characteristics']}")
+        # Получаем топ композиторов фестиваля
+        try:
+            top_festival_composers = get_top_festival_composers(session)
+        except Exception as e:
+            logger.error(f"Error getting top festival composers: {e}")
+            top_festival_composers = []
+        
+        # Добавляем топ композиторов в контекст
+        context["top_festival_composers"] = top_festival_composers
+        
         return templates.TemplateResponse("profile.html", context)
         
     except Exception as e:
@@ -847,11 +852,7 @@ def get_user_route_sheet(session, user_external_id: str, concerts_data: list, fe
                 }
         
         # Группируем концерты по дням
-        logger.info(f"Calling group_concerts_by_day with {len(concerts_data)} concerts and {len(festival_days_data) if festival_days_data else 0} festival days")
         concerts_by_day = group_concerts_by_day(concerts_data, festival_days_data)
-        logger.info(f"group_concerts_by_day returned: {concerts_by_day}")
-        logger.info(f"concerts_by_day keys: {list(concerts_by_day.keys())}")
-        logger.info(f"concerts_by_day values: {[len(concerts) for concerts in concerts_by_day.values()]}")
         
         # --- ENRICH-БЛОК (всегда выполняется) ---
         concerts_by_day_with_transitions = {}
@@ -1763,9 +1764,6 @@ def group_concerts_by_day(concerts_data: list, festival_days_data: list = None) 
             # Если не удалось отсортировать, оставляем как есть
             pass
     
-    logger.info(f"Final grouped concerts by festival day: {concerts_by_day}")
-    logger.info(f"Final concerts_by_day keys: {list(concerts_by_day.keys())}")
-    logger.info(f"Final concerts_by_day values: {[len(concerts) for concerts in concerts_by_day.values()]}")
     return concerts_by_day
     
 
@@ -1907,15 +1905,50 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
         "compositions": counter_to_list(compositions_counter)
     }
     
-    logger.info(f"Generated characteristics for user {user_external_id}: {characteristics}")
-    logger.info(f"characteristics keys: {list(characteristics.keys())}")
-    logger.info(f"characteristics values: {[len(v) if isinstance(v, list) else v for k, v in characteristics.items()]}")
-    
     return characteristics
-    
 
 
+def get_top_festival_composers(session) -> list:
+    """
+    Получает топ композиторов фестиваля по количеству произведений
     
+    Args:
+        session: Сессия базы данных
+        
+    Returns:
+        Список топ композиторов с количеством произведений
+    """
+    from models.concert import Concert
+    from models.composition import Composition, Author
+    from sqlmodel import select
+    from collections import Counter
+    
+    # Получаем все концерты с композициями
+    all_concerts = session.exec(select(Concert)).all()
+    
+    # Счетчик композиторов
+    composers_counter = Counter()
+    
+    # Обрабатываем каждый концерт
+    for concert in all_concerts:
+        try:
+            # Принудительно загружаем связи
+            session.refresh(concert)
+            
+            # Композиции и их авторы
+            for composition in concert.compositions:
+                if composition.author:
+                    composers_counter[composition.author.name] += 1
+                    
+        except Exception as e:
+            logger.warning(f"Error getting concert compositions for {concert.id}: {e}")
+            continue
+    
+    # Преобразуем в список с сортировкой по количеству
+    top_composers = [{"name": name, "count": count} for name, count in composers_counter.most_common(10)]
+    
+    return top_composers
+
 
 def get_all_halls_and_genres_with_visit_status(session, user_external_id: str, concerts_data: list) -> dict:
     """
