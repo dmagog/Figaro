@@ -3002,7 +3002,7 @@
                                 <p>Музыканты, которых вы увидите</p>
                             </div>
                             <div class="characteristic-count">
-                                <span id="artists-visible-count">{{ characteristics.get('artists', [])|length if characteristics.get('artists', [])|length <= 10 else 10 }}</span> из {{ characteristics.get('artists', [])|length }}
+                                {{ characteristics.get('artists', [])|length }}
                             </div>
                         </div>
                         <div class="characteristic-content">
@@ -3158,7 +3158,7 @@
                                 <p>Композиции в программе</p>
                             </div>
                             <div class="characteristic-count">
-                                <span id="compositions-visible-count">{{ characteristics.get('compositions', [])|length if characteristics.get('compositions', [])|length <= 10 else 10 }}</span> из {{ characteristics.get('compositions', [])|length }}
+                                {{ characteristics.get('compositions', [])|length }}
                             </div>
                         </div>
                         <div class="characteristic-content">
@@ -3506,7 +3506,6 @@
             const button = document.getElementById('expand-artists');
             const expandText = button.querySelector('.expand-text');
             const expandIcon = button.querySelector('.expand-icon');
-            const visibleCountSpan = document.getElementById('artists-visible-count');
             
             if (hiddenArtists.length > 0 && (hiddenArtists[0].style.display === 'none' || hiddenArtists[0].style.display === '')) {
                 // Разворачиваем всех артистов
@@ -3516,7 +3515,6 @@
                 expandText.textContent = 'Свернуть';
                 expandIcon.textContent = '▲';
                 button.classList.add('expanded');
-                visibleCountSpan.textContent = document.querySelectorAll('.characteristic-item:not(.hidden-artist)').length + hiddenArtists.length;
             } else {
                 // Сворачиваем до первых 10
                 hiddenArtists.forEach(artist => {
@@ -3525,7 +3523,6 @@
                 expandText.textContent = 'Показать всех артистов';
                 expandIcon.textContent = '▼';
                 button.classList.remove('expanded');
-                visibleCountSpan.textContent = '10';
                 
                 // Прокручиваем к заголовку блока артистов
                 const headers = document.querySelectorAll('.characteristic-section h3');
@@ -3588,7 +3585,6 @@
             const button = document.getElementById('expand-compositions');
             const expandText = button.querySelector('.expand-text');
             const expandIcon = button.querySelector('.expand-icon');
-            const visibleCountSpan = document.getElementById('compositions-visible-count');
             
             if (hiddenCompositions.length > 0 && (hiddenCompositions[0].style.display === 'none' || hiddenCompositions[0].style.display === '')) {
                 // Разворачиваем все произведения
@@ -3598,7 +3594,6 @@
                 expandText.textContent = 'Свернуть';
                 expandIcon.textContent = '▲';
                 button.classList.add('expanded');
-                visibleCountSpan.textContent = document.querySelectorAll('.characteristic-item:not(.hidden-composition)').length + hiddenCompositions.length;
             } else {
                 // Сворачиваем до первых 10
                 hiddenCompositions.forEach(composition => {
@@ -3607,7 +3602,6 @@
                 expandText.textContent = 'Показать все произведения';
                 expandIcon.textContent = '▼';
                 button.classList.remove('expanded');
-                visibleCountSpan.textContent = '10';
                 
                 // Прокручиваем к заголовку блока произведений
                 const headers = document.querySelectorAll('.characteristic-section h3');

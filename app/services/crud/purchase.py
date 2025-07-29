@@ -133,6 +133,99 @@ def get_user_purchases_with_details(session: Session, user_external_id: str) -> 
     return purchases_details
 
 
+def get_user_unique_concerts_with_details(session: Session, user_external_id: str) -> List[dict]:
+    """
+    Находит уникальные концерты пользователя с детальной информацией (исключает дубликаты от нескольких покупок)
+    
+    Args:
+        session: Сессия базы данных
+        user_external_id: Внешний ID пользователя (ClientId)
+        
+    Returns:
+        Список словарей с информацией об уникальных концертах
+    """
+    # Получаем уникальные концерты пользователя (исключаем дубликаты от нескольких покупок)
+    statement = (
+        select(Concert, Hall)
+        .join(Purchase, Concert.id == Purchase.concert_id)
+        .join(Hall, Concert.hall_id == Hall.id)
+        .where(Purchase.user_external_id == user_external_id)
+        .distinct(Concert.id)  # Убираем дубликаты концертов
+        .order_by(Concert.id, Concert.datetime)  # ORDER BY должен начинаться с Concert.id
+    )
+    
+    results = session.exec(statement).all()
+    
+    unique_concerts_details = []
+    for concert, hall in results:
+        # Получаем артистов для концерта
+        artists = session.exec(
+            select(Artist)
+            .join(ConcertArtistLink, Artist.id == ConcertArtistLink.artist_id)
+            .where(ConcertArtistLink.concert_id == concert.id)
+            .order_by(Artist.name)
+        ).all()
+        
+        # Получаем произведения для концерта
+        compositions = session.exec(
+            select(Composition, Author)
+            .join(Author, Composition.author_id == Author.id)
+            .join(ConcertCompositionLink, Composition.id == ConcertCompositionLink.composition_id)
+            .where(ConcertCompositionLink.concert_id == concert.id)
+            .order_by(Author.name, Composition.name)
+        ).all()
+        
+        # Получаем количество покупок этого концерта пользователем
+        purchase_count = session.exec(
+            select(func.count(Purchase.id))
+            .where(Purchase.concert_id == concert.id)
+            .where(Purchase.user_external_id == user_external_id)
+        ).first()
+        
+        unique_concerts_details.append({
+            'concert': {
+                'id': concert.id,
+                'external_id': concert.external_id,
+                'name': concert.name,
+                'datetime': concert.datetime,
+                'duration': concert.duration,
+                'genre': concert.genre,
+                'price': concert.price,
+                'is_family_friendly': concert.is_family_friendly,
+                'link': concert.link,
+                'purchase_count': purchase_count or 0,  # Количество купленных билетов
+                'hall': {
+                    'id': hall.id,
+                    'name': hall.name,
+                    'address': hall.address,
+                    'latitude': hall.latitude,
+                    'longitude': hall.longitude
+                },
+                'artists': [
+                    {
+                        'id': artist.id,
+                        'name': artist.name,
+                        'is_special': artist.is_special
+                    }
+                    for artist in artists
+                ],
+                'compositions': [
+                    {
+                        'id': composition.id,
+                        'name': composition.name,
+                        'author': {
+                            'id': author.id,
+                            'name': author.name
+                        }
+                    }
+                    for composition, author in compositions
+                ]
+            }
+        })
+    
+    return unique_concerts_details
+
+
 def get_user_purchase_count(session: Session, user_external_id: str) -> int:
     """
     Возвращает количество покупок пользователя

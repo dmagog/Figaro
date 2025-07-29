@@ -249,55 +249,43 @@ async def profile_page(
         # Отладочная информация о поиске покупок
         logger.info(f"Searching purchases for external_id: {user_external_id}")
         
-        # Получаем покупки с деталями
-        purchases = PurchaseService.get_user_purchases_with_details(session, user_external_id)
+        # Получаем уникальные концерты с деталями (исключаем дубликаты от нескольких покупок)
+        purchases = PurchaseService.get_user_unique_concerts_with_details(session, user_external_id)
         
         logger.info(f"Found {len(purchases)} purchases for user {user_external_id}")
         
-        # Получаем сводную информацию
+        # Получаем сводную информацию (данные уже уникальные)
+        total_spent = sum(p['concert'].get('purchase_count', 1) * (p['concert'].get('price', 0) or 0) for p in purchases)
         purchase_summary = {
-            "total_purchases": len(purchases),
-            "total_spent": sum(p.get('price', 0) or 0 for p in purchases),
-            "total_concerts": len(set(p['concert']['id'] for p in purchases)),
+            "total_purchases": sum(p['concert'].get('purchase_count', 1) for p in purchases),
+            "total_spent": total_spent,
+            "total_concerts": len(purchases),  # Уже уникальные концерты
             "unique_halls": len(set(p['concert']['hall']['id'] for p in purchases if p['concert']['hall'])),
             "genres": list(set(p['concert']['genre'] for p in purchases if p['concert']['genre']))
         }
         
         logger.info(f"Purchase summary: {purchase_summary}")
+        logger.info(f"Found {len(purchases)} unique concerts")
         
-        # Группируем покупки по уникальным концертам
-        unique_concerts = {}
-        for purchase in purchases:
-            concert_id = purchase['concert']['id']
-            if concert_id not in unique_concerts:
-                unique_concerts[concert_id] = {
-                    'concert': purchase['concert'],
-                    'tickets_count': 1,
-                    "total_spent": purchase.get('price', 0) or 0
-                }
-            else:
-                unique_concerts[concert_id]['tickets_count'] += 1
-                unique_concerts[concert_id]['total_spent'] += purchase.get('price', 0) or 0
-        
-        logger.info(f"Found {len(unique_concerts)} unique concerts")
-        
-        # Упрощаем преобразование данных для шаблона
+        # Преобразуем данные для шаблона (данные уже уникальные)
         concerts_for_template = []
-        for concert_id, concert_data in unique_concerts.items():
+        for purchase in purchases:
             try:
                 # Создаем копию данных концерта
-                concert_copy = concert_data.copy()
+                concert_copy = purchase.copy()
                 
-                # Проверяем тип данных перед преобразованием
+                # Добавляем информацию о количестве билетов
+                concert_copy['tickets_count'] = purchase['concert'].get('purchase_count', 1)
+                concert_copy['total_spent'] = purchase['concert'].get('purchase_count', 1) * (purchase['concert'].get('price', 0) or 0)
                 
                 # Обрабатываем concert datetime
-                if isinstance(concert_data['concert']['datetime'], str):
-                    concert_copy['concert']['datetime'] = datetime.fromisoformat(concert_data['concert']['datetime'])
+                if isinstance(purchase['concert']['datetime'], str):
+                    concert_copy['concert']['datetime'] = datetime.fromisoformat(purchase['concert']['datetime'])
                 else:
-                    concert_copy['concert']['datetime'] = concert_data['concert']['datetime']
+                    concert_copy['concert']['datetime'] = purchase['concert']['datetime']
                 
                 # Преобразуем duration обратно в timedelta
-                duration_str = concert_data['concert']['duration']
+                duration_str = purchase['concert']['duration']
                 if isinstance(duration_str, (int, float)):
                     # Если duration в секундах
                     concert_copy['concert']['duration'] = timedelta(seconds=duration_str)
@@ -318,7 +306,10 @@ async def profile_page(
             except Exception as e:
                 logger.error(f"Error processing concert: {e}")
                 # Добавляем концерт без обработки datetime
-                concerts_for_template.append(concert_data)
+                concert_copy = purchase.copy()
+                concert_copy['tickets_count'] = purchase['concert'].get('purchase_count', 1)
+                concert_copy['total_spent'] = purchase['concert'].get('purchase_count', 1) * (purchase['concert'].get('price', 0) or 0)
+                concerts_for_template.append(concert_copy)
                 continue
         
         # Сортируем концерты по дате (по возрастанию)
