@@ -3300,12 +3300,15 @@
                 totalCountSpan.textContent = '5';
                 
                 // Прокручиваем к началу блока ТОП композиторов
-                const topComposersSection = document.querySelector('.characteristic-section h3');
-                if (topComposersSection && topComposersSection.textContent.includes('ТОП композиторов')) {
-                    topComposersSection.scrollIntoView({ 
-                        behavior: 'smooth', 
-                        block: 'start' 
-                    });
+                const headers = document.querySelectorAll('.characteristic-section h3');
+                for (let header of headers) {
+                    if (header.textContent.includes('ТОП композиторов')) {
+                        header.closest('.characteristic-section').scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'start' 
+                        });
+                        break;
+                    }
                 }
             }
         }
