@@ -1998,8 +1998,20 @@
             color: #9ca3af;
         }
         
-        /* Стили для разворачивания ТОП композиторов */
+        /* Стили для разворачивания списков */
         .hidden-composer {
+            display: none;
+        }
+        
+        .hidden-artist {
+            display: none;
+        }
+        
+        .hidden-composer-user {
+            display: none;
+        }
+        
+        .hidden-composition {
             display: none;
         }
         
@@ -2989,11 +3001,13 @@
                                 <h3>Артисты и исполнители</h3>
                                 <p>Музыканты, которых вы увидите</p>
                             </div>
-                                                    <div class="characteristic-count">{{ characteristics.get('artists', [])|length }}</div>
+                            <div class="characteristic-count">
+                                <span id="artists-visible-count">{{ characteristics.get('artists', [])|length if characteristics.get('artists', [])|length <= 10 else 10 }}</span> из {{ characteristics.get('artists', [])|length }}
+                            </div>
                         </div>
                         <div class="characteristic-content">
                         {% for artist in characteristics.get('artists', []) %}
-                            <div class="characteristic-item">
+                            <div class="characteristic-item{% if loop.index > 10 %} hidden-artist{% endif %}">
                                 <div class="item-info">
                                     <div class="item-name">{{ artist.name }}</div>
                                     <div class="item-description">{{ artist.count }} концерт{{ 'а' if artist.count >= 2 and artist.count <= 4 else 'ов' if artist.count >= 5 else '' }}</div>
@@ -3003,6 +3017,16 @@
                                 </div>
                             </div>
                             {% endfor %}
+                            
+                            <!-- Кнопка разворачивания для артистов -->
+                            {% if characteristics.get('artists', [])|length > 10 %}
+                            <div class="expand-button-container">
+                                <button id="expand-artists" class="expand-button">
+                                    <span class="expand-text">Показать всех артистов</span>
+                                    <span class="expand-icon">▼</span>
+                                </button>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                     
@@ -3016,11 +3040,13 @@
                                     <h3>Композиторы</h3>
                                     <p>Авторы музыкальных произведений</p>
                                 </div>
-                                <div class="characteristic-count">{{ characteristics.get('composers', [])|length }}</div>
+                                <div class="characteristic-count">
+                                    <span id="composers-visible-count">{{ characteristics.get('composers', [])|length if characteristics.get('composers', [])|length <= 10 else 10 }}</span> из {{ characteristics.get('composers', [])|length }}
+                                </div>
                             </div>
                             <div class="characteristic-content">
                             {% for composer in characteristics.get('composers', []) %}
-                                <div class="characteristic-item">
+                                <div class="characteristic-item{% if loop.index > 10 %} hidden-composer-user{% endif %}">
                                     <div class="item-info">
                                         <div class="item-name">{{ composer.name }}</div>
                                         <div class="item-description">{{ composer.count }} произведени{{ 'е' if composer.count % 10 == 1 and composer.count % 100 != 11 else 'я' if composer.count % 10 >= 2 and composer.count % 10 <= 4 and (composer.count % 100 < 10 or composer.count % 100 >= 20) else 'й' }}</div>
@@ -3030,6 +3056,16 @@
                                     </div>
                                 </div>
                                 {% endfor %}
+                                
+                                <!-- Кнопка разворачивания для композиторов -->
+                                {% if characteristics.get('composers', [])|length > 10 %}
+                                <div class="expand-button-container">
+                                    <button id="expand-composers" class="expand-button">
+                                        <span class="expand-text">Показать всех композиторов</span>
+                                        <span class="expand-icon">▼</span>
+                                    </button>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                         
@@ -3121,11 +3157,13 @@
                                 <h3>Музыкальные произведения</h3>
                                 <p>Композиции в программе</p>
                             </div>
-                                                    <div class="characteristic-count">{{ characteristics.get('compositions', [])|length }}</div>
+                            <div class="characteristic-count">
+                                <span id="compositions-visible-count">{{ characteristics.get('compositions', [])|length if characteristics.get('compositions', [])|length <= 10 else 10 }}</span> из {{ characteristics.get('compositions', [])|length }}
+                            </div>
                         </div>
                         <div class="characteristic-content">
                         {% for composition in characteristics.get('compositions', []) %}
-                            <div class="characteristic-item">
+                            <div class="characteristic-item{% if loop.index > 10 %} hidden-composition{% endif %}">
                                 <div class="item-info">
                                     <div class="item-name">{{ composition.name }}</div>
                                     <div class="item-description">{{ composition.count }} исполнение{{ 'я' if composition.count >= 2 and composition.count <= 4 else 'й' if composition.count >= 5 else 'е' }}</div>
@@ -3135,6 +3173,16 @@
                                 </div>
                             </div>
                             {% endfor %}
+                            
+                            <!-- Кнопка разворачивания для произведений -->
+                            {% if characteristics.get('compositions', [])|length > 10 %}
+                            <div class="expand-button-container">
+                                <button id="expand-compositions" class="expand-button">
+                                    <span class="expand-text">Показать все произведения</span>
+                                    <span class="expand-icon">▼</span>
+                                </button>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 {% else %}
@@ -3452,6 +3500,129 @@
             }
         }
         
+        // Разворачивание/сворачивание артистов
+        function toggleArtists() {
+            const hiddenArtists = document.querySelectorAll('.hidden-artist');
+            const button = document.getElementById('expand-artists');
+            const expandText = button.querySelector('.expand-text');
+            const expandIcon = button.querySelector('.expand-icon');
+            const visibleCountSpan = document.getElementById('artists-visible-count');
+            
+            if (hiddenArtists.length > 0 && (hiddenArtists[0].style.display === 'none' || hiddenArtists[0].style.display === '')) {
+                // Разворачиваем всех артистов
+                hiddenArtists.forEach(artist => {
+                    artist.style.display = 'flex';
+                });
+                expandText.textContent = 'Свернуть';
+                expandIcon.textContent = '▲';
+                button.classList.add('expanded');
+                visibleCountSpan.textContent = document.querySelectorAll('.characteristic-item:not(.hidden-artist)').length + hiddenArtists.length;
+            } else {
+                // Сворачиваем до первых 10
+                hiddenArtists.forEach(artist => {
+                    artist.style.display = 'none';
+                });
+                expandText.textContent = 'Показать всех артистов';
+                expandIcon.textContent = '▼';
+                button.classList.remove('expanded');
+                visibleCountSpan.textContent = '10';
+                
+                // Прокручиваем к заголовку блока артистов
+                const headers = document.querySelectorAll('.characteristic-section h3');
+                for (let header of headers) {
+                    if (header.textContent.includes('Артисты и исполнители')) {
+                        header.closest('.characteristic-section').scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'start' 
+                        });
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Разворачивание/сворачивание композиторов пользователя
+        function toggleComposers() {
+            const hiddenComposers = document.querySelectorAll('.hidden-composer-user');
+            const button = document.getElementById('expand-composers');
+            const expandText = button.querySelector('.expand-text');
+            const expandIcon = button.querySelector('.expand-icon');
+            const visibleCountSpan = document.getElementById('composers-visible-count');
+            
+            if (hiddenComposers.length > 0 && (hiddenComposers[0].style.display === 'none' || hiddenComposers[0].style.display === '')) {
+                // Разворачиваем всех композиторов
+                hiddenComposers.forEach(composer => {
+                    composer.style.display = 'flex';
+                });
+                expandText.textContent = 'Свернуть';
+                expandIcon.textContent = '▲';
+                button.classList.add('expanded');
+                visibleCountSpan.textContent = document.querySelectorAll('.characteristic-item:not(.hidden-composer-user)').length + hiddenComposers.length;
+            } else {
+                // Сворачиваем до первых 10
+                hiddenComposers.forEach(composer => {
+                    composer.style.display = 'none';
+                });
+                expandText.textContent = 'Показать всех композиторов';
+                expandIcon.textContent = '▼';
+                button.classList.remove('expanded');
+                visibleCountSpan.textContent = '10';
+                
+                // Прокручиваем к заголовку блока композиторов
+                const headers = document.querySelectorAll('.characteristic-section h3');
+                for (let header of headers) {
+                    if (header.textContent.includes('Композиторы')) {
+                        header.closest('.characteristic-section').scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'start' 
+                        });
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Разворачивание/сворачивание произведений
+        function toggleCompositions() {
+            const hiddenCompositions = document.querySelectorAll('.hidden-composition');
+            const button = document.getElementById('expand-compositions');
+            const expandText = button.querySelector('.expand-text');
+            const expandIcon = button.querySelector('.expand-icon');
+            const visibleCountSpan = document.getElementById('compositions-visible-count');
+            
+            if (hiddenCompositions.length > 0 && (hiddenCompositions[0].style.display === 'none' || hiddenCompositions[0].style.display === '')) {
+                // Разворачиваем все произведения
+                hiddenCompositions.forEach(composition => {
+                    composition.style.display = 'flex';
+                });
+                expandText.textContent = 'Свернуть';
+                expandIcon.textContent = '▲';
+                button.classList.add('expanded');
+                visibleCountSpan.textContent = document.querySelectorAll('.characteristic-item:not(.hidden-composition)').length + hiddenCompositions.length;
+            } else {
+                // Сворачиваем до первых 10
+                hiddenCompositions.forEach(composition => {
+                    composition.style.display = 'none';
+                });
+                expandText.textContent = 'Показать все произведения';
+                expandIcon.textContent = '▼';
+                button.classList.remove('expanded');
+                visibleCountSpan.textContent = '10';
+                
+                // Прокручиваем к заголовку блока произведений
+                const headers = document.querySelectorAll('.characteristic-section h3');
+                for (let header of headers) {
+                    if (header.textContent.includes('Музыкальные произведения')) {
+                        header.closest('.characteristic-section').scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'start' 
+                        });
+                        break;
+                    }
+                }
+            }
+        }
+        
         // Раскрытие/скрытие блока офф-программы
         function toggleOffProgram(offProgramId) {
             const collapsedContent = document.getElementById('off-program-collapsed-' + offProgramId);
@@ -3526,10 +3697,25 @@
                 setTimeout(initializeProgressBars, 100);
             }
             
-            // Инициализация кнопки разворачивания ТОП композиторов
-            const expandButton = document.getElementById('expand-top-composers');
-            if (expandButton) {
-                expandButton.addEventListener('click', toggleTopComposers);
+            // Инициализация кнопок разворачивания
+            const expandTopComposersButton = document.getElementById('expand-top-composers');
+            if (expandTopComposersButton) {
+                expandTopComposersButton.addEventListener('click', toggleTopComposers);
+            }
+            
+            const expandArtistsButton = document.getElementById('expand-artists');
+            if (expandArtistsButton) {
+                expandArtistsButton.addEventListener('click', toggleArtists);
+            }
+            
+            const expandComposersButton = document.getElementById('expand-composers');
+            if (expandComposersButton) {
+                expandComposersButton.addEventListener('click', toggleComposers);
+            }
+            
+            const expandCompositionsButton = document.getElementById('expand-compositions');
+            if (expandCompositionsButton) {
+                expandCompositionsButton.addEventListener('click', toggleCompositions);
             }
         });
 
