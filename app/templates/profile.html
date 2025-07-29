@@ -2993,40 +2993,80 @@
                         </div>
                     </div>
                     
-                    <!-- Артисты -->
-                    <div class="characteristic-section">
-                        <div class="characteristic-header">
-                            <div class="characteristic-icon">🎤</div>
-                            <div class="characteristic-title">
-                                <h3>Артисты и исполнители</h3>
-                                <p>Музыканты, которых вы увидите</p>
+                    <!-- Артисты и Произведения в две колонки -->
+                    <div class="characteristics-row">
+                        <!-- Артисты -->
+                        <div class="characteristic-section">
+                            <div class="characteristic-header">
+                                <div class="characteristic-icon">🎤</div>
+                                <div class="characteristic-title">
+                                    <h3>Артисты и исполнители</h3>
+                                    <p>Музыканты, которых вы увидите</p>
+                                </div>
+                                <div class="characteristic-count">
+                                    {{ characteristics.get('artists', [])|length }}
+                                </div>
                             </div>
-                            <div class="characteristic-count">
-                                {{ characteristics.get('artists', [])|length }}
+                            <div class="characteristic-content">
+                            {% for artist in characteristics.get('artists', []) %}
+                                <div class="characteristic-item{% if loop.index > 10 %} hidden-artist{% endif %}">
+                                    <div class="item-info">
+                                        <div class="item-name">{{ artist.name }}</div>
+                                        <div class="item-description">{{ artist.count }} концерт{{ 'а' if artist.count >= 2 and artist.count <= 4 else 'ов' if artist.count >= 5 else '' }}</div>
+                                    </div>
+                                    <div class="item-count">
+                                        <span class="count-visited">{{ artist.count }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                
+                                <!-- Кнопка разворачивания для артистов -->
+                                {% if characteristics.get('artists', [])|length > 10 %}
+                                <div class="expand-button-container">
+                                    <button id="expand-artists" class="expand-button">
+                                        <span class="expand-text">Показать всех артистов</span>
+                                        <span class="expand-icon">▼</span>
+                                    </button>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
-                        <div class="characteristic-content">
-                        {% for artist in characteristics.get('artists', []) %}
-                            <div class="characteristic-item{% if loop.index > 10 %} hidden-artist{% endif %}">
-                                <div class="item-info">
-                                    <div class="item-name">{{ artist.name }}</div>
-                                    <div class="item-description">{{ artist.count }} концерт{{ 'а' if artist.count >= 2 and artist.count <= 4 else 'ов' if artist.count >= 5 else '' }}</div>
+                        
+                        <!-- Произведения -->
+                        <div class="characteristic-section">
+                            <div class="characteristic-header">
+                                <div class="characteristic-icon">📜</div>
+                                <div class="characteristic-title">
+                                    <h3>Музыкальные произведения</h3>
+                                    <p>Композиции в программе</p>
                                 </div>
-                                <div class="item-count">
-                                    <span class="count-visited">{{ artist.count }}</span>
+                                <div class="characteristic-count">
+                                    {{ characteristics.get('compositions', [])|length }}
                                 </div>
                             </div>
-                            {% endfor %}
-                            
-                            <!-- Кнопка разворачивания для артистов -->
-                            {% if characteristics.get('artists', [])|length > 10 %}
-                            <div class="expand-button-container">
-                                <button id="expand-artists" class="expand-button">
-                                    <span class="expand-text">Показать всех артистов</span>
-                                    <span class="expand-icon">▼</span>
-                                </button>
+                            <div class="characteristic-content">
+                            {% for composition in characteristics.get('compositions', []) %}
+                                <div class="characteristic-item{% if loop.index > 10 %} hidden-composition{% endif %}">
+                                    <div class="item-info">
+                                        <div class="item-name">{{ composition.name }}</div>
+                                        <div class="item-description">{{ composition.count }} исполнение{{ 'я' if composition.count >= 2 and composition.count <= 4 else 'й' if composition.count >= 5 else 'е' }}</div>
+                                    </div>
+                                    <div class="item-count">
+                                        <span class="count-visited">{{ composition.count }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                
+                                <!-- Кнопка разворачивания для произведений -->
+                                {% if characteristics.get('compositions', [])|length > 10 %}
+                                <div class="expand-button-container">
+                                    <button id="expand-compositions" class="expand-button">
+                                        <span class="expand-text">Показать все произведения</span>
+                                        <span class="expand-icon">▼</span>
+                                    </button>
+                                </div>
+                                {% endif %}
                             </div>
-                            {% endif %}
                         </div>
                     </div>
                     
@@ -3146,43 +3186,6 @@
                                 </span>
                                 {% endfor %}
                             </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Произведения -->
-                    <div class="characteristic-section">
-                        <div class="characteristic-header">
-                            <div class="characteristic-icon">📜</div>
-                            <div class="characteristic-title">
-                                <h3>Музыкальные произведения</h3>
-                                <p>Композиции в программе</p>
-                            </div>
-                            <div class="characteristic-count">
-                                {{ characteristics.get('compositions', [])|length }}
-                            </div>
-                        </div>
-                        <div class="characteristic-content">
-                        {% for composition in characteristics.get('compositions', []) %}
-                            <div class="characteristic-item{% if loop.index > 10 %} hidden-composition{% endif %}">
-                                <div class="item-info">
-                                    <div class="item-name">{{ composition.name }}</div>
-                                    <div class="item-description">{{ composition.count }} исполнение{{ 'я' if composition.count >= 2 and composition.count <= 4 else 'й' if composition.count >= 5 else 'е' }}</div>
-                                </div>
-                                <div class="item-count">
-                                    <span class="count-visited">{{ composition.count }}</span>
-                                </div>
-                            </div>
-                            {% endfor %}
-                            
-                            <!-- Кнопка разворачивания для произведений -->
-                            {% if characteristics.get('compositions', [])|length > 10 %}
-                            <div class="expand-button-container">
-                                <button id="expand-compositions" class="expand-button">
-                                    <span class="expand-text">Показать все произведения</span>
-                                    <span class="expand-icon">▼</span>
-                                </button>
-                            </div>
-                            {% endif %}
                         </div>
                     </div>
                 {% else %}
