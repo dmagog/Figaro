@@ -2991,7 +2991,7 @@
                                     <p>Самые исполняемые авторы</p>
                                 </div>
                                 <div class="characteristic-count">
-                                    <span id="top-composers-active-count">{{ top_festival_composers[:5]|selectattr('is_active')|list|length }}</span> из <span id="top-composers-total-count">5</span>
+                                    <span id="top-composers-active-count">{{ top_festival_composers|selectattr('position', '<=', 5)|selectattr('is_active')|list|length }}</span> из <span id="top-composers-total-count">{{ top_festival_composers|selectattr('position', '<=', 5)|list|length }}</span>
                                 </div>
                             </div>
                             <div class="characteristic-content">
@@ -3288,7 +3288,39 @@
                 expandText.textContent = 'Свернуть';
                 expandIcon.textContent = '▲';
                 button.classList.add('expanded');
-                totalCountSpan.textContent = '10';
+                
+                // Обновляем счетчик для ТОП-10
+                // Считаем только композиторов с позицией ≤ 10
+                const allComposerItems = document.querySelectorAll('.characteristic-item');
+                let top10Count = 0;
+                let top10ActiveCount = 0;
+                
+                allComposerItems.forEach(item => {
+                    const positionElement = item.querySelector('.position-emoji');
+                    if (positionElement) {
+                        const positionText = positionElement.textContent.trim();
+                        // Проверяем позицию (медали или числа)
+                        let position = 0;
+                        if (positionText === '🥇') position = 1;
+                        else if (positionText === '🥈') position = 2;
+                        else if (positionText === '🥉') position = 3;
+                        else {
+                            // Извлекаем число из текста
+                            const match = positionText.match(/\d+/);
+                            if (match) position = parseInt(match[0]);
+                        }
+                        
+                        if (position <= 10) {
+                            top10Count++;
+                            if (!item.classList.contains('inactive')) {
+                                top10ActiveCount++;
+                            }
+                        }
+                    }
+                });
+                
+                activeCountSpan.textContent = top10ActiveCount;
+                totalCountSpan.textContent = top10Count;
             } else {
                 // Сворачиваем до ТОП-5
                 hiddenComposers.forEach(composer => {
@@ -3297,7 +3329,39 @@
                 expandText.textContent = 'Показать ТОП-10';
                 expandIcon.textContent = '▼';
                 button.classList.remove('expanded');
-                totalCountSpan.textContent = '5';
+                
+                // Обновляем счетчик для ТОП-5
+                // Считаем только композиторов с позицией ≤ 5
+                const allComposerItems = document.querySelectorAll('.characteristic-item');
+                let top5Count = 0;
+                let top5ActiveCount = 0;
+                
+                allComposerItems.forEach(item => {
+                    const positionElement = item.querySelector('.position-emoji');
+                    if (positionElement) {
+                        const positionText = positionElement.textContent.trim();
+                        // Проверяем позицию (медали или числа)
+                        let position = 0;
+                        if (positionText === '🥇') position = 1;
+                        else if (positionText === '🥈') position = 2;
+                        else if (positionText === '🥉') position = 3;
+                        else {
+                            // Извлекаем число из текста
+                            const match = positionText.match(/\d+/);
+                            if (match) position = parseInt(match[0]);
+                        }
+                        
+                        if (position <= 5) {
+                            top5Count++;
+                            if (!item.classList.contains('inactive')) {
+                                top5ActiveCount++;
+                            }
+                        }
+                    }
+                });
+                
+                activeCountSpan.textContent = top5ActiveCount;
+                totalCountSpan.textContent = top5Count;
                 
                 // Прокручиваем к началу блока ТОП композиторов
                 const headers = document.querySelectorAll('.characteristic-section h3');
