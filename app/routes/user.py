@@ -1961,26 +1961,33 @@ def get_top_festival_composers(session, user_composers: list = None) -> list:
     logger.info(f"All composers sorted: {all_composers_sorted[:15]}")
     logger.info(f"Filtered composers: {filtered_composers[:15]}")
     
-    # Определяем позиции с учетом равных мест (без пропусков)
+    # Определяем позиции с учетом равных мест (топ-5)
     top_composers = []
     current_position = 1
     current_count = None
     
-    for i, (name, count) in enumerate(filtered_composers[:10]):  # Берем только топ-10
+    # Проходим по всем композиторам, чтобы найти тех, кто должен быть в топ-5
+    for i, (name, count) in enumerate(filtered_composers):
         # Если это первый элемент или количество изменилось, обновляем позицию
         if current_count is None or count != current_count:
-            current_position = current_position + 1 if current_count is not None else 1
+            # Для первого элемента позиция 1, для остальных увеличиваем на 1
+            current_position = 1 if current_count is None else current_position + 1
             current_count = count
         
-        logger.info(f"Position {current_position}: {name} - {count} compositions")
-        
-        is_active = name in user_composer_names
-        top_composers.append({
-            "name": name, 
-            "count": count, 
-            "is_active": is_active,
-            "position": current_position
-        })
+        # Добавляем композитора, если его позиция <= 5
+        if current_position <= 5:
+            logger.info(f"Position {current_position}: {name} - {count} compositions")
+            
+            is_active = name in user_composer_names
+            top_composers.append({
+                "name": name, 
+                "count": count, 
+                "is_active": is_active,
+                "position": current_position
+            })
+        else:
+            # Если позиция больше 5, прекращаем
+            break
     
     return top_composers
 
