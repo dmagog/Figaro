@@ -212,19 +212,19 @@
                             </div>
                             <div class="tg-campaign-stats">
                                 <div class="tg-stat-item">
-                                    <div class="tg-stat-number">{{ campaign.target_users_count }}</div>
+                                    <div class="tg-stat-number" style="color: #333; font-weight: bold; font-size: 1.8em;">{{ campaign.target_users_count or 0 }}</div>
                                     <div class="tg-stat-label">Целевых</div>
                                 </div>
                                 <div class="tg-stat-item">
-                                    <div class="tg-stat-number">{{ campaign.sent_count }}</div>
+                                    <div class="tg-stat-number" style="color: #333; font-weight: bold; font-size: 1.8em;">{{ campaign.sent_count or 0 }}</div>
                                     <div class="tg-stat-label">Отправлено</div>
                                 </div>
                                 <div class="tg-stat-item">
-                                    <div class="tg-stat-number">{{ campaign.delivered_count }}</div>
+                                    <div class="tg-stat-number" style="color: #333; font-weight: bold; font-size: 1.8em;">{{ campaign.delivered_count or 0 }}</div>
                                     <div class="tg-stat-label">Доставлено</div>
                                 </div>
                                 <div class="tg-stat-item">
-                                    <div class="tg-stat-number">{{ campaign.failed_count }}</div>
+                                    <div class="tg-stat-number" style="color: #333; font-weight: bold; font-size: 1.8em;">{{ campaign.failed_count or 0 }}</div>
                                     <div class="tg-stat-label">Ошибок</div>
                                 </div>
                             </div>

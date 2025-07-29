@@ -156,8 +156,6 @@ class TelegramService:
     ) -> str:
         """Отправляет кампанию сообщений через Celery"""
         
-        campaign_id = str(uuid.uuid4())
-        
         # Создаем запись о кампании
         campaign = TelegramCampaign(
             name=campaign_name or f"Кампания {datetime.now().strftime('%d.%m.%Y %H:%M')}",
@@ -168,6 +166,8 @@ class TelegramService:
         session.add(campaign)
         session.commit()
         session.refresh(campaign)
+        
+        campaign_id = str(campaign.id)
         
         # Создаем записи о сообщениях и ставим задачи в очередь
         for user in users:
@@ -190,6 +190,7 @@ class TelegramService:
                 campaign_id=campaign_id
             )
             session.add(message_record)
+            session.flush()  # Получаем ID без коммита
             
             # Ставим задачу в очередь Celery
             send_telegram_message.delay(
@@ -218,6 +219,22 @@ class TelegramService:
             "delivered": len([m for m in messages if m.status == MessageStatus.DELIVERED]),
             "failed": len([m for m in messages if m.status == MessageStatus.FAILED])
         }
+        
+        # Обновляем статистику в кампании
+        try:
+            campaign_id_int = int(campaign_id)
+            campaign = session.exec(
+                select(TelegramCampaign).where(TelegramCampaign.id == campaign_id_int)
+            ).first()
+        except ValueError:
+            campaign = None
+        
+        if campaign:
+            campaign.sent_count = stats["sent"]
+            campaign.delivered_count = stats["delivered"]
+            campaign.failed_count = stats["failed"]
+            session.add(campaign)
+            session.commit()
         
         return stats
     
