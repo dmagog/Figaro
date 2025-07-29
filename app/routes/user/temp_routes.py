@@ -2146,24 +2146,25 @@ def get_all_halls_and_genres_with_visit_status(session, user_external_id: str, c
     logger.info(f"[DEBUG] get_all_halls_and_genres_with_visit_status called with {len(concerts_data)} concerts")
     
     try:
-        # Получаем ВСЕ залы и жанры фестиваля из базы данных
-        logger.info("[DEBUG] Fetching halls from database...")
-        all_halls_from_db = session.exec(select(Hall)).all()
-        logger.info(f"[DEBUG] Found {len(all_halls_from_db)} halls in database")
-        
-        # Получаем все концерты фестиваля для определения жанров
+        # Получаем все концерты фестиваля для определения жанров и залов
         logger.info("[DEBUG] Fetching all concerts from database...")
         all_concerts = session.exec(select(Concert)).all()
         logger.info(f"[DEBUG] Found {len(all_concerts)} concerts in database")
         
-        # Собираем все уникальные жанры из всех концертов фестиваля
+        # Собираем все уникальные жанры и залы из концертов фестиваля
         all_genres = set()
+        festival_halls = set()
         for concert in all_concerts:
             if concert.genre:
                 all_genres.add(concert.genre)
+            if concert.hall and concert.hall.name:
+                festival_halls.add(concert.hall.name)
         
-        # Собираем все уникальные залы из базы данных
-        all_halls = {hall.name for hall in all_halls_from_db}
+        logger.info(f"[DEBUG] Festival halls from concerts: {festival_halls}")
+        logger.info(f"[DEBUG] All festival genres: {all_genres}")
+        
+        # Используем только залы, где проходят концерты фестиваля
+        all_halls = festival_halls
         
         logger.info(f"[DEBUG] All festival genres: {all_genres}")
         logger.info(f"[DEBUG] All festival halls: {all_halls}")
