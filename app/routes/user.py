@@ -543,7 +543,7 @@ async def profile_page(
         # Получаем топ композиторов фестиваля
         try:
             user_composers = characteristics_data.get('composers', [])
-            top_festival_composers = get_top_festival_composers(session, user_composers)
+            top_festival_composers = get_top_festival_composers(session, user_composers, limit=10)
         except Exception as e:
             logger.error(f"Error getting top festival composers: {e}")
             top_festival_composers = []
@@ -1909,7 +1909,7 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
     return characteristics
 
 
-def get_top_festival_composers(session, user_composers: list = None) -> list:
+def get_top_festival_composers(session, user_composers: list = None, limit: int = 5) -> list:
     """
     Получает топ композиторов фестиваля по количеству произведений
     
@@ -1974,8 +1974,8 @@ def get_top_festival_composers(session, user_composers: list = None) -> list:
             current_position = 1 if current_count is None else current_position + 1
             current_count = count
         
-        # Добавляем композитора, если его позиция <= 5
-        if current_position <= 5:
+        # Добавляем композитора, если его позиция <= limit
+        if current_position <= limit:
             logger.info(f"Position {current_position}: {name} - {count} compositions")
             
             is_active = name in user_composer_names
@@ -1986,7 +1986,7 @@ def get_top_festival_composers(session, user_composers: list = None) -> list:
                 "position": current_position
             })
         else:
-            # Если позиция больше 5, прекращаем
+            # Если позиция больше limit, прекращаем
             break
     
     return top_composers
