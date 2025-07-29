@@ -378,15 +378,15 @@ async def profile_page(
                         "total_routes_checked": 0,
                         "customer_concerts": [],
                         "best_route": None
-                    },
+                },
                     "concerts_by_day": {}
                 }
-            
-            # Получаем данные для характеристик
-            try:
-                logger.info(f"Calling get_user_characteristics with external_id: {user_external_id}")
-                characteristics_data = get_user_characteristics(session, user_external_id, concerts_for_template)
-            except Exception as e:
+        
+        # Получаем данные для характеристик
+        try:
+            logger.info(f"Calling get_user_characteristics with external_id: {user_external_id}")
+            characteristics_data = get_user_characteristics(session, user_external_id, concerts_for_template)
+        except Exception as e:
                 logger.error(f"Error getting characteristics data: {e}")
                 characteristics_data = {
                     "total_concerts": 0,
@@ -716,25 +716,25 @@ def get_user_route_sheet(session, user_external_id: str, concerts_data: list, fe
                         common_concerts = set(route_concert_ids) & set(user_concert_ids)
                         if len(common_concerts) >= 2:
                             match_percentage = len(common_concerts) / len(user_concert_ids) * 100
-                            partial_matches.append({
-                                "id": route.id,
-                                "composition": route.Sostav,
-                                "days": route.Days,
-                                "concerts": route.Concerts,
-                                "halls": route.Halls,
-                                "genre": route.Genre,
-                                "show_time": route.ShowTime,
-                                "trans_time": route.TransTime,
-                                "wait_time": route.WaitTime,
-                                "costs": route.Costs,
-                                "comfort_score": route.ComfortScore,
-                                "comfort_level": route.ComfortLevel,
-                                "intellect_score": route.IntellectScore,
-                                "intellect_category": route.IntellectCategory,
-                                "match_percentage": match_percentage,
+                        partial_matches.append({
+                            "id": route.id,
+                            "composition": route.Sostav,
+                            "days": route.Days,
+                            "concerts": route.Concerts,
+                            "halls": route.Halls,
+                            "genre": route.Genre,
+                            "show_time": route.ShowTime,
+                            "trans_time": route.TransTime,
+                            "wait_time": route.WaitTime,
+                            "costs": route.Costs,
+                            "comfort_score": route.ComfortScore,
+                            "comfort_level": route.ComfortLevel,
+                            "intellect_score": route.IntellectScore,
+                            "intellect_category": route.IntellectCategory,
+                            "match_percentage": match_percentage,
                                 "common_concerts": list(common_concerts)
-                            })
-                            
+                        })
+                        
                 except Exception as e:
                     logger.warning(f"Ошибка при анализе маршрута {route.id}: {e}")
                     continue

@@ -15,7 +15,7 @@ logger = get_task_logger(__name__)
 
 @celery_app.task(bind=True, max_retries=3, default_retry_delay=10)
 def send_telegram_message(self, telegram_id: int, text: str = None, file_path: str = None, file_type: str = None, parse_mode: str = None, message_id: int = None):
-    logger.info(f"[Celery] Отправка сообщения пользователю {telegram_id}: {text} (file: {file_path}, type: {file_type}, parse_mode: {parse_mode})")
+    logger.info(f"[Celery] Отправка сообщения пользователю {telegram_id}: {text} (file: {file_path}, type: {file_type}, parse_mode: {parse_mode}, message_id: {message_id})")
     
     # Обновляем статус сообщения в базе данных
     if message_id:

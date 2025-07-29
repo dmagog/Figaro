@@ -159,6 +159,22 @@ async def admin_telegram_page(request: Request, session=Depends(get_session)):
         select(TelegramCampaign).order_by(TelegramCampaign.created_at.desc()).limit(5)
     ).all()
     
+    # Обновляем статистику для каждой кампании
+    from services.telegram_service import TelegramService
+    for campaign in recent_campaigns:
+        # Проверяем, что это объект модели, а не Row
+        if hasattr(campaign, 'id'):
+            campaign_id = str(campaign.id)
+        else:
+            # Если это Row объект, получаем id по-другому
+            campaign_id = str(campaign[0]) if isinstance(campaign, (list, tuple)) else str(getattr(campaign, 'id', None))
+        
+        if campaign_id and campaign_id != 'None':
+            stats = TelegramService.get_campaign_stats(session, campaign_id)
+            print(f"DEBUG: Кампания {campaign_id} - stats: {stats}")
+            # Обновляем объект кампании из базы
+            session.refresh(campaign)
+    
 
     
     context = {
@@ -303,3 +319,29 @@ async def get_campaigns(request: Request, session=Depends(get_session)):
         })
     
     return JSONResponse({"success": True, "campaigns": campaigns_data}) 
+
+@admin_users_router.get("/admin/telegram/test")
+async def test_telegram_data(request: Request, session=Depends(get_session)):
+    """Тестовый маршрут для проверки данных кампаний"""
+    from models import TelegramCampaign
+    from services.telegram_service import TelegramService
+    
+    campaigns = session.exec(
+        select(TelegramCampaign).order_by(TelegramCampaign.created_at.desc()).limit(3)
+    ).all()
+    
+    result = []
+    for campaign in campaigns:
+        stats = TelegramService.get_campaign_stats(session, str(campaign.id))
+        session.refresh(campaign)
+        result.append({
+            "id": campaign.id,
+            "name": campaign.name,
+            "target_users_count": campaign.target_users_count,
+            "sent_count": campaign.sent_count,
+            "delivered_count": campaign.delivered_count,
+            "failed_count": campaign.failed_count,
+            "stats": stats
+        })
+    
+    return JSONResponse({"campaigns": result}) 
