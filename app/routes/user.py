@@ -378,14 +378,15 @@ async def profile_page(
                         "total_routes_checked": 0,
                         "customer_concerts": [],
                         "best_route": None
-                },
+                    },
                     "concerts_by_day": {}
                 }
         
         # Получаем данные для характеристик
-        try:
-            characteristics_data = get_user_characteristics(session, user_external_id, concerts_for_template)
-        except Exception as e:
+        if user_external_id:
+            try:
+                characteristics_data = get_user_characteristics(session, user_external_id, concerts_for_template)
+            except Exception as e:
                 logger.error(f"Error getting characteristics data: {e}")
                 characteristics_data = {
                     "total_concerts": 0,
@@ -396,6 +397,7 @@ async def profile_page(
                     "compositions": []
                 }
         else:
+
             # Если нет external_id, создаём базовые данные, но с реальными характеристиками
             logger.info("No external_id, creating basic route sheet and characteristics data")
             
@@ -414,86 +416,86 @@ async def profile_page(
                     "composers": [],
                     "compositions": []
                 }
+        
+        # Создаем маршрутный лист с группировкой по дням и ENRICH-блоком
+        try:
+            logger.info(f"Creating route sheet without external_id")
+            concerts_by_day = group_concerts_by_day(concerts_for_template, festival_days_data)
+            logger.info(f"group_concerts_by_day returned: {concerts_by_day}")
             
-            # Создаем маршрутный лист с группировкой по дням и ENRICH-блоком
-            try:
-                logger.info(f"Creating route sheet without external_id")
-                concerts_by_day = group_concerts_by_day(concerts_for_template, festival_days_data)
-                logger.info(f"group_concerts_by_day returned: {concerts_by_day}")
-                
-                # --- ENRICH-БЛОК для пользователей без external_id ---
-                concerts_by_day_with_transitions = {}
-                for day_index, day_concerts in concerts_by_day.items():
-                    concerts_with_transitions = []
-                    for i, concert in enumerate(day_concerts):
-                        concert_with_transition = concert.copy()
-                        # enrich: переходы
-                        if i < len(day_concerts) - 1:
-                            next_concert = day_concerts[i + 1]
-                            transition_info = calculate_transition_time(session, concert, next_concert)
-                            concert_with_transition['transition_info'] = transition_info
-                            # enrich: офф-программа между концертами
-                            off_program_events = find_available_off_program_events(session, concert, next_concert)
-                            concert_with_transition['off_program_events'] = off_program_events
-                        else:
-                            concert_with_transition['transition_info'] = None
-                            concert_with_transition['off_program_events'] = []
-                        # enrich: офф-программа до первого концерта
-                        if i == 0:
-                            before_concert_events = find_available_off_program_events_before_first_concert(session, concert)
-                            concert_with_transition['before_concert_events'] = before_concert_events
-                        else:
-                            concert_with_transition['before_concert_events'] = []
-                        # enrich: офф-программа после последнего концерта
-                        if i == len(day_concerts) - 1:
-                            after_concert_events = find_available_off_program_events_after_last_concert(session, concert)
-                            concert_with_transition['after_concert_events'] = after_concert_events
-                        else:
-                            concert_with_transition['after_concert_events'] = []
-                        concerts_with_transitions.append(concert_with_transition)
-                    concerts_by_day_with_transitions[day_index] = concerts_with_transitions
-                # --- КОНЕЦ ENRICH-БЛОКА ---
-                
-                route_sheet_data = {
-                    "summary": {
-                        "total_concerts": len(concerts_for_template),
-                        "total_days": len(concerts_by_day),
-                        "total_halls": len(set(c['concert'].get('hall', {}).get('id') for c in concerts_for_template if c['concert'].get('hall'))),
-                        "total_genres": len(set(c['concert'].get('genre') for c in concerts_for_template if c['concert'].get('genre'))),
-                        "total_spent": sum(c.get('total_spent', 0) for c in concerts_for_template)
-                    },
-                    "match": {
-                        "found": False,
-                        "match_type": "no_external_id",
-                        "reason": "Для анализа маршрутов требуется external_id",
-                        "match_percentage": 0.0,
-                        "total_routes_checked": 0,
-                        "customer_concerts": [],
-                        "best_route": None
-                    },
-                    "concerts_by_day": concerts_by_day_with_transitions
-                }
-            except Exception as e:
-                logger.error(f"Error creating route sheet without external_id: {e}")
-                route_sheet_data = {
-                    "summary": {
-                        "total_concerts": len(concerts_for_template),
-                        "total_days": 0,
-                        "total_halls": 0,
-                        "total_genres": 0,
-                        "total_spent": sum(c.get('total_spent', 0) for c in concerts_for_template)
-                    },
-                    "match": {
-                        "found": False,
-                        "match_type": "no_external_id",
-                        "reason": "Для анализа маршрутов требуется external_id",
-                        "match_percentage": 0.0,
-                        "total_routes_checked": 0,
-                        "customer_concerts": [],
-                        "best_route": None
-                    },
-                    "concerts_by_day": {}
-                }
+            # --- ENRICH-БЛОК для пользователей без external_id ---
+            concerts_by_day_with_transitions = {}
+            for day_index, day_concerts in concerts_by_day.items():
+                concerts_with_transitions = []
+                for i, concert in enumerate(day_concerts):
+                    concert_with_transition = concert.copy()
+                    # enrich: переходы
+                    if i < len(day_concerts) - 1:
+                        next_concert = day_concerts[i + 1]
+                        transition_info = calculate_transition_time(session, concert, next_concert)
+                        concert_with_transition['transition_info'] = transition_info
+                        # enrich: офф-программа между концертами
+                        off_program_events = find_available_off_program_events(session, concert, next_concert)
+                        concert_with_transition['off_program_events'] = off_program_events
+                    else:
+                        concert_with_transition['transition_info'] = None
+                        concert_with_transition['off_program_events'] = []
+                    # enrich: офф-программа до первого концерта
+                    if i == 0:
+                        before_concert_events = find_available_off_program_events_before_first_concert(session, concert)
+                        concert_with_transition['before_concert_events'] = before_concert_events
+                    else:
+                        concert_with_transition['before_concert_events'] = []
+                    # enrich: офф-программа после последнего концерта
+                    if i == len(day_concerts) - 1:
+                        after_concert_events = find_available_off_program_events_after_last_concert(session, concert)
+                        concert_with_transition['after_concert_events'] = after_concert_events
+                    else:
+                        concert_with_transition['after_concert_events'] = []
+                    concerts_with_transitions.append(concert_with_transition)
+                concerts_by_day_with_transitions[day_index] = concerts_with_transitions
+            # --- КОНЕЦ ENRICH-БЛОКА ---
+            
+            route_sheet_data = {
+                "summary": {
+                    "total_concerts": len(concerts_for_template),
+                    "total_days": len(concerts_by_day),
+                    "total_halls": len(set(c['concert'].get('hall', {}).get('id') for c in concerts_for_template if c['concert'].get('hall'))),
+                    "total_genres": len(set(c['concert'].get('genre') for c in concerts_for_template if c['concert'].get('genre'))),
+                    "total_spent": sum(c.get('total_spent', 0) for c in concerts_for_template)
+                },
+                "match": {
+                    "found": False,
+                    "match_type": "no_external_id",
+                    "reason": "Для анализа маршрутов требуется external_id",
+                    "match_percentage": 0.0,
+                    "total_routes_checked": 0,
+                    "customer_concerts": [],
+                    "best_route": None
+                },
+                "concerts_by_day": concerts_by_day_with_transitions
+            }
+        except Exception as e:
+            logger.error(f"Error creating route sheet without external_id: {e}")
+            route_sheet_data = {
+                "summary": {
+                    "total_concerts": len(concerts_for_template),
+                    "total_days": 0,
+                    "total_halls": 0,
+                    "total_genres": 0,
+                    "total_spent": sum(c.get('total_spent', 0) for c in concerts_for_template)
+                },
+                "match": {
+                    "found": False,
+                    "match_type": "no_external_id",
+                    "reason": "Для анализа маршрутов требуется external_id",
+                    "match_percentage": 0.0,
+                    "total_routes_checked": 0,
+                    "customer_concerts": [],
+                    "best_route": None
+                },
+                "concerts_by_day": {}
+            }
         
         logger.info(f"Festival days data: {festival_days_data}")
         logger.info(f"Characteristics data type: {type(characteristics_data)}")
@@ -1858,7 +1860,8 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
     # Получаем все залы и жанры с отметкой о посещении
     if user_external_id:
         halls_and_genres = get_all_halls_and_genres_with_visit_status(session, user_external_id, concerts_data)
-    else:
+    elif not user_external_id:
+
         # Если нет external_id, создаем базовые данные о залах и жанрах
         halls_and_genres = {
             "halls": [],
@@ -1898,7 +1901,7 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
                     
                     compositions_counter[composition_key] += 1
                     logger.debug(f"Found composition: {composition_key} for concert {concert['id']}")
-            
+                
         except Exception as e:
             logger.warning(f"Error processing concert data for {concert['id']}: {e}")
             continue
@@ -1928,7 +1931,7 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
     logger.info(f"  Top composers: {[name for name, count in composers_counter.most_common(5)]}")
     
     return characteristics
-
+    
 
 def get_rare_festival_composers(session, user_composers: list = None, limit: int = 15) -> list:
     """
@@ -2079,87 +2082,6 @@ def get_top_festival_composers(session, user_composers: list = None, limit: int 
             break
     
     return top_composers
-
-
-def get_all_halls_and_genres_with_visit_status(session, user_external_id: str, concerts_data: list) -> dict:
-    """
-    Получает все залы и жанры с отметкой о посещении пользователем
-    
-    Args:
-        session: Сессия базы данных
-        user_external_id: Внешний ID пользователя
-        concerts_data: Список концертов пользователя
-        
-    Returns:
-        Словарь с залами и жанрами и их статусом посещения
-    """
-    from models.hall import Hall
-    from models.concert import Concert
-    from sqlmodel import select
-    from collections import Counter
-    
-    # Получаем все уникальные жанры из концертов
-    all_genres_query = session.exec(select(Concert.genre).distinct().where(Concert.genre.is_not(None))).all()
-    all_genres = [genre for genre in all_genres_query if genre]
-    
-    # Получаем все уникальные залы из концертов
-    all_halls_query = session.exec(select(Concert.hall_id).distinct().where(Concert.hall_id.is_not(None))).all()
-    all_halls = []
-    for hall_id in all_halls_query:
-        hall = session.exec(select(Hall).where(Hall.id == hall_id)).first()
-        if hall:
-            all_halls.append(hall)
-    
-    # Счетчики посещений залов и жанров
-    halls_counter = Counter()
-    genres_counter = Counter()
-    
-    # Обрабатываем концерты пользователя
-    for concert_data in concerts_data:
-        concert = concert_data['concert']
-        
-        # Добавляем зал в счетчик
-        if concert.get('hall') and concert['hall'].get('name'):
-            halls_counter[concert['hall']['name']] += 1
-        
-        # Добавляем жанр в счетчик
-        if concert.get('genre'):
-            genres_counter[concert['genre']] += 1
-    
-    # Формируем список всех залов с количеством посещений
-    halls_with_status = []
-    for hall in all_halls:
-        visit_count = halls_counter.get(hall.name, 0)
-        halls_with_status.append({
-            "name": hall.name,
-            "visit_count": visit_count,
-            "is_visited": visit_count > 0,
-            "address": hall.address,
-            "seats": hall.seats
-        })
-    
-    # Сортируем залы по убыванию количества посещений
-    halls_with_status.sort(key=lambda x: x['visit_count'], reverse=True)
-    
-    # Формируем список всех жанров с количеством посещений
-    genres_with_status = []
-    for genre in all_genres:
-        visit_count = genres_counter.get(genre, 0)
-        genres_with_status.append({
-            "name": genre,
-            "visit_count": visit_count,
-            "is_visited": visit_count > 0
-        })
-    
-    # Сортируем жанры по убыванию количества посещений
-    genres_with_status.sort(key=lambda x: x['visit_count'], reverse=True)
-    
-    return {
-        "halls": halls_with_status,
-        "genres": genres_with_status
-    }
-    
-
 
     
 
@@ -3123,7 +3045,7 @@ def get_all_festival_days_with_visit_status(session, concerts_data: list) -> lis
     return days_with_status
 
 
-   
+    
 
 def get_all_halls_and_genres_with_visit_status(session, user_external_id: str, concerts_data: list) -> dict:
     """
@@ -3137,22 +3059,32 @@ def get_all_halls_and_genres_with_visit_status(session, user_external_id: str, c
     Returns:
         Словарь с залами и жанрами и их статусом посещения
     """
-    from models.hall import Hall
-    from models.concert import Concert
-    from sqlmodel import select
     from collections import Counter
     
-    # Получаем все уникальные жанры из концертов
-    all_genres_query = session.exec(select(Concert.genre).distinct().where(Concert.genre.is_not(None))).all()
-    all_genres = [genre for genre in all_genres_query if genre]
+    logger.info(f"[DEBUG] get_all_halls_and_genres_with_visit_status called with {len(concerts_data)} concerts")
     
-    # Получаем все уникальные залы из концертов
-    all_halls_query = session.exec(select(Concert.hall_id).distinct().where(Concert.hall_id.is_not(None))).all()
-    all_halls = []
-    for hall_id in all_halls_query:
-        hall = session.exec(select(Hall).where(Hall.id == hall_id)).first()
-        if hall:
-            all_halls.append(hall)
+    # Получаем все уникальные жанры и залы из концертов пользователя
+    all_genres = set()
+    all_halls = set()
+    
+    # Собираем уникальные жанры и залы из концертов пользователя
+    for concert_data in concerts_data:
+        concert = concert_data['concert']
+        
+        # Добавляем жанр
+        if concert.get('genre'):
+            all_genres.add(concert['genre'])
+        
+        # Добавляем зал
+        if concert.get('hall') and concert['hall'].get('name'):
+            all_halls.add(concert['hall']['name'])
+    
+    logger.info(f"[DEBUG] Found genres: {all_genres}")
+    logger.info(f"[DEBUG] Found halls: {all_halls}")
+    
+    # Преобразуем в списки
+    all_genres = list(all_genres)
+    all_halls = list(all_halls)
     
     # Счетчики посещений залов и жанров
     halls_counter = Counter()
@@ -3170,16 +3102,19 @@ def get_all_halls_and_genres_with_visit_status(session, user_external_id: str, c
         if concert.get('genre'):
             genres_counter[concert['genre']] += 1
     
+    logger.info(f"[DEBUG] Halls counter: {dict(halls_counter)}")
+    logger.info(f"[DEBUG] Genres counter: {dict(genres_counter)}")
+    
     # Формируем список всех залов с количеством посещений
     halls_with_status = []
-    for hall in all_halls:
-        visit_count = halls_counter.get(hall.name, 0)
+    for hall_name in all_halls:
+        visit_count = halls_counter.get(hall_name, 0)
         halls_with_status.append({
-            "name": hall.name,
+            "name": hall_name,
             "visit_count": visit_count,
             "is_visited": visit_count > 0,
-            "address": hall.address,
-            "seats": hall.seats
+            "address": "",  # Адрес не доступен из данных концертов
+            "seats": 0      # Количество мест не доступно из данных концертов
         })
     
     # Сортируем залы по убыванию количества посещений
@@ -3198,12 +3133,13 @@ def get_all_halls_and_genres_with_visit_status(session, user_external_id: str, c
     # Сортируем жанры по убыванию количества посещений
     genres_with_status.sort(key=lambda x: x['visit_count'], reverse=True)
     
+    logger.info(f"[DEBUG] Returning halls: {len(halls_with_status)}, genres: {len(genres_with_status)}")
+    
     return {
         "halls": halls_with_status,
         "genres": genres_with_status
     }
     
-
 
     
 
