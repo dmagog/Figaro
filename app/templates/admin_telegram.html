@@ -28,7 +28,7 @@
         .tg-form-group input, .tg-form-group select, .tg-form-group textarea { width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 1em; transition: border-color 0.2s; }
         .tg-form-group input:focus, .tg-form-group select:focus, .tg-form-group textarea:focus { border-color: #667eea; outline: none; }
         
-        .tg-categories { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .tg-categories { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 20px; width: 100%; }
         .tg-category-card { background: white; border: 2px solid #e1e5e9; border-radius: 10px; padding: 15px; cursor: pointer; transition: all 0.2s; }
         .tg-category-card:hover { border-color: #667eea; transform: translateY(-2px); }
         .tg-category-card.selected { border-color: #667eea; background: #f0f4ff; }
@@ -69,9 +69,9 @@
         .tg-search-box { margin-bottom: 15px; }
         .tg-search-box input { width: 100%; padding: 10px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 1em; }
         
-        @media (max-width: 1200px) { .tg-main-content { grid-template-columns: 1fr; } }
-        @media (max-width: 900px) { .tg-dashboard { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 768px) { .tg-dashboard { grid-template-columns: 1fr; } .admin-container { padding: 15px; } }
+        @media (max-width: 1200px) { .tg-main-content { grid-template-columns: 1fr; } .tg-categories { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 900px) { .tg-dashboard { grid-template-columns: repeat(2, 1fr); } .tg-categories { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 768px) { .tg-dashboard { grid-template-columns: 1fr; } .tg-categories { grid-template-columns: 1fr; } .admin-container { padding: 15px; } }
     </style>
 </head>
 <body>
@@ -121,42 +121,42 @@
         </div>
 
         <div class="tg-main-content">
+            <!-- Категории пользователей (отдельный блок на всю ширину) -->
+            <div class="tg-form-section" style="grid-column: 1 / -1;">
+                <h3>👥 Выберите категорию пользователей</h3>
+                <div class="tg-categories">
+                    <div class="tg-category-card" data-category="all">
+                        <h4>Все пользователи</h4>
+                        <div class="count">{{ total_users }}</div>
+                        <div class="desc">Все с Telegram</div>
+                    </div>
+                    <div class="tg-category-card" data-category="with_purchases">
+                        <h4>С покупками</h4>
+                        <div class="count">{{ users_with_purchases }}</div>
+                        <div class="desc">Покупали билеты</div>
+                    </div>
+                    <div class="tg-category-card" data-category="without_purchases">
+                        <h4>Без покупок</h4>
+                        <div class="count">{{ users_without_purchases }}</div>
+                        <div class="desc">Еще не покупали</div>
+                    </div>
+                    <div class="tg-category-card" data-category="new_users">
+                        <h4>Новые</h4>
+                        <div class="count">{{ new_users }}</div>
+                        <div class="desc">Зарегистрировались недавно</div>
+                    </div>
+                    <div class="tg-category-card" data-category="active_users">
+                        <h4>Активные</h4>
+                        <div class="count">{{ active_users }}</div>
+                        <div class="desc">Покупали недавно</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Форма отправки -->
             <div class="tg-form-section">
                 <h3>📤 Отправить сообщение</h3>
                 <form id="tg-send-form">
-                    <!-- Категории пользователей -->
-                    <div class="tg-form-group">
-                        <label>Выберите категорию пользователей:</label>
-                        <div class="tg-categories">
-                            <div class="tg-category-card" data-category="all">
-                                <h4>Все пользователи</h4>
-                                <div class="count">{{ total_users }}</div>
-                                <div class="desc">Все с Telegram</div>
-                            </div>
-                            <div class="tg-category-card" data-category="with_purchases">
-                                <h4>С покупками</h4>
-                                <div class="count">{{ users_with_purchases }}</div>
-                                <div class="desc">Покупали билеты</div>
-                            </div>
-                            <div class="tg-category-card" data-category="without_purchases">
-                                <h4>Без покупок</h4>
-                                <div class="count">{{ users_without_purchases }}</div>
-                                <div class="desc">Еще не покупали</div>
-                            </div>
-                            <div class="tg-category-card" data-category="new_users">
-                                <h4>Новые</h4>
-                                <div class="count">{{ new_users }}</div>
-                                <div class="desc">Зарегистрировались недавно</div>
-                            </div>
-                            <div class="tg-category-card" data-category="active_users">
-                                <h4>Активные</h4>
-                                <div class="count">{{ active_users }}</div>
-                                <div class="desc">Покупали недавно</div>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Шаблоны -->
                     <div class="tg-form-group">
                         <label for="template-select">Шаблон сообщения:</label>
