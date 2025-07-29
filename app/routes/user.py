@@ -1831,6 +1831,20 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
     """
     from collections import defaultdict, Counter
     
+    logger.info(f"=== DEBUG: Called get_user_characteristics #1 (line 1820) ===")
+    logger.info(f"user_external_id: {user_external_id}")
+    logger.info(f"concerts_data length: {len(concerts_data)}")
+    
+    # Дополнительная отладка структуры данных
+    if concerts_data:
+        sample_concert = concerts_data[0]['concert']
+        logger.info(f"Sample concert structure: {list(sample_concert.keys())}")
+        if 'compositions' in sample_concert:
+            logger.info(f"Sample concert has {len(sample_concert['compositions'])} compositions")
+            if sample_concert['compositions']:
+                sample_composition = sample_concert['compositions'][0]
+                logger.info(f"Sample composition structure: {sample_composition}")
+    
     if not concerts_data:
         return {
             "total_concerts": 0,
@@ -1860,40 +1874,30 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
     for concert_data in concerts_data:
         concert = concert_data['concert']
         
-        # Получаем детали концерта из базы данных
+        # Используем данные, которые уже загружены в concert_data
         try:
-            from models.concert import Concert
-            from models.artist import Artist
-            from models.composition import Composition, Author
-            from sqlmodel import select
+            # Артисты (уже загружены в данных)
+            if 'artists' in concert:
+                for artist in concert['artists']:
+                    artists_counter[artist['name']] += 1
+                    logger.debug(f"Found artist: {artist['name']} for concert {concert['id']}")
             
-            # Получаем концерт с загруженными связями
-            db_concert = session.exec(select(Concert).where(Concert.id == concert['id'])).first()
-            
-            if db_concert:
-                # Принудительно загружаем связи
-                session.refresh(db_concert)
-                
-                # Артисты
-                for artist in db_concert.artists:
-                    artists_counter[artist.name] += 1
-                    logger.debug(f"Found artist: {artist.name} for concert {concert['id']}")
-                
-                # Композиции и их авторы
-                for composition in db_concert.compositions:
+            # Композиции и их авторы (уже загружены в данных)
+            if 'compositions' in concert:
+                for composition in concert['compositions']:
                     # Формируем ключ для композиции с автором
-                    if composition.author:
-                        composition_key = f"{composition.name} ({composition.author.name})"
-                        composers_counter[composition.author.name] += 1
-                        logger.debug(f"Found composer: {composition.author.name} for composition {composition.name}")
+                    if 'author' in composition and composition['author']:
+                        composition_key = f"{composition['name']} ({composition['author']['name']})"
+                        composers_counter[composition['author']['name']] += 1
+                        logger.debug(f"Found composer: {composition['author']['name']} for composition {composition['name']}")
                     else:
-                        composition_key = f"{composition.name} (Автор неизвестен)"
+                        composition_key = f"{composition['name']} (Автор неизвестен)"
                     
                     compositions_counter[composition_key] += 1
                     logger.debug(f"Found composition: {composition_key} for concert {concert['id']}")
-                
+            
         except Exception as e:
-            logger.warning(f"Error getting concert details for {concert['id']}: {e}")
+            logger.warning(f"Error processing concert data for {concert['id']}: {e}")
             continue
     
     # Преобразуем счетчики в списки с сортировкой по количеству
@@ -1908,6 +1912,14 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
         "composers": counter_to_list(composers_counter),
         "compositions": counter_to_list(compositions_counter)
     }
+    
+    # Логирование результатов
+    logger.info(f"Characteristics calculation results:")
+    logger.info(f"  Total concerts: {len(concerts_data)}")
+    logger.info(f"  Artists found: {len(artists_counter)}")
+    logger.info(f"  Composers found: {len(composers_counter)}")
+    logger.info(f"  Compositions found: {len(compositions_counter)}")
+    logger.info(f"  Top composers: {[name for name, count in composers_counter.most_common(5)]}")
     
     return characteristics
 
@@ -3100,94 +3112,6 @@ def get_all_festival_days_with_visit_status(session, concerts_data: list) -> lis
     return days_with_status
 
 
-def get_user_characteristics(session, user_external_id: str, concerts_data: list) -> dict:
-    """
-    Получает характеристики пользователя на основе его покупок
-    
-    Args:
-        session: Сессия базы данных
-        user_external_id: Внешний ID пользователя
-        concerts_data: Список концертов пользователя
-        
-    Returns:
-        Словарь с характеристиками пользователя
-    """
-    from collections import defaultdict, Counter
-    
-    if not concerts_data:
-        return {
-            "total_concerts": 0,
-            "halls": [],
-            "genres": [],
-            "artists": [],
-            "composers": [],
-            "compositions": []
-        }
-    
-    # Получаем все залы и жанры с отметкой о посещении
-    halls_and_genres = get_all_halls_and_genres_with_visit_status(session, user_external_id, concerts_data)
-    
-    # Счетчики для различных характеристик
-    artists_counter = Counter()
-    composers_counter = Counter()
-    compositions_counter = Counter()
-    
-    # Обрабатываем каждый концерт
-    for concert_data in concerts_data:
-        concert = concert_data['concert']
-        
-        # Получаем детали концерта из базы данных
-        try:
-            from models.concert import Concert
-            from models.artist import Artist
-            from models.composition import Composition, Author
-            from sqlmodel import select
-            
-            # Получаем концерт с загруженными связями
-            db_concert = session.exec(select(Concert).where(Concert.id == concert['id'])).first()
-            
-            if db_concert:
-                # Принудительно загружаем связи
-                session.refresh(db_concert)
-                
-                # Артисты
-                for artist in db_concert.artists:
-                    artists_counter[artist.name] += 1
-                    logger.debug(f"Found artist: {artist.name} for concert {concert['id']}")
-                
-                # Композиции и их авторы
-                for composition in db_concert.compositions:
-                    # Формируем ключ для композиции с автором
-                    if composition.author:
-                        composition_key = f"{composition.name} ({composition.author.name})"
-                        composers_counter[composition.author.name] += 1
-                        logger.debug(f"Found composer: {composition.author.name} for composition {composition.name}")
-                    else:
-                        composition_key = f"{composition.name} (Автор неизвестен)"
-                    
-                    compositions_counter[composition_key] += 1
-                    logger.debug(f"Found composition: {composition_key} for concert {concert['id']}")
-                
-        except Exception as e:
-            logger.warning(f"Error getting concert details for {concert['id']}: {e}")
-            continue
-    
-    # Преобразуем счетчики в списки с сортировкой по количеству
-    def counter_to_list(counter, limit=10):
-        return [{"name": name, "count": count} for name, count in counter.most_common(limit)]
-    
-    characteristics = {
-        "total_concerts": len(concerts_data),
-        "halls": halls_and_genres["halls"],
-        "genres": halls_and_genres["genres"],
-        "artists": counter_to_list(artists_counter),
-        "composers": counter_to_list(composers_counter),
-        "compositions": counter_to_list(compositions_counter)
-    }
-    
-    logger.info(f"Generated characteristics for user {user_external_id}: {characteristics}")
-    
-    return characteristics
     
 
 
@@ -4235,98 +4159,7 @@ def get_all_festival_days_with_visit_status(session, concerts_data: list) -> lis
     return days_with_status
 
 
-def get_user_characteristics(session, user_external_id: str, concerts_data: list) -> dict:
-    """
-    Получает характеристики пользователя на основе его покупок
-    
-    Args:
-        session: Сессия базы данных
-        user_external_id: Внешний ID пользователя
-        concerts_data: Список концертов пользователя
-        
-    Returns:
-        Словарь с характеристиками пользователя
-    """
-    from collections import defaultdict, Counter
-    
-    if not concerts_data:
-        return {
-            "total_concerts": 0,
-            "halls": [],
-            "genres": [],
-            "artists": [],
-            "composers": [],
-            "compositions": []
-        }
-    
-    # Получаем все залы и жанры с отметкой о посещении
-    halls_and_genres = get_all_halls_and_genres_with_visit_status(session, user_external_id, concerts_data)
-    
-    # Счетчики для различных характеристик
-    artists_counter = Counter()
-    composers_counter = Counter()
-    compositions_counter = Counter()
-    
-    # Обрабатываем каждый концерт
-    for concert_data in concerts_data:
-        concert = concert_data['concert']
-        
-        # Получаем детали концерта из базы данных
-        try:
-            from models.concert import Concert
-            from models.artist import Artist
-            from models.composition import Composition, Author
-            from sqlmodel import select
-            
-            # Получаем концерт с загруженными связями
-            db_concert = session.exec(select(Concert).where(Concert.id == concert['id'])).first()
-            
-            if db_concert:
-                # Принудительно загружаем связи
-                session.refresh(db_concert)
-                
-                # Артисты
-                for artist in db_concert.artists:
-                    artists_counter[artist.name] += 1
-                    logger.debug(f"Found artist: {artist.name} for concert {concert['id']}")
-                
-                # Композиции и их авторы
-                for composition in db_concert.compositions:
-                    # Формируем ключ для композиции с автором
-                    if composition.author:
-                        composition_key = f"{composition.name} ({composition.author.name})"
-                        composers_counter[composition.author.name] += 1
-                        logger.debug(f"Found composer: {composition.author.name} for composition {composition.name}")
-                    else:
-                        composition_key = f"{composition.name} (Автор неизвестен)"
-                    
-                    compositions_counter[composition_key] += 1
-                    logger.debug(f"Found composition: {composition_key} for concert {concert['id']}")
-                
-        except Exception as e:
-            logger.warning(f"Error getting concert details for {concert['id']}: {e}")
-            continue
-    
-    # Преобразуем счетчики в списки с сортировкой по количеству
-    def counter_to_list(counter, limit=10):
-        return [{"name": name, "count": count} for name, count in counter.most_common(limit)]
-    
-    characteristics = {
-        "total_concerts": len(concerts_data),
-        "halls": halls_and_genres["halls"],
-        "genres": halls_and_genres["genres"],
-        "artists": counter_to_list(artists_counter),
-        "composers": counter_to_list(composers_counter),
-        "compositions": counter_to_list(compositions_counter)
-    }
-    
-    logger.info(f"Generated characteristics for user {user_external_id}: {characteristics}")
-    
-    return characteristics
-    
-
-
-    
+   
 
 def get_all_halls_and_genres_with_visit_status(session, user_external_id: str, concerts_data: list) -> dict:
     """

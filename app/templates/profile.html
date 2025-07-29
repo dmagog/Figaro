@@ -2051,31 +2051,33 @@
             display: inline-flex;
             align-items: center;
             gap: 4px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: #f8f9fa;
+            color: #495057;
             padding: 6px 12px;
-            border-radius: 20px;
+            border-radius: 6px;
             font-size: 12px;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(102,126,234,0.2);
+            border: 1px solid #e9ecef;
             position: relative;
         }
         
         .composer-tag:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(102,126,234,0.3);
+            background: #e9ecef;
+            border-color: #dee2e6;
+            transform: translateY(-1px);
         }
         
         .composer-tag.inactive {
-            background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
-            color: #f3f4f6;
-            box-shadow: 0 2px 4px rgba(156,163,175,0.2);
+            background: #f8f9fa;
+            color: #9ca3af;
+            border-color: #e9ecef;
         }
         
         .composer-tag.inactive:hover {
-            box-shadow: 0 4px 8px rgba(156,163,175,0.3);
+            background: #f1f3f4;
+            border-color: #dee2e6;
         }
         
         .tag-check {
@@ -3093,7 +3095,7 @@
                             <div class="characteristic-icon">💎</div>
                             <div class="characteristic-title">
                                 <h3>Редкие композиторы</h3>
-                                <p>Самые редкие авторы фестиваля</p>
+                                <p>Самые редкие авторы в программе фестиваля</p>
                             </div>
                             <div class="characteristic-count">{{ rare_festival_composers|selectattr('is_active')|list|length }} из {{ rare_festival_composers|length }}</div>
                         </div>
