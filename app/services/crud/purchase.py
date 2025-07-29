@@ -1,6 +1,6 @@
 # services/crud/purchase.py
 from sqlmodel import Session, select
-from models import Purchase, Concert, Hall
+from models import Purchase, Concert, Hall, AvailableRoute
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone
 from models.user import User
@@ -216,6 +216,16 @@ def get_festival_summary_stats(session: Session) -> dict:
         .where(Purchase.user_external_id.is_not(None))
     ).one()
     
+    # Подсчитываем доступные концерты (с билетами)
+    available_concerts_count = session.exec(
+        select(func.count(Concert.id))
+        .where(Concert.tickets_available == True)
+        .where((Concert.tickets_left > 0) | (Concert.tickets_left.is_(None)))
+    ).one()
+    
+    # Подсчитываем доступные маршруты
+    available_routes_count = session.exec(select(func.count(AvailableRoute.id))).one()
+    
     return {
         "users_count": users_count,
         "concerts_count": concerts_count,
@@ -229,7 +239,9 @@ def get_festival_summary_stats(session: Session) -> dict:
         "authors_count": authors_count,
         "compositions_count": compositions_count,
         "genres_count": genres_count,
-        "customers_count": customers_count
+        "customers_count": customers_count,
+        "available_concerts_count": available_concerts_count,
+        "available_routes_count": available_routes_count
     } 
 
 

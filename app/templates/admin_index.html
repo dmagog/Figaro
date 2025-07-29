@@ -244,6 +244,47 @@
                         <p>{{ summary.tickets_count }}</p>
                     </div>
                 </a>
+                <a href="/profile" style="text-decoration:none; color:inherit;" title="Перейти в профиль">
+                    <div class="summary-card profile-card" style="cursor:pointer; transition:box-shadow 0.18s, background 0.18s;">
+                        <div class="profile-avatar">👑 </div>
+                        <div class="profile-info">
+                            <div class="profile-name">{{ user.name or user.email }}</div>
+                            <div class="profile-role">Суперадмин</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- 📊 Аналитика и статистика -->
+        <div class="admin-section">
+            <div class="admin-section-title">
+                <span style="font-size: 1.3em;">📊</span>
+                Аналитика и статистика
+            </div>
+            <div class="admin-section-grid">
+                <div class="summary-card">
+                    <h3>Сумма покупок</h3>
+                    <p>{{ "{: }".format(summary.total_spent) }} ₽</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Средняя заполняемость</h3>
+                    <p>{{ '%.2f' % summary.avg_fill }}</p>
+                </div>
+                <a href="/admin/routes/view" style="text-decoration:none; color:inherit;" title="Перейти к маршрутам">
+                    <div class="summary-card" style="cursor:pointer;">
+                        <h3>Маршрутов</h3>
+                        <p>{{ routes_count }}</p>
+                    </div>
+                </a>
+                <div class="summary-card" style="background: linear-gradient(135deg, #e8f5e8 0%, #f0fff0 100%);">
+                    <h3>🎫 Концертов в продаже</h3>
+                    <p>{{ summary.available_concerts_count or 0 }}</p>
+                </div>
+                <div class="summary-card" style="background: linear-gradient(135deg, #e8f5e8 0%, #f0fff0 100%);">
+                    <h3>🛤️ Доступных маршрутов</h3>
+                    <p>{{ summary.available_routes_count or 0 }}</p>
+                </div>
             </div>
         </div>
         
@@ -290,40 +331,6 @@
                         <p>{{ summary.genres_count or 0 }}</p>
                     </div>
                 </a>
-            </div>
-        </div>
-        
-        <!-- 📊 Аналитика и статистика -->
-        <div class="admin-section">
-            <div class="admin-section-title">
-                <span style="font-size: 1.3em;">📊</span>
-                Аналитика и статистика
-            </div>
-            <div class="admin-section-grid">
-                <div class="summary-card">
-                    <h3>Сумма покупок</h3>
-                    <p>{{ "{: }".format(summary.total_spent) }} ₽</p>
-                </div>
-                <div class="summary-card">
-                    <h3>Средняя заполняемость</h3>
-                    <p>{{ '%.2f' % summary.avg_fill }}</p>
-                </div>
-                <a href="/admin/routes/view" style="text-decoration:none; color:inherit;" title="Перейти к маршрутам">
-                    <div class="summary-card" style="cursor:pointer;">
-                        <h3>Маршрутов</h3>
-                        <p>{{ routes_count }}</p>
-                    </div>
-                </a>
-            </div>
-        </div>
-        
-        <!-- 🎪 Дополнительные возможности -->
-        <div class="admin-section">
-            <div class="admin-section-title">
-                <span style="font-size: 1.3em;">🎪</span>
-                Дополнительные возможности
-            </div>
-            <div class="admin-section-grid">
                 <a href="/admin/offprogram" style="text-decoration:none; color:inherit;" title="Перейти к офф-программе">
                     <div class="summary-card" style="cursor:pointer;">
                         <h3>Офф-программа</h3>
@@ -333,20 +340,29 @@
             </div>
         </div>
         
-        <!-- 👤 Профиль администратора -->
+        <!-- 🛠️ Дополнительные возможности -->
         <div class="admin-section">
             <div class="admin-section-title">
-                <span style="font-size: 1.3em;">👤</span>
-                Профиль администратора
+                <span style="font-size: 1.3em;">🛠️</span>
+                Дополнительные возможности
             </div>
             <div class="admin-section-grid">
-                <a href="/profile" style="text-decoration:none; color:inherit;" title="Перейти в профиль">
-                    <div class="summary-card profile-card" style="cursor:pointer; transition:box-shadow 0.18s, background 0.18s;">
-                        <div class="profile-avatar">👑 </div>
-                        <div class="profile-info">
-                            <div class="profile-name">{{ user.name or user.email }}</div>
-                            <div class="profile-role">Суперадмин</div>
-                        </div>
+                <a href="/admin/telegram" style="text-decoration:none; color:inherit;" title="Перейти к рассылке Telegram">
+                    <div class="summary-card" style="cursor:pointer;">
+                        <h3>📱 Telegram рассылка</h3>
+                        <p>Отправка сообщений</p>
+                    </div>
+                </a>
+                <a href="http://localhost:5555" target="_blank" style="text-decoration:none; color:inherit;" title="Открыть мониторинг Celery">
+                    <div class="summary-card" style="cursor:pointer;">
+                        <h3>⚡ Очереди Celery</h3>
+                        <p>Мониторинг задач</p>
+                    </div>
+                </a>
+                <a href="http://localhost:8080" target="_blank" style="text-decoration:none; color:inherit;" title="Открыть Adminer">
+                    <div class="summary-card" style="cursor:pointer;">
+                        <h3>🗄️ База данных</h3>
+                        <p>Управление БД</p>
                     </div>
                 </a>
             </div>
