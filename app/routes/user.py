@@ -1886,11 +1886,14 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
             if 'compositions' in concert:
                 for composition in concert['compositions']:
                     # Формируем ключ для композиции с автором
-                    if 'author' in composition and composition['author']:
+                    if 'author' in composition and composition['author'] and composition['author']['name'] != '_Прочее':
                         composition_key = f"{composition['name']} ({composition['author']['name']})"
                         composers_counter[composition['author']['name']] += 1
                         logger.debug(f"Found composer: {composition['author']['name']} for composition {composition['name']}")
                     else:
+                        # Логируем случаи с "_Прочее" или отсутствующим автором
+                        if 'author' in composition and composition['author'] and composition['author']['name'] == '_Прочее':
+                            logger.debug(f"Skipping composer '_Прочее' for composition {composition['name']}")
                         composition_key = f"{composition['name']} (Автор неизвестен)"
                     
                     compositions_counter[composition_key] += 1
