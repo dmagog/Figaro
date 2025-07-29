@@ -3013,7 +3013,12 @@
                                 <div class="characteristic-item{% if loop.index > 10 %} hidden-artist{% endif %}">
                                     <div class="item-info">
                                         <div class="item-name">{{ artist.name }}</div>
-                                        <div class="item-description">{{ artist.count }} концерт{{ 'а' if artist.count >= 2 and artist.count <= 4 else 'ов' if artist.count >= 5 else '' }}</div>
+                                        <div class="item-description">
+                                            {{ artist.count }} концерт{{ 'а' if artist.count >= 2 and artist.count <= 4 else 'ов' if artist.count >= 5 else '' }}
+                                            {% if artist.concerts %}
+                                                 • {{ artist.concerts|join('·') }}
+                                            {% endif %}
+                                        </div>
                                     </div>
                                     <div class="item-count">
                                         <span class="count-visited">{{ artist.count }}</span>

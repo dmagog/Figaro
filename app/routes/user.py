@@ -1892,6 +1892,7 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
     
     # Счетчики для различных характеристик
     artists_counter = Counter()
+    artists_concerts = defaultdict(list)  # Для хранения номеров концертов артистов
     composers_counter = Counter()
     compositions_counter = Counter()
     
@@ -1905,6 +1906,10 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
             if 'artists' in concert:
                 for artist in concert['artists']:
                     artists_counter[artist['name']] += 1
+                    # Сохраняем номер концерта для артиста
+                    concert_number = concert_data.get('concert_number', 0)
+                    if concert_number > 0:
+                        artists_concerts[artist['name']].append(concert_number)
                     logger.debug(f"Found artist: {artist['name']} for concert {concert['id']}")
             
             # Композиции и их авторы (уже загружены в данных)
@@ -1929,17 +1934,24 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
             continue
     
     # Преобразуем счетчики в списки с сортировкой по количеству
-    def counter_to_list(counter, limit=None):
+    def counter_to_list(counter, limit=None, concerts_dict=None):
         items = counter.most_common()
         if limit is not None:
             items = items[:limit]
-        return [{"name": name, "count": count} for name, count in items]
+        
+        result = []
+        for name, count in items:
+            item = {"name": name, "count": count}
+            if concerts_dict and name in concerts_dict:
+                item["concerts"] = sorted(concerts_dict[name])
+            result.append(item)
+        return result
     
     characteristics = {
         "total_concerts": len(concerts_data),
         "halls": halls_and_genres["halls"],
         "genres": halls_and_genres["genres"],
-        "artists": counter_to_list(artists_counter, None),  # Показываем всех артистов
+        "artists": counter_to_list(artists_counter, None, artists_concerts),  # Показываем всех артистов с номерами концертов
         "composers": counter_to_list(composers_counter, None),  # Показываем всех композиторов
         "compositions": counter_to_list(compositions_counter, None)  # Показываем все произведения
     }
