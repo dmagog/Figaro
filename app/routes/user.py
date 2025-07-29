@@ -544,12 +544,15 @@ async def profile_page(
         try:
             user_composers = characteristics_data.get('composers', [])
             top_festival_composers = get_top_festival_composers(session, user_composers, limit=10)
+            rare_festival_composers = get_rare_festival_composers(session, user_composers, limit=15)
         except Exception as e:
-            logger.error(f"Error getting top festival composers: {e}")
+            logger.error(f"Error getting festival composers: {e}")
             top_festival_composers = []
+            rare_festival_composers = []
         
         # Добавляем топ композиторов в контекст
         context["top_festival_composers"] = top_festival_composers
+        context["rare_festival_composers"] = rare_festival_composers
         
         return templates.TemplateResponse("profile.html", context)
         
@@ -1907,6 +1910,69 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
     }
     
     return characteristics
+
+
+def get_rare_festival_composers(session, user_composers: list = None, limit: int = 15) -> list:
+    """
+    Получает редких композиторов фестиваля по количеству произведений (с наименьшим количеством)
+    
+    Args:
+        session: Сессия базы данных
+        user_composers: Список композиторов пользователя для проверки активности
+        limit: Количество редких композиторов для отображения
+        
+    Returns:
+        Список редких композиторов с количеством произведений и статусом активности
+    """
+    from models.concert import Concert
+    from models.composition import Composition, Author
+    from sqlmodel import select
+    from collections import Counter
+    
+    # Получаем все концерты с композициями
+    all_concerts = session.exec(select(Concert)).all()
+    
+    # Счетчик композиторов
+    composers_counter = Counter()
+    
+    # Обрабатываем каждый концерт
+    for concert in all_concerts:
+        try:
+            # Принудительно загружаем связи
+            session.refresh(concert)
+            
+            # Композиции и их авторы
+            for composition in concert.compositions:
+                if composition.author:
+                    composers_counter[composition.author.name] += 1
+                    
+        except Exception as e:
+            logger.warning(f"Error getting concert compositions for {concert.id}: {e}")
+            continue
+    
+    # Создаем список имен композиторов пользователя для быстрой проверки
+    user_composer_names = set()
+    if user_composers:
+        user_composer_names = {composer['name'] for composer in user_composers}
+    
+    # Получаем всех композиторов, отсортированных по количеству произведений (от меньшего к большему)
+    all_composers_sorted = composers_counter.most_common()
+    all_composers_sorted.reverse()  # Инвертируем для получения редких композиторов
+    
+    # Фильтруем композиторов, исключая "_Прочее"
+    filtered_composers = [(name, count) for name, count in all_composers_sorted if name != "_Прочее"]
+    
+    # Берем только редких композиторов
+    rare_composers = []
+    for name, count in filtered_composers[:limit]:
+        is_active = name in user_composer_names
+        rare_composers.append({
+            "name": name, 
+            "count": count, 
+            "is_active": is_active
+        })
+    
+    return rare_composers
 
 
 def get_top_festival_composers(session, user_composers: list = None, limit: int = 5) -> list:
