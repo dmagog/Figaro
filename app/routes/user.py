@@ -359,7 +359,13 @@ async def profile_page(
                         "total_days": 0,
                         "total_halls": 0,
                         "total_genres": 0,
-                        "total_spent": 0
+                        "total_spent": 0,
+                        "total_concert_time_minutes": 0,
+                        "total_walk_time_minutes": 0,
+                        "total_distance_km": 0,
+                        "unique_compositions": 0,
+                        "unique_authors": 0,
+                        "unique_artists": 0
                     },
                     "match": {
                         "found": False,
@@ -447,13 +453,22 @@ async def profile_page(
                 concerts_by_day_with_transitions[day_index] = concerts_with_transitions
             # --- КОНЕЦ ENRICH-БЛОКА ---
             
+            # Рассчитываем статистику маршрута
+            route_stats = calculate_route_statistics(session, concerts_for_template, concerts_by_day_with_transitions)
+            
             route_sheet_data = {
                 "summary": {
                     "total_concerts": len(concerts_for_template),
                     "total_days": len(concerts_by_day),
                     "total_halls": len(set(c['concert'].get('hall', {}).get('id') for c in concerts_for_template if c['concert'].get('hall'))),
                     "total_genres": len(set(c['concert'].get('genre') for c in concerts_for_template if c['concert'].get('genre'))),
-                    "total_spent": sum(c.get('total_spent', 0) for c in concerts_for_template)
+                    "total_spent": sum(c.get('total_spent', 0) for c in concerts_for_template),
+                    "total_concert_time_minutes": route_stats.get('total_concert_time_minutes', 0),
+                    "total_walk_time_minutes": route_stats.get('total_walk_time_minutes', 0),
+                    "total_distance_km": route_stats.get('total_distance_km', 0),
+                    "unique_compositions": route_stats.get('unique_compositions', 0),
+                    "unique_authors": route_stats.get('unique_authors', 0),
+                    "unique_artists": route_stats.get('unique_artists', 0)
                 },
                 "match": {
                     "found": False,
@@ -474,7 +489,13 @@ async def profile_page(
                     "total_days": 0,
                     "total_halls": 0,
                     "total_genres": 0,
-                    "total_spent": sum(c.get('total_spent', 0) for c in concerts_for_template)
+                    "total_spent": sum(c.get('total_spent', 0) for c in concerts_for_template),
+                    "total_concert_time_minutes": 0,
+                    "total_walk_time_minutes": 0,
+                    "total_distance_km": 0,
+                    "unique_compositions": 0,
+                    "unique_authors": 0,
+                    "unique_artists": 0
                 },
                 "match": {
                     "found": False,
@@ -530,6 +551,10 @@ async def profile_page(
             "telegram_link_code_expires": telegram_link_code_expires,
             "bot_link": bot_link
         }
+        logger.info(f"Route sheet data for template: {route_sheet_data}")
+        logger.info(f"Route sheet summary: {route_sheet_data.get('summary', {})}")
+        logger.info(f"Route sheet summary keys: {list(route_sheet_data.get('summary', {}).keys())}")
+        logger.info(f"Route sheet summary values: {list(route_sheet_data.get('summary', {}).values())}")
         logger.info(f"Context characteristics type: {type(context['characteristics'])}")
         logger.info(f"Context characteristics: {context['characteristics']}")
         logger.info(f"Context characteristics keys: {list(context['characteristics'].keys()) if hasattr(context['characteristics'], 'keys') else 'No keys method'}")
@@ -890,7 +915,7 @@ def get_user_route_sheet(session, user_external_id: str, concerts_data: list, fe
         # Подсчитываем общую статистику
         total_days = len(set(c['concert'].get('date', '').split()[0] for c in concerts_data if c['concert'].get('date')))
         total_halls = len(set(c['concert'].get('hall', {}).get('id') for c in concerts_data if c['concert'].get('hall')))
-        total_genres = len(set(g['id'] for c in concerts_data for g in c['concert'].get('genres', [])))
+        total_genres = len(set(c['concert'].get('genre') for c in concerts_data if c['concert'].get('genre')))
         
         return {
             "summary": {
@@ -898,7 +923,7 @@ def get_user_route_sheet(session, user_external_id: str, concerts_data: list, fe
                 "total_days": total_days,
                 "total_halls": total_halls,
                 "total_genres": total_genres,
-                "total_spent": sum(c['total_spent'] for c in concerts_data),
+                "total_spent": sum(c['concert'].get('purchase_count', 1) * (c['concert'].get('price', 0) or 0) for c in concerts_data),
                 "total_concert_time_minutes": route_stats["total_concert_time_minutes"],
                 "total_walk_time_minutes": route_stats["total_walk_time_minutes"],
                 "total_distance_km": route_stats["total_distance_km"],
@@ -918,7 +943,13 @@ def get_user_route_sheet(session, user_external_id: str, concerts_data: list, fe
                 "total_days": 0,
                 "total_halls": 0,
                 "total_genres": 0,
-                "total_spent": sum(c['total_spent'] for c in concerts_data)
+                "total_spent": sum(c['concert'].get('purchase_count', 1) * (c['concert'].get('price', 0) or 0) for c in concerts_data),
+                "total_concert_time_minutes": 0,
+                "total_walk_time_minutes": 0,
+                "total_distance_km": 0,
+                "unique_compositions": 0,
+                "unique_authors": 0,
+                "unique_artists": 0
             },
             "match": {
                 "found": False,

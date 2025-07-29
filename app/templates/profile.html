@@ -2823,12 +2823,13 @@
                             <div class="finish-dot">🏁</div>
                             <div class="finish-card">
                                 <div class="finish-title">Маршрут завершён!</div>
+
                                 <div class="finish-stats">
                                     <div class="finish-stats-row">
                                         <span>Дней: {{ route_sheet.summary.total_days }}</span>
                                         <span>Концертов: {{ route_sheet.summary.total_concerts }}</span>
                                         <span>Залов: {{ route_sheet.summary.total_halls }}</span>
-                                        <span>Потрачено: {{ "{:,}".format(route_sheet.summary.total_spent) }} ₽</span>
+                                        <span>Жанров: {{ route_sheet.summary.total_genres }}</span>
                                     </div>
                                     <div class="finish-stats-row">
                                         <span>Время концертов: {{ route_sheet.summary.total_concert_time_minutes }} мин</span>
