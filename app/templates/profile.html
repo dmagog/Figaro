@@ -1700,12 +1700,12 @@
         
         .position-number {
             display: inline-block;
-            font-size: 0.8em;
+            font-size: 1.1em;
             font-weight: 600;
-            padding: 2px 6px;
-            border-radius: 12px;
+            padding: 6px 10px;
+            border-radius: 16px;
             margin-right: 8px;
-            min-width: 20px;
+            min-width: 24px;
             text-align: center;
         }
         
@@ -1730,7 +1730,32 @@
         .position-number[data-position]:not([data-position="1"]):not([data-position="2"]):not([data-position="3"]) {
             background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
             color: #6b7280;
-            border: 1px solid #d1d5db;
+        }
+        
+        .position-with-status {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .status-indicator {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        
+        .status-indicator.active {
+            color: #10b981;
+        }
+        
+        .position-emoji {
+            margin-right: 8px;
+            font-size: 1.1em;
+        }
+        
+        .not-visited-circle {
+            color: #6b7280;
+            font-size: 1.3em;
+            font-weight: bold;
         }
         
         /* Стили для таблиц дней фестиваля */
@@ -2931,22 +2956,27 @@
                                 <div class="characteristic-item{% if not composer.is_active %} inactive{% endif %}">
                                     <div class="item-info">
                                         <div class="item-name">
-                                            <span class="position-number" data-position="{{ composer.position }}">{{ composer.position }}</span>
+                                            <span class="position-emoji">
+                                                {% if composer.position == 1 %}🥇
+                                                {% elif composer.position == 2 %}🥈
+                                                {% elif composer.position == 3 %}🥉
+                                                {% else %}{{ composer.position }}
+                                                {% endif %}
+                                            </span>
                                             {{ composer.name }}
                                         </div>
                                         <div class="item-description">
-                                            {% if composer.is_active %}
-                                                {{ composer.count }} произведение{{ 'я' if composer.count >= 2 and composer.count <= 4 else 'ий' if composer.count >= 5 else 'е' }}
-                                            {% else %}
-                                                Не в вашем маршруте
+                                            {{ composer.count }} произведение{{ 'я' if composer.count >= 2 and composer.count <= 4 else 'ий' if composer.count >= 5 else 'е' }}
+                                            {% if not composer.is_active %}
+                                                • Нет в вашем маршруте
                                             {% endif %}
                                         </div>
                                     </div>
                                     <div class="item-count">
                                         {% if composer.is_active %}
-                                            <span class="visit-check">✓</span>
+                                            <span class="visit-check" title="Есть в вашем маршруте">✓</span>
                                         {% else %}
-                                            <span class="not-visited">○</span>
+                                            <span class="not-visited-circle" title="Нет в вашем маршруте">○</span>
                                         {% endif %}
                                     </div>
                                 </div>
