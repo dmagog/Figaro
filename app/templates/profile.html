@@ -2924,7 +2924,7 @@
                                 <div class="characteristic-icon">🏛️</div>
                                 <div class="characteristic-title">
                                     <h3>Залы фестиваля</h3>
-                                    <p>Места проведения концертов</p>
+                                    <p>Места, где вы проводите эти дни</p>
                                 </div>
                             <div class="characteristic-count">{{ characteristics.get('halls', [])|selectattr('is_visited')|list|length }}</div>
                             </div>
@@ -3002,7 +3002,7 @@
                                 <div class="characteristic-icon">🎤</div>
                                 <div class="characteristic-title">
                                     <h3>Артисты и исполнители</h3>
-                                    <p>Музыканты, которых вы увидите</p>
+                                    <p>Музыканты, которых вы услышите</p>
                                 </div>
                                 <div class="characteristic-count">
                                     {{ characteristics.get('artists', [])|length }}
@@ -3039,7 +3039,7 @@
                                 <div class="characteristic-icon">📜</div>
                                 <div class="characteristic-title">
                                     <h3>Музыкальные произведения</h3>
-                                    <p>Композиции в программе</p>
+                                    <p>В концертных программах фестиваля</p>
                                 </div>
                                 <div class="characteristic-count">
                                     {{ characteristics.get('compositions', [])|length }}
@@ -3050,7 +3050,7 @@
                                 <div class="characteristic-item{% if loop.index > 10 %} hidden-composition{% endif %}">
                                     <div class="item-info">
                                         <div class="item-name">{{ composition.name }}</div>
-                                        <div class="item-description">{{ composition.count }} исполнение{{ 'я' if composition.count >= 2 and composition.count <= 4 else 'й' if composition.count >= 5 else 'е' }}</div>
+                                        <div class="item-description">{{ composition.count }} исполнени{{ 'е' if composition.count % 10 == 1 and composition.count % 100 != 11 else 'я' if composition.count % 10 >= 2 and composition.count % 10 <= 4 and (composition.count % 100 < 10 or composition.count % 100 >= 20) else 'й' }}</div>
                                     </div>
                                     <div class="item-count">
                                         <span class="count-visited">{{ composition.count }}</span>
@@ -3115,8 +3115,8 @@
                             <div class="characteristic-header">
                                 <div class="characteristic-icon">🏆</div>
                                 <div class="characteristic-title">
-                                    <h3>ТОП композиторов фестиваля</h3>
-                                    <p>Самые исполняемые авторы</p>
+                                    <h3>ТОП композиторов</h3>
+                                    <p>Самые исполняемые авторы фестиваля</p>
                                 </div>
                                 <div class="characteristic-count">
                                     <span id="top-composers-active-count">{{ top_festival_composers|selectattr('position', '<=', 5)|selectattr('is_active')|list|length }}</span> из <span id="top-composers-total-count">{{ top_festival_composers|selectattr('position', '<=', 5)|list|length }}</span>
