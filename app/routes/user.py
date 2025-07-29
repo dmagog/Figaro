@@ -4,6 +4,9 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from database.database import get_session
 from models.user import User, UserCreate, TelegramLinkCode
+from models.hall import Hall
+from models.genre import Genre
+from models.concert import Concert
 from services.crud import user as UserService
 from services.crud import purchase as PurchaseService
 from typing import List, Dict
@@ -382,7 +385,9 @@ async def profile_page(
         # Получаем данные для характеристик
         if user_external_id:
             try:
+                logger.info(f"[DEBUG] Calling get_user_characteristics with external_id: {user_external_id}")
                 characteristics_data = get_user_characteristics(session, user_external_id, concerts_for_template)
+                logger.info(f"[DEBUG] get_user_characteristics returned: {characteristics_data}")
             except Exception as e:
                 logger.error(f"Error getting characteristics data: {e}")
                 characteristics_data = {
@@ -1881,23 +1886,28 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
         }
     
     # Получаем все залы и жанры с отметкой о посещении
-    if user_external_id:
+    logger.info(f"[DEBUG] About to call get_all_halls_and_genres_with_visit_status with user_external_id={user_external_id}")
+    logger.info(f"[DEBUG] concerts_data length: {len(concerts_data)}")
+    try:
         halls_and_genres = get_all_halls_and_genres_with_visit_status(session, user_external_id, concerts_data)
-    elif not user_external_id:
-
-        # Если нет external_id, создаем базовые данные о залах и жанрах
-        halls_and_genres = {
-            "halls": [],
-            "genres": []
-        }
+        logger.info(f"[DEBUG] get_all_halls_and_genres_with_visit_status returned: {halls_and_genres}")
+    except Exception as e:
+        logger.error(f"[ERROR] Exception in get_all_halls_and_genres_with_visit_status: {e}")
+        import traceback
+        logger.error(f"[ERROR] Traceback: {traceback.format_exc()}")
+        halls_and_genres = {"halls": [], "genres": []}
+    
+    logger.info(f"[DEBUG] After get_all_halls_and_genres_with_visit_status, halls_and_genres: {halls_and_genres}")
     
     # Счетчики для различных характеристик
     artists_counter = Counter()
-    artists_concerts = defaultdict(list)  # Для хранения номеров концертов артистов
     composers_counter = Counter()
-    composers_concerts = defaultdict(list)  # Для хранения номеров концертов композиторов
     compositions_counter = Counter()
-    compositions_concerts = defaultdict(list)  # Для хранения номеров концертов произведений
+    
+    # Словари для хранения номеров концертов
+    artists_concerts = defaultdict(list)
+    composers_concerts = defaultdict(list)
+    compositions_concerts = defaultdict(list)
     
     # Обрабатываем каждый концерт
     for concert_data in concerts_data:
@@ -2213,994 +2223,127 @@ def calculate_route_statistics(session, concerts_data: list, concerts_by_day_wit
     }
 
 
-def calculate_transition_time(session, current_concert: dict, next_concert: dict) -> dict:
-    """
-    Рассчитывает время перехода между двумя концертами
-    
-    Args:
-        session: Сессия базы данных
-        current_concert: Текущий концерт
-        next_concert: Следующий концерт
-        
-    Returns:
-        Словарь с информацией о переходе
-    """
-    try:
-        from datetime import datetime, timedelta
-        
-        # Получаем ID залов
-        current_hall_id = current_concert['concert'].get('hall', {}).get('id')
-        next_hall_id = next_concert['concert'].get('hall', {}).get('id')
-        
-        logger.info(f"Calculating transition: hall {current_hall_id} -> {next_hall_id}")
-        
-        if not current_hall_id or not next_hall_id:
-            logger.warning(f"No hall info: current_hall_id={current_hall_id}, next_hall_id={next_hall_id}")
-            return {
-                'time_between': 0,
-                'walk_time': 0,
-                'status': 'no_hall_info'
-            }
-        
-        # Получаем время начала и окончания концертов
-        current_start = current_concert['concert'].get('datetime')
-        current_duration = current_concert['concert'].get('duration')
-        next_start = next_concert['concert'].get('datetime')
-        
-        logger.info(f"Times: current_start={current_start}, next_start={next_start}, current_duration={current_duration}")
-        
-        if not current_start or not next_start:
-            logger.warning(f"No time info: current_start={current_start}, next_start={next_start}")
-            return {
-                'time_between': 0,
-                'walk_time': 0,
-                'status': 'no_time_info'
-            }
-        
-        # Рассчитываем время окончания текущего концерта
-        if current_duration and hasattr(current_duration, 'seconds'):
-            current_end = current_start + timedelta(seconds=current_duration.seconds)
-        elif current_duration and isinstance(current_duration, timedelta):
-            current_end = current_start + current_duration
-        else:
-            # Если нет информации о длительности, предполагаем 90 минут
-            current_end = current_start + timedelta(minutes=90)
-        
-        logger.info(f"Current end time: {current_end}")
-        
-        # Рассчитываем время между концертами
-        time_between = (next_start - current_end).total_seconds() / 60  # в минутах
-        
-        logger.info(f"Time between concerts: {time_between} minutes")
-        
-        # Проверяем наложение концертов по времени
-        if time_between < 0:
-            logger.warning(f"Concert overlap detected: {time_between} minutes (negative)")
-            return {
-                'time_between': int(time_between),
-                'walk_time': 0,
-                'status': 'overlap',
-                'current_end': current_end.strftime('%H:%M'),
-                'next_start': next_start.strftime('%H:%M')
-            }
-        
-        # Если концерты в одном зале, время перехода = 0
-        if current_hall_id == next_hall_id:
-            logger.info(f"Same hall ({current_hall_id}), no transition needed")
-            return {
-                'time_between': int(time_between),
-                'walk_time': 0,
-                'status': 'same_hall'
-            }
-        
-        # Получаем время перехода между залами через SQLModel
-        from models import HallTransition
-        from sqlalchemy import select
-
-        # Ищем переход в прямом направлении
-        transition = session.exec(
-            select(HallTransition)
-            .where(HallTransition.from_hall_id == current_hall_id)
-            .where(HallTransition.to_hall_id == next_hall_id)
-        ).first()
-
-        # Если не найден прямой переход, ищем обратный
-        if not transition:
-            transition = session.exec(
-                select(HallTransition)
-                .where(HallTransition.from_hall_id == next_hall_id)
-                .where(HallTransition.to_hall_id == current_hall_id)
-            ).first()
-
-        if transition:
-            try:
-                # Если это Row-объект, извлекаем данные через _asdict()
-                if hasattr(transition, '_asdict'):
-                    transition_dict = transition._asdict()
-                    
-                    # Row содержит объект модели под ключом 'HallTransition'
-                    if 'HallTransition' in transition_dict:
-                        hall_transition_obj = transition_dict['HallTransition']
-                        walk_time = hall_transition_obj.transition_time
-                    else:
-                        walk_time = transition_dict.get('transition_time')
-                else:
-                    walk_time = transition.transition_time
-                
-                if walk_time is not None:
-                    logger.info(f"Found transition: {current_hall_id} <-> {next_hall_id} = {walk_time} minutes")
-            except Exception as e:
-                logger.error(f"Error accessing transition_time: {e}")
-                walk_time = None
-        else:
-            walk_time = None
-            logger.error(f"No transition found for {current_hall_id} <-> {next_hall_id}")
-        
-        # Определяем статус перехода
-        if walk_time is None:
-            status = 'no_transition_data'  # Нет данных о переходе
-        elif walk_time == 0:
-            status = 'same_hall'  # В том же зале
-        elif walk_time == 1:
-            status = 'same_building'  # В том же здании
-        elif time_between < walk_time - 3:
-            # Если время между концертами меньше времени перехода на 3+ минут - это наложение
-            status = 'overlap'  # Наложение из-за недостатка времени на переход
-        elif time_between < walk_time:
-            # Если разница менее 3 минут - нужно поторопиться
-            status = 'hurry'    # Нужно поторопиться
-        elif time_between < walk_time + 10:
-            status = 'tight'    # Впритык
-        else:
-            status = 'success'  # Достаточно времени
-        
-        logger.info(f"Transition status: {status} (time_between={time_between}, walk_time={walk_time})")
-        
-        return {
-            'time_between': int(time_between),
-            'walk_time': walk_time,
-            'status': status,
-            'current_end': current_end.strftime('%H:%M'),
-            'next_start': next_start.strftime('%H:%M')
-        }
-        
-    except Exception as e:
-        logger.error(f"Error calculating transition time: {e}")
-        return {
-            'time_between': 0,
-            'walk_time': 0,
-            'status': 'error'
-        }
-
-
-def find_available_off_program_events(session, current_concert: dict, next_concert: dict) -> list:
-    """
-    Находит доступные мероприятия офф-программы между двумя концертами
-    
-    Args:
-        session: Сессия базы данных
-        current_concert: Текущий концерт
-        next_concert: Следующий концерт
-        
-    Returns:
-        Список доступных мероприятий офф-программы
-    """
-    try:
-        from models import OffProgram, HallTransition, Hall
-        from sqlalchemy import select
-        from datetime import datetime, timedelta
-        
-        # Получаем время окончания текущего концерта и начала следующего
-        current_start = current_concert['concert'].get('datetime')
-        current_duration = current_concert['concert'].get('duration')
-        next_start = next_concert['concert'].get('datetime')
-        
-        if not current_start or not next_start or not current_duration:
-            return []
-        
-        # Вычисляем время окончания текущего концерта
-        if hasattr(current_duration, 'total_seconds'):
-            current_end = current_start + timedelta(seconds=current_duration.total_seconds())
-        else:
-            # Если duration - это строка времени
-            try:
-                time_parts = str(current_duration).split(':')
-                if len(time_parts) >= 2:
-                    hours = int(time_parts[0])
-                    minutes = int(time_parts[1])
-                    current_end = current_start + timedelta(hours=hours, minutes=minutes)
-                else:
-                    return []
-            except:
-                return []
-        
-        # Получаем ID залов
-        current_hall_id = current_concert['concert'].get('hall', {}).get('id')
-        next_hall_id = next_concert['concert'].get('hall', {}).get('id')
-        
-        # Ищем мероприятия офф-программы в промежутке времени
-        off_program_events = session.exec(
-            select(OffProgram)
-            .where(OffProgram.event_date >= current_end)
-            .where(OffProgram.event_date < next_start)
-            .order_by(OffProgram.event_date)
-        ).all()
-        
-
-        
-        available_events = []
-        
-        for event in off_program_events:
-            # Извлекаем SQLModel объект из Row кортежа
-            if hasattr(event, '_mapping'):
-                event_data = event._mapping['OffProgram']
-            elif isinstance(event, tuple) and len(event) > 0:
-                event_data = event[0]
-            else:
-                event_data = event
-            
-            # Фильтруем только рекомендуемые мероприятия
-            if not getattr(event_data, 'recommend', False):
-                continue
-            
-            logger.info(f"Processing event: {event_data.event_name} at {event_data.event_date.strftime('%H:%M')}")
-            
-            # Вычисляем продолжительность мероприятия
-            event_duration = timedelta()
-            if event_data.event_long:
-                try:
-                    time_parts = str(event_data.event_long).split(':')
-                    if len(time_parts) >= 2:
-                        hours = int(time_parts[0])
-                        minutes = int(time_parts[1])
-                        if hours == 0 and minutes == 0:
-                            # Если продолжительность 00:00, считаем 30 минут
-                            event_duration = timedelta(minutes=30)
-                        else:
-                            event_duration = timedelta(hours=hours, minutes=minutes)
-                    else:
-                        event_duration = timedelta(minutes=30)
-                except:
-                    event_duration = timedelta(minutes=30)  # По умолчанию 30 минут
-            else:
-                event_duration = timedelta(minutes=30)  # По умолчанию 30 минут
-            
-            # Вычисляем время окончания мероприятия
-            event_end = event_data.event_date + event_duration
-            
-            # Проверяем, помещается ли мероприятие во временной промежуток
-            if event_end <= next_start:
-                # Рассчитываем время перехода к мероприятию офф-программы
-                walk_time_to_event = 0
-                if current_hall_id:
-                    # Ищем зал, где проводится мероприятие офф-программы
-                    logger.info(f"Looking for event hall: '{event_data.hall_name}'")
-                    event_hall = session.exec(
-                        select(Hall).where(Hall.name.ilike(f'%{event_data.hall_name}%'))
-                    ).first()
-                    
-                    # Извлекаем SQLModel объект из Row если нужно
-                    if hasattr(event_hall, '_mapping'):
-                        event_hall = event_hall._mapping['Hall']
-                    
-                    if event_hall:
-                        # Ищем переход от зала концерта к залу мероприятия офф-программы
-                        transition_to_event = session.exec(
-                            select(HallTransition)
-                            .where(HallTransition.from_hall_id == current_hall_id)
-                            .where(HallTransition.to_hall_id == event_hall.id)
-                        ).first()
-                        
-                        # Если не найден прямой переход, ищем обратный
-                        if not transition_to_event:
-                            transition_to_event = session.exec(
-                                select(HallTransition)
-                                .where(HallTransition.from_hall_id == event_hall.id)
-                                .where(HallTransition.to_hall_id == current_hall_id)
-                            ).first()
-                        
-                        if transition_to_event:
-                            # Извлекаем время перехода из Row объекта если нужно
-                            if hasattr(transition_to_event, '_asdict'):
-                                transition_dict = transition_to_event._asdict()
-                                if 'HallTransition' in transition_dict:
-                                    walk_time_to_event = transition_dict['HallTransition'].transition_time
-                                else:
-                                    walk_time_to_event = transition_dict.get('transition_time', 0)
-                            else:
-                                walk_time_to_event = transition_to_event.transition_time
-                            logger.info(f"Found transition to event: {current_hall_id} -> {event_hall.id} = {walk_time_to_event} min")
-                        else:
-                            # Если переход не найден, логируем для диагностики
-                            logger.warning(f"No transition found: {current_hall_id} <-> {event_hall.id} (to event)")
-                            walk_time_to_event = None  # Явно указываем None для диагностики
-                    else:
-                        # Если зал мероприятия не найден, логируем для диагностики
-                        logger.warning(f"Event hall not found: {event_data.hall_name}")
-                        walk_time_to_event = None  # Явно указываем None для диагностики
-                
-                # Рассчитываем время перехода от мероприятия офф-программы к следующему концерту
-                walk_time_from_event = 0
-                if next_hall_id:
-                    # Ищем зал, где проводится мероприятие офф-программы
-                    logger.info(f"Looking for event hall: '{event_data.hall_name}'")
-                    event_hall = session.exec(
-                        select(Hall).where(Hall.name.ilike(f'%{event_data.hall_name}%'))
-                    ).first()
-                    
-                    # Извлекаем SQLModel объект из Row если нужно
-                    if hasattr(event_hall, '_mapping'):
-                        event_hall = event_hall._mapping['Hall']
-                    
-                    if event_hall:
-                        # Ищем переход от зала мероприятия офф-программы к залу следующего концерта
-                        transition_from_event = session.exec(
-                            select(HallTransition)
-                            .where(HallTransition.from_hall_id == event_hall.id)
-                            .where(HallTransition.to_hall_id == next_hall_id)
-                        ).first()
-                        
-                        # Если не найден прямой переход, ищем обратный
-                        if not transition_from_event:
-                            transition_from_event = session.exec(
-                                select(HallTransition)
-                                .where(HallTransition.from_hall_id == next_hall_id)
-                                .where(HallTransition.to_hall_id == event_hall.id)
-                            ).first()
-                        
-                        if transition_from_event:
-                            # Извлекаем время перехода из Row объекта если нужно
-                            if hasattr(transition_from_event, '_asdict'):
-                                transition_dict = transition_from_event._asdict()
-                                if 'HallTransition' in transition_dict:
-                                    walk_time_from_event = transition_dict['HallTransition'].transition_time
-                                else:
-                                    walk_time_from_event = transition_dict.get('transition_time', 0)
-                            else:
-                                walk_time_from_event = transition_from_event.transition_time
-                            logger.info(f"Found transition from event: {event_hall.id} -> {next_hall_id} = {walk_time_from_event} min")
-                        else:
-                            # Если переход не найден, логируем для диагностики
-                            logger.warning(f"No transition found: {event_hall.id} <-> {next_hall_id} (from event)")
-                            walk_time_from_event = None  # Явно указываем None для диагностики
-                    else:
-                        # Если зал мероприятия не найден, логируем для диагностики
-                        logger.warning(f"Event hall not found: {event_data.hall_name}")
-                        walk_time_from_event = None  # Явно указываем None для диагностики
-                
-                # Проверяем, достаточно ли времени на переходы
-                # Обрабатываем None значения для диагностики
-                if walk_time_to_event is None:
-                    logger.warning(f"Cannot calculate total walk time: walk_time_to_event is None")
-                    total_walk_time = None
-                elif walk_time_from_event is None:
-                    logger.warning(f"Cannot calculate total walk time: walk_time_from_event is None")
-                    total_walk_time = None
-                else:
-                    total_walk_time = walk_time_to_event + walk_time_from_event
-                
-                available_time = (next_start - current_end).total_seconds() / 60
-                event_duration_minutes = event_duration.total_seconds() / 60
-                
-                # Проверяем доступность только если у нас есть данные о переходах
-                if total_walk_time is not None and total_walk_time + event_duration_minutes <= available_time:
-                    # Форматируем продолжительность для отображения
-                    duration_display = ""
-                    if event_duration.total_seconds() > 0:
-                        hours = int(event_duration.total_seconds() // 3600)
-                        minutes = int((event_duration.total_seconds() % 3600) // 60)
-                        if hours > 0 and minutes > 0:
-                            duration_display = f"{hours}ч {minutes}м"
-                        elif hours > 0:
-                            duration_display = f"{hours}ч"
-                        else:
-                            duration_display = f"{minutes}м"
-                    else:
-                        duration_display = "30м"  # По умолчанию
-                    
-                    available_events.append({
-                        'id': event_data.id,
-                        'event_num': event_data.event_num,
-                        'event_name': event_data.event_name,
-                        'description': event_data.description,
-                        'event_date': event_data.event_date,
-                        'event_date_display': event_data.event_date.strftime('%H:%M'),
-                        'duration': duration_display,
-                        'hall_name': event_data.hall_name,
-                        'format': event_data.format.value if event_data.format else 'Не указан',
-                        'recommend': event_data.recommend,
-                        'link': event_data.link,
-                        'walk_time_to_event': walk_time_to_event,
-                        'walk_time_from_event': walk_time_from_event,
-                        'total_walk_time': total_walk_time,
-                        'available_time': int(available_time),
-                        'event_duration_minutes': int(event_duration_minutes)
-                    })
-        
-        # Сортируем по времени начала
-        available_events.sort(key=lambda x: x['event_date'])
-        
-        return available_events
-        
-    except Exception as e:
-        logger.error(f"Error finding available off program events: {e}")
-        import traceback
-        print(f"DEBUG: Full error traceback:")
-        traceback.print_exc()
-        return []
-
-
-def find_available_off_program_events_before_first_concert(session, first_concert: dict) -> list:
-    """
-    Находит доступные мероприятия офф-программы до первого концерта дня
-    
-    Args:
-        session: Сессия базы данных
-        first_concert: Первый концерт дня
-        
-    Returns:
-        Список доступных мероприятий офф-программы
-    """
-    try:
-        from models import OffProgram, HallTransition, Hall
-        from sqlalchemy import select
-        from datetime import datetime, timedelta
-        
-        # Получаем время начала первого концерта
-        concert_start = first_concert['concert'].get('datetime')
-        
-        if not concert_start:
-            return []
-        
-        # Определяем временное окно для поиска (например, за 4 часа до концерта)
-        search_start = concert_start - timedelta(hours=4)
-        
-        logger.info(f"Searching off-program events before concert: {concert_start.strftime('%H:%M')}")
-        logger.info(f"Search window: {search_start.strftime('%H:%M')} - {concert_start.strftime('%H:%M')}")
-        
-        # Ищем мероприятия офф-программы до концерта
-        off_program_events = session.exec(
-            select(OffProgram)
-            .where(OffProgram.event_date >= search_start)
-            .where(OffProgram.event_date < concert_start)
-            .order_by(OffProgram.event_date)  # Сортируем по возрастанию времени
-        ).all()
-        
-        logger.info(f"Found {len(off_program_events)} off-program events in search window")
-        
-        available_events = []
-        
-        for event in off_program_events:
-            # Извлекаем SQLModel объект из Row кортежа
-            if hasattr(event, '_mapping'):
-                event_data = event._mapping['OffProgram']
-            elif isinstance(event, tuple) and len(event) > 0:
-                event_data = event[0]
-            else:
-                event_data = event
-            
-            logger.info(f"Processing event: {event_data.event_name} at {event_data.event_date.strftime('%H:%M')}")
-            
-            # Вычисляем продолжительность мероприятия
-            event_duration = timedelta()
-            if event_data.event_long:
-                try:
-                    time_parts = str(event_data.event_long).split(':')
-                    if len(time_parts) >= 2:
-                        hours = int(time_parts[0])
-                        minutes = int(time_parts[1])
-                        if hours == 0 and minutes == 0:
-                            event_duration = timedelta(minutes=30)
-                        else:
-                            event_duration = timedelta(hours=hours, minutes=minutes)
-                    else:
-                        event_duration = timedelta(minutes=30)
-                except:
-                    event_duration = timedelta(minutes=30)
-            else:
-                event_duration = timedelta(minutes=30)
-            
-            # Вычисляем время окончания мероприятия
-            event_end = event_data.event_date + event_duration
-            
-            logger.info(f"Event duration: {event_duration}, Event end: {event_end.strftime('%H:%M')}")
-            
-            # Проверяем, что мероприятие заканчивается до начала концерта
-            if event_end <= concert_start:
-                logger.info(f"Event ends before concert, checking transition time...")
-                
-                # Рассчитываем время перехода от мероприятия к концерту
-                walk_time_to_concert = 0
-                concert_hall_id = first_concert['concert'].get('hall', {}).get('id')
-                
-                if concert_hall_id:
-                    # Ищем зал, где проводится мероприятие офф-программы
-                    event_hall = session.exec(
-                        select(Hall).where(Hall.name.ilike(f'%{event_data.hall_name}%'))
-                    ).first()
-                    
-                    # Извлекаем SQLModel объект из Row если нужно
-                    if hasattr(event_hall, '_mapping'):
-                        event_hall = event_hall._mapping['Hall']
-                    
-                    if event_hall:
-                        logger.info(f"Found event hall: {event_hall.name} (ID: {event_hall.id})")
-                        
-                        # Ищем переход от зала мероприятия к залу концерта
-                        transition = session.exec(
-                            select(HallTransition)
-                            .where(HallTransition.from_hall_id == event_hall.id)
-                            .where(HallTransition.to_hall_id == concert_hall_id)
-                        ).first()
-                        
-                        # Если не найден прямой переход, ищем обратный
-                        if not transition:
-                            transition = session.exec(
-                                select(HallTransition)
-                                .where(HallTransition.from_hall_id == concert_hall_id)
-                                .where(HallTransition.to_hall_id == event_hall.id)
-                            ).first()
-                        
-                        if transition:
-                            # Извлекаем время перехода из Row объекта если нужно
-                            if hasattr(transition, '_asdict'):
-                                transition_dict = transition._asdict()
-                                if 'HallTransition' in transition_dict:
-                                    walk_time_to_concert = transition_dict['HallTransition'].transition_time
-                                else:
-                                    walk_time_to_concert = transition_dict.get('transition_time', 0)
-                            else:
-                                walk_time_to_concert = transition.transition_time
-                            logger.info(f"Found transition time: {walk_time_to_concert} minutes")
-                        else:
-                            walk_time_to_concert = 5  # Значение по умолчанию
-                            logger.info(f"No transition found, using default: {walk_time_to_concert} minutes")
-                    else:
-                        logger.warning(f"Event hall not found for: {event_data.hall_name}")
-                
-                # Проверяем, достаточно ли времени для перехода
-                available_time = (concert_start - event_end).total_seconds() / 60
-                
-                logger.info(f"Available time: {available_time} minutes, Walk time: {walk_time_to_concert} minutes")
-                
-                if walk_time_to_concert <= available_time:
-                    logger.info(f"Event fits in available time, adding to results")
-                    
-                    # Форматируем продолжительность для отображения
-                    duration_display = ""
-                    if event_duration.total_seconds() > 0:
-                        hours = int(event_duration.total_seconds() // 3600)
-                        minutes = int((event_duration.total_seconds() % 3600) // 60)
-                        if hours > 0 and minutes > 0:
-                            duration_display = f"{hours}ч {minutes}м"
-                        elif hours > 0:
-                            duration_display = f"{hours}ч"
-                        else:
-                            duration_display = f"{minutes}м"
-                    else:
-                        duration_display = "30м"
-                    
-                    available_events.append({
-                        'id': event_data.id,
-                        'event_num': event_data.event_num,
-                        'event_name': event_data.event_name,
-                        'description': event_data.description,
-                        'event_date': event_data.event_date,
-                        'event_date_display': event_data.event_date.strftime('%H:%M'),
-                        'duration': duration_display,
-                        'hall_name': event_data.hall_name,
-                        'format': event_data.format.value if event_data.format else 'Не указан',
-                        'recommend': event_data.recommend,
-                        'link': event_data.link,
-                        'walk_time_to_concert': walk_time_to_concert,
-                        'available_time': int(available_time),
-                        'event_duration_minutes': int(event_duration.total_seconds() / 60),
-                        'type': 'before_concert'
-                    })
-                else:
-                    logger.info(f"Event does not fit in available time")
-            else:
-                logger.info(f"Event ends after concert start, skipping")
-        
-        # Сортируем: сначала рекомендуемые, затем по времени начала (по возрастанию)
-        available_events.sort(key=lambda x: (-x['recommend'], x['event_date']))
-        
-        return available_events
-        
-    except Exception as e:
-        logger.error(f"Error finding available off program events before first concert: {e}")
-        return []
-
-
-def find_available_off_program_events_after_last_concert(session, last_concert: dict) -> list:
-    """
-    Находит доступные мероприятия офф-программы после последнего концерта дня
-    
-    Args:
-        session: Сессия базы данных
-        last_concert: Последний концерт дня
-        
-    Returns:
-        Список доступных мероприятий офф-программы
-    """
-    try:
-        from models import OffProgram, HallTransition, Hall
-        from sqlalchemy import select
-        from datetime import datetime, timedelta
-        
-        # Получаем время окончания последнего концерта
-        concert_start = last_concert['concert'].get('datetime')
-        concert_duration = last_concert['concert'].get('duration')
-        
-        if not concert_start or not concert_duration:
-            return []
-        
-        # Вычисляем время окончания концерта
-        if hasattr(concert_duration, 'total_seconds'):
-            concert_end = concert_start + timedelta(seconds=concert_duration.total_seconds())
-        else:
-            # Если duration - это строка времени
-            try:
-                time_parts = str(concert_duration).split(':')
-                if len(time_parts) >= 2:
-                    hours = int(time_parts[0])
-                    minutes = int(time_parts[1])
-                    concert_end = concert_start + timedelta(hours=hours, minutes=minutes)
-                else:
-                    return []
-            except:
-                return []
-        
-        # Определяем временное окно для поиска (например, до 22:00)
-        search_end = datetime.combine(concert_end.date(), datetime.max.time().replace(hour=22, minute=0))
-        
-        # Ищем мероприятия офф-программы после концерта
-        off_program_events = session.exec(
-            select(OffProgram)
-            .where(OffProgram.event_date >= concert_end)
-            .where(OffProgram.event_date <= search_end)
-            .order_by(OffProgram.event_date)
-        ).all()
-        
-        available_events = []
-        
-        for event in off_program_events:
-            # Извлекаем SQLModel объект из Row кортежа
-            if hasattr(event, '_mapping'):
-                event_data = event._mapping['OffProgram']
-            elif isinstance(event, tuple) and len(event) > 0:
-                event_data = event[0]
-            else:
-                event_data = event
-            
-            # Вычисляем продолжительность мероприятия
-            event_duration = timedelta()
-            if event_data.event_long:
-                try:
-                    time_parts = str(event_data.event_long).split(':')
-                    if len(time_parts) >= 2:
-                        hours = int(time_parts[0])
-                        minutes = int(time_parts[1])
-                        if hours == 0 and minutes == 0:
-                            event_duration = timedelta(minutes=30)
-                        else:
-                            event_duration = timedelta(hours=hours, minutes=minutes)
-                    else:
-                        event_duration = timedelta(minutes=30)
-                except:
-                    event_duration = timedelta(minutes=30)
-            else:
-                event_duration = timedelta(minutes=30)
-            
-            # Вычисляем время окончания мероприятия
-            event_end = event_data.event_date + event_duration
-            
-            # Проверяем, что мероприятие помещается во временное окно
-            if event_end <= search_end:
-                # Рассчитываем время перехода от концерта к мероприятию
-                walk_time_from_concert = 0
-                concert_hall_id = last_concert['concert'].get('hall', {}).get('id')
-                
-                if concert_hall_id:
-                    # Ищем зал, где проводится мероприятие офф-программы
-                    event_hall = session.exec(
-                        select(Hall).where(Hall.name.ilike(f'%{event_data.hall_name}%'))
-                    ).first()
-                    
-                    # Извлекаем SQLModel объект из Row если нужно
-                    if hasattr(event_hall, '_mapping'):
-                        event_hall = event_hall._mapping['Hall']
-                    
-                    if event_hall:
-                        # Ищем переход от зала концерта к залу мероприятия
-                        transition = session.exec(
-                            select(HallTransition)
-                            .where(HallTransition.from_hall_id == concert_hall_id)
-                            .where(HallTransition.to_hall_id == event_hall.id)
-                        ).first()
-                        
-                        # Если не найден прямой переход, ищем обратный
-                        if not transition:
-                            transition = session.exec(
-                                select(HallTransition)
-                                .where(HallTransition.from_hall_id == event_hall.id)
-                                .where(HallTransition.to_hall_id == concert_hall_id)
-                            ).first()
-                        
-                        if transition:
-                            # Извлекаем время перехода из Row объекта если нужно
-                            if hasattr(transition, '_asdict'):
-                                transition_dict = transition._asdict()
-                                if 'HallTransition' in transition_dict:
-                                    walk_time_from_concert = transition_dict['HallTransition'].transition_time
-                                else:
-                                    walk_time_from_concert = transition_dict.get('transition_time', 0)
-                            else:
-                                walk_time_from_concert = transition.transition_time
-                        else:
-                            walk_time_from_concert = 5  # Значение по умолчанию
-                
-                # Проверяем, достаточно ли времени для перехода
-                available_time = (event_data.event_date - concert_end).total_seconds() / 60
-                
-                if walk_time_from_concert <= available_time:
-                    # Форматируем продолжительность для отображения
-                    duration_display = ""
-                    if event_duration.total_seconds() > 0:
-                        hours = int(event_duration.total_seconds() // 3600)
-                        minutes = int((event_duration.total_seconds() % 3600) // 60)
-                        if hours > 0 and minutes > 0:
-                            duration_display = f"{hours}ч {minutes}м"
-                        elif hours > 0:
-                            duration_display = f"{hours}ч"
-                        else:
-                            duration_display = f"{minutes}м"
-                    else:
-                        duration_display = "30м"
-                    
-                    available_events.append({
-                        'id': event_data.id,
-                        'event_num': event_data.event_num,
-                        'event_name': event_data.event_name,
-                        'description': event_data.description,
-                        'event_date': event_data.event_date,
-                        'event_date_display': event_data.event_date.strftime('%H:%M'),
-                        'duration': duration_display,
-                        'hall_name': event_data.hall_name,
-                        'format': event_data.format.value if event_data.format else 'Не указан',
-                        'recommend': event_data.recommend,
-                        'link': event_data.link,
-                        'walk_time_from_concert': walk_time_from_concert,
-                        'available_time': int(available_time),
-                        'event_duration_minutes': int(event_duration.total_seconds() / 60),
-                        'type': 'after_concert'
-                    })
-        
-        # Сортируем по времени начала
-        available_events.sort(key=lambda x: x['event_date'])
-        
-        return available_events
-        
-    except Exception as e:
-        logger.error(f"Error finding available off program events after last concert: {e}")
-        return []
-
-
-def group_concerts_by_day(concerts_data: list, festival_days_data: list = None) -> dict:
-    """
-    Группирует концерты по дням фестиваля с учетом порядковых номеров дней
-    
-    Args:
-        concerts_data: Список концертов пользователя
-        festival_days_data: Список всех дней фестиваля
-        
-    Returns:
-        Словарь с концертами, сгруппированными по дням, и информацией о порядковых номерах
-    """
-    from datetime import datetime
-    
-    concerts_by_day = {}
-    
-    logger.info(f"Starting to group {len(concerts_data)} concerts by day")
-    
-    # Создаем маппинг дат на порядковые номера дней фестиваля
-    date_to_festival_day = {}
-    if festival_days_data:
-        for i, day_data in enumerate(festival_days_data, 1):
-            date_to_festival_day[day_data['day']] = i
-        logger.info(f"Created date mapping: {date_to_festival_day}")
-    
-    for i, concert in enumerate(concerts_data):
-        concert_date = None
-        if concert['concert'].get('datetime'):
-            concert_date = concert['concert']['datetime'].date()
-        
-        # Определяем порядковый номер дня фестиваля
-        if concert_date and concert_date in date_to_festival_day:
-            festival_day_number = date_to_festival_day[concert_date]
-        else:
-            # Если дата не найдена в днях фестиваля, используем старую логику
-            festival_day_number = concert.get('concert_day_index', 0)
-        
-        logger.info(f"Concert {i}: date={concert_date}, festival_day_number={festival_day_number}")
-        
-        if festival_day_number > 0:
-            if festival_day_number not in concerts_by_day:
-                concerts_by_day[festival_day_number] = []
-            concerts_by_day[festival_day_number].append(concert)
-            logger.info(f"Added concert to festival day {festival_day_number}")
-        else:
-            logger.warning(f"Concert {i} has festival_day_number=0, skipping")
-    
-    # Сортируем концерты в каждом дне по времени
-    for day_concerts in concerts_by_day.values():
-        try:
-            day_concerts.sort(key=lambda x: x['concert'].get('datetime') if x['concert'].get('datetime') else datetime.min)
-        except Exception as e:
-            logger.warning(f"Error sorting concerts by time: {e}")
-            # Если не удалось отсортировать, оставляем как есть
-            pass
-    
-    logger.info(f"Final grouped concerts by festival day: {concerts_by_day}")
-    return concerts_by_day
-    
-
-
-    
-
-def get_all_festival_days_with_visit_status(session, concerts_data: list) -> list:
-    """
-    Получает все дни фестиваля с отметкой о посещении пользователем
-    
-    Args:
-        session: Сессия базы данных
-        concerts_data: Список концертов пользователя
-        
-    Returns:
-        Список дней фестиваля с информацией о посещении
-    """
-    from models.festival_day import FestivalDay
-    from sqlmodel import select
-    from collections import Counter
-    
-    # Получаем все дни фестиваля
-    all_festival_days = session.exec(select(FestivalDay).order_by(FestivalDay.day)).all()
-    
-    # Счетчик посещений дней пользователем
-    days_counter = Counter()
-    
-    # Обрабатываем концерты пользователя
-    for concert_data in concerts_data:
-        concert = concert_data['concert']
-        if concert.get('datetime'):
-            concert_date = concert['datetime'].date()
-            days_counter[concert_date] += 1
-    
-    # Формируем список всех дней фестиваля с количеством посещений
-    days_with_status = []
-    for festival_day in all_festival_days:
-        visit_count = days_counter.get(festival_day.day, 0)
-        days_with_status.append({
-            "day": festival_day.day,
-            "visit_count": visit_count,
-            "is_visited": visit_count > 0,
-            "total_concerts": festival_day.concert_count,
-            "available_concerts": festival_day.available_concerts
-        })
-    
-    return days_with_status
-
-
-    
-
 def get_all_halls_and_genres_with_visit_status(session, user_external_id: str, concerts_data: list) -> dict:
     """
     Получает все залы и жанры с отметкой о посещении пользователем
     
     Args:
         session: Сессия базы данных
-        user_external_id: Внешний ID пользователя
+        user_external_id: Внешний ID пользователя (может быть None)
         concerts_data: Список концертов пользователя
         
     Returns:
         Словарь с залами и жанрами и их статусом посещения
     """
+    logger.info(f"[DEBUG] ENTERING get_all_halls_and_genres_with_visit_status")
+    logger.info(f"[DEBUG] user_external_id: {user_external_id}")
+    logger.info(f"[DEBUG] concerts_data length: {len(concerts_data)}")
+    
     from collections import Counter, defaultdict
     
     logger.info(f"[DEBUG] get_all_halls_and_genres_with_visit_status called with {len(concerts_data)} concerts")
     
-    # Получаем все уникальные жанры и залы из концертов пользователя
-    all_genres = set()
-    all_halls = set()
-    
-    # Собираем уникальные жанры и залы из концертов пользователя
-    for concert_data in concerts_data:
-        concert = concert_data['concert']
+    try:
+        # Получаем ВСЕ залы и жанры фестиваля из базы данных
+        logger.info("[DEBUG] Fetching halls from database...")
+        all_halls_from_db = session.exec(select(Hall)).all()
+        logger.info(f"[DEBUG] Found {len(all_halls_from_db)} halls in database")
         
-        # Добавляем жанр
-        if concert.get('genre'):
-            all_genres.add(concert['genre'])
+        # Получаем все концерты фестиваля для определения жанров
+        logger.info("[DEBUG] Fetching all concerts from database...")
+        all_concerts = session.exec(select(Concert)).all()
+        logger.info(f"[DEBUG] Found {len(all_concerts)} concerts in database")
         
-        # Добавляем зал
-        if concert.get('hall') and concert['hall'].get('name'):
-            all_halls.add(concert['hall']['name'])
-    
-    logger.info(f"[DEBUG] Found genres: {all_genres}")
-    logger.info(f"[DEBUG] Found halls: {all_halls}")
-    
-    # Преобразуем в списки
-    all_genres = list(all_genres)
-    all_halls = list(all_halls)
-    
-    # Счетчики посещений залов и жанров
-    halls_counter = Counter()
-    genres_counter = Counter()
-    halls_concerts = defaultdict(list)  # Для хранения номеров концертов залов
-    genres_concerts = defaultdict(list)  # Для хранения номеров концертов жанров
-    
-    # Обрабатываем концерты пользователя
-    for concert_data in concerts_data:
-        concert = concert_data['concert']
-        concert_id = concert.get('id', 0)
+        # Собираем все уникальные жанры из всех концертов фестиваля
+        all_genres = set()
+        for concert in all_concerts:
+            if concert.genre:
+                all_genres.add(concert.genre)
         
-        # Добавляем зал в счетчик
-        if concert.get('hall') and concert['hall'].get('name'):
-            halls_counter[concert['hall']['name']] += 1
-            if concert_id > 0:
-                halls_concerts[concert['hall']['name']].append(concert_id)
+        # Собираем все уникальные залы из базы данных
+        all_halls = {hall.name for hall in all_halls_from_db}
         
-        # Добавляем жанр в счетчик
-        if concert.get('genre'):
-            genres_counter[concert['genre']] += 1
-            if concert_id > 0:
-                genres_concerts[concert['genre']].append(concert_id)
-    
-    logger.info(f"[DEBUG] Halls counter: {dict(halls_counter)}")
-    logger.info(f"[DEBUG] Genres counter: {dict(genres_counter)}")
-    
-    # Формируем список всех залов с количеством посещений
-    halls_with_status = []
-    for hall_name in all_halls:
-        visit_count = halls_counter.get(hall_name, 0)
-        hall_data = {
-            "name": hall_name,
-            "visit_count": visit_count,
-            "is_visited": visit_count > 0,
-            "address": "",  # Адрес не доступен из данных концертов
-            "seats": 0      # Количество мест не доступно из данных концертов
+        logger.info(f"[DEBUG] All festival genres: {all_genres}")
+        logger.info(f"[DEBUG] All festival halls: {all_halls}")
+        
+        # Счетчики посещений залов и жанров пользователем
+        halls_counter = Counter()
+        genres_counter = Counter()
+        halls_concerts = defaultdict(list)  # Для хранения номеров концертов залов
+        genres_concerts = defaultdict(list)  # Для хранения номеров концертов жанров
+        
+        # Обрабатываем концерты пользователя
+        logger.info(f"[DEBUG] Processing {len(concerts_data)} user concerts...")
+        for concert_data in concerts_data:
+            concert = concert_data['concert']
+            concert_id = concert.get('id', 0)
+            
+            # Добавляем зал в счетчик
+            if concert.get('hall') and concert['hall'].get('name'):
+                halls_counter[concert['hall']['name']] += 1
+                if concert_id > 0:
+                    halls_concerts[concert['hall']['name']].append(concert_id)
+            
+            # Добавляем жанр в счетчик
+            if concert.get('genre'):
+                genres_counter[concert['genre']] += 1
+                if concert_id > 0:
+                    genres_concerts[concert['genre']].append(concert_id)
+        
+        logger.info(f"[DEBUG] User halls counter: {dict(halls_counter)}")
+        logger.info(f"[DEBUG] User genres counter: {dict(genres_counter)}")
+        
+        # Формируем список ВСЕХ залов с количеством посещений
+        halls_with_status = []
+        for hall_name in all_halls:
+            visit_count = halls_counter.get(hall_name, 0)
+            hall_data = {
+                "name": hall_name,
+                "visit_count": visit_count,
+                "is_visited": visit_count > 0,
+                "address": "",  # Адрес не доступен из данных концертов
+                "seats": 0      # Количество мест не доступно из данных концертов
+            }
+            if hall_name in halls_concerts:
+                hall_data["concerts"] = sorted(halls_concerts[hall_name])
+            halls_with_status.append(hall_data)
+        
+        # Сортируем залы: сначала посещенные (по убыванию), потом непосещенные
+        halls_with_status.sort(key=lambda x: (x['is_visited'], x['visit_count']), reverse=True)
+        
+        # Формируем список ВСЕХ жанров с количеством посещений
+        genres_with_status = []
+        for genre in all_genres:
+            visit_count = genres_counter.get(genre, 0)
+            genre_data = {
+                "name": genre,
+                "visit_count": visit_count,
+                "is_visited": visit_count > 0
+            }
+            if genre in genres_concerts:
+                genre_data["concerts"] = sorted(genres_concerts[genre])
+            genres_with_status.append(genre_data)
+        
+        # Сортируем жанры: сначала посещенные (по убыванию), потом непосещенные
+        genres_with_status.sort(key=lambda x: (x['is_visited'], x['visit_count']), reverse=True)
+        
+        logger.info(f"[DEBUG] Returning halls: {len(halls_with_status)}, genres: {len(genres_with_status)}")
+        
+        return {
+            "halls": halls_with_status,
+            "genres": genres_with_status
         }
-        if hall_name in halls_concerts:
-            hall_data["concerts"] = sorted(halls_concerts[hall_name])
-        halls_with_status.append(hall_data)
-    
-    # Сортируем залы по убыванию количества посещений
-    halls_with_status.sort(key=lambda x: x['visit_count'], reverse=True)
-    
-    # Формируем список всех жанров с количеством посещений
-    genres_with_status = []
-    for genre in all_genres:
-        visit_count = genres_counter.get(genre, 0)
-        genre_data = {
-            "name": genre,
-            "visit_count": visit_count,
-            "is_visited": visit_count > 0
+        
+    except Exception as e:
+        logger.error(f"[ERROR] Exception in get_all_halls_and_genres_with_visit_status: {e}")
+        logger.error(f"[ERROR] Exception type: {type(e)}")
+        import traceback
+        logger.error(f"[ERROR] Traceback: {traceback.format_exc()}")
+        return {
+            "halls": [],
+            "genres": []
         }
-        if genre in genres_concerts:
-            genre_data["concerts"] = sorted(genres_concerts[genre])
-        genres_with_status.append(genre_data)
-    
-    # Сортируем жанры по убыванию количества посещений
-    genres_with_status.sort(key=lambda x: x['visit_count'], reverse=True)
-    
-    logger.info(f"[DEBUG] Returning halls: {len(halls_with_status)}, genres: {len(genres_with_status)}")
-    
-    return {
-        "halls": halls_with_status,
-        "genres": genres_with_status
-    }
-    
 
-    
 
 @user_route.post("/telegram/link-code")
 async def generate_telegram_link_code(request: Request, session=Depends(get_session)):
