@@ -385,7 +385,10 @@ async def profile_page(
         # Получаем данные для характеристик
         try:
             logger.info(f"Calling get_user_characteristics with external_id: {user_external_id}")
+            logger.info(f"concerts_for_template length: {len(concerts_for_template)}")
             characteristics_data = get_user_characteristics(session, user_external_id, concerts_for_template)
+            logger.info(f"get_user_characteristics returned: {characteristics_data}")
+            logger.info(f"characteristics_data keys: {list(characteristics_data.keys()) if hasattr(characteristics_data, 'keys') else 'No keys method'}")
         except Exception as e:
                 logger.error(f"Error getting characteristics data: {e}")
                 characteristics_data = {
@@ -397,35 +400,104 @@ async def profile_page(
                     "compositions": []
                 }
         else:
-            # Если нет external_id, создаём базовые данные
+            # Если нет external_id, создаём базовые данные, но с реальными характеристиками
             logger.info("No external_id, creating basic route sheet and characteristics data")
-            route_sheet_data = {
-                "summary": {
+            
+            # Получаем характеристики даже без external_id
+            try:
+                logger.info(f"Calling get_user_characteristics without external_id")
+                characteristics_data = get_user_characteristics(session, None, concerts_for_template)
+                logger.info(f"get_user_characteristics returned: {characteristics_data}")
+            except Exception as e:
+                logger.error(f"Error getting characteristics data without external_id: {e}")
+                characteristics_data = {
                     "total_concerts": len(concerts_for_template),
-                    "total_days": 0,
-                    "total_halls": 0,
-                    "total_genres": 0,
-                    "total_spent": sum(c.get('total_spent', 0) for c in concerts_for_template)
-                },
-                "match": {
-                    "found": False,
-                    "match_type": "no_external_id",
-                    "reason": "Для анализа маршрутов требуется external_id",
-                    "match_percentage": 0.0,
-                    "total_routes_checked": 0,
-                    "customer_concerts": [],
-                    "best_route": None
-                },
-                "concerts_by_day": {}
-            }
-            characteristics_data = {
-                "total_concerts": 0,
-                "halls": [],
-                "genres": [],
-                "artists": [],
-                "composers": [],
-                "compositions": []
-            }
+                    "halls": [],
+                    "genres": [],
+                    "artists": [],
+                    "composers": [],
+                    "compositions": []
+                }
+            
+            # Создаем маршрутный лист с группировкой по дням и ENRICH-блоком
+            try:
+                logger.info(f"Creating route sheet without external_id")
+                concerts_by_day = group_concerts_by_day(concerts_for_template, festival_days_data)
+                logger.info(f"group_concerts_by_day returned: {concerts_by_day}")
+                
+                # --- ENRICH-БЛОК для пользователей без external_id ---
+                concerts_by_day_with_transitions = {}
+                for day_index, day_concerts in concerts_by_day.items():
+                    concerts_with_transitions = []
+                    for i, concert in enumerate(day_concerts):
+                        concert_with_transition = concert.copy()
+                        # enrich: переходы
+                        if i < len(day_concerts) - 1:
+                            next_concert = day_concerts[i + 1]
+                            transition_info = calculate_transition_time(session, concert, next_concert)
+                            concert_with_transition['transition_info'] = transition_info
+                            # enrich: офф-программа между концертами
+                            off_program_events = find_available_off_program_events(session, concert, next_concert)
+                            concert_with_transition['off_program_events'] = off_program_events
+                        else:
+                            concert_with_transition['transition_info'] = None
+                            concert_with_transition['off_program_events'] = []
+                        # enrich: офф-программа до первого концерта
+                        if i == 0:
+                            before_concert_events = find_available_off_program_events_before_first_concert(session, concert)
+                            concert_with_transition['before_concert_events'] = before_concert_events
+                        else:
+                            concert_with_transition['before_concert_events'] = []
+                        # enrich: офф-программа после последнего концерта
+                        if i == len(day_concerts) - 1:
+                            after_concert_events = find_available_off_program_events_after_last_concert(session, concert)
+                            concert_with_transition['after_concert_events'] = after_concert_events
+                        else:
+                            concert_with_transition['after_concert_events'] = []
+                        concerts_with_transitions.append(concert_with_transition)
+                    concerts_by_day_with_transitions[day_index] = concerts_with_transitions
+                # --- КОНЕЦ ENRICH-БЛОКА ---
+                
+                route_sheet_data = {
+                    "summary": {
+                        "total_concerts": len(concerts_for_template),
+                        "total_days": len(concerts_by_day),
+                        "total_halls": len(set(c['concert'].get('hall', {}).get('id') for c in concerts_for_template if c['concert'].get('hall'))),
+                        "total_genres": len(set(c['concert'].get('genre') for c in concerts_for_template if c['concert'].get('genre'))),
+                        "total_spent": sum(c.get('total_spent', 0) for c in concerts_for_template)
+                    },
+                    "match": {
+                        "found": False,
+                        "match_type": "no_external_id",
+                        "reason": "Для анализа маршрутов требуется external_id",
+                        "match_percentage": 0.0,
+                        "total_routes_checked": 0,
+                        "customer_concerts": [],
+                        "best_route": None
+                    },
+                    "concerts_by_day": concerts_by_day_with_transitions
+                }
+            except Exception as e:
+                logger.error(f"Error creating route sheet without external_id: {e}")
+                route_sheet_data = {
+                    "summary": {
+                        "total_concerts": len(concerts_for_template),
+                        "total_days": 0,
+                        "total_halls": 0,
+                        "total_genres": 0,
+                        "total_spent": sum(c.get('total_spent', 0) for c in concerts_for_template)
+                    },
+                    "match": {
+                        "found": False,
+                        "match_type": "no_external_id",
+                        "reason": "Для анализа маршрутов требуется external_id",
+                        "match_percentage": 0.0,
+                        "total_routes_checked": 0,
+                        "customer_concerts": [],
+                        "best_route": None
+                    },
+                    "concerts_by_day": {}
+                }
         
         logger.info(f"Festival days data: {festival_days_data}")
         logger.info(f"Characteristics data type: {type(characteristics_data)}")
@@ -775,8 +847,13 @@ def get_user_route_sheet(session, user_external_id: str, concerts_data: list, fe
                 }
         
         # Группируем концерты по дням
+        logger.info(f"Calling group_concerts_by_day with {len(concerts_data)} concerts and {len(festival_days_data) if festival_days_data else 0} festival days")
         concerts_by_day = group_concerts_by_day(concerts_data, festival_days_data)
-        # --- ВОССТАНОВЛЕННЫЙ ENRICH-БЛОК ---
+        logger.info(f"group_concerts_by_day returned: {concerts_by_day}")
+        logger.info(f"concerts_by_day keys: {list(concerts_by_day.keys())}")
+        logger.info(f"concerts_by_day values: {[len(concerts) for concerts in concerts_by_day.values()]}")
+        
+        # --- ENRICH-БЛОК (всегда выполняется) ---
         concerts_by_day_with_transitions = {}
         for day_index, day_concerts in concerts_by_day.items():
             concerts_with_transitions = []
@@ -1687,6 +1764,8 @@ def group_concerts_by_day(concerts_data: list, festival_days_data: list = None) 
             pass
     
     logger.info(f"Final grouped concerts by festival day: {concerts_by_day}")
+    logger.info(f"Final concerts_by_day keys: {list(concerts_by_day.keys())}")
+    logger.info(f"Final concerts_by_day values: {[len(concerts) for concerts in concerts_by_day.values()]}")
     return concerts_by_day
     
 
@@ -1761,7 +1840,14 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
         }
     
     # Получаем все залы и жанры с отметкой о посещении
-    halls_and_genres = get_all_halls_and_genres_with_visit_status(session, user_external_id, concerts_data)
+    if user_external_id:
+        halls_and_genres = get_all_halls_and_genres_with_visit_status(session, user_external_id, concerts_data)
+    else:
+        # Если нет external_id, создаем базовые данные о залах и жанрах
+        halls_and_genres = {
+            "halls": [],
+            "genres": []
+        }
     
     # Счетчики для различных характеристик
     artists_counter = Counter()
@@ -1822,6 +1908,8 @@ def get_user_characteristics(session, user_external_id: str, concerts_data: list
     }
     
     logger.info(f"Generated characteristics for user {user_external_id}: {characteristics}")
+    logger.info(f"characteristics keys: {list(characteristics.keys())}")
+    logger.info(f"characteristics values: {[len(v) if isinstance(v, list) else v for k, v in characteristics.items()]}")
     
     return characteristics
     
