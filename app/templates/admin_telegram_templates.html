@@ -205,8 +205,8 @@
                     <div class="template-content">${(template.content || '').substring(0, 100)}${(template.content || '').length > 100 ? '...' : ''}</div>
                     <div class="template-variables">${template.variables || 'Нет переменных'}</div>
                     <div class="template-actions">
-                        <button class="template-btn edit" onclick="editTemplate(${template.id}); event.stopPropagation();">✏️</button>
-                        <button class="template-btn delete" onclick="deleteTemplate(${template.id}); event.stopPropagation();">🗑️</button>
+                        <button class="template-btn edit" onclick="editTemplate('${template.id}'); event.stopPropagation();" data-template-id="${template.id}">✏️</button>
+                        <button class="template-btn delete" onclick="deleteTemplate('${template.id}'); event.stopPropagation();" data-template-id="${template.id}">🗑️</button>
                     </div>
                 `;
                 
@@ -216,24 +216,49 @@
 
         // Выбор шаблона
         function selectTemplate(template) {
+            console.log('Выбираем шаблон:', template);
             document.querySelectorAll('.template-item').forEach(el => el.classList.remove('selected'));
-            event.target.closest('.template-item').classList.add('selected');
+            
+            // Находим элемент шаблона по ID
+            const templateElement = document.querySelector(`[onclick*="editTemplate(${template.id})"]`).closest('.template-item');
+            if (templateElement) {
+                templateElement.classList.add('selected');
+            }
+            
             currentTemplate = template;
+            console.log('Установлен currentTemplate:', currentTemplate);
         }
 
         // Редактирование шаблона
         function editTemplate(templateId) {
-            const template = templates.find(t => t.id === templateId);
-            if (!template) return;
+            console.log('Редактируем шаблон с ID:', templateId, 'тип:', typeof templateId);
+            console.log('Доступные шаблоны:', templates);
+            
+            // Преобразуем ID в число, если это строка
+            const numericId = parseInt(templateId);
+            console.log('Преобразованный ID:', numericId);
+            
+            const template = templates.find(t => t.id === numericId);
+            console.log('Найденный шаблон:', template);
+            
+            if (!template) {
+                console.error('Шаблон не найден для ID:', templateId, '(числовой ID:', numericId, ')');
+                showStatus('Шаблон не найден', 'error');
+                return;
+            }
 
             currentTemplate = template;
+            console.log('Устанавливаем currentTemplate:', currentTemplate);
+            
             document.getElementById('form-title').textContent = '✏️ Редактировать шаблон';
             document.getElementById('template-id').value = template.id;
-            document.getElementById('template-name').value = template.name;
-            document.getElementById('template-content').value = template.content;
-            document.getElementById('template-variables').value = template.variables;
+            document.getElementById('template-name').value = template.name || '';
+            document.getElementById('template-content').value = template.content || '';
+            document.getElementById('template-variables').value = template.variables || '';
             document.getElementById('template-active').checked = template.is_active;
             document.getElementById('delete-btn').style.display = 'inline-block';
+            
+            console.log('Форма заполнена данными шаблона');
         }
 
         // Создание нового шаблона
@@ -276,6 +301,8 @@
 
         // Удаление шаблона
         async function deleteTemplate(templateId) {
+            console.log('Удаляем шаблон с ID:', templateId, 'тип:', typeof templateId);
+            
             if (!confirm('Вы уверены, что хотите деактивировать этот шаблон?')) {
                 return;
             }

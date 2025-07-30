@@ -376,37 +376,23 @@ async def get_templates(request: Request, session=Depends(get_session)):
         return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
     
     from models import MessageTemplate
+    # Получаем все шаблоны как SQLModel объекты
     templates = session.exec(select(MessageTemplate).order_by(MessageTemplate.created_at.desc())).all()
     
     templates_data = []
-    for template in templates:
-        # Проверяем, что это объект модели, а не Row
-        if hasattr(template, 'id'):
-            template_id = template.id
-            template_name = template.name
-            template_content = template.content
-            template_variables = template.variables
-            template_is_active = template.is_active
-            template_created_at = template.created_at
-            template_updated_at = template.updated_at
-        else:
-            # Если это Row объект, получаем данные по-другому
-            template_id = template[0] if isinstance(template, (list, tuple)) else getattr(template, 'id', None)
-            template_name = template[1] if isinstance(template, (list, tuple)) else getattr(template, 'name', '')
-            template_content = template[2] if isinstance(template, (list, tuple)) else getattr(template, 'content', '')
-            template_variables = template[3] if isinstance(template, (list, tuple)) else getattr(template, 'variables', '')
-            template_is_active = template[4] if isinstance(template, (list, tuple)) else getattr(template, 'is_active', True)
-            template_created_at = template[5] if isinstance(template, (list, tuple)) else getattr(template, 'created_at', None)
-            template_updated_at = template[6] if isinstance(template, (list, tuple)) else getattr(template, 'updated_at', None)
+    for template_tuple in templates:
+        # Получаем SQLModel объект из кортежа
+        template = template_tuple[0]
         
+        # Получаем данные из SQLModel объекта
         templates_data.append({
-            "id": template_id,
-            "name": template_name,
-            "content": template_content,
-            "variables": template_variables,
-            "is_active": template_is_active,
-            "created_at": template_created_at.isoformat() if template_created_at else None,
-            "updated_at": template_updated_at.isoformat() if template_updated_at else None
+            "id": template.id,
+            "name": template.name,
+            "content": template.content,
+            "variables": template.variables,
+            "is_active": template.is_active,
+            "created_at": template.created_at.isoformat() if template.created_at else None,
+            "updated_at": template.updated_at.isoformat() if template.updated_at else None
         })
     
     return JSONResponse({"success": True, "templates": templates_data})
@@ -466,13 +452,12 @@ async def update_template(template_id: int, request: Request, session=Depends(ge
         return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
     
     from models import MessageTemplate
-    template = session.exec(select(MessageTemplate).where(MessageTemplate.id == template_id)).first()
-    if not template:
+    template_tuple = session.exec(select(MessageTemplate).where(MessageTemplate.id == template_id)).first()
+    if not template_tuple:
         return JSONResponse({"success": False, "error": "Шаблон не найден"}, status_code=404)
     
-    # Проверяем, что это объект модели
-    if not hasattr(template, 'id'):
-        return JSONResponse({"success": False, "error": "Некорректный объект шаблона"}, status_code=500)
+    # Получаем SQLModel объект из кортежа
+    template = template_tuple[0]
     
     form = await request.form()
     name = form.get("name", "").strip()
@@ -523,13 +508,12 @@ async def delete_template(template_id: int, request: Request, session=Depends(ge
         return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
     
     from models import MessageTemplate
-    template = session.exec(select(MessageTemplate).where(MessageTemplate.id == template_id)).first()
-    if not template:
+    template_tuple = session.exec(select(MessageTemplate).where(MessageTemplate.id == template_id)).first()
+    if not template_tuple:
         return JSONResponse({"success": False, "error": "Шаблон не найден"}, status_code=404)
     
-    # Проверяем, что это объект модели
-    if not hasattr(template, 'id'):
-        return JSONResponse({"success": False, "error": "Некорректный объект шаблона"}, status_code=500)
+    # Получаем SQLModel объект из кортежа
+    template = template_tuple[0]
     
     try:
         # Деактивируем шаблон вместо удаления
