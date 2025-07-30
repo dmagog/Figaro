@@ -220,25 +220,31 @@ class TelegramService:
                     concerts_text = ""
                     day_counter = 1
                     
+                    print(concert)
                     for day in sorted_days:
                         day_concerts = concerts_by_day[day]
                         # Сортируем концерты в дне по времени
                         day_concerts.sort(key=lambda x: x['time'])
                         
-                        concerts_text += f"📅 **День {day_counter}** ({day})\n"
-                        concerts_text += "─" * 30 + "\n"
+                        concerts_text += f"🎈 *День {day_counter}* ({day})\n"
+                        # concerts_text += "─" * 20 + "\n"
+                        # concerts_text += "~" * 20 + "\n"
+                        concerts_text += " " * 20 + "\n"
                         
                         for i, concert in enumerate(day_concerts, 1):
-                            concerts_text += f"🎵 **#{concert['id']} {concert['name']}**\n"
-                            concerts_text += f"   🕐 {concert['time']} • ⏱️ {concert['duration']}\n"
-                            concerts_text += f"   🏛️ {concert['hall']}\n"
-                            concerts_text += f"   🎭 {concert['genre']}\n"
+                            concerts_text += f"*{concert['time']}* • {concert['id']}. {concert['name']}\n"
+                            # concerts_text += f"        {concert['hall']} • {concert['genre']}\n"
+                            # concerts_text += f"🎵 **#{concert['id']} {concert['name']}**\n"
+                            # concerts_text += f"   🕐 {concert['time']} • ⏱️ {concert['duration']}\n"
+                            # concerts_text += f"   🏛️ {concert['hall']}\n"
+                            # concerts_text += f"   🎭 {concert['genre']}\n"
                             
-                            # Добавляем разделитель между концертами, но не после последнего
-                            if i < len(day_concerts):
-                                concerts_text += "   " + "─" * 25 + "\n"
+                            #Добавляем разделитель между концертами, но не после последнего
+                            # if i < len(day_concerts):
+                            #     # concerts_text += "   " + "─" * 25 + "\n"
+                            #     concerts_text += "\n"
                         
-                        concerts_text += "\n"
+                        concerts_text += "\n\n"
                         day_counter += 1
                     
                     personalized = personalized.replace("{route_concerts_list}", concerts_text.strip())
