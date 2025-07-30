@@ -108,20 +108,46 @@ class TelegramService:
                     # Сортируем концерты по дате (как в user.py)
                     concerts_for_template.sort(key=lambda x: x['concert']['datetime'] if x['concert']['datetime'] else datetime.min)
                     
+                    # Создаем day_to_index как в user.py
+                    day_to_index = {}
+                    for concert_data in concerts_for_template:
+                        dt = concert_data['concert']['datetime']
+                        if dt:
+                            day = dt.date()
+                            if day not in day_to_index:
+                                day_to_index[day] = len(day_to_index) + 1
+                            concert_data['concert_day_index'] = day_to_index[day]
+                        else:
+                            concert_data['concert_day_index'] = 0
+                    
                     # Формируем данные для шаблона
                     route_concerts = []
                     
                     # Получаем концерты из обработанных данных
                     for concert_data in concerts_for_template:
                         concert = concert_data['concert']
+                        
+                        # Форматируем дату: число + месяц прописью
+                        date_str = "Дата не указана"
+                        if concert['datetime']:
+                            month_names = {
+                                1: "января", 2: "февраля", 3: "марта", 4: "апреля",
+                                5: "мая", 6: "июня", 7: "июля", 8: "августа",
+                                9: "сентября", 10: "октября", 11: "ноября", 12: "декабря"
+                            }
+                            day = concert['datetime'].day
+                            month = month_names.get(concert['datetime'].month, "месяца")
+                            date_str = f"{day} {month}"
+                        
                         route_concerts.append({
                             "id": concert['id'],
                             "name": concert['name'] or "Название не указано",
-                            "date": concert['datetime'].strftime("%d.%m.%Y") if concert['datetime'] else "Дата не указана",
+                            "date": date_str,
                             "time": concert['datetime'].strftime("%H:%M") if concert['datetime'] else "Время не указано",
                             "hall": concert['hall']['name'] if concert['hall'] else "Зал не указан",
                             "genre": concert['genre'] or "Жанр не указан",
-                            "duration": str(concert['duration']) if concert['duration'] else "Длительность не указана"
+                            "duration": str(concert['duration']) if concert['duration'] else "Длительность не указана",
+                            "day_index": concert_data.get('concert_day_index', 0)
                         })
                     
                     # Формируем сводку маршрута
@@ -206,46 +232,34 @@ class TelegramService:
             if "{route_concerts_list}" in personalized:
                 route_concerts = user_data.get("route_concerts", [])
                 if route_concerts:
-                    # Группируем концерты по дням
+                    # Группируем концерты по дням фестиваля
                     concerts_by_day = {}
                     for concert in route_concerts:
-                        date = concert['date']
-                        if date not in concerts_by_day:
-                            concerts_by_day[date] = []
-                        concerts_by_day[date].append(concert)
+                        day_index = concert['day_index']
+                        if day_index not in concerts_by_day:
+                            concerts_by_day[day_index] = []
+                        concerts_by_day[day_index].append(concert)
                     
-                    # Сортируем дни
-                    sorted_days = sorted(concerts_by_day.keys(), key=lambda x: datetime.strptime(x, "%d.%m.%Y"))
+                    # Сортируем дни по номеру фестивального дня
+                    sorted_days = sorted(concerts_by_day.keys())
                     
                     concerts_text = ""
-                    day_counter = 1
                     
-                    print(concert)
-                    for day in sorted_days:
-                        day_concerts = concerts_by_day[day]
+                    for day_index in sorted_days:
+                        day_concerts = concerts_by_day[day_index]
                         # Сортируем концерты в дне по времени
                         day_concerts.sort(key=lambda x: x['time'])
                         
-                        concerts_text += f"🎈 *День {day_counter}* ({day})\n"
-                        # concerts_text += "─" * 20 + "\n"
-                        # concerts_text += "~" * 20 + "\n"
+                        # Берем дату из первого концерта дня
+                        day_date = day_concerts[0]['date'] if day_concerts else "Дата не указана"
+                        
+                        concerts_text += f"🎈 *День {day_index}* ({day_date})\n"
                         concerts_text += " " * 20 + "\n"
                         
                         for i, concert in enumerate(day_concerts, 1):
                             concerts_text += f"*{concert['time']}* • {concert['id']}. {concert['name']}\n"
-                            # concerts_text += f"        {concert['hall']} • {concert['genre']}\n"
-                            # concerts_text += f"🎵 **#{concert['id']} {concert['name']}**\n"
-                            # concerts_text += f"   🕐 {concert['time']} • ⏱️ {concert['duration']}\n"
-                            # concerts_text += f"   🏛️ {concert['hall']}\n"
-                            # concerts_text += f"   🎭 {concert['genre']}\n"
-                            
-                            #Добавляем разделитель между концертами, но не после последнего
-                            # if i < len(day_concerts):
-                            #     # concerts_text += "   " + "─" * 25 + "\n"
-                            #     concerts_text += "\n"
                         
                         concerts_text += "\n\n"
-                        day_counter += 1
                     
                     personalized = personalized.replace("{route_concerts_list}", concerts_text.strip())
                 else:
