@@ -11,6 +11,7 @@ import asyncio
 import sys
 sys.path.append("../../bot")
 from bot.utils import send_telegram_message
+from datetime import datetime
 
 settings = get_settings()
 admin_users_router = APIRouter()
@@ -192,6 +193,19 @@ async def admin_telegram_page(request: Request, session=Depends(get_session)):
 
 @admin_users_router.post("/admin/send-telegram")
 async def send_telegram(request: Request, session=Depends(get_session)):
+    # Проверяем авторизацию
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
+    
     form = await request.form()
     
     # Получаем данные из формы
@@ -345,3 +359,203 @@ async def test_telegram_data(request: Request, session=Depends(get_session)):
         })
     
     return JSONResponse({"campaigns": result}) 
+
+@admin_users_router.get("/admin/telegram/templates")
+async def get_templates(request: Request, session=Depends(get_session)):
+    """Получает список всех шаблонов"""
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
+    
+    from models import MessageTemplate
+    templates = session.exec(select(MessageTemplate).order_by(MessageTemplate.created_at.desc())).all()
+    
+    templates_data = []
+    for template in templates:
+        # Проверяем, что это объект модели, а не Row
+        if hasattr(template, 'id'):
+            template_id = template.id
+            template_name = template.name
+            template_content = template.content
+            template_variables = template.variables
+            template_is_active = template.is_active
+            template_created_at = template.created_at
+            template_updated_at = template.updated_at
+        else:
+            # Если это Row объект, получаем данные по-другому
+            template_id = template[0] if isinstance(template, (list, tuple)) else getattr(template, 'id', None)
+            template_name = template[1] if isinstance(template, (list, tuple)) else getattr(template, 'name', '')
+            template_content = template[2] if isinstance(template, (list, tuple)) else getattr(template, 'content', '')
+            template_variables = template[3] if isinstance(template, (list, tuple)) else getattr(template, 'variables', '')
+            template_is_active = template[4] if isinstance(template, (list, tuple)) else getattr(template, 'is_active', True)
+            template_created_at = template[5] if isinstance(template, (list, tuple)) else getattr(template, 'created_at', None)
+            template_updated_at = template[6] if isinstance(template, (list, tuple)) else getattr(template, 'updated_at', None)
+        
+        templates_data.append({
+            "id": template_id,
+            "name": template_name,
+            "content": template_content,
+            "variables": template_variables,
+            "is_active": template_is_active,
+            "created_at": template_created_at.isoformat() if template_created_at else None,
+            "updated_at": template_updated_at.isoformat() if template_updated_at else None
+        })
+    
+    return JSONResponse({"success": True, "templates": templates_data})
+
+@admin_users_router.post("/admin/telegram/templates")
+async def create_template(request: Request, session=Depends(get_session)):
+    """Создает новый шаблон"""
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
+    
+    form = await request.form()
+    name = form.get("name", "").strip()
+    content = form.get("content", "").strip()
+    variables = form.get("variables", "").strip()
+    
+    if not name or not content:
+        return JSONResponse({"success": False, "error": "Название и содержимое обязательны"}, status_code=400)
+    
+    from services.telegram_service import TelegramService
+    try:
+        template = TelegramService.create_template(session, name, content, variables)
+        return JSONResponse({
+            "success": True, 
+            "template": {
+                "id": template.id,
+                "name": template.name,
+                "content": template.content,
+                "variables": template.variables,
+                "is_active": template.is_active
+            }
+        })
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+@admin_users_router.put("/admin/telegram/templates/{template_id}")
+async def update_template(template_id: int, request: Request, session=Depends(get_session)):
+    """Обновляет существующий шаблон"""
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
+    
+    from models import MessageTemplate
+    template = session.exec(select(MessageTemplate).where(MessageTemplate.id == template_id)).first()
+    if not template:
+        return JSONResponse({"success": False, "error": "Шаблон не найден"}, status_code=404)
+    
+    # Проверяем, что это объект модели
+    if not hasattr(template, 'id'):
+        return JSONResponse({"success": False, "error": "Некорректный объект шаблона"}, status_code=500)
+    
+    form = await request.form()
+    name = form.get("name", "").strip()
+    content = form.get("content", "").strip()
+    variables = form.get("variables", "").strip()
+    is_active = form.get("is_active", "true").lower() == "true"
+    
+    if not name or not content:
+        return JSONResponse({"success": False, "error": "Название и содержимое обязательны"}, status_code=400)
+    
+    try:
+        template.name = name
+        template.content = content
+        template.variables = variables
+        template.is_active = is_active
+        template.updated_at = datetime.utcnow()
+        
+        session.add(template)
+        session.commit()
+        session.refresh(template)
+        
+        return JSONResponse({
+            "success": True, 
+            "template": {
+                "id": template.id,
+                "name": template.name,
+                "content": template.content,
+                "variables": template.variables,
+                "is_active": template.is_active
+            }
+        })
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+@admin_users_router.delete("/admin/telegram/templates/{template_id}")
+async def delete_template(template_id: int, request: Request, session=Depends(get_session)):
+    """Удаляет шаблон (деактивирует)"""
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
+    
+    from models import MessageTemplate
+    template = session.exec(select(MessageTemplate).where(MessageTemplate.id == template_id)).first()
+    if not template:
+        return JSONResponse({"success": False, "error": "Шаблон не найден"}, status_code=404)
+    
+    # Проверяем, что это объект модели
+    if not hasattr(template, 'id'):
+        return JSONResponse({"success": False, "error": "Некорректный объект шаблона"}, status_code=500)
+    
+    try:
+        # Деактивируем шаблон вместо удаления
+        template.is_active = False
+        template.updated_at = datetime.utcnow()
+        
+        session.add(template)
+        session.commit()
+        
+        return JSONResponse({"success": True, "message": "Шаблон деактивирован"})
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500) 
+
+@admin_users_router.get("/admin/telegram/templates-page", response_class=HTMLResponse)
+async def admin_telegram_templates_page(request: Request, session=Depends(get_session)):
+    """Страница управления шаблонами Telegram"""
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return RedirectResponse(url="/login", status_code=302)
+    
+    return templates.TemplateResponse("admin_telegram_templates.html", {"request": request}) 

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Шаблоны Telegram — Админка Фигаро</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body { background: #f6f7fb; font-family: 'Segoe UI', 'Arial', sans-serif; margin: 0; }
+        .admin-container { max-width: 1400px; margin: 40px auto; padding: 30px; background: white; border-radius: 18px; box-shadow: 0 8px 32px rgba(60,60,120,0.08); }
+        .admin-header { margin-bottom: 30px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+        .admin-nav-flex { display: flex; gap: 18px; flex-wrap: nowrap; align-items: center; position: relative; padding-bottom: 4px; overflow: hidden; }
+        .admin-menu-btn { background: #667eea; color: white; padding: 10px 28px; border-radius: 10px; text-decoration: none; font-weight: 500; font-size: 1.08em; border: none; transition: background 0.18s, color 0.18s; display: inline-block; text-align: center; cursor: pointer; white-space: nowrap; }
+        .admin-menu-btn:hover, .admin-menu-btn.active { background: #4f5bd5; color: #fff; }
+        
+        .templates-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+        .templates-list { background: #f8f9fa; border-radius: 15px; padding: 25px; }
+        .template-form { background: #f8f9fa; border-radius: 15px; padding: 25px; }
+        
+        .template-item { background: white; border: 1px solid #e1e5e9; border-radius: 10px; padding: 20px; margin-bottom: 15px; cursor: pointer; transition: all 0.2s; }
+        .template-item:hover { border-color: #667eea; transform: translateY(-2px); }
+        .template-item.selected { border-color: #667eea; background: #f0f4ff; }
+        .template-item.inactive { opacity: 0.6; }
+        
+        .template-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .template-name { font-weight: 600; color: #333; font-size: 1.1em; }
+        .template-status { font-size: 0.8em; padding: 4px 8px; border-radius: 4px; }
+        .template-status.active { background: #d1fae5; color: #065f46; }
+        .template-status.inactive { background: #fee2e2; color: #991b1b; }
+        
+        .template-content { color: #666; font-size: 0.9em; margin-bottom: 10px; max-height: 60px; overflow: hidden; }
+        .template-variables { font-size: 0.8em; color: #999; }
+        .template-actions { display: flex; gap: 10px; }
+        .template-btn { padding: 6px 12px; border: none; border-radius: 6px; font-size: 0.8em; cursor: pointer; transition: background 0.2s; }
+        .template-btn.edit { background: #667eea; color: white; }
+        .template-btn.delete { background: #dc2626; color: white; }
+        .template-btn:hover { opacity: 0.8; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-weight: 500; color: #4f5bd5; margin-bottom: 8px; font-size: 1.05em; }
+        .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 1em; transition: border-color 0.2s; }
+        .form-group input:focus, .form-group textarea:focus { border-color: #667eea; outline: none; }
+        .form-group textarea { resize: vertical; min-height: 120px; }
+        
+        .form-actions { display: flex; gap: 15px; margin-top: 20px; }
+        .btn { padding: 12px 24px; border: none; border-radius: 8px; font-size: 1em; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .btn.primary { background: #667eea; color: white; }
+        .btn.secondary { background: #e1e5e9; color: #333; }
+        .btn.danger { background: #dc2626; color: white; }
+        .btn:hover { transform: translateY(-1px); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        
+        .variables-help { background: #f0f4ff; border: 1px solid #c7d2fe; border-radius: 8px; padding: 15px; margin-top: 15px; }
+        .variables-help h4 { margin: 0 0 10px 0; color: #4f5bd5; }
+        .variables-help ul { margin: 0; padding-left: 20px; }
+        .variables-help li { margin-bottom: 5px; color: #666; }
+        
+        .status { margin-top: 15px; padding: 12px; border-radius: 8px; font-weight: 500; text-align: center; opacity: 0; transition: opacity 0.3s; }
+        .status.visible { opacity: 1; }
+        .status.success { background: #d1fae5; color: #065f46; }
+        .status.error { background: #fee2e2; color: #991b1b; }
+        
+        .checkbox-group { display: flex; align-items: center; gap: 10px; }
+        .checkbox-group input[type="checkbox"] { width: 18px; height: 18px; }
+        
+        @media (max-width: 1200px) { .templates-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) { .admin-container { padding: 15px; } .form-actions { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1 style="font-size:2.2em; margin:0; flex-shrink:0;">Шаблоны Telegram</h1>
+            <nav class="admin-nav-flex">
+                <a href="/admin" class="admin-menu-btn">Главная</a>
+                <a href="/admin/telegram" class="admin-menu-btn">Рассылки</a>
+                <a href="/admin/telegram/templates" class="admin-menu-btn active">Шаблоны</a>
+                <a href="/" class="admin-menu-btn">🌐 На сайт</a>
+            </nav>
+        </div>
+
+        <div class="templates-grid">
+            <!-- Список шаблонов -->
+            <div class="templates-list">
+                <h3>📝 Список шаблонов</h3>
+                <div id="templates-container">
+                    <!-- Шаблоны будут загружены через JavaScript -->
+                </div>
+            </div>
+
+            <!-- Форма редактирования -->
+            <div class="template-form">
+                <h3 id="form-title">➕ Создать шаблон</h3>
+                <form id="template-form">
+                    <input type="hidden" id="template-id" name="id">
+                    
+                    <div class="form-group">
+                        <label for="template-name">Название шаблона:</label>
+                        <input type="text" id="template-name" name="name" placeholder="Введите название шаблона" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="template-content">Содержимое:</label>
+                        <textarea id="template-content" name="content" placeholder="Введите текст шаблона с переменными..." required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="template-variables">Описание переменных (JSON):</label>
+                        <textarea id="template-variables" name="variables" placeholder='{"name": "Имя пользователя", "email": "Email пользователя"}'></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="template-active" name="is_active" checked>
+                            <label for="template-active" style="margin: 0;">Активный шаблон</label>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn primary" id="save-btn">💾 Сохранить</button>
+                        <button type="button" class="btn secondary" id="cancel-btn">❌ Отмена</button>
+                        <button type="button" class="btn danger" id="delete-btn" style="display: none;">🗑️ Удалить</button>
+                    </div>
+                </form>
+
+                <div class="variables-help">
+                    <h4>📋 Доступные переменные:</h4>
+                    <ul>
+                        <li><strong>{name}</strong> - Имя пользователя</li>
+                        <li><strong>{email}</strong> - Email пользователя</li>
+                        <li><strong>{telegram_username}</strong> - Username в Telegram</li>
+                        <li><strong>{tickets_count}</strong> - Количество купленных билетов</li>
+                        <li><strong>{total_spent}</strong> - Общая сумма покупок</li>
+                        <li><strong>{concerts_count}</strong> - Количество посещённых концертов</li>
+                        <li><strong>{user_id}</strong> - ID пользователя</li>
+                        <li><strong>{concert_name}</strong> - Название концерта</li>
+                        <li><strong>{concert_date}</strong> - Дата концерта</li>
+                        <li><strong>{hall_name}</strong> - Название зала</li>
+                        <li><strong>{offer_text}</strong> - Текст предложения</li>
+                        <li><strong>{expiry_date}</strong> - Дата окончания предложения</li>
+                    </ul>
+                </div>
+
+                <div id="status" class="status"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTemplate = null;
+        let templates = [];
+
+        // Загрузка шаблонов
+        async function loadTemplates() {
+            try {
+                console.log('Загружаем шаблоны...');
+                const response = await fetch('/admin/telegram/templates');
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Полученные данные:', data);
+                
+                if (data.success) {
+                    templates = data.templates;
+                    console.log('Шаблоны загружены:', templates);
+                    renderTemplates();
+                } else {
+                    console.error('Ошибка API:', data.error);
+                    showStatus('Ошибка загрузки шаблонов: ' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки шаблонов:', error);
+                showStatus('Ошибка загрузки шаблонов: ' + error.message, 'error');
+            }
+        }
+
+        // Отображение шаблонов
+        function renderTemplates() {
+            console.log('Рендерим шаблоны:', templates);
+            const container = document.getElementById('templates-container');
+            container.innerHTML = '';
+
+            if (!templates || templates.length === 0) {
+                container.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">Шаблоны не найдены</p>';
+                return;
+            }
+
+            templates.forEach((template, index) => {
+                console.log(`Рендерим шаблон ${index}:`, template);
+                const templateEl = document.createElement('div');
+                templateEl.className = `template-item ${template.is_active ? '' : 'inactive'}`;
+                templateEl.onclick = () => selectTemplate(template);
+                
+                templateEl.innerHTML = `
+                    <div class="template-header">
+                        <div class="template-name">${template.name || 'Без названия'}</div>
+                        <div class="template-status ${template.is_active ? 'active' : 'inactive'}">
+                            ${template.is_active ? 'Активен' : 'Неактивен'}
+                        </div>
+                    </div>
+                    <div class="template-content">${(template.content || '').substring(0, 100)}${(template.content || '').length > 100 ? '...' : ''}</div>
+                    <div class="template-variables">${template.variables || 'Нет переменных'}</div>
+                    <div class="template-actions">
+                        <button class="template-btn edit" onclick="editTemplate(${template.id}); event.stopPropagation();">✏️</button>
+                        <button class="template-btn delete" onclick="deleteTemplate(${template.id}); event.stopPropagation();">🗑️</button>
+                    </div>
+                `;
+                
+                container.appendChild(templateEl);
+            });
+        }
+
+        // Выбор шаблона
+        function selectTemplate(template) {
+            document.querySelectorAll('.template-item').forEach(el => el.classList.remove('selected'));
+            event.target.closest('.template-item').classList.add('selected');
+            currentTemplate = template;
+        }
+
+        // Редактирование шаблона
+        function editTemplate(templateId) {
+            const template = templates.find(t => t.id === templateId);
+            if (!template) return;
+
+            currentTemplate = template;
+            document.getElementById('form-title').textContent = '✏️ Редактировать шаблон';
+            document.getElementById('template-id').value = template.id;
+            document.getElementById('template-name').value = template.name;
+            document.getElementById('template-content').value = template.content;
+            document.getElementById('template-variables').value = template.variables;
+            document.getElementById('template-active').checked = template.is_active;
+            document.getElementById('delete-btn').style.display = 'inline-block';
+        }
+
+        // Создание нового шаблона
+        function newTemplate() {
+            currentTemplate = null;
+            document.getElementById('form-title').textContent = '➕ Создать шаблон';
+            document.getElementById('template-form').reset();
+            document.getElementById('template-id').value = '';
+            document.getElementById('delete-btn').style.display = 'none';
+            document.querySelectorAll('.template-item').forEach(el => el.classList.remove('selected'));
+        }
+
+        // Сохранение шаблона
+        async function saveTemplate(formData) {
+            const templateId = formData.get('id');
+            const url = templateId ? `/admin/telegram/templates/${templateId}` : '/admin/telegram/templates';
+            const method = templateId ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatus(templateId ? 'Шаблон обновлён!' : 'Шаблон создан!', 'success');
+                    await loadTemplates();
+                    if (!templateId) {
+                        newTemplate();
+                    }
+                } else {
+                    showStatus('Ошибка: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showStatus('Ошибка сохранения', 'error');
+            }
+        }
+
+        // Удаление шаблона
+        async function deleteTemplate(templateId) {
+            if (!confirm('Вы уверены, что хотите деактивировать этот шаблон?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/admin/telegram/templates/${templateId}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatus('Шаблон деактивирован!', 'success');
+                    await loadTemplates();
+                    if (currentTemplate && currentTemplate.id === templateId) {
+                        newTemplate();
+                    }
+                } else {
+                    showStatus('Ошибка: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showStatus('Ошибка удаления', 'error');
+            }
+        }
+
+        // Отображение статуса
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status visible ${type}`;
+            
+            setTimeout(() => {
+                status.className = 'status';
+            }, 3000);
+        }
+
+        // Обработчики событий
+        document.getElementById('template-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            await saveTemplate(formData);
+        });
+
+        document.getElementById('cancel-btn').addEventListener('click', function() {
+            newTemplate();
+        });
+
+        document.getElementById('delete-btn').addEventListener('click', function() {
+            if (currentTemplate) {
+                deleteTemplate(currentTemplate.id);
+            }
+        });
+
+        // Добавляем кнопку "Новый шаблон" в заголовок
+        document.addEventListener('DOMContentLoaded', function() {
+            const header = document.querySelector('.admin-header');
+            const newBtn = document.createElement('button');
+            newBtn.className = 'btn primary';
+            newBtn.textContent = '➕ Новый шаблон';
+            newBtn.onclick = newTemplate;
+            header.appendChild(newBtn);
+            
+            loadTemplates();
+        });
+    </script>
+</body>
+</html> 
