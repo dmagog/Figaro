@@ -37,8 +37,8 @@ class TelegramService:
         },
         {
             "name": "Ваш маршрут концертов",
-            "content": "🎵 Ваш персональный маршрут фестиваля, {name}!\n\n📊 Статистика маршрута:\n🎫 Концертов: {route_concerts_count}\n📅 Дней: {route_days}\n🏛️ Залы: {route_halls}\n⏱️ Время концертов: {route_show_time} мин\n🚶 Время переходов: {route_trans_time} мин\n⏳ Время ожидания: {route_wait_time} мин\n😌 Комфорт: {route_comfort_score}\n🧠 Интеллект: {route_intellect_score}\n\n🎼 Ваши концерты:\n\n{route_concerts_list}\n\nУдачного фестиваля! 🎉",
-            "variables": '{"name": "Имя пользователя", "route_concerts_count": "Количество концертов в маршруте", "route_days": "Количество дней", "route_halls": "Количество залов", "route_show_time": "Время концертов (мин)", "route_trans_time": "Время переходов (мин)", "route_wait_time": "Время ожидания (мин)", "route_comfort_score": "Оценка комфорта", "route_intellect_score": "Оценка интеллекта", "route_concerts_list": "Список концертов"}'
+            "content": "🎵 **Ваш персональный маршрут фестиваля, {name}!**\n\n📊 **Статистика маршрута:**\n🎫 Концертов: **{route_concerts_count}**\n📅 Дней фестиваля: **{route_days}**\n🏛️ Уникальных залов: **{route_halls}**\n🎭 Музыкальных жанров: **{route_genres}**\n⏱️ Общее время концертов: **{route_show_time} мин**\n\n🎼 **Ваши концерты:**\n\n{route_concerts_list}\n\nУдачного фестиваля! 🎉",
+            "variables": '{"name": "Имя пользователя", "route_concerts_count": "Количество концертов в маршруте", "route_days": "Количество дней", "route_halls": "Количество залов", "route_genres": "Количество жанров", "route_show_time": "Время концертов (мин)", "route_trans_time": "Время переходов (мин)", "route_wait_time": "Время ожидания (мин)", "route_comfort_score": "Оценка комфорта", "route_intellect_score": "Оценка интеллекта", "route_concerts_list": "Список концертов"}'
         }
     ]
     
@@ -126,12 +126,28 @@ class TelegramService:
                     # Формируем сводку маршрута
                     total_days = len(set(c['concert']['datetime'].date() for c in concerts_for_template if c['concert']['datetime']))
                     total_halls = len(set(c['concert']['hall']['id'] for c in concerts_for_template if c['concert']['hall']))
+                    total_genres = len(set(c['concert']['genre'] for c in concerts_for_template if c['concert']['genre']))
+                    
+                    # Рассчитываем общее время концертов
+                    total_show_time = 0
+                    for concert_data in concerts_for_template:
+                        duration = concert_data['concert']['duration']
+                        if duration:
+                            if isinstance(duration, str) and ':' in duration:
+                                parts = duration.split(':')
+                                if len(parts) >= 2:
+                                    hours = int(parts[0])
+                                    minutes = int(parts[1])
+                                    total_show_time += hours * 60 + minutes
+                            elif isinstance(duration, (int, float)):
+                                total_show_time += duration
                     
                     route_summary = {
                         "total_concerts": len(route_concerts),
                         "total_days": total_days,
                         "total_halls": total_halls,
-                        "show_time": 0,  # Будем рассчитывать позже
+                        "total_genres": total_genres,
+                        "show_time": total_show_time,
                         "trans_time": 0,  # Будем рассчитывать позже
                         "wait_time": 0,   # Будем рассчитывать позже
                         "comfort_score": 0,
@@ -178,6 +194,7 @@ class TelegramService:
                 "{route_wait_time}": str(user_data.get("route_summary", {}).get("wait_time", 0)),
                 "{route_comfort_score}": str(user_data.get("route_summary", {}).get("comfort_score", 0)),
                 "{route_intellect_score}": str(user_data.get("route_summary", {}).get("intellect_score", 0)),
+                "{route_genres}": str(user_data.get("route_summary", {}).get("total_genres", 0)),
             }
             
             for placeholder, value in replacements.items():
@@ -187,13 +204,41 @@ class TelegramService:
             if "{route_concerts_list}" in personalized:
                 route_concerts = user_data.get("route_concerts", [])
                 if route_concerts:
+                    # Группируем концерты по дням
+                    concerts_by_day = {}
+                    for concert in route_concerts:
+                        date = concert['date']
+                        if date not in concerts_by_day:
+                            concerts_by_day[date] = []
+                        concerts_by_day[date].append(concert)
+                    
+                    # Сортируем дни
+                    sorted_days = sorted(concerts_by_day.keys(), key=lambda x: datetime.strptime(x, "%d.%m.%Y"))
+                    
                     concerts_text = ""
-                    for i, concert in enumerate(route_concerts, 1):
-                        concerts_text += f"{i}. {concert['name']}\n"
-                        concerts_text += f"   📅 {concert['date']} в {concert['time']}\n"
-                        concerts_text += f"   🏛️ {concert['hall']}\n"
-                        concerts_text += f"   🎵 {concert['genre']}\n"
-                        concerts_text += f"   ⏱️ {concert['duration']}\n\n"
+                    day_counter = 1
+                    
+                    for day in sorted_days:
+                        day_concerts = concerts_by_day[day]
+                        # Сортируем концерты в дне по времени
+                        day_concerts.sort(key=lambda x: x['time'])
+                        
+                        concerts_text += f"📅 **День {day_counter}** ({day})\n"
+                        concerts_text += "─" * 30 + "\n"
+                        
+                        for i, concert in enumerate(day_concerts, 1):
+                            concerts_text += f"🎵 **{i}. {concert['name']}**\n"
+                            concerts_text += f"   🕐 {concert['time']} • ⏱️ {concert['duration']}\n"
+                            concerts_text += f"   🏛️ {concert['hall']}\n"
+                            concerts_text += f"   🎭 {concert['genre']}\n"
+                            
+                            # Добавляем разделитель между концертами, но не после последнего
+                            if i < len(day_concerts):
+                                concerts_text += "   " + "─" * 25 + "\n"
+                        
+                        concerts_text += "\n"
+                        day_counter += 1
+                    
                     personalized = personalized.replace("{route_concerts_list}", concerts_text.strip())
                 else:
                     personalized = personalized.replace("{route_concerts_list}", "Маршрут не найден или пуст")
