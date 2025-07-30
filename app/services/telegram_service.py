@@ -115,6 +115,7 @@ class TelegramService:
                     for concert_data in concerts_for_template:
                         concert = concert_data['concert']
                         route_concerts.append({
+                            "id": concert['id'],
                             "name": concert['name'] or "Название не указано",
                             "date": concert['datetime'].strftime("%d.%m.%Y") if concert['datetime'] else "Дата не указана",
                             "time": concert['datetime'].strftime("%H:%M") if concert['datetime'] else "Время не указано",
@@ -180,6 +181,7 @@ class TelegramService:
                 "{user_id}": str(user_data.get("id", "")),
                 # Переменные для концертов
                 "{concert_name}": user_data.get("concert_name", "Концерт"),
+                "{concert_id}": str(user_data.get("concert_id", "")),
                 "{concert_date}": user_data.get("concert_date", "Дата не указана"),
                 "{hall_name}": user_data.get("hall_name", "Зал не указан"),
                 # Переменные для предложений
@@ -227,7 +229,7 @@ class TelegramService:
                         concerts_text += "─" * 30 + "\n"
                         
                         for i, concert in enumerate(day_concerts, 1):
-                            concerts_text += f"🎵 **{i}. {concert['name']}**\n"
+                            concerts_text += f"🎵 **#{concert['id']} {concert['name']}**\n"
                             concerts_text += f"   🕐 {concert['time']} • ⏱️ {concert['duration']}\n"
                             concerts_text += f"   🏛️ {concert['hall']}\n"
                             concerts_text += f"   🎭 {concert['genre']}\n"
