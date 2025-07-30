@@ -117,12 +117,13 @@ class TelegramService:
         return session.exec(select(MessageTemplate).where(MessageTemplate.is_active == True)).all()
     
     @staticmethod
-    def create_template(session: Session, name: str, content: str, variables: str = "") -> MessageTemplate:
+    def create_template(session: Session, name: str, content: str, variables: str = "", is_active: bool = True) -> MessageTemplate:
         """Создает новый шаблон"""
         template = MessageTemplate(
             name=name,
             content=content,
-            variables=variables
+            variables=variables,
+            is_active=is_active
         )
         session.add(template)
         session.commit()

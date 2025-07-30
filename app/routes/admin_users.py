@@ -416,13 +416,14 @@ async def create_template(request: Request, session=Depends(get_session)):
     name = form.get("name", "").strip()
     content = form.get("content", "").strip()
     variables = form.get("variables", "").strip()
+    is_active = form.get("is_active") == "on"
     
     if not name or not content:
         return JSONResponse({"success": False, "error": "Название и содержимое обязательны"}, status_code=400)
     
     from services.telegram_service import TelegramService
     try:
-        template = TelegramService.create_template(session, name, content, variables)
+        template = TelegramService.create_template(session, name, content, variables, is_active)
         return JSONResponse({
             "success": True, 
             "template": {
@@ -463,7 +464,7 @@ async def update_template(template_id: int, request: Request, session=Depends(ge
     name = form.get("name", "").strip()
     content = form.get("content", "").strip()
     variables = form.get("variables", "").strip()
-    is_active = form.get("is_active", "true").lower() == "true"
+    is_active = form.get("is_active") == "on"
     
     if not name or not content:
         return JSONResponse({"success": False, "error": "Название и содержимое обязательны"}, status_code=400)

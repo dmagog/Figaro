@@ -259,6 +259,8 @@
             document.getElementById('delete-btn').style.display = 'inline-block';
             
             console.log('Форма заполнена данными шаблона');
+            console.log('is_active установлен в:', template.is_active);
+            console.log('Чекбокс checked:', document.getElementById('template-active').checked);
         }
 
         // Создание нового шаблона
@@ -276,6 +278,12 @@
             const templateId = formData.get('id');
             const url = templateId ? `/admin/telegram/templates/${templateId}` : '/admin/telegram/templates';
             const method = templateId ? 'PUT' : 'POST';
+
+            // Добавляем отладочную информацию
+            console.log('Отправляем данные формы:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`${key}: ${value}`);
+            }
 
             try {
                 const response = await fetch(url, {
