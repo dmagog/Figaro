@@ -9,7 +9,7 @@ class MessageStatus(str, Enum):
     FAILED = "failed"
     DELIVERED = "delivered"
 
-class MessageTemplate(SQLModel, table=True):
+class MessageTemplate(SQLModel, table=True, extend_existing=True):
     """Шаблоны сообщений для Telegram рассылок"""
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(max_length=100, description="Название шаблона")
@@ -19,7 +19,7 @@ class MessageTemplate(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     is_active: bool = Field(default=True)
 
-class TelegramMessage(SQLModel, table=True):
+class TelegramMessage(SQLModel, table=True, extend_existing=True):
     """Записи о отправленных Telegram сообщениях"""
     id: Optional[int] = Field(default=None, primary_key=True)
     telegram_id: int = Field(description="ID пользователя в Telegram")
@@ -35,7 +35,7 @@ class TelegramMessage(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     campaign_id: Optional[str] = Field(default=None, description="ID кампании для группировки")
 
-class TelegramCampaign(SQLModel, table=True):
+class TelegramCampaign(SQLModel, table=True, extend_existing=True):
     """Кампании Telegram рассылок"""
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(max_length=200, description="Название кампании")

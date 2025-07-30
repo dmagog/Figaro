@@ -34,6 +34,11 @@ class TelegramService:
             "name": "Статистика покупок",
             "content": "📊 Ваша статистика покупок:\n\n🎫 Всего билетов: {tickets_count}\n💰 Общая сумма: {total_spent} ₽\n🎵 Посещено концертов: {concerts_count}\n\nСпасибо за поддержку фестиваля!",
             "variables": '{"tickets_count": "Количество билетов", "total_spent": "Общая сумма", "concerts_count": "Количество концертов"}'
+        },
+        {
+            "name": "Ваш маршрут концертов",
+            "content": "🎵 Ваш персональный маршрут фестиваля, {name}!\n\n📊 Статистика маршрута:\n🎫 Концертов: {route_concerts_count}\n📅 Дней: {route_days}\n🏛️ Залы: {route_halls}\n⏱️ Время концертов: {route_show_time} мин\n🚶 Время переходов: {route_trans_time} мин\n⏳ Время ожидания: {route_wait_time} мин\n😌 Комфорт: {route_comfort_score}\n🧠 Интеллект: {route_intellect_score}\n\n🎼 Ваши концерты:\n\n{route_concerts_list}\n\nУдачного фестиваля! 🎉",
+            "variables": '{"name": "Имя пользователя", "route_concerts_count": "Количество концертов в маршруте", "route_days": "Количество дней", "route_halls": "Количество залов", "route_show_time": "Время концертов (мин)", "route_trans_time": "Время переходов (мин)", "route_wait_time": "Время ожидания (мин)", "route_comfort_score": "Оценка комфорта", "route_intellect_score": "Оценка интеллекта", "route_concerts_list": "Список концертов"}'
         }
     ]
     
@@ -50,7 +55,9 @@ class TelegramService:
             "tickets_count": 0,
             "total_spent": 0,
             "concerts_count": 0,
-            "last_purchase": None
+            "last_purchase": None,
+            "route_concerts": [],
+            "route_summary": {}
         }
         
         # Получаем статистику покупок
@@ -64,6 +71,78 @@ class TelegramService:
                 data["total_spent"] = sum(p.price or 0 for p in purchases)
                 data["concerts_count"] = len(set(p.concert_id for p in purchases))
                 data["last_purchase"] = max(p.purchased_at for p in purchases if p.purchased_at)
+            
+            # Получаем маршрут пользователя через ту же логику, что и на странице профиля
+            try:
+                # Используем ту же логику, что и в user.py
+                from app.services.crud.purchase import get_user_unique_concerts_with_details
+                
+                # Получаем уникальные концерты пользователя (как в user.py)
+                purchases = get_user_unique_concerts_with_details(session, str(user.external_id))
+                
+                if purchases:
+                    # Преобразуем данные для совместимости с get_user_route_sheet (как в user.py)
+                    concerts_for_template = []
+                    for purchase in purchases:
+                        try:
+                            # Создаем копию данных концерта
+                            concert_copy = purchase.copy()
+                            
+                            # Добавляем информацию о количестве билетов
+                            concert_copy['tickets_count'] = purchase['concert'].get('purchase_count', 1)
+                            concert_copy['total_spent'] = purchase['concert'].get('purchase_count', 1) * (purchase['concert'].get('price', 0) or 0)
+                            
+                            # Обрабатываем concert datetime
+                            if isinstance(purchase['concert']['datetime'], str):
+                                from datetime import datetime
+                                concert_copy['concert']['datetime'] = datetime.fromisoformat(purchase['concert']['datetime'])
+                            else:
+                                concert_copy['concert']['datetime'] = purchase['concert']['datetime']
+                            
+                            concerts_for_template.append(concert_copy)
+                            
+                        except Exception as e:
+                            print(f"Ошибка при обработке концерта: {e}")
+                            continue
+                    
+                    # Сортируем концерты по дате (как в user.py)
+                    concerts_for_template.sort(key=lambda x: x['concert']['datetime'] if x['concert']['datetime'] else datetime.min)
+                    
+                    # Формируем данные для шаблона
+                    route_concerts = []
+                    
+                    # Получаем концерты из обработанных данных
+                    for concert_data in concerts_for_template:
+                        concert = concert_data['concert']
+                        route_concerts.append({
+                            "name": concert['name'] or "Название не указано",
+                            "date": concert['datetime'].strftime("%d.%m.%Y") if concert['datetime'] else "Дата не указана",
+                            "time": concert['datetime'].strftime("%H:%M") if concert['datetime'] else "Время не указано",
+                            "hall": concert['hall']['name'] if concert['hall'] else "Зал не указан",
+                            "genre": concert['genre'] or "Жанр не указан",
+                            "duration": str(concert['duration']) if concert['duration'] else "Длительность не указана"
+                        })
+                    
+                    # Формируем сводку маршрута
+                    total_days = len(set(c['concert']['datetime'].date() for c in concerts_for_template if c['concert']['datetime']))
+                    total_halls = len(set(c['concert']['hall']['id'] for c in concerts_for_template if c['concert']['hall']))
+                    
+                    route_summary = {
+                        "total_concerts": len(route_concerts),
+                        "total_days": total_days,
+                        "total_halls": total_halls,
+                        "show_time": 0,  # Будем рассчитывать позже
+                        "trans_time": 0,  # Будем рассчитывать позже
+                        "wait_time": 0,   # Будем рассчитывать позже
+                        "comfort_score": 0,
+                        "intellect_score": 0
+                    }
+                    
+                    data["route_concerts"] = route_concerts
+                    data["route_summary"] = route_summary
+                        
+            except Exception as e:
+                print(f"Ошибка при получении данных маршрута: {e}")
         
         return data
     
@@ -90,10 +169,34 @@ class TelegramService:
                 # Переменные для предложений
                 "{offer_text}": user_data.get("offer_text", "Специальное предложение"),
                 "{expiry_date}": user_data.get("expiry_date", "Дата не указана"),
+                # Переменные для маршрута
+                "{route_concerts_count}": str(user_data.get("route_summary", {}).get("total_concerts", 0)),
+                "{route_days}": str(user_data.get("route_summary", {}).get("total_days", 0)),
+                "{route_halls}": str(user_data.get("route_summary", {}).get("total_halls", 0)),
+                "{route_show_time}": str(user_data.get("route_summary", {}).get("show_time", 0)),
+                "{route_trans_time}": str(user_data.get("route_summary", {}).get("trans_time", 0)),
+                "{route_wait_time}": str(user_data.get("route_summary", {}).get("wait_time", 0)),
+                "{route_comfort_score}": str(user_data.get("route_summary", {}).get("comfort_score", 0)),
+                "{route_intellect_score}": str(user_data.get("route_summary", {}).get("intellect_score", 0)),
             }
             
             for placeholder, value in replacements.items():
                 personalized = personalized.replace(placeholder, value)
+            
+            # Специальная обработка для списка концертов маршрута
+            if "{route_concerts_list}" in personalized:
+                route_concerts = user_data.get("route_concerts", [])
+                if route_concerts:
+                    concerts_text = ""
+                    for i, concert in enumerate(route_concerts, 1):
+                        concerts_text += f"{i}. {concert['name']}\n"
+                        concerts_text += f"   📅 {concert['date']} в {concert['time']}\n"
+                        concerts_text += f"   🏛️ {concert['hall']}\n"
+                        concerts_text += f"   🎵 {concert['genre']}\n"
+                        concerts_text += f"   ⏱️ {concert['duration']}\n\n"
+                    personalized = personalized.replace("{route_concerts_list}", concerts_text.strip())
+                else:
+                    personalized = personalized.replace("{route_concerts_list}", "Маршрут не найден или пуст")
             
             # Форматируем даты
             if user_data.get("last_purchase"):
@@ -275,4 +378,6 @@ class TelegramService:
                 if days_since_purchase <= 90:
                     categories["active_users"].append(user)
         
-        return categories 
+        return categories
+    
+ 
