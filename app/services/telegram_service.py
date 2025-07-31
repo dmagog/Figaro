@@ -151,6 +151,7 @@ class TelegramService:
                     
                     data["route_concerts"] = flat_concerts
                     data["concerts_for_template"] = flat_concerts_for_template
+                    data["sorted_concerts"] = sorted_concerts  # Сохраняем для определения следующего зала
                     data["route_summary"] = route_summary
                         
             except Exception as e:
@@ -253,6 +254,9 @@ class TelegramService:
                     concert = route_concerts[concert_index]
                     concert_data = concerts_for_template[concert_index] if concert_index < len(concerts_for_template) else None
                     
+                    # Получаем отсортированные концерты для определения следующего зала
+                    sorted_concerts = user_data.get("sorted_concerts", [])
+                    
                     # Получаем артистов
                     artists = []
                     if concert_data and 'concert' in concert_data and 'artists' in concert_data['concert']:
@@ -269,7 +273,7 @@ class TelegramService:
                             compositions.append(f"• {comp_name} ({author_name})")
                     compositions_text = "\n".join(compositions) if compositions else "Произведения не указаны"
                     
-                    # Формируем информацию о переходе
+                    # Формируем информацию о переходе (точно как в маршрутном листе)
                     transition_info_text = ""
                     if concert_data and 'transition_info' in concert_data and concert_data['transition_info']:
                         transition = concert_data['transition_info']
@@ -277,22 +281,29 @@ class TelegramService:
                         walk_time = transition.get('walk_time', 0)
                         status = transition.get('status', '')
                         
-                        if status == 'same_hall':
-                            transition_info_text = f"⏱️ {time_between} мин между концертами • Остаемся в том же зале"
-                        elif status == 'same_building':
-                            transition_info_text = f"⏱️ {time_between} мин между концертами • Переход в том же здании"
+                                            # Получаем название следующего зала
+                    next_hall_name = "следующий зал"
+                    if concert_index + 1 < len(sorted_concerts):
+                        next_concert = sorted_concerts[concert_index + 1]['concert']
+                        if next_concert.get('hall') and next_concert['hall'].get('name'):
+                            next_hall_name = next_concert['hall']['name']
+                        
+                        if status == 'success':
+                            transition_info_text = f"🚶🏼‍➡️ Переходим в → {next_hall_name} • ~{walk_time} мин пешком • {time_between} мин до следующего концерта"
                         elif status == 'hurry':
-                            transition_info_text = f"⏱️ {time_between} мин между концертами • Переход в другой зал: ~{walk_time} мин (нужно поторопиться!)"
+                            transition_info_text = f"🏃🏼‍➡️ Нужно поторопиться • {time_between} мин между концертами • ~{walk_time} мин пешком"
                         elif status == 'tight':
-                            transition_info_text = f"⏱️ {time_between} мин между концертами • Переход в другой зал: ~{walk_time} мин (впритык)"
-                        elif status == 'success':
-                            transition_info_text = f"⏱️ {time_between} мин между концертами • Переход в другой зал: ~{walk_time} мин (достаточно времени)"
+                            transition_info_text = f"⏱️ Впритык по времени • {time_between} мин между концертами • ~{walk_time} мин пешком"
+                        elif status == 'same_hall':
+                            transition_info_text = f"📍 Остаёмся в том же зале • {time_between} мин до следующего концерта"
+                        elif status == 'same_building':
+                            transition_info_text = f"🏛️ Остаёмся в том же здании • {time_between} мин между концертами • Переход в другой зал: ~{walk_time} мин"
                         elif status == 'overlap':
                             transition_info_text = f"⚠️ Наложение концертов! Текущий концерт заканчивается в {transition.get('current_end', '?')}, следующий начинается в {transition.get('next_start', '?')}"
                         elif status == 'no_transition_data':
-                            transition_info_text = f"⏱️ {time_between} мин между концертами • Время перехода неизвестно"
+                            transition_info_text = f"❓ Нет данных о переходе • {time_between} мин между концертами • Время перехода неизвестно"
                         else:
-                            transition_info_text = f"⏱️ {time_between} мин между концертами • Переход в другой зал: ~{walk_time} мин"
+                            transition_info_text = f"⏱️ Время перехода • {time_between} мин между концертами • ~{walk_time} мин пешком"
                     else:
                         transition_info_text = "⏱️ Информация о переходе недоступна"
                     
