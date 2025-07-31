@@ -54,52 +54,32 @@ def get_day_selection_keyboard():
     keyboard.add(InlineKeyboardButton("🔙 Назад", callback_data="route_menu"))
     return keyboard
 
-import aiohttp
-
-async def get_user_route_data_async(user_external_id: str):
-    """Получает данные маршрута пользователя через HTTP API"""
+async def send_template_message_async(template_id: int, telegram_id: int):
+    """Отправляет сообщение пользователю по шаблону"""
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"http://app:8080/api/user/route-data/{user_external_id}") as response:
-                if response.status == 200:
-                    return await response.json()
-                else:
-                    return {"error": f"HTTP {response.status}: {await response.text()}"}
+        with Session(simple_engine) as session:
+            # Получаем пользователя по telegram_id
+            user = session.exec(select(User).where(User.telegram_id == telegram_id)).first()
+            if not user:
+                return {"error": "Пользователь не найден"}
+            
+            # Получаем шаблон
+            from models import MessageTemplate
+            template = session.get(MessageTemplate, template_id)
+            if not template:
+                return {"error": "Шаблон не найден"}
+            
+            # Простая персонализация сообщения
+            personalized_message = template.content.replace("{name}", user.name or user.email.split('@')[0] if user.email else "Пользователь")
+            
+            # Отправляем напрямую через бота
+            await bot.send_message(telegram_id, personalized_message, parse_mode='Markdown')
+            
+            return {"success": True, "message": "Сообщение отправлено"}
+            
     except Exception as e:
-        print(f"Ошибка при получении данных маршрута через API: {e}")
-        return {"error": f"Ошибка при получении данных: {str(e)}"}
-
-async def format_route_concerts_list_async(concerts_data: dict, detailed: bool = False, day_number: int = None):
-    """Форматирует список концертов через HTTP API"""
-    try:
-        async with aiohttp.ClientSession() as session:
-            payload = {
-                "concerts_data": concerts_data,
-                "detailed": detailed,
-                "day_number": day_number
-            }
-            async with session.post("http://app:8080/api/user/format-route", json=payload) as response:
-                if response.status == 200:
-                    return await response.text()
-                else:
-                    return f"Ошибка HTTP {response.status}: {await response.text()}"
-    except Exception as e:
-        print(f"Ошибка при форматировании маршрута через API: {e}")
-        return f"Ошибка при форматировании: {str(e)}"
-
-async def format_route_summary_async(concerts_data: dict):
-    """Форматирует статистику маршрута через HTTP API"""
-    try:
-        async with aiohttp.ClientSession() as session:
-            payload = {"concerts_data": concerts_data}
-            async with session.post("http://app:8080/api/user/format-summary", json=payload) as response:
-                if response.status == 200:
-                    return await response.text()
-                else:
-                    return f"Ошибка HTTP {response.status}: {await response.text()}"
-    except Exception as e:
-        print(f"Ошибка при форматировании статистики через API: {e}")
-        return f"Ошибка при форматировании статистики: {str(e)}"
+        print(f"Ошибка при отправке сообщения: {e}")
+        return {"error": f"Ошибка при отправке: {str(e)}"}
 
 def format_route_concerts_list(concerts_data, detailed=False, day_number=None):
     """Форматирует список концертов для отображения"""
@@ -380,70 +360,31 @@ async def process_callback(callback_query: types.CallbackQuery):
             )
         
         elif action == "route_brief":
-            # Получаем краткий маршрут
-            try:
-                concerts_data = await get_user_route_data_async(user.external_id)
-                if "error" in concerts_data:
-                    await safe_edit_message(
-                        concerts_data["error"],
-                        reply_markup=get_route_menu_keyboard()
-                    )
-                    return
-                
-                message_text = await format_route_concerts_list_async(concerts_data, detailed=False)
-                await safe_edit_message(
-                    message_text,
-                    reply_markup=get_route_menu_keyboard()
-                )
-            except Exception as e:
-                await safe_edit_message(
-                    f"❌ Ошибка при получении маршрута: {str(e)}",
-                    reply_markup=get_route_menu_keyboard()
-                )
+            # Отправляем краткий маршрут по шаблону
+            await safe_edit_message("🔄 Отправляю ваш маршрут...")
+            result = await send_template_message_async(1, callback_query.from_user.id)  # ID шаблона для краткого маршрута
+            if "error" in result:
+                await safe_edit_message(f"❌ Ошибка: {result['error']}", reply_markup=get_route_menu_keyboard())
+            else:
+                await safe_edit_message("✅ Маршрут отправлен в личные сообщения!", reply_markup=get_route_menu_keyboard())
         
         elif action == "route_detailed":
-            # Получаем развернутый маршрут
-            try:
-                concerts_data = await get_user_route_data_async(user.external_id)
-                if "error" in concerts_data:
-                    await safe_edit_message(
-                        concerts_data["error"],
-                        reply_markup=get_route_menu_keyboard()
-                    )
-                    return
-                
-                message_text = await format_route_concerts_list_async(concerts_data, detailed=True)
-                await safe_edit_message(
-                    message_text,
-                    reply_markup=get_route_menu_keyboard()
-                )
-            except Exception as e:
-                await safe_edit_message(
-                    f"❌ Ошибка при получении маршрута: {str(e)}",
-                    reply_markup=get_route_menu_keyboard()
-                )
+            # Отправляем развернутый маршрут по шаблону
+            await safe_edit_message("🔄 Отправляю развернутый маршрут...")
+            result = await send_template_message_async(2, callback_query.from_user.id)  # ID шаблона для развернутого маршрута
+            if "error" in result:
+                await safe_edit_message(f"❌ Ошибка: {result['error']}", reply_markup=get_route_menu_keyboard())
+            else:
+                await safe_edit_message("✅ Развернутый маршрут отправлен в личные сообщения!", reply_markup=get_route_menu_keyboard())
         
         elif action == "route_stats":
-            # Получаем статистику маршрута
-            try:
-                concerts_data = await get_user_route_data_async(user.external_id)
-                if "error" in concerts_data:
-                    await safe_edit_message(
-                        concerts_data["error"],
-                        reply_markup=get_route_menu_keyboard()
-                    )
-                    return
-                
-                message_text = await format_route_summary_async(concerts_data)
-                await safe_edit_message(
-                    message_text,
-                    reply_markup=get_route_menu_keyboard()
-                )
-            except Exception as e:
-                await safe_edit_message(
-                    f"❌ Ошибка при получении статистики: {str(e)}",
-                    reply_markup=get_route_menu_keyboard()
-                )
+            # Отправляем статистику по шаблону
+            await safe_edit_message("🔄 Отправляю статистику маршрута...")
+            result = await send_template_message_async(3, callback_query.from_user.id)  # ID шаблона для статистики
+            if "error" in result:
+                await safe_edit_message(f"❌ Ошибка: {result['error']}", reply_markup=get_route_menu_keyboard())
+            else:
+                await safe_edit_message("✅ Статистика отправлена в личные сообщения!", reply_markup=get_route_menu_keyboard())
         
         elif action == "route_day":
             # Показываем выбор дня
@@ -453,49 +394,23 @@ async def process_callback(callback_query: types.CallbackQuery):
             )
         
         elif action.startswith("day_"):
-            # Получаем маршрут на конкретный день
+            # Отправляем маршрут на конкретный день по шаблону
             day_number = action.split("_")[1]
-            try:
-                concerts_data = await get_user_route_data_async(user.external_id)
-                if "error" in concerts_data:
-                    await safe_edit_message(
-                        concerts_data["error"],
-                        reply_markup=get_day_selection_keyboard()
-                    )
-                    return
-                
-                message_text = await format_route_concerts_list_async(concerts_data, detailed=False, day_number=int(day_number))
-                await safe_edit_message(
-                    message_text,
-                    reply_markup=get_day_selection_keyboard()
-                )
-            except Exception as e:
-                await safe_edit_message(
-                    f"❌ Ошибка при получении маршрута на день {day_number}: {str(e)}",
-                    reply_markup=get_day_selection_keyboard()
-                )
+            await safe_edit_message(f"🔄 Отправляю маршрут на день {day_number}...")
+            result = await send_template_message_async(4, callback_query.from_user.id)  # ID шаблона для маршрута на день
+            if "error" in result:
+                await safe_edit_message(f"❌ Ошибка: {result['error']}", reply_markup=get_day_selection_keyboard())
+            else:
+                await safe_edit_message(f"✅ Маршрут на день {day_number} отправлен в личные сообщения!", reply_markup=get_day_selection_keyboard())
         
         elif action == "statistics":
-            # Получаем общую статистику
-            try:
-                concerts_data = await get_user_route_data_async(user.external_id)
-                if "error" in concerts_data:
-                    await safe_edit_message(
-                        concerts_data["error"],
-                        reply_markup=get_main_menu_keyboard()
-                    )
-                    return
-                
-                message_text = await format_route_summary_async(concerts_data)
-                await safe_edit_message(
-                    message_text,
-                    reply_markup=get_main_menu_keyboard()
-                )
-            except Exception as e:
-                await safe_edit_message(
-                    f"❌ Ошибка при получении статистики: {str(e)}",
-                    reply_markup=get_main_menu_keyboard()
-                )
+            # Отправляем общую статистику по шаблону
+            await safe_edit_message("🔄 Отправляю общую статистику...")
+            result = await send_template_message_async(5, callback_query.from_user.id)  # ID шаблона для общей статистики
+            if "error" in result:
+                await safe_edit_message(f"❌ Ошибка: {result['error']}", reply_markup=get_main_menu_keyboard())
+            else:
+                await safe_edit_message("✅ Общая статистика отправлена в личные сообщения!", reply_markup=get_main_menu_keyboard())
         
         elif action == "profile":
             # Показываем профиль пользователя
