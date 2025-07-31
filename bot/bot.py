@@ -1,9 +1,10 @@
 import os
 from aiogram import Bot, Dispatcher, types, executor
 from aiogram.types import ParseMode, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
+from sqlalchemy import create_engine, text
 from sqlmodel import Session, select
-from app.models.user import User, TelegramLinkCode
 from app.database.simple_engine import simple_engine
+from app.models.user import User
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -52,6 +53,212 @@ def get_day_selection_keyboard():
         keyboard.add(InlineKeyboardButton(f"День {day}", callback_data=f"day_{day}"))
     keyboard.add(InlineKeyboardButton("🔙 Назад", callback_data="route_menu"))
     return keyboard
+
+import aiohttp
+
+async def get_user_route_data_async(user_external_id: str):
+    """Получает данные маршрута пользователя через HTTP API"""
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"http://app:8080/api/user/route-data/{user_external_id}") as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    return {"error": f"HTTP {response.status}: {await response.text()}"}
+    except Exception as e:
+        print(f"Ошибка при получении данных маршрута через API: {e}")
+        return {"error": f"Ошибка при получении данных: {str(e)}"}
+
+async def format_route_concerts_list_async(concerts_data: dict, detailed: bool = False, day_number: int = None):
+    """Форматирует список концертов через HTTP API"""
+    try:
+        async with aiohttp.ClientSession() as session:
+            payload = {
+                "concerts_data": concerts_data,
+                "detailed": detailed,
+                "day_number": day_number
+            }
+            async with session.post("http://app:8080/api/user/format-route", json=payload) as response:
+                if response.status == 200:
+                    return await response.text()
+                else:
+                    return f"Ошибка HTTP {response.status}: {await response.text()}"
+    except Exception as e:
+        print(f"Ошибка при форматировании маршрута через API: {e}")
+        return f"Ошибка при форматировании: {str(e)}"
+
+async def format_route_summary_async(concerts_data: dict):
+    """Форматирует статистику маршрута через HTTP API"""
+    try:
+        async with aiohttp.ClientSession() as session:
+            payload = {"concerts_data": concerts_data}
+            async with session.post("http://app:8080/api/user/format-summary", json=payload) as response:
+                if response.status == 200:
+                    return await response.text()
+                else:
+                    return f"Ошибка HTTP {response.status}: {await response.text()}"
+    except Exception as e:
+        print(f"Ошибка при форматировании статистики через API: {e}")
+        return f"Ошибка при форматировании статистики: {str(e)}"
+
+def format_route_concerts_list(concerts_data, detailed=False, day_number=None):
+    """Форматирует список концертов для отображения"""
+    try:
+        sorted_concerts = concerts_data.get("sorted_concerts", [])
+        if not sorted_concerts:
+            return "Маршрут не найден или пуст"
+        
+        # Группируем концерты по дням
+        concerts_by_day = {}
+        for i, concert_data in enumerate(sorted_concerts):
+            concert = concert_data['concert']
+            if concert.get('datetime'):
+                day = concert['datetime'].date()
+                if day not in concerts_by_day:
+                    concerts_by_day[day] = []
+                concerts_by_day[day].append({
+                    'index': i + 1,
+                    'time': concert['datetime'].strftime("%H:%M"),
+                    'name': concert.get('name', 'Название не указано'),
+                    'hall': concert.get('hall', {}).get('name', 'Зал не указан'),
+                    'duration': str(concert.get('duration', 'Длительность не указана')),
+                    'genre': concert.get('genre', 'Жанр не указан'),
+                    'concert_data': concert_data
+                })
+        
+        # Сортируем дни
+        sorted_days = sorted(concerts_by_day.keys())
+        
+        if day_number:
+            # Показываем только конкретный день
+            try:
+                day_index = int(day_number) - 1
+                if 0 <= day_index < len(sorted_days):
+                    target_day = sorted_days[day_index]
+                    day_concerts = concerts_by_day[target_day]
+                    
+                    # Форматируем дату
+                    day_str = str(target_day.day)
+                    month_names = {
+                        1: "января", 2: "февраля", 3: "марта", 4: "апреля",
+                        5: "мая", 6: "июня", 7: "июля", 8: "августа",
+                        9: "сентября", 10: "октября", 11: "ноября", 12: "декабря"
+                    }
+                    month_str = month_names.get(target_day.month, "месяца")
+                    
+                    concerts_text = f"🎈 *День {day_index + 1}* ({day_str} {month_str})\n\n"
+                    
+                    for concert in day_concerts:
+                        if detailed:
+                            concerts_text += f"*{concert['time']}* • {concert['index']}. {concert['name']}\n"
+                            concerts_text += f"   🏛️ {concert['hall']} • ⏱️ {concert['duration']} • 🎭 {concert['genre']}\n"
+                            
+                            if concert['concert_data'].get('transition_info'):
+                                transition = concert['concert_data']['transition_info']
+                                if transition.get('status') == 'success':
+                                    concerts_text += f"   🚶🏼‍➡️ Переход в другой зал: ~{transition.get('walk_time', 0)} мин • {transition.get('time_between', 0)} мин до следующего\n"
+                                elif transition.get('status') == 'same_hall':
+                                    concerts_text += f"   📍 Остаёмся в том же зале • {transition.get('time_between', 0)} мин до следующего\n"
+                            
+                            concerts_text += "\n"
+                        else:
+                            concerts_text += f"{concert['time']} • {concert['index']}. {concert['name']}\n"
+                    
+                    return concerts_text
+                else:
+                    return f"День {day_number} не найден в маршруте"
+            except ValueError:
+                return f"Неверный номер дня: {day_number}"
+        
+        # Показываем все дни
+        concerts_text = ""
+        for day_index, target_day in enumerate(sorted_days, 1):
+            day_concerts = concerts_by_day[target_day]
+            
+            # Форматируем дату
+            day_str = str(target_day.day)
+            month_names = {
+                1: "января", 2: "февраля", 3: "марта", 4: "апреля",
+                5: "мая", 6: "июня", 7: "июля", 8: "августа",
+                9: "сентября", 10: "октября", 11: "ноября", 12: "декабря"
+            }
+            month_str = month_names.get(target_day.month, "месяца")
+            
+            concerts_text += f"🎈 *День {day_index}* ({day_str} {month_str})\n\n"
+            
+            for concert in day_concerts:
+                if detailed:
+                    concerts_text += f"*{concert['time']}* • {concert['index']}. {concert['name']}\n"
+                    concerts_text += f"   🏛️ {concert['hall']} • ⏱️ {concert['duration']} • 🎭 {concert['genre']}\n"
+                    
+                    if concert['concert_data'].get('transition_info'):
+                        transition = concert['concert_data']['transition_info']
+                        if transition.get('status') == 'success':
+                            concerts_text += f"   🚶🏼‍➡️ Переход в другой зал: ~{transition.get('walk_time', 0)} мин • {transition.get('time_between', 0)} мин до следующего\n"
+                        elif transition.get('status') == 'same_hall':
+                            concerts_text += f"   📍 Остаёмся в том же зале • {transition.get('time_between', 0)} мин до следующего\n"
+                    
+                    concerts_text += "\n"
+                else:
+                    concerts_text += f"{concert['time']} • {concert['index']}. {concert['name']}\n"
+            
+            concerts_text += "\n"
+        
+        return concerts_text.strip()
+        
+    except Exception as e:
+        print(f"Ошибка при форматировании маршрута: {e}")
+        return f"Ошибка при форматировании: {str(e)}"
+
+def format_route_summary(concerts_data):
+    """Форматирует статистику маршрута"""
+    try:
+        route_summary = concerts_data.get("route_summary", {})
+        if not route_summary:
+            return "Статистика маршрута недоступна"
+        
+        summary_text = "📊 *Итоговая статистика маршрута:*\n\n"
+        
+        # Основные показатели
+        summary_text += f"🎵 *Концертов:* {route_summary.get('total_concerts', 0)}\n"
+        summary_text += f"📅 *Дней:* {route_summary.get('total_days', 0)}\n"
+        summary_text += f"🏛️ *Залов:* {route_summary.get('total_halls', 0)}\n"
+        summary_text += f"🎨 *Жанров:* {route_summary.get('total_genres', 0)}\n"
+        
+        # Время
+        concert_time = route_summary.get('total_concert_time_minutes', 0)
+        if concert_time:
+            summary_text += f"⏱️ *Время концертов:* {concert_time} мин\n"
+        
+        trans_time = route_summary.get('total_walk_time_minutes', 0)
+        if trans_time:
+            summary_text += f"🚶 *Время переходов:* {trans_time} мин\n"
+        
+        # Расстояние
+        distance = route_summary.get('total_distance_km', 0)
+        if distance:
+            summary_text += f"📍 *Пройдено:* {distance} км\n"
+        
+        # Контент
+        compositions = route_summary.get('unique_compositions', 0)
+        if compositions:
+            summary_text += f"🎼 *Произведений:* {compositions}\n"
+        
+        authors = route_summary.get('unique_authors', 0)
+        if authors:
+            summary_text += f"✍️ *Авторов:* {authors}\n"
+        
+        artists = route_summary.get('unique_artists', 0)
+        if artists:
+            summary_text += f"🎭 *Артистов:* {artists}\n"
+        
+        summary_text += "\n🎉 *Спасибо, что выбрали наш фестиваль! До встречи на концертах!*"
+        
+        return summary_text
+        
+    except Exception as e:
+        print(f"Ошибка при форматировании статистики: {e}")
+        return f"Ошибка при форматировании статистики: {str(e)}"
 
 @dp.message_handler(commands=["start", "help"])
 async def send_welcome(message: types.Message):
@@ -125,6 +332,27 @@ async def testmsg(message: types.Message):
 async def process_callback(callback_query: types.CallbackQuery):
     await bot.answer_callback_query(callback_query.id)
     
+    async def safe_edit_message(text, reply_markup=None):
+        """Безопасное редактирование сообщения с обработкой ошибок"""
+        try:
+            await bot.edit_message_text(
+                text,
+                callback_query.from_user.id,
+                callback_query.message.message_id,
+                reply_markup=reply_markup
+            )
+        except Exception as e:
+            if "Message is not modified" in str(e):
+                # Игнорируем ошибку если сообщение не изменилось
+                pass
+            else:
+                # Отправляем новое сообщение если редактирование не удалось
+                await bot.send_message(
+                    callback_query.from_user.id,
+                    text,
+                    reply_markup=reply_markup
+                )
+    
     with Session(simple_engine) as session:
         user = session.exec(select(User).where(User.telegram_id == callback_query.from_user.id)).first()
         if not user:
@@ -134,98 +362,93 @@ async def process_callback(callback_query: types.CallbackQuery):
         action = callback_query.data
         
         if action == "main_menu":
-            await bot.edit_message_text(
+            await safe_edit_message(
                 f"👋 Привет, {user.name or 'друг'}! Выберите действие:",
-                callback_query.from_user.id,
-                callback_query.message.message_id,
                 reply_markup=get_main_menu_keyboard()
             )
         
         elif action == "my_route":
-            await bot.edit_message_text(
+            await safe_edit_message(
                 "🎵 Выберите формат маршрута:",
-                callback_query.from_user.id,
-                callback_query.message.message_id,
                 reply_markup=get_route_menu_keyboard()
             )
         
         elif action == "route_menu":
-            await bot.edit_message_text(
+            await safe_edit_message(
                 "🎵 Выберите формат маршрута:",
-                callback_query.from_user.id,
-                callback_query.message.message_id,
                 reply_markup=get_route_menu_keyboard()
             )
         
         elif action == "route_brief":
             # Получаем краткий маршрут
             try:
-                from app.services.telegram_service import TelegramService
-                user_data = TelegramService.get_user_data(user, session)
-                template = "{route_concerts_list}"
-                message_text = TelegramService.personalize_message(template, user_data)
-                await bot.edit_message_text(
+                concerts_data = await get_user_route_data_async(user.external_id)
+                if "error" in concerts_data:
+                    await safe_edit_message(
+                        concerts_data["error"],
+                        reply_markup=get_route_menu_keyboard()
+                    )
+                    return
+                
+                message_text = await format_route_concerts_list_async(concerts_data, detailed=False)
+                await safe_edit_message(
                     message_text,
-                    callback_query.from_user.id,
-                    callback_query.message.message_id,
                     reply_markup=get_route_menu_keyboard()
                 )
             except Exception as e:
-                await bot.edit_message_text(
+                await safe_edit_message(
                     f"❌ Ошибка при получении маршрута: {str(e)}",
-                    callback_query.from_user.id,
-                    callback_query.message.message_id,
                     reply_markup=get_route_menu_keyboard()
                 )
         
         elif action == "route_detailed":
             # Получаем развернутый маршрут
             try:
-                from app.services.telegram_service import TelegramService
-                user_data = TelegramService.get_user_data(user, session)
-                template = "{route_concerts_list:detailed}"
-                message_text = TelegramService.personalize_message(template, user_data)
-                await bot.edit_message_text(
+                concerts_data = await get_user_route_data_async(user.external_id)
+                if "error" in concerts_data:
+                    await safe_edit_message(
+                        concerts_data["error"],
+                        reply_markup=get_route_menu_keyboard()
+                    )
+                    return
+                
+                message_text = await format_route_concerts_list_async(concerts_data, detailed=True)
+                await safe_edit_message(
                     message_text,
-                    callback_query.from_user.id,
-                    callback_query.message.message_id,
                     reply_markup=get_route_menu_keyboard()
                 )
             except Exception as e:
-                await bot.edit_message_text(
+                await safe_edit_message(
                     f"❌ Ошибка при получении маршрута: {str(e)}",
-                    callback_query.from_user.id,
-                    callback_query.message.message_id,
                     reply_markup=get_route_menu_keyboard()
                 )
         
         elif action == "route_stats":
             # Получаем статистику маршрута
             try:
-                from app.services.telegram_service import TelegramService
-                user_data = TelegramService.get_user_data(user, session)
-                template = "{route_summary}"
-                message_text = TelegramService.personalize_message(template, user_data)
-                await bot.edit_message_text(
+                concerts_data = await get_user_route_data_async(user.external_id)
+                if "error" in concerts_data:
+                    await safe_edit_message(
+                        concerts_data["error"],
+                        reply_markup=get_route_menu_keyboard()
+                    )
+                    return
+                
+                message_text = await format_route_summary_async(concerts_data)
+                await safe_edit_message(
                     message_text,
-                    callback_query.from_user.id,
-                    callback_query.message.message_id,
                     reply_markup=get_route_menu_keyboard()
                 )
             except Exception as e:
-                await bot.edit_message_text(
+                await safe_edit_message(
                     f"❌ Ошибка при получении статистики: {str(e)}",
-                    callback_query.from_user.id,
-                    callback_query.message.message_id,
                     reply_markup=get_route_menu_keyboard()
                 )
         
         elif action == "route_day":
             # Показываем выбор дня
-            await bot.edit_message_text(
+            await safe_edit_message(
                 "📅 Выберите день фестиваля:",
-                callback_query.from_user.id,
-                callback_query.message.message_id,
                 reply_markup=get_day_selection_keyboard()
             )
         
@@ -233,42 +456,44 @@ async def process_callback(callback_query: types.CallbackQuery):
             # Получаем маршрут на конкретный день
             day_number = action.split("_")[1]
             try:
-                from app.services.telegram_service import TelegramService
-                user_data = TelegramService.get_user_data(user, session)
-                template = f"{{route_concerts_list:day={day_number}}}"
-                message_text = TelegramService.personalize_message(template, user_data)
-                await bot.edit_message_text(
+                concerts_data = await get_user_route_data_async(user.external_id)
+                if "error" in concerts_data:
+                    await safe_edit_message(
+                        concerts_data["error"],
+                        reply_markup=get_day_selection_keyboard()
+                    )
+                    return
+                
+                message_text = await format_route_concerts_list_async(concerts_data, detailed=False, day_number=int(day_number))
+                await safe_edit_message(
                     message_text,
-                    callback_query.from_user.id,
-                    callback_query.message.message_id,
                     reply_markup=get_day_selection_keyboard()
                 )
             except Exception as e:
-                await bot.edit_message_text(
+                await safe_edit_message(
                     f"❌ Ошибка при получении маршрута на день {day_number}: {str(e)}",
-                    callback_query.from_user.id,
-                    callback_query.message.message_id,
                     reply_markup=get_day_selection_keyboard()
                 )
         
         elif action == "statistics":
             # Получаем общую статистику
             try:
-                from app.services.telegram_service import TelegramService
-                user_data = TelegramService.get_user_data(user, session)
-                template = "{route_summary}"
-                message_text = TelegramService.personalize_message(template, user_data)
-                await bot.edit_message_text(
+                concerts_data = await get_user_route_data_async(user.external_id)
+                if "error" in concerts_data:
+                    await safe_edit_message(
+                        concerts_data["error"],
+                        reply_markup=get_main_menu_keyboard()
+                    )
+                    return
+                
+                message_text = await format_route_summary_async(concerts_data)
+                await safe_edit_message(
                     message_text,
-                    callback_query.from_user.id,
-                    callback_query.message.message_id,
                     reply_markup=get_main_menu_keyboard()
                 )
             except Exception as e:
-                await bot.edit_message_text(
+                await safe_edit_message(
                     f"❌ Ошибка при получении статистики: {str(e)}",
-                    callback_query.from_user.id,
-                    callback_query.message.message_id,
                     reply_markup=get_main_menu_keyboard()
                 )
         
@@ -281,10 +506,8 @@ async def process_callback(callback_query: types.CallbackQuery):
             if user.telegram_username:
                 profile_text += f"📱 Telegram: @{user.telegram_username}\n"
             
-            await bot.edit_message_text(
+            await safe_edit_message(
                 profile_text,
-                callback_query.from_user.id,
-                callback_query.message.message_id,
                 reply_markup=get_main_menu_keyboard()
             )
         
@@ -299,29 +522,23 @@ async def process_callback(callback_query: types.CallbackQuery):
             help_text += "🔗 *Личный кабинет* - ссылка на веб-версию\n\n"
             help_text += "Для привязки аккаунта используйте код из личного кабинета."
             
-            await bot.edit_message_text(
+            await safe_edit_message(
                 help_text,
-                callback_query.from_user.id,
-                callback_query.message.message_id,
                 reply_markup=get_main_menu_keyboard()
             )
         
         elif action == "web_profile":
             # Ссылка на личный кабинет
             web_url = "http://localhost:8000/profile"  # Можно сделать настраиваемым
-            await bot.edit_message_text(
+            await safe_edit_message(
                 f"🔗 *Личный кабинет:*\n\nПерейдите по ссылке для доступа к полному функционалу:\n{web_url}",
-                callback_query.from_user.id,
-                callback_query.message.message_id,
                 reply_markup=get_main_menu_keyboard()
             )
         
         elif action in ["today_concerts", "halls", "genres"]:
             # Заглушки для будущих функций
-            await bot.edit_message_text(
+            await safe_edit_message(
                 "🚧 Эта функция находится в разработке. Скоро будет доступна!",
-                callback_query.from_user.id,
-                callback_query.message.message_id,
                 reply_markup=get_main_menu_keyboard()
             )
 
