@@ -85,7 +85,13 @@ class BotApiService:
             
             # Получаем данные маршрута
             user_data = TelegramService.get_user_data(user, session)
-            route_data = user_data.get("route_data", {})
+            route_data = {
+                "sorted_concerts": user_data.get("sorted_concerts", []),
+                "route_summary": user_data.get("route_summary", {}),
+                "route_concerts": user_data.get("route_concerts", [])
+            }
+            
+            logger.info(f"Route data for day {day_number}: {len(route_data.get('sorted_concerts', []))} concerts")
             
             # Форматируем маршрут на конкретный день
             # Используем простую логику форматирования здесь
@@ -107,11 +113,14 @@ class BotApiService:
         """Форматирует список концертов для отображения"""
         try:
             sorted_concerts = concerts_data.get("sorted_concerts", [])
+            logger.info(f"Formatting route: {len(sorted_concerts)} concerts, day_number={day_number}")
+            
             if not sorted_concerts:
                 return "Маршрут не найден или пуст"
             
             # Группируем концерты по дням
             concerts_by_day = {}
+            processed_concerts = 0
             for i, concert_data in enumerate(sorted_concerts):
                 concert = concert_data['concert']
                 if concert.get('datetime'):
@@ -120,7 +129,8 @@ class BotApiService:
                         from datetime import datetime
                         try:
                             dt = datetime.fromisoformat(concert['datetime'].replace('Z', '+00:00'))
-                        except:
+                        except Exception as e:
+                            logger.warning(f"Failed to parse datetime '{concert['datetime']}': {e}")
                             # Если не удается распарсить, пропускаем концерт
                             continue
                     else:
@@ -138,6 +148,10 @@ class BotApiService:
                         'genre': concert.get('genre', 'Жанр не указан'),
                         'concert_data': concert_data
                     })
+                    processed_concerts += 1
+            
+            logger.info(f"Processed {processed_concerts} concerts, grouped into {len(concerts_by_day)} days")
+            logger.info(f"Available days: {sorted(concerts_by_day.keys())}")
             
             # Сортируем дни
             sorted_days = sorted(concerts_by_day.keys())
