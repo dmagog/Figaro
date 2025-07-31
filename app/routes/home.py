@@ -207,11 +207,23 @@ async def admin_index(request: Request, session=Depends(get_session)):
     # Получаем количество маршрутов из кэша
     routes_count = summary.get("routes_count", 0)
 
+    # Добавляем заглушки для новых разделов
+    alerts = {
+        "critical": 0,
+        "notifications": 2
+    }
+    
+    telegram_stats = {
+        "sent": 15
+    }
+
     context = {
         "user": user_obj,
         "request": request,
         "summary": summary,
-        "routes_count": routes_count
+        "routes_count": routes_count,
+        "alerts": alerts,
+        "telegram_stats": telegram_stats
     }
     return templates.TemplateResponse("admin_index.html", context)
 
@@ -1683,6 +1695,155 @@ async def get_recommendations_api(
         import traceback
         traceback.print_exc()
         return {"success": False, "message": str(e)}
+
+
+@home_route.get("/admin/api/dashboard-stats")
+async def get_dashboard_stats(request: Request, session=Depends(get_session)):
+    """API для получения статистики дашборда"""
+    try:
+        # Проверяем авторизацию
+        token = request.cookies.get(settings.COOKIE_NAME)
+        if token:
+            user = await authenticate_cookie(token)
+        else:
+            user = None
+
+        user_obj = None
+        if user:
+            user_obj = UsersService.get_user_by_email(user, session)
+        if not user_obj or not getattr(user_obj, 'is_superuser', False):
+            raise HTTPException(status_code=403, detail="Доступ запрещен")
+
+        # Получаем базовую статистику
+        from models import User, Purchase, Concert, Hall
+        from sqlalchemy import func
+        
+        users_count = session.exec(select(func.count(User.id))).first()
+        # customers_count = 0  # Модель Customer не существует
+        tickets_count = session.exec(select(func.count(Purchase.id))).first()
+        concerts_count = session.exec(select(func.count(Concert.id))).first()
+        halls_count = session.exec(select(func.count(Hall.id))).first()
+        
+        # Статистика Telegram
+        telegram_users = session.exec(select(func.count(User.id)).where(User.telegram_id.is_not(None))).first()
+        
+        # Алерты (заглушка для демонстрации)
+        alerts = {
+            "critical": 0,  # Здесь будет логика проверки критических ситуаций
+            "notifications": 2
+        }
+        
+        # Статистика Telegram рассылок
+        telegram_stats = {
+            "sent": 15,  # Здесь будет реальная статистика
+            "users": telegram_users or 0
+        }
+        
+        return {
+            "users_count": users_count,
+            "customers_count": 0,  # Модель Customer не существует
+            "tickets_count": tickets_count,
+            "concerts_count": concerts_count,
+            "halls_count": halls_count,
+            "alerts": alerts,
+            "telegram_stats": telegram_stats
+        }
+        
+    except Exception as e:
+        print(f"Error getting dashboard stats: {e}")
+        raise HTTPException(status_code=500, detail="Ошибка получения статистики")
+
+
+@home_route.get("/admin/api/alerts")
+async def get_alerts(request: Request, session=Depends(get_session)):
+    """API для получения алертов"""
+    try:
+        # Проверяем авторизацию
+        token = request.cookies.get(settings.COOKIE_NAME)
+        if token:
+            user = await authenticate_cookie(token)
+        else:
+            user = None
+
+        user_obj = None
+        if user:
+            user_obj = UsersService.get_user_by_email(user, session)
+        if not user_obj or not getattr(user_obj, 'is_superuser', False):
+            raise HTTPException(status_code=403, detail="Доступ запрещен")
+
+        alerts = []
+        
+        # Проверяем концерты с низкой заполняемостью
+        from models import Concert
+        low_fill_concerts = session.exec(
+            select(Concert)
+            .where(Concert.available_seats < 10)
+            .limit(5)
+        ).all()
+        
+        for concert in low_fill_concerts:
+            alerts.append({
+                "type": "critical",
+                "message": f"Низкая заполняемость: {concert.name} - {concert.available_seats} мест",
+                "concert_id": concert.id
+            })
+        
+        # Проверяем проблемы с Telegram ботом
+        # Здесь можно добавить проверку статуса бота
+        
+        return {
+            "critical": alerts,
+            "notifications": []
+        }
+        
+    except Exception as e:
+        print(f"Error getting alerts: {e}")
+        raise HTTPException(status_code=500, detail="Ошибка получения алертов")
+
+
+@home_route.get("/admin/telegram/stats", response_class=HTMLResponse)
+async def admin_telegram_stats(request: Request, session=Depends(get_session)):
+    """Страница статистики Telegram (заглушка)"""
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return RedirectResponse(url="/login", status_code=302)
+
+    context = {
+        "user": user_obj,
+        "request": request
+    }
+    return templates.TemplateResponse("admin_telegram_stats.html", context)
+
+
+@home_route.get("/admin/notifications/settings", response_class=HTMLResponse)
+async def admin_notifications_settings(request: Request, session=Depends(get_session)):
+    """Страница настроек уведомлений (заглушка)"""
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return RedirectResponse(url="/login", status_code=302)
+
+    context = {
+        "user": user_obj,
+        "request": request
+    }
+    return templates.TemplateResponse("admin_notifications_settings.html", context)
+
 
 home_route.include_router(admin_customers_router)
 home_route.include_router(admin_users_router)
