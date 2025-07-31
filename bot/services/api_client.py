@@ -33,4 +33,46 @@ class ApiClient:
                         
         except Exception as e:
             logger.error(f"API client error: {e}", exc_info=True)
-            return {"error": f"Ошибка при отправке: {str(e)}"} 
+            return {"error": f"Ошибка при отправке: {str(e)}"}
+    
+    async def get_route_data(self, telegram_id: int):
+        """Получает данные маршрута пользователя"""
+        try:
+            url = f"{self.base_url}/bot/route-data/{telegram_id}"
+            logger.info(f"Getting route data from {url}")
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    if response.status == 200:
+                        result = await response.json()
+                        logger.info(f"Route data response: {result}")
+                        return result
+                    else:
+                        error_text = await response.text()
+                        logger.error(f"Route data API error {response.status}: {error_text}")
+                        return {"error": f"HTTP {response.status}: {error_text}"}
+                        
+        except Exception as e:
+            logger.error(f"Route data API client error: {e}", exc_info=True)
+            return {"error": f"Ошибка при получении маршрута: {str(e)}"}
+    
+    async def get_route_day(self, telegram_id: int, day_number: int):
+        """Получает маршрут на конкретный день"""
+        try:
+            url = f"{self.base_url}/bot/route-day/{telegram_id}/{day_number}"
+            logger.info(f"Getting route day from {url}")
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    if response.status == 200:
+                        result = await response.json()
+                        logger.info(f"Route day response: {result}")
+                        return result
+                    else:
+                        error_text = await response.text()
+                        logger.error(f"Route day API error {response.status}: {error_text}")
+                        return {"error": f"HTTP {response.status}: {error_text}"}
+                        
+        except Exception as e:
+            logger.error(f"Route day API client error: {e}", exc_info=True)
+            return {"error": f"Ошибка при получении маршрута на день: {str(e)}"} 

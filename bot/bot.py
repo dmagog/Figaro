@@ -342,31 +342,40 @@ async def process_callback(callback_query: types.CallbackQuery):
             )
         
         elif action == "route_brief":
-            # Отправляем краткий маршрут по шаблону
-            await safe_edit_message("🔄 Отправляю ваш маршрут...")
-            result = await send_template_message_async(1, callback_query.from_user.id)  # ID шаблона для краткого маршрута
+            # Получаем и отображаем краткий маршрут
+            await safe_edit_message("🔄 Загружаю ваш маршрут...")
+            result = await api_client.get_route_data(callback_query.from_user.id)
             if "error" in result:
                 await safe_edit_message(f"❌ Ошибка: {result['error']}", reply_markup=get_route_menu_keyboard())
             else:
-                await safe_edit_message("✅ Маршрут отправлен в личные сообщения!", reply_markup=get_route_menu_keyboard())
+                route_data = result.get("route_data", {})
+                formatted_route = format_route_concerts_list(route_data, detailed=False)
+                await safe_edit_message(f"🎵 *Ваш краткий маршрут:*\n\n{formatted_route}", 
+                                      reply_markup=get_route_menu_keyboard(), parse_mode='Markdown')
         
         elif action == "route_detailed":
-            # Отправляем развернутый маршрут по шаблону
-            await safe_edit_message("🔄 Отправляю развернутый маршрут...")
-            result = await send_template_message_async(2, callback_query.from_user.id)  # ID шаблона для развернутого маршрута
+            # Получаем и отображаем развернутый маршрут
+            await safe_edit_message("🔄 Загружаю развернутый маршрут...")
+            result = await api_client.get_route_data(callback_query.from_user.id)
             if "error" in result:
                 await safe_edit_message(f"❌ Ошибка: {result['error']}", reply_markup=get_route_menu_keyboard())
             else:
-                await safe_edit_message("✅ Развернутый маршрут отправлен в личные сообщения!", reply_markup=get_route_menu_keyboard())
+                route_data = result.get("route_data", {})
+                formatted_route = format_route_concerts_list(route_data, detailed=True)
+                await safe_edit_message(f"🎵 *Ваш развернутый маршрут:*\n\n{formatted_route}", 
+                                      reply_markup=get_route_menu_keyboard(), parse_mode='Markdown')
         
         elif action == "route_stats":
-            # Отправляем статистику по шаблону
-            await safe_edit_message("🔄 Отправляю статистику маршрута...")
-            result = await send_template_message_async(3, callback_query.from_user.id)  # ID шаблона для статистики
+            # Получаем и отображаем статистику маршрута
+            await safe_edit_message("🔄 Загружаю статистику маршрута...")
+            result = await api_client.get_route_data(callback_query.from_user.id)
             if "error" in result:
                 await safe_edit_message(f"❌ Ошибка: {result['error']}", reply_markup=get_route_menu_keyboard())
             else:
-                await safe_edit_message("✅ Статистика отправлена в личные сообщения!", reply_markup=get_route_menu_keyboard())
+                route_data = result.get("route_data", {})
+                formatted_stats = format_route_summary(route_data)
+                await safe_edit_message(f"📊 *Статистика вашего маршрута:*\n\n{formatted_stats}", 
+                                      reply_markup=get_route_menu_keyboard(), parse_mode='Markdown')
         
         elif action == "route_day":
             # Показываем выбор дня
@@ -376,14 +385,16 @@ async def process_callback(callback_query: types.CallbackQuery):
             )
         
         elif action.startswith("day_"):
-            # Отправляем маршрут на конкретный день по шаблону
+            # Получаем и отображаем маршрут на конкретный день
             day_number = action.split("_")[1]
-            await safe_edit_message(f"🔄 Отправляю маршрут на день {day_number}...")
-            result = await send_template_message_async(4, callback_query.from_user.id)  # ID шаблона для маршрута на день
+            await safe_edit_message(f"🔄 Загружаю маршрут на день {day_number}...")
+            result = await api_client.get_route_day(callback_query.from_user.id, int(day_number))
             if "error" in result:
                 await safe_edit_message(f"❌ Ошибка: {result['error']}", reply_markup=get_day_selection_keyboard())
             else:
-                await safe_edit_message(f"✅ Маршрут на день {day_number} отправлен в личные сообщения!", reply_markup=get_day_selection_keyboard())
+                formatted_route = result.get("formatted_route", "Маршрут не найден")
+                await safe_edit_message(f"📅 *Маршрут на день {day_number}:*\n\n{formatted_route}", 
+                                      reply_markup=get_day_selection_keyboard(), parse_mode='Markdown')
         
         elif action == "statistics":
             # Отправляем общую статистику по шаблону

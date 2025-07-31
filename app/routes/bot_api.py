@@ -32,4 +32,44 @@ async def send_template_message(request: dict, session: Session = Depends(get_se
         raise
     except Exception as e:
         logger.error(f"Unexpected error in bot API: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Внутренняя ошибка сервера: {str(e)}")
+
+@bot_api_router.get("/route-data/{telegram_id}")
+async def get_route_data(telegram_id: int, session: Session = Depends(get_session)):
+    """API endpoint для бота - получение данных маршрута пользователя"""
+    try:
+        logger.info(f"Bot API route request: telegram_id={telegram_id}")
+        
+        # Используем сервис для обработки
+        result = BotApiService.get_route_data(telegram_id, session)
+        
+        if result.get("error"):
+            raise HTTPException(status_code=result.get("code", 500), detail=result["error"])
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error in bot route API: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Внутренняя ошибка сервера: {str(e)}")
+
+@bot_api_router.get("/route-day/{telegram_id}/{day_number}")
+async def get_route_day(telegram_id: int, day_number: int, session: Session = Depends(get_session)):
+    """API endpoint для бота - получение маршрута на конкретный день"""
+    try:
+        logger.info(f"Bot API route day request: telegram_id={telegram_id}, day={day_number}")
+        
+        # Используем сервис для обработки
+        result = BotApiService.get_route_day(telegram_id, day_number, session)
+        
+        if result.get("error"):
+            raise HTTPException(status_code=result.get("code", 500), detail=result["error"])
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error in bot route day API: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Внутренняя ошибка сервера: {str(e)}") 
