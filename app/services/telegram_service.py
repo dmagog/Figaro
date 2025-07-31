@@ -49,6 +49,11 @@ class TelegramService:
             "name": "Маршрут на день",
             "content": "*Привет, {name}!*\n\nЗавтра первый день фестиваля, и вот какие концерты будут на твоём пути:\n\n\n{route_concerts_list:day=1}\n\n\n*P.S. В личном кабинете ты можешь посмотреть на развернутый маршрутный лист, где я уже отметил, что из офф-программы фестиваля ты успеешь посетить и как ещё можно скоротать время между концертами*",
             "variables": '{"name": "Имя пользователя", "route_concerts_list:day=N": "Список концертов для конкретного дня (например: {route_concerts_list:day=1} для первого дня)"}'
+        },
+        {
+            "name": "Развернутый маршрут",
+            "content": "*Привет, {name}!*\n\nВот твой подробный маршрут фестиваля:\n\n\n{route_concerts_list:detailed}\n\n\n*P.S. В личном кабинете ты можешь посмотреть на развернутый маршрутный лист, где я уже отметил, что из офф-программы фестиваля ты успеешь посетить и как ещё можно скоротать время между концертами*",
+            "variables": '{"name": "Имя пользователя", "route_concerts_list:detailed": "Развернутый список концертов с информацией о залах, длительности и переходах"}'
         }
     ]
     
@@ -350,6 +355,9 @@ class TelegramService:
             # Специальная обработка для route_concerts_list с указанием дня
             route_concerts_day_pattern = r'\{route_concerts_list:day=(\d+)\}'
             
+            # Специальная обработка для развернутого списка концертов
+            route_concerts_detailed_pattern = r'\{route_concerts_list:detailed\}'
+            
             for match in re.finditer(route_concerts_day_pattern, personalized):
                 day_number = int(match.group(1))
                 
@@ -402,6 +410,68 @@ class TelegramService:
                 else:
                     # Если день не найден
                     personalized = personalized.replace(match.group(0), f"День {day_number} не найден в маршруте")
+            
+            # Обработка развернутого списка концертов
+            for match in re.finditer(route_concerts_detailed_pattern, personalized):
+                sorted_concerts = user_data.get("sorted_concerts", [])
+                if sorted_concerts:
+                    # Группируем концерты по дням
+                    concerts_by_day = {}
+                    for i, concert_data in enumerate(sorted_concerts):
+                        concert = concert_data['concert']
+                        if concert.get('datetime'):
+                            day = concert['datetime'].date()
+                            if day not in concerts_by_day:
+                                concerts_by_day[day] = []
+                            concerts_by_day[day].append({
+                                'index': i + 1,
+                                'time': concert['datetime'].strftime("%H:%M"),
+                                'name': concert.get('name', 'Название не указано'),
+                                'hall': concert.get('hall', {}).get('name', 'Зал не указан'),
+                                'duration': str(concert.get('duration', 'Длительность не указана')),
+                                'genre': concert.get('genre', 'Жанр не указан'),
+                                'concert_data': concert_data
+                            })
+                    
+                    # Сортируем дни
+                    sorted_days = sorted(concerts_by_day.keys())
+                    
+                    concerts_text = ""
+                    
+                    for day_index, target_day in enumerate(sorted_days, 1):
+                        day_concerts = concerts_by_day[target_day]
+                        
+                        # Форматируем дату
+                        day_str = str(target_day.day)
+                        month_names = {
+                            1: "января", 2: "февраля", 3: "марта", 4: "апреля",
+                            5: "мая", 6: "июня", 7: "июля", 8: "августа",
+                            9: "сентября", 10: "октября", 11: "ноября", 12: "декабря"
+                        }
+                        month_str = month_names.get(target_day.month, "месяца")
+                        
+                        concerts_text += f"🎈 *День {day_index}* ({day_str} {month_str})\n"
+                        
+                        for concert in day_concerts:
+                            # Развернутая информация о концерте
+                            concerts_text += f"*{concert['time']}* • {concert['index']}. {concert['name']}\n"
+                            concerts_text += f"   🏛️ {concert['hall']} • ⏱️ {concert['duration']} • 🎭 {concert['genre']}\n"
+                            
+                            # Добавляем информацию о переходе если есть
+                            if concert['concert_data'].get('transition_info'):
+                                transition = concert['concert_data']['transition_info']
+                                if transition.get('status') == 'success':
+                                    concerts_text += f"   🚶🏼‍➡️ Переход в другой зал: ~{transition.get('walk_time', 0)} мин • {transition.get('time_between', 0)} мин до следующего\n"
+                                elif transition.get('status') == 'same_hall':
+                                    concerts_text += f"   📍 Остаёмся в том же зале • {transition.get('time_between', 0)} мин до следующего\n"
+                            
+                            concerts_text += "\n"
+                        
+                        concerts_text += "\n"
+                    
+                    personalized = personalized.replace(match.group(0), concerts_text.strip())
+                else:
+                    personalized = personalized.replace(match.group(0), "Маршрут не найден или пуст")
             
             # Форматируем даты
             if user_data.get("last_purchase"):
