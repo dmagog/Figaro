@@ -54,6 +54,11 @@ class TelegramService:
             "name": "Развернутый маршрут",
             "content": "*Привет, {name}!*\n\nВот твой подробный маршрут фестиваля:\n\n\n{route_concerts_list:detailed}\n\n\n*P.S. В личном кабинете ты можешь посмотреть на развернутый маршрутный лист, где я уже отметил, что из офф-программы фестиваля ты успеешь посетить и как ещё можно скоротать время между концертами*",
             "variables": '{"name": "Имя пользователя", "route_concerts_list:detailed": "Развернутый список концертов с информацией о залах, длительности и переходах"}'
+        },
+        {
+            "name": "Итоговая статистика маршрута",
+            "content": "*Привет, {name}!*\n\nВот итоговая статистика твоего маршрута фестиваля:\n\n\n{route_summary}\n\n\n*P.S. В личном кабинете ты можешь посмотреть на развернутый маршрутный лист, где я уже отметил, что из офф-программы фестиваля ты успеешь посетить и как ещё можно скоротать время между концертами*",
+            "variables": '{"name": "Имя пользователя", "route_summary": "Итоговая статистика маршрута с количеством концертов, дней, залов, жанров, временем и расстоянием"}'
         }
     ]
     
@@ -148,6 +153,50 @@ class TelegramService:
                         "comfort_score": 0,
                         "intellect_score": 0
                     }
+                    
+                    # Получаем полную статистику маршрута
+                    try:
+                        from routes.user.temp_routes import calculate_route_statistics
+                        
+                        # Создаем структуру concerts_by_day_with_transitions для calculate_route_statistics
+                        concerts_by_day_with_transitions = {}
+                        current_day = None
+                        day_concerts = []
+                        
+                        for i, concert_data in enumerate(sorted_concerts):
+                            concert = concert_data['concert']
+                            if concert.get('datetime'):
+                                day = concert['datetime'].date()
+                                if current_day != day:
+                                    if current_day and day_concerts:
+                                        concerts_by_day_with_transitions[current_day] = day_concerts
+                                    current_day = day
+                                    day_concerts = []
+                                
+                                # Добавляем информацию о переходе
+                                concert_with_transition = concert_data.copy()
+                                if i < len(sorted_concerts) - 1:
+                                    next_concert_data = sorted_concerts[i + 1]
+                                    transition_info = calculate_transition_time(session, concert_data, next_concert_data)
+                                    concert_with_transition['transition_info'] = transition_info
+                                else:
+                                    concert_with_transition['transition_info'] = None
+                                
+                                day_concerts.append(concert_with_transition)
+                        
+                        # Добавляем последний день
+                        if current_day and day_concerts:
+                            concerts_by_day_with_transitions[current_day] = day_concerts
+                        
+                        # Получаем полную статистику
+                        route_stats = calculate_route_statistics(session, sorted_concerts, concerts_by_day_with_transitions)
+                        
+                        # Обновляем route_summary с полными данными
+                        route_summary.update(route_stats)
+                        
+                    except Exception as e:
+                        print(f"Ошибка при получении полной статистики маршрута: {e}")
+                        # Оставляем базовую статистику
                     
                     # Добавляем информацию о переходах для каждого концерта
                     for i, concert_data in enumerate(sorted_concerts):
@@ -358,6 +407,9 @@ class TelegramService:
             # Специальная обработка для развернутого списка концертов
             route_concerts_detailed_pattern = r'\{route_concerts_list:detailed\}'
             
+            # Специальная обработка для итоговой статистики маршрута
+            route_summary_pattern = r'\{route_summary\}'
+            
             for match in re.finditer(route_concerts_day_pattern, personalized):
                 day_number = int(match.group(1))
                 
@@ -472,6 +524,52 @@ class TelegramService:
                     personalized = personalized.replace(match.group(0), concerts_text.strip())
                 else:
                     personalized = personalized.replace(match.group(0), "Маршрут не найден или пуст")
+            
+            # Обработка итоговой статистики маршрута
+            route_summary_pattern = r'\{route_summary\}'
+            for match in re.finditer(route_summary_pattern, personalized):
+                route_summary = user_data.get("route_summary", {})
+                if route_summary:
+                    summary_text = "📊 *Итоговая статистика маршрута:*\n\n"
+                    
+                    # Основные показатели
+                    summary_text += f"🎵 *Концертов:* {route_summary.get('total_concerts', 0)}\n"
+                    summary_text += f"📅 *Дней:* {route_summary.get('total_days', 0)}\n"
+                    summary_text += f"🏛️ *Залов:* {route_summary.get('total_halls', 0)}\n"
+                    summary_text += f"🎨 *Жанров:* {route_summary.get('total_genres', 0)}\n"
+                    
+                    # Время
+                    concert_time = route_summary.get('total_concert_time_minutes', 0)
+                    if concert_time:
+                        summary_text += f"⏱️ *Время концертов:* {concert_time} мин\n"
+                    
+                    trans_time = route_summary.get('total_walk_time_minutes', 0)
+                    if trans_time:
+                        summary_text += f"🚶 *Время переходов:* {trans_time} мин\n"
+                    
+                    # Расстояние
+                    distance = route_summary.get('total_distance_km', 0)
+                    if distance:
+                        summary_text += f"📍 *Пройдено:* {distance} км\n"
+                    
+                    # Контент
+                    compositions = route_summary.get('unique_compositions', 0)
+                    if compositions:
+                        summary_text += f"🎼 *Произведений:* {compositions}\n"
+                    
+                    authors = route_summary.get('unique_authors', 0)
+                    if authors:
+                        summary_text += f"✍️ *Авторов:* {authors}\n"
+                    
+                    artists = route_summary.get('unique_artists', 0)
+                    if artists:
+                        summary_text += f"🎭 *Артистов:* {artists}\n"
+                    
+                    summary_text += "\n🎉 *Спасибо, что выбрали наш фестиваль! До встречи на концертах!*"
+                    
+                    personalized = personalized.replace(match.group(0), summary_text)
+                else:
+                    personalized = personalized.replace(match.group(0), "Статистика маршрута недоступна")
             
             # Форматируем даты
             if user_data.get("last_purchase"):
