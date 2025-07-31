@@ -54,32 +54,14 @@ def get_day_selection_keyboard():
     keyboard.add(InlineKeyboardButton("🔙 Назад", callback_data="route_menu"))
     return keyboard
 
+from services.api_client import ApiClient
+
+# Создаем экземпляр API клиента
+api_client = ApiClient()
+
 async def send_template_message_async(template_id: int, telegram_id: int):
-    """Отправляет сообщение пользователю по шаблону"""
-    try:
-        with Session(simple_engine) as session:
-            # Получаем пользователя по telegram_id
-            user = session.exec(select(User).where(User.telegram_id == telegram_id)).first()
-            if not user:
-                return {"error": "Пользователь не найден"}
-            
-            # Получаем шаблон
-            from models import MessageTemplate
-            template = session.get(MessageTemplate, template_id)
-            if not template:
-                return {"error": "Шаблон не найден"}
-            
-            # Простая персонализация сообщения
-            personalized_message = template.content.replace("{name}", user.name or user.email.split('@')[0] if user.email else "Пользователь")
-            
-            # Отправляем напрямую через бота
-            await bot.send_message(telegram_id, personalized_message, parse_mode='Markdown')
-            
-            return {"success": True, "message": "Сообщение отправлено"}
-            
-    except Exception as e:
-        print(f"Ошибка при отправке сообщения: {e}")
-        return {"error": f"Ошибка при отправке: {str(e)}"}
+    """Отправляет сообщение пользователю по шаблону через HTTP API и Celery"""
+    return await api_client.send_template_message(telegram_id, template_id)
 
 def format_route_concerts_list(concerts_data, detailed=False, day_number=None):
     """Форматирует список концертов для отображения"""

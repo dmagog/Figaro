@@ -45,6 +45,9 @@ async def send_test_telegram_message(request: Request, session=Depends(get_sessi
     send_telegram_message.delay(user.telegram_id, "Тестовое сообщение из FastAPI через Celery!", None, None, "Markdown")
     return {"success": True, "message": "Задача на отправку сообщения поставлена в очередь."}
 
+# Импортируем роутер для бота API
+from app.routes.bot_api import bot_api_router
+
 @api_router.post("/admin/telegram/broadcast")
 async def broadcast_telegram_message(
     request: Request,
@@ -123,6 +126,7 @@ def create_application() -> FastAPI:
     app.include_router(purchase_route, tags=['Purchase'])
     app.include_router(tickets_route, tags=['Tickets'])
     app.include_router(api_router, tags=['API'])
+    app.include_router(bot_api_router, tags=['Bot API'])
     
 
 
