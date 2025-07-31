@@ -42,8 +42,13 @@ class TelegramService:
         },
         {
             "name": "Напоминание о концерте по позиции",
-            "content": "🎵 Напоминание о концерте №{concert_position:1}, {name}!\n\n🎼 {next_concert_name}\n📅 Дата: {next_concert_date}\n🕐 Время: {next_concert_time}\n🏛️ Зал: {next_concert_hall}\n⏱️ Длительность: {next_concert_duration}\n\n🎭 Артисты:\n{next_concert_artists}\n\n🎼 Произведения:\n{next_concert_compositions}\n\nУдачного концерта! 🎉",
+            "content": "🎵 Напоминание о концерте №{concert_position:1}, {name}!\n\n🎼 {next_concert_name}\n📅 Дата: {next_concert_date}\n🕐 Время: {next_concert_time}\n🏛️ Зал: {next_concert_hall}\n⏱️ Длительность: {next_concert_duration}\n\n🎭 Артисты:\n{next_concert_artists}\n\n🎼 Произведения:\n{next_concert_compositions}\n\n{transition_info}\n\nУдачного концерта! 🎉",
             "variables": '{"name": "Имя пользователя", "concert_position:N": "Номер концерта в маршруте (например: {concert_position:1} для первого концерта)", "next_concert_name": "Название концерта", "next_concert_date": "Дата концерта", "next_concert_time": "Время концерта", "next_concert_hall": "Название зала", "next_concert_duration": "Длительность концерта", "next_concert_artists": "Список артистов", "next_concert_compositions": "Список произведений с авторами"}'
+        },
+        {
+            "name": "Маршрут на день",
+            "content": "*Привет, {name}!*\n\nЗавтра первый день фестиваля, и вот какие концерты будут на твоём пути:\n\n\n{route_concerts_list:day=1}\n\n\n*P.S. В личном кабинете ты можешь посмотреть на развернутый маршрутный лист, где я уже отметил, что из офф-программы фестиваля ты успеешь посетить и как ещё можно скоротать время между концертами*",
+            "variables": '{"name": "Имя пользователя", "route_concerts_list:day=N": "Список концертов для конкретного дня (например: {route_concerts_list:day=1} для первого дня)"}'
         }
     ]
     
@@ -229,7 +234,7 @@ class TelegramService:
                         for i, concert in enumerate(day_concerts, 1):
                             concerts_text += f"*{concert['time']}* • {concert['id']}. {concert['name']}\n"
                         
-                        concerts_text += "\n\n"
+                        # concerts_text += "\n"
                     
                     personalized = personalized.replace("{route_concerts_list}", concerts_text.strip())
                 else:
@@ -331,6 +336,62 @@ class TelegramService:
             # Применяем все замены за один раз
             for placeholder, value in concert_replacements_to_apply.items():
                 personalized = personalized.replace(placeholder, value)
+            
+            # Специальная обработка для route_concerts_list с указанием дня
+            route_concerts_day_pattern = r'\{route_concerts_list:day=(\d+)\}'
+            
+            for match in re.finditer(route_concerts_day_pattern, personalized):
+                day_number = int(match.group(1))
+                
+                # Получаем концерты для указанного дня
+                sorted_concerts = user_data.get("sorted_concerts", [])
+                day_concerts = []
+                
+                # Группируем концерты по дням
+                concerts_by_day = {}
+                for i, concert_data in enumerate(sorted_concerts):
+                    concert = concert_data['concert']
+                    if concert.get('datetime'):
+                        day = concert['datetime'].date()
+                        if day not in concerts_by_day:
+                            concerts_by_day[day] = []
+                        concerts_by_day[day].append({
+                            'index': i + 1,
+                            'time': concert['datetime'].strftime("%H:%M"),
+                            'name': concert.get('name', 'Название не указано'),
+                            'concert_data': concert_data
+                        })
+                
+                # Сортируем дни
+                sorted_days = sorted(concerts_by_day.keys())
+                
+                if day_number <= len(sorted_days):
+                    target_day = sorted_days[day_number - 1]
+                    day_concerts = concerts_by_day[target_day]
+                    
+                    # Форматируем список концертов для дня
+                    # Получаем день без ведущего нуля и месяц на русском
+                    day_str = str(target_day.day)  # Убираем ведущий ноль
+                    month_names = {
+                        1: "января", 2: "февраля", 3: "марта", 4: "апреля",
+                        5: "мая", 6: "июня", 7: "июля", 8: "августа",
+                        9: "сентября", 10: "октября", 11: "ноября", 12: "декабря"
+                    }
+                    month_str = month_names.get(target_day.month, "месяца")
+                    
+                    # Используем реальный номер фестивального дня (позиция в отсортированном списке)
+                    festival_day_number = sorted_days.index(target_day) + 1
+                    day_name = f"*День {festival_day_number}* ({day_str} {month_str})"
+                    concerts_text = f"🎈 {day_name}\n"
+                    
+                    for concert in day_concerts:
+                        concerts_text += f"{concert['time']} • {concert['index']}. {concert['name']}\n"
+                    
+                    # Заменяем placeholder
+                    personalized = personalized.replace(match.group(0), concerts_text)
+                else:
+                    # Если день не найден
+                    personalized = personalized.replace(match.group(0), f"День {day_number} не найден в маршруте")
             
             # Форматируем даты
             if user_data.get("last_purchase"):
