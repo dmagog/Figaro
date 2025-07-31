@@ -75,12 +75,23 @@ def format_route_concerts_list(concerts_data, detailed=False, day_number=None):
         for i, concert_data in enumerate(sorted_concerts):
             concert = concert_data['concert']
             if concert.get('datetime'):
-                day = concert['datetime'].date()
+                # Проверяем, является ли datetime строкой или объектом
+                if isinstance(concert['datetime'], str):
+                    from datetime import datetime
+                    try:
+                        dt = datetime.fromisoformat(concert['datetime'].replace('Z', '+00:00'))
+                    except:
+                        # Если не удается распарсить, пропускаем концерт
+                        continue
+                else:
+                    dt = concert['datetime']
+                
+                day = dt.date()
                 if day not in concerts_by_day:
                     concerts_by_day[day] = []
                 concerts_by_day[day].append({
                     'index': i + 1,
-                    'time': concert['datetime'].strftime("%H:%M"),
+                    'time': dt.strftime("%H:%M"),
                     'name': concert.get('name', 'Название не указано'),
                     'hall': concert.get('hall', {}).get('name', 'Зал не указан'),
                     'duration': str(concert.get('duration', 'Длительность не указана')),
@@ -294,14 +305,15 @@ async def testmsg(message: types.Message):
 async def process_callback(callback_query: types.CallbackQuery):
     await bot.answer_callback_query(callback_query.id)
     
-    async def safe_edit_message(text, reply_markup=None):
+    async def safe_edit_message(text, reply_markup=None, parse_mode=None):
         """Безопасное редактирование сообщения с обработкой ошибок"""
         try:
             await bot.edit_message_text(
                 text,
                 callback_query.from_user.id,
                 callback_query.message.message_id,
-                reply_markup=reply_markup
+                reply_markup=reply_markup,
+                parse_mode=parse_mode
             )
         except Exception as e:
             if "Message is not modified" in str(e):
@@ -312,7 +324,8 @@ async def process_callback(callback_query: types.CallbackQuery):
                 await bot.send_message(
                     callback_query.from_user.id,
                     text,
-                    reply_markup=reply_markup
+                    reply_markup=reply_markup,
+                    parse_mode=parse_mode
                 )
     
     with Session(simple_engine) as session:

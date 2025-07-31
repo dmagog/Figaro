@@ -62,7 +62,11 @@ class BotApiService:
             
             return {
                 "success": True,
-                "route_data": user_data.get("route_data", {}),
+                "route_data": {
+                    "sorted_concerts": user_data.get("sorted_concerts", []),
+                    "route_summary": user_data.get("route_summary", {}),
+                    "route_concerts": user_data.get("route_concerts", [])
+                },
                 "user_name": user.name or user.email.split('@')[0] if user.email else "Пользователь"
             }
             
@@ -111,12 +115,23 @@ class BotApiService:
             for i, concert_data in enumerate(sorted_concerts):
                 concert = concert_data['concert']
                 if concert.get('datetime'):
-                    day = concert['datetime'].date()
+                    # Проверяем, является ли datetime строкой или объектом
+                    if isinstance(concert['datetime'], str):
+                        from datetime import datetime
+                        try:
+                            dt = datetime.fromisoformat(concert['datetime'].replace('Z', '+00:00'))
+                        except:
+                            # Если не удается распарсить, пропускаем концерт
+                            continue
+                    else:
+                        dt = concert['datetime']
+                    
+                    day = dt.date()
                     if day not in concerts_by_day:
                         concerts_by_day[day] = []
                     concerts_by_day[day].append({
                         'index': i + 1,
-                        'time': concert['datetime'].strftime("%H:%M"),
+                        'time': dt.strftime("%H:%M"),
                         'name': concert.get('name', 'Название не указано'),
                         'hall': concert.get('hall', {}).get('name', 'Зал не указан'),
                         'duration': str(concert.get('duration', 'Длительность не указана')),
