@@ -81,6 +81,7 @@ class TelegramService:
             # Получаем маршрут пользователя используя простую логику сортировки
             try:
                 from app.services.crud.purchase import get_user_unique_concerts_with_details
+                from app.routes.user.temp_routes import calculate_transition_time
                 
                 # Получаем уникальные концерты пользователя
                 concerts_data = get_user_unique_concerts_with_details(session, str(user.external_id))
@@ -137,6 +138,16 @@ class TelegramService:
                         "comfort_score": 0,
                         "intellect_score": 0
                     }
+                    
+                    # Добавляем информацию о переходах для каждого концерта
+                    for i, concert_data in enumerate(sorted_concerts):
+                        if i < len(sorted_concerts) - 1:  # Если есть следующий концерт
+                            next_concert_data = sorted_concerts[i + 1]
+                            transition_info = calculate_transition_time(session, concert_data, next_concert_data)
+                            flat_concerts_for_template[i]['transition_info'] = transition_info
+                        else:
+                            # Для последнего концерта нет перехода
+                            flat_concerts_for_template[i]['transition_info'] = None
                     
                     data["route_concerts"] = flat_concerts
                     data["concerts_for_template"] = flat_concerts_for_template
@@ -258,6 +269,33 @@ class TelegramService:
                             compositions.append(f"• {comp_name} ({author_name})")
                     compositions_text = "\n".join(compositions) if compositions else "Произведения не указаны"
                     
+                    # Формируем информацию о переходе
+                    transition_info_text = ""
+                    if concert_data and 'transition_info' in concert_data and concert_data['transition_info']:
+                        transition = concert_data['transition_info']
+                        time_between = transition.get('time_between', 0)
+                        walk_time = transition.get('walk_time', 0)
+                        status = transition.get('status', '')
+                        
+                        if status == 'same_hall':
+                            transition_info_text = f"⏱️ {time_between} мин между концертами • Остаемся в том же зале"
+                        elif status == 'same_building':
+                            transition_info_text = f"⏱️ {time_between} мин между концертами • Переход в том же здании"
+                        elif status == 'hurry':
+                            transition_info_text = f"⏱️ {time_between} мин между концертами • Переход в другой зал: ~{walk_time} мин (нужно поторопиться!)"
+                        elif status == 'tight':
+                            transition_info_text = f"⏱️ {time_between} мин между концертами • Переход в другой зал: ~{walk_time} мин (впритык)"
+                        elif status == 'success':
+                            transition_info_text = f"⏱️ {time_between} мин между концертами • Переход в другой зал: ~{walk_time} мин (достаточно времени)"
+                        elif status == 'overlap':
+                            transition_info_text = f"⚠️ Наложение концертов! Текущий концерт заканчивается в {transition.get('current_end', '?')}, следующий начинается в {transition.get('next_start', '?')}"
+                        elif status == 'no_transition_data':
+                            transition_info_text = f"⏱️ {time_between} мин между концертами • Время перехода неизвестно"
+                        else:
+                            transition_info_text = f"⏱️ {time_between} мин между концертами • Переход в другой зал: ~{walk_time} мин"
+                    else:
+                        transition_info_text = "⏱️ Информация о переходе недоступна"
+                    
                     # Собираем замены для этого концерта
                     concert_replacements = {
                         "{next_concert_name}": concert.get('name', 'Концерт не найден'),
@@ -267,6 +305,7 @@ class TelegramService:
                         "{next_concert_duration}": concert.get('duration', 'Длительность не указана'),
                         "{next_concert_artists}": artists_text,
                         "{next_concert_compositions}": compositions_text,
+                        "{transition_info}": transition_info_text,
                     }
                     
                     # Добавляем в общий словарь замен
