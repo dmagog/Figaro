@@ -72,4 +72,24 @@ async def get_route_day(telegram_id: int, day_number: int, session: Session = De
         raise
     except Exception as e:
         logger.error(f"Unexpected error in bot route day API: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Внутренняя ошибка сервера: {str(e)}")
+
+@bot_api_router.get("/route-days/{telegram_id}")
+async def get_route_days(telegram_id: int, session: Session = Depends(get_session)):
+    """API endpoint для бота - получение списка доступных дней"""
+    try:
+        logger.info(f"Bot API route days request: telegram_id={telegram_id}")
+        
+        # Используем сервис для обработки
+        result = BotApiService.get_route_days(telegram_id, session)
+        
+        if result.get("error"):
+            raise HTTPException(status_code=result.get("code", 500), detail=result["error"])
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error in bot route days API: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Внутренняя ошибка сервера: {str(e)}") 

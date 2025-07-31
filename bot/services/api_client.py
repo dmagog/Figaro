@@ -75,4 +75,25 @@ class ApiClient:
                         
         except Exception as e:
             logger.error(f"Route day API client error: {e}", exc_info=True)
-            return {"error": f"Ошибка при получении маршрута на день: {str(e)}"} 
+            return {"error": f"Ошибка при получении маршрута на день: {str(e)}"}
+    
+    async def get_route_days(self, telegram_id: int):
+        """Получает список доступных дней в маршруте"""
+        try:
+            url = f"{self.base_url}/bot/route-days/{telegram_id}"
+            logger.info(f"Getting route days from {url}")
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    if response.status == 200:
+                        result = await response.json()
+                        logger.info(f"Route days response: {result}")
+                        return result
+                    else:
+                        error_text = await response.text()
+                        logger.error(f"Route days API error {response.status}: {error_text}")
+                        return {"error": f"HTTP {response.status}: {error_text}"}
+                        
+        except Exception as e:
+            logger.error(f"Route days API client error: {e}", exc_info=True)
+            return {"error": f"Ошибка при получении дней маршрута: {str(e)}"} 

@@ -45,14 +45,42 @@ def get_route_menu_keyboard():
     )
     return keyboard
 
-def get_day_selection_keyboard():
-    """Создает клавиатуру для выбора дня"""
-    keyboard = InlineKeyboardMarkup(row_width=3)
-    # Добавим кнопки для дней 1-5 (можно расширить)
-    for day in range(1, 6):
-        keyboard.add(InlineKeyboardButton(f"День {day}", callback_data=f"day_{day}"))
-    keyboard.add(InlineKeyboardButton("🔙 Назад", callback_data="route_menu"))
-    return keyboard
+async def get_day_selection_keyboard(telegram_id: int):
+    """Создает клавиатуру для выбора дня на основе реальных данных маршрута"""
+    try:
+        # Получаем список доступных дней
+        result = await api_client.get_route_days(telegram_id)
+        if "error" in result:
+            # Если ошибка, возвращаем пустую клавиатуру с кнопкой назад
+            keyboard = InlineKeyboardMarkup(row_width=1)
+            keyboard.add(InlineKeyboardButton("🔙 Назад", callback_data="route_menu"))
+            return keyboard
+        
+        days = result.get("days", [])
+        if not days:
+            # Если нет дней, показываем сообщение
+            keyboard = InlineKeyboardMarkup(row_width=1)
+            keyboard.add(InlineKeyboardButton("🔙 Назад", callback_data="route_menu"))
+            return keyboard
+        
+        # Создаем клавиатуру с реальными днями
+        keyboard = InlineKeyboardMarkup(row_width=2)
+        for day_info in days:
+            day_number = day_info["day_number"]
+            formatted_date = day_info["formatted_date"]
+            concerts_count = day_info["concerts_count"]
+            button_text = f"День {day_number} ({formatted_date}) - {concerts_count} конц."
+            keyboard.add(InlineKeyboardButton(button_text, callback_data=f"day_{day_number}"))
+        
+        keyboard.add(InlineKeyboardButton("🔙 Назад", callback_data="route_menu"))
+        return keyboard
+        
+    except Exception as e:
+        print(f"Ошибка при создании клавиатуры дней: {e}")
+        # Возвращаем простую клавиатуру с кнопкой назад
+        keyboard = InlineKeyboardMarkup(row_width=1)
+        keyboard.add(InlineKeyboardButton("🔙 Назад", callback_data="route_menu"))
+        return keyboard
 
 from services.api_client import ApiClient
 
@@ -392,9 +420,11 @@ async def process_callback(callback_query: types.CallbackQuery):
         
         elif action == "route_day":
             # Показываем выбор дня
+            await safe_edit_message("📅 Загружаю доступные дни...")
+            keyboard = await get_day_selection_keyboard(callback_query.from_user.id)
             await safe_edit_message(
                 "📅 Выберите день фестиваля:",
-                reply_markup=get_day_selection_keyboard()
+                reply_markup=keyboard
             )
         
         elif action.startswith("day_"):
@@ -403,11 +433,13 @@ async def process_callback(callback_query: types.CallbackQuery):
             await safe_edit_message(f"🔄 Загружаю маршрут на день {day_number}...")
             result = await api_client.get_route_day(callback_query.from_user.id, int(day_number))
             if "error" in result:
-                await safe_edit_message(f"❌ Ошибка: {result['error']}", reply_markup=get_day_selection_keyboard())
+                keyboard = await get_day_selection_keyboard(callback_query.from_user.id)
+                await safe_edit_message(f"❌ Ошибка: {result['error']}", reply_markup=keyboard)
             else:
                 formatted_route = result.get("formatted_route", "Маршрут не найден")
+                keyboard = await get_day_selection_keyboard(callback_query.from_user.id)
                 await safe_edit_message(f"📅 *Маршрут на день {day_number}:*\n\n{formatted_route}", 
-                                      reply_markup=get_day_selection_keyboard(), parse_mode='Markdown')
+                                      reply_markup=keyboard, parse_mode='Markdown')
         
         elif action == "statistics":
             # Отправляем общую статистику по шаблону

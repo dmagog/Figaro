@@ -109,6 +109,78 @@ class BotApiService:
             return {"error": f"Ошибка при получении маршрута на день: {str(e)}", "code": 500}
     
     @staticmethod
+    def get_route_days(telegram_id: int, session: Session):
+        """Получает список доступных дней в маршруте"""
+        try:
+            # Получаем пользователя
+            user = session.exec(select(User).where(User.telegram_id == telegram_id)).first()
+            if not user:
+                return {"error": "Пользователь не найден", "code": 404}
+            
+            # Получаем данные маршрута
+            user_data = TelegramService.get_user_data(user, session)
+            sorted_concerts = user_data.get("sorted_concerts", [])
+            
+            if not sorted_concerts:
+                return {
+                    "success": True,
+                    "days": [],
+                    "user_name": user.name or user.email.split('@')[0] if user.email else "Пользователь"
+                }
+            
+            # Группируем концерты по дням
+            concerts_by_day = {}
+            for concert_data in sorted_concerts:
+                concert = concert_data['concert']
+                if concert.get('datetime'):
+                    # Проверяем, является ли datetime строкой или объектом
+                    if isinstance(concert['datetime'], str):
+                        from datetime import datetime
+                        try:
+                            dt = datetime.fromisoformat(concert['datetime'].replace('Z', '+00:00'))
+                        except Exception as e:
+                            logger.warning(f"Failed to parse datetime '{concert['datetime']}': {e}")
+                            continue
+                    else:
+                        dt = concert['datetime']
+                    
+                    day = dt.date()
+                    if day not in concerts_by_day:
+                        concerts_by_day[day] = []
+                    concerts_by_day[day].append(concert_data)
+            
+            # Сортируем дни и создаем список
+            sorted_days = sorted(concerts_by_day.keys())
+            days_list = []
+            
+            for i, day in enumerate(sorted_days, 1):
+                # Форматируем дату
+                day_str = str(day.day)
+                month_names = {
+                    1: "января", 2: "февраля", 3: "марта", 4: "апреля",
+                    5: "мая", 6: "июня", 7: "июля", 8: "августа",
+                    9: "сентября", 10: "октября", 11: "ноября", 12: "декабря"
+                }
+                month_str = month_names.get(day.month, "месяца")
+                
+                days_list.append({
+                    "day_number": i,
+                    "date": day,
+                    "formatted_date": f"{day_str} {month_str}",
+                    "concerts_count": len(concerts_by_day[day])
+                })
+            
+            return {
+                "success": True,
+                "days": days_list,
+                "user_name": user.name or user.email.split('@')[0] if user.email else "Пользователь"
+            }
+            
+        except Exception as e:
+            logger.error(f"Bot API Route Days Error: {e}", exc_info=True)
+            return {"error": f"Ошибка при получении дней маршрута: {str(e)}", "code": 500}
+    
+    @staticmethod
     def _format_route_concerts_list(concerts_data, detailed=False, day_number=None):
         """Форматирует список концертов для отображения"""
         try:
