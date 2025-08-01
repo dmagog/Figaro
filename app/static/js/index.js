@@ -726,6 +726,7 @@ function showRecommendationsLoading() {
 function renderRecommendations(recommendations) {
     console.log('renderRecommendations получил:', recommendations);
     console.log('Тип recommendations:', typeof recommendations);
+    console.log('Создаем навигатор...');
     
     if (!recommendations) {
         const block = document.getElementById('recommendations-block');
@@ -749,14 +750,26 @@ function renderRecommendations(recommendations) {
     
     const block = document.createElement('div');
     block.className = 'recommendations-block';
+    
+    // Создаем навигатор
+    console.log('Вызываем createRecommendationsNavigator...');
+    const navigator = createRecommendationsNavigator(recommendations);
+    console.log('Навигатор создан:', navigator);
+    
     block.innerHTML = `
         <h2>🎯 Персональные рекомендации</h2>
-        ${renderGroup('Топ по вашему профилю', recommendations.top_weighted, 'weighted')}
-        ${renderGroup('🧠 Интеллектуальные маршруты', recommendations.top_intellect, 'intellect')}
-        ${renderGroup('🛋️ Комфортные маршруты', recommendations.top_comfort, 'comfort')}
-        ${renderGroup('⚖️ Сбалансированные маршруты', recommendations.top_balanced, 'balanced')}
+        ${navigator}
+        <div class="recommendations-content">
+            ${renderGroup('Топ по вашему профилю', recommendations.top_weighted, 'weighted')}
+            ${renderGroup('🧠 Интеллектуальные маршруты', recommendations.top_intellect, 'intellect')}
+            ${renderGroup('🛋️ Комфортные маршруты', recommendations.top_comfort, 'comfort')}
+            ${renderGroup('⚖️ Сбалансированные маршруты', recommendations.top_balanced, 'balanced')}
+        </div>
     `;
     document.getElementById('recommendations-block').appendChild(block);
+    
+    // Добавляем обработчики для навигатора
+    setupNavigatorHandlers();
 }
 
 // --- Поясняющие тексты для блоков рекомендаций ---
@@ -766,6 +779,91 @@ const recGroupDescriptions = {
     comfort: 'Маршруты, подобранные с акцентом на удобство: минимальные переходы между залами, оптимальное время ожидания и сбалансированная нагрузка.',
     balanced: 'Маршруты, в которых гармонично сочетаются интеллектуальная насыщенность и комфорт посещения. Лучший выбор для тех, кто ценит баланс впечатлений и удобства.'
 };
+
+// Создание навигатора для рекомендаций
+function createRecommendationsNavigator(recommendations) {
+    console.log('createRecommendationsNavigator вызвана с:', recommendations);
+    const sections = [
+        {
+            id: 'weighted',
+            title: '🎯 Топ по профилю',
+            icon: '🎯',
+            description: 'Максимально подходит вам',
+            count: recommendations.top_weighted?.length || 0
+        },
+        {
+            id: 'intellect', 
+            title: '🧠 Интеллектуальные',
+            icon: '🧠',
+            description: 'Высокая насыщенность',
+            count: recommendations.top_intellect?.length || 0
+        },
+        {
+            id: 'comfort',
+            title: '🛋️ Комфортные', 
+            icon: '🛋️',
+            description: 'Удобство и комфорт',
+            count: recommendations.top_comfort?.length || 0
+        },
+        {
+            id: 'balanced',
+            title: '⚖️ Сбалансированные',
+            icon: '⚖️', 
+            description: 'Гармония впечатлений',
+            count: recommendations.top_balanced?.length || 0
+        }
+    ];
+    
+    return `
+        <div class="recommendations-navigator">
+            <div class="nav-sections">
+                ${sections.map(section => `
+                    <div class="nav-section" data-section="${section.id}">
+                        <div class="nav-section-icon">${section.icon}</div>
+                        <div class="nav-section-content">
+                            <div class="nav-section-title">${section.title}</div>
+                            <div class="nav-section-desc">${section.description}</div>
+                            <div class="nav-section-count">${section.count} маршрутов</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+// Настройка обработчиков для навигатора
+function setupNavigatorHandlers() {
+    const navSections = document.querySelectorAll('.nav-section');
+    
+    navSections.forEach(section => {
+        section.addEventListener('click', function() {
+            const sectionId = this.getAttribute('data-section');
+            scrollToSection(sectionId);
+            
+            // Обновляем активное состояние
+            navSections.forEach(s => s.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+}
+
+// Скролл к разделу
+function scrollToSection(sectionId) {
+    const targetSection = document.querySelector(`.rec-group[data-group="${sectionId}"]`);
+    if (targetSection) {
+        targetSection.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+        });
+        
+        // Добавляем подсветку
+        targetSection.classList.add('highlighted');
+        setTimeout(() => {
+            targetSection.classList.remove('highlighted');
+        }, 2000);
+    }
+}
 
 // Рендеринг группы рекомендаций
 function renderGroup(title, routes, groupType) {
@@ -784,7 +882,7 @@ function renderGroup(title, routes, groupType) {
     const top3 = sorted.slice(0, 3);
     const description = recGroupDescriptions[groupType] ? `<div class='rec-group-desc'>${recGroupDescriptions[groupType]}</div>` : '';
     return `
-        <div class="rec-group">
+        <div class="rec-group" data-group="${groupType}">
             <h3>${title}</h3>
             ${description}
             <div class="rec-table-wrapper">

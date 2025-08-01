@@ -1801,4 +1801,214 @@
     font-weight: 700;
     z-index: 2;
     box-shadow: 0 4px 16px rgba(102,126,234,0.18);
+}
+
+/* Навигатор рекомендаций */
+.recommendations-navigator {
+    background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 24px;
+    border: 1px solid #e8ecff;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.06);
+}
+
+
+
+.nav-sections {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.nav-section {
+    background: white;
+    border-radius: 10px;
+    padding: 16px 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    min-height: 80px;
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-section:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
+    border-color: #667eea;
+}
+
+.nav-section.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: #667eea;
+}
+
+.nav-section-icon {
+    font-size: 1.8em;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border-radius: 10px;
+    position: relative;
+}
+
+.nav-section.active .nav-section-icon {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.nav-section-content {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+}
+
+.nav-section-title {
+    font-weight: 600;
+    font-size: 0.95em;
+    margin-bottom: 4px;
+    color: #333;
+    line-height: 1.2;
+}
+
+.nav-section.active .nav-section-title {
+    color: white;
+}
+
+.nav-section-desc {
+    font-size: 0.8em;
+    color: #666;
+    margin-bottom: 6px;
+    line-height: 1.2;
+}
+
+.nav-section.active .nav-section-desc {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.nav-section-count {
+    font-size: 0.75em;
+    color: #667eea;
+    font-weight: 600;
+    background: rgba(102, 126, 234, 0.08);
+    padding: 2px 6px;
+    border-radius: 6px;
+    display: inline-block;
+}
+
+.nav-section.active .nav-section-count {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.nav-section-arrow {
+    font-size: 1.3em;
+    color: #ddd;
+    transition: all 0.3s ease;
+    opacity: 0.7;
+}
+
+.nav-section:hover .nav-section-arrow {
+    color: #667eea;
+    transform: translateX(4px);
+}
+
+.nav-section.active .nav-section-arrow {
+    color: white;
+}
+
+/* Подсветка активного раздела */
+.rec-group.highlighted {
+    animation: highlightSection 2s ease-out;
+}
+
+@keyframes highlightSection {
+    0% {
+        background: rgba(102, 126, 234, 0.1);
+        transform: scale(1);
+    }
+    50% {
+        background: rgba(102, 126, 234, 0.2);
+        transform: scale(1.02);
+    }
+    100% {
+        background: transparent;
+        transform: scale(1);
+    }
+}
+
+/* Адаптивность для навигатора */
+@media (max-width: 768px) {
+    .recommendations-navigator {
+        padding: 12px;
+        margin-bottom: 20px;
+    }
+    
+    .nav-sections {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        max-width: 100%;
+    }
+    
+    .nav-section {
+        padding: 12px 8px;
+        gap: 6px;
+        min-height: 70px;
+    }
+    
+    .nav-section-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 1.4em;
+    }
+    
+    .nav-section-title {
+        font-size: 0.85em;
+    }
+    
+    .nav-section-desc {
+        font-size: 0.75em;
+    }
+    
+    .nav-section-count {
+        font-size: 0.7em;
+        padding: 1px 4px;
+    }
+}
+
+@media (max-width: 480px) {
+    .recommendations-navigator {
+        padding: 16px;
+    }
+    
+    .nav-header h3 {
+        font-size: 1.2em;
+    }
+    
+    .nav-header p {
+        font-size: 0.9em;
+    }
+    
+    .nav-section {
+        padding: 14px;
+        gap: 10px;
+    }
+    
+    .nav-section-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 1.4em;
+    }
 } 
