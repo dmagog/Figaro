@@ -11,12 +11,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Noteworthy:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Верхнее навигационное меню -->
-    <nav class="top-navbar">
+    <!-- Современная шапка -->
+    <nav class="top-navbar-modern">
+        <div class="nav-background">
+            <div class="nav-particles"></div>
+            <div class="nav-glow"></div>
+        </div>
+        
         <div class="nav-container">
             <div class="nav-brand">
-                <h1 class="nav-title">🎈 Figaro</h1>
-                <span class="nav-subtitle">Конструктор маршрутов</span>
+                <div class="brand-icon-nav">🎈</div>
+                <div class="brand-text">
+                    <h1 class="nav-title-modern">Figaro</h1>
+                    <span class="nav-subtitle">Проведёт по фестивалю</span>
+                </div>
+                <div class="nav-brand-glow"></div>
             </div>
             
             <div class="nav-menu">
@@ -25,16 +34,16 @@
                     <span class="user-greeting">Привет, {{ user.name or user.email }}!</span>
                     <div class="nav-actions">
                         {% if user.is_superuser %}
-                        <a href="/admin" class="nav-btn nav-btn-admin">Админка</a>
+                        <a href="/admin" class="nav-btn-modern nav-btn-admin">Админка</a>
                         {% endif %}
-                        <a href="/profile" class="nav-btn nav-btn-primary">Личный кабинет</a>
-                        <a href="/logout" class="nav-btn nav-btn-secondary">🚪 Выйти</a>
+                        <a href="/profile" class="nav-btn-modern nav-btn-primary">Личный кабинет</a>
+                        <a href="/logout" class="nav-btn-modern nav-btn-secondary">🚪 Выйти</a>
                     </div>
                 </div>
                 {% else %}
                 <div class="nav-auth">
-                    <a href="/login" class="nav-btn nav-btn-primary">🔑 Войти</a>
-                    <a href="/register" class="nav-btn nav-btn-secondary">📝 Регистрация</a>
+                    <a href="/login" class="nav-btn-modern nav-btn-primary">🔑 Войти</a>
+                    <a href="/register" class="nav-btn-modern nav-btn-secondary">📝 Регистрация</a>
                 </div>
                 {% endif %}
             </div>
