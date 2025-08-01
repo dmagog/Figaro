@@ -68,7 +68,7 @@
 }
 
 .brand-icon-nav {
-    font-size: 2em;
+    font-size: 3em;
     animation: floatIconNav 3s ease-in-out infinite;
 }
 
@@ -199,7 +199,7 @@
     }
     
     .brand-icon-nav {
-        font-size: 1.5em;
+        font-size: 2.5em;
     }
     
     .nav-title-modern {
@@ -238,7 +238,7 @@
     }
     
     .brand-icon-nav {
-        font-size: 1.3em;
+        font-size: 2.2em;
     }
     
     .nav-title-modern {
