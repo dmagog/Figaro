@@ -208,7 +208,7 @@
 .tabs-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 10px 20px;
 }
 
 /* Стили для кнопок */
@@ -265,7 +265,7 @@
 }
 
 .tab-content {
-    padding: 30px;
+    padding: 15px;
 }
 
 /* Секция анкеты */
@@ -1163,7 +1163,7 @@
     }
     
     .tab-content {
-        padding: 15px;
+        padding: 10px;
     }
     
     .radio-group {
@@ -1291,20 +1291,20 @@
 
 /* Стили для вкладки "О проекте" */
 .about-section {
-    max-width: 1000px;
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 40px 20px;
+    padding: 20px;
 }
 
 .about-header {
     text-align: center;
-    margin-bottom: 50px;
+    margin-bottom: 30px;
 }
 
 .about-header h2 {
-    font-size: 2.5em;
+    font-size: 2.2em;
     color: #333;
-    margin-bottom: 15px;
+    margin-bottom: 12px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -1312,26 +1312,30 @@
 }
 
 .about-subtitle {
-    font-size: 1.3em;
+    font-size: 1.1em;
     color: #666;
     margin: 0;
 }
 
 .about-content {
-    display: flex;
-    flex-direction: column;
-    gap: 40px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
 }
 
 .about-feature {
     display: flex;
-    align-items: flex-start;
-    gap: 25px;
-    padding: 30px;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 15px;
+    padding: 25px 20px;
     background: white;
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    min-height: 200px;
 }
 
 .about-feature:hover {
@@ -1340,42 +1344,48 @@
 }
 
 .feature-icon {
-    font-size: 3em;
+    font-size: 2.5em;
     flex-shrink: 0;
-    width: 80px;
-    text-align: center;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border-radius: 12px;
 }
 
 .feature-text h3 {
-    font-size: 1.4em;
+    font-size: 1.2em;
     color: #333;
-    margin: 0 0 15px 0;
+    margin: 0 0 10px 0;
+    font-weight: 600;
 }
 
 .feature-text p {
-    font-size: 1.1em;
+    font-size: 0.95em;
     color: #666;
-    line-height: 1.6;
+    line-height: 1.5;
     margin: 0;
 }
 
 .about-cta {
     text-align: center;
-    padding: 50px 30px;
+    padding: 30px 20px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 20px;
+    border-radius: 15px;
     color: white;
-    margin-top: 20px;
+    margin-top: 0;
 }
 
 .about-cta h3 {
-    font-size: 1.8em;
-    margin: 0 0 15px 0;
+    font-size: 1.5em;
+    margin: 0 0 10px 0;
 }
 
 .about-cta p {
-    font-size: 1.2em;
-    margin: 0 0 30px 0;
+    font-size: 1em;
+    margin: 0 0 20px 0;
     opacity: 0.9;
 }
 
@@ -1398,39 +1408,56 @@
 /* Адаптивность для мобильных устройств */
 @media (max-width: 768px) {
     .about-section {
-        padding: 20px 15px;
+        padding: 15px;
+    }
+    
+    .about-header {
+        margin-bottom: 20px;
     }
     
     .about-header h2 {
-        font-size: 2em;
+        font-size: 1.8em;
     }
     
     .about-subtitle {
-        font-size: 1.1em;
+        font-size: 1em;
+    }
+    
+    .about-content {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        margin-bottom: 20px;
     }
     
     .about-feature {
-        flex-direction: column;
-        text-align: center;
-        gap: 20px;
-        padding: 25px 20px;
+        padding: 20px 15px;
+        min-height: 160px;
     }
     
     .feature-icon {
-        font-size: 2.5em;
-        width: auto;
+        width: 50px;
+        height: 50px;
+        font-size: 2em;
+    }
+    
+    .feature-text h3 {
+        font-size: 1.1em;
+    }
+    
+    .feature-text p {
+        font-size: 0.9em;
     }
     
     .about-cta {
-        padding: 40px 20px;
+        padding: 25px 15px;
     }
     
     .about-cta h3 {
-        font-size: 1.5em;
+        font-size: 1.3em;
     }
     
     .about-cta p {
-        font-size: 1.1em;
+        font-size: 0.95em;
     }
 } 
 

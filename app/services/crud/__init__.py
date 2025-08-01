@@ -5,5 +5,6 @@ __all__ = [
     "user", 
     "festival",
     "purchase",
-    "billing"
+    "billing",
+    "route_service"
 ]
