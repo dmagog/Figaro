@@ -1845,6 +1845,9 @@ async def admin_notifications_settings(request: Request, session=Depends(get_ses
     return templates.TemplateResponse("admin_notifications_settings.html", context)
 
 
+
+
+
 home_route.include_router(admin_customers_router)
 home_route.include_router(admin_users_router)
 home_route.include_router(admin_purchases_router)

@@ -12,6 +12,7 @@ from .customer_route_match import CustomerRouteMatch
 from .off_program import OffProgram, EventFormat
 from .telegram_stats import MessageTemplate, TelegramMessage, TelegramCampaign, MessageStatus
 
+
 __all__ = [
     "Hall",
     "Concert", 
