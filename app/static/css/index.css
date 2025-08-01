@@ -1343,6 +1343,48 @@
     box-shadow: 0 8px 25px rgba(0,0,0,0.12);
 }
 
+/* Стили для CTA блока в сетке */
+.about-cta-feature {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    text-align: center;
+    justify-content: center;
+}
+
+.about-cta-feature .feature-text h3 {
+    color: white;
+    font-size: 1.4em;
+    margin-bottom: 15px;
+    font-weight: 700;
+}
+
+.about-cta-feature .feature-text p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1em;
+    margin-bottom: 25px;
+    line-height: 1.5;
+}
+
+.about-cta-feature .btn {
+    background: white;
+    color: #667eea;
+    font-size: 1.1em;
+    padding: 16px 32px;
+    border-radius: 12px;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.about-cta-feature .btn:hover {
+    background: #f8f9fa;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+}
+
 .feature-icon {
     font-size: 2.5em;
     flex-shrink: 0;
@@ -1369,41 +1411,7 @@
     margin: 0;
 }
 
-.about-cta {
-    text-align: center;
-    padding: 30px 20px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 15px;
-    color: white;
-    margin-top: 0;
-}
 
-.about-cta h3 {
-    font-size: 1.5em;
-    margin: 0 0 10px 0;
-}
-
-.about-cta p {
-    font-size: 1em;
-    margin: 0 0 20px 0;
-    opacity: 0.9;
-}
-
-.about-cta .btn {
-    background: white;
-    color: #667eea;
-    font-size: 1.1em;
-    padding: 15px 30px;
-    border-radius: 12px;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.about-cta .btn:hover {
-    background: #f8f9fa;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-}
 
 /* Адаптивность для мобильных устройств */
 @media (max-width: 768px) {
@@ -1448,17 +1456,21 @@
         font-size: 0.9em;
     }
     
-    .about-cta {
-        padding: 25px 15px;
-    }
-    
-    .about-cta h3 {
+    .about-cta-feature .feature-text h3 {
         font-size: 1.3em;
     }
     
-    .about-cta p {
+    .about-cta-feature .feature-text p {
         font-size: 0.95em;
+        margin-bottom: 20px;
     }
+    
+    .about-cta-feature .btn {
+        font-size: 1em;
+        padding: 14px 28px;
+    }
+    
+
 } 
 
 /* Призыв к действию на вкладке рекомендаций */
