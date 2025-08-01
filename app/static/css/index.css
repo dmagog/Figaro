@@ -67,9 +67,35 @@
     align-items: flex-start;
 }
 
+.brand-icon-nav-link {
+    display: inline-block;
+    text-decoration: none !important;
+    color: inherit;
+    transition: all 0.3s ease;
+    border-radius: 50%;
+    padding: 5px;
+    outline: none;
+    position: relative;
+    left: 3px;
+}
+
+.brand-icon-nav-link:hover,
+.brand-icon-nav-link:focus,
+.brand-icon-nav-link:active {
+    text-decoration: none !important;
+    outline: none;
+}
+
+.brand-icon-nav-link:hover {
+    transform: scale(1.1);
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
 .brand-icon-nav {
     font-size: 3em;
     animation: floatIconNav 3s ease-in-out infinite;
+    cursor: pointer;
 }
 
 @keyframes floatIconNav {
