@@ -2052,33 +2052,145 @@
     }
 } 
 
-/* Стили для подвала */
-.footer {
+/* Элегантные стили для подвала */
+.footer-modern {
+    position: relative;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    color: #ffffff;
     margin-top: 60px;
-    padding: 40px 0 20px;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+    padding: 60px 0 30px;
+    overflow: hidden;
+}
+
+.footer-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+}
+
+.footer-particles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+}
+
+.footer-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, 
+        rgba(255, 255, 255, 0.02) 0%, 
+        rgba(255, 255, 255, 0.02) 100%);
 }
 
 .footer-container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 20px;
+    position: relative;
+    z-index: 2;
+}
+
+/* Элегантные карточки */
+.glass-card {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.glass-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.15);
 }
 
 .footer-content {
     display: grid;
     grid-template-columns: 2fr 1fr 1fr 1fr;
-    gap: 40px;
-    margin-bottom: 30px;
+    gap: 30px;
+    margin-bottom: 40px;
 }
 
-.footer-section h4 {
-    font-size: 1.1em;
-    font-weight: 600;
+/* Неоновый брендинг */
+.footer-brand {
+    text-align: center;
+    position: relative;
+}
+
+.brand-icon {
+    font-size: 3em;
     margin-bottom: 15px;
+    display: block;
+    animation: floatIcon 3s ease-in-out infinite;
+}
+
+@keyframes floatIcon {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.brand-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: brandGlow 4s ease-in-out infinite;
+    z-index: -1;
+}
+
+@keyframes brandGlow {
+    0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.2); }
+}
+
+.neon-text {
+    font-family: 'Noteworthy', cursive;
+    font-size: 2.5em;
+    font-weight: 700;
     color: #ffffff;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    letter-spacing: 1px;
+}
+
+
+
+.section-title {
+    font-size: 1.2em;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: #ffffff;
+    position: relative;
+    padding-bottom: 8px;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 25px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 1px;
 }
 
 .footer-brand h3 {
@@ -2108,12 +2220,33 @@
     color: rgba(255, 255, 255, 0.8);
     text-decoration: none;
     font-size: 0.9em;
-    transition: color 0.3s ease;
+    transition: all 0.3s ease;
+    position: relative;
+    padding: 5px 0;
+    display: inline-block;
 }
 
-.footer-links a:hover {
+.link-hover {
+    position: relative;
+}
+
+.link-hover::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.8);
+    transition: width 0.3s ease;
+}
+
+.link-hover:hover::before {
+    width: 100%;
+}
+
+.link-hover:hover {
     color: #ffffff;
-    text-decoration: underline;
 }
 
 .footer-bottom {
@@ -2135,34 +2268,71 @@
     gap: 15px;
 }
 
-.social-link {
+.social-link-modern {
     display: inline-block;
-    font-size: 1.2em;
+    font-size: 1.3em;
     color: rgba(255, 255, 255, 0.8);
     text-decoration: none;
     transition: all 0.3s ease;
-    padding: 8px;
+    padding: 10px;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.social-link:hover {
+.social-link-modern:hover {
     color: #ffffff;
     background: rgba(255, 255, 255, 0.2);
     transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
-/* Адаптивность для подвала */
+.social-link-modern::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.8em;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    margin-bottom: 5px;
+}
+
+.social-link-modern:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Адаптивность для современного подвала */
 @media (max-width: 768px) {
-    .footer {
-        padding: 30px 0 15px;
+    .footer-modern {
+        padding: 40px 0 20px;
         margin-top: 40px;
     }
     
     .footer-content {
         grid-template-columns: 1fr;
-        gap: 25px;
+        gap: 20px;
         text-align: center;
+    }
+    
+    .glass-card {
+        padding: 20px;
+    }
+    
+    .brand-icon {
+        font-size: 2.5em;
+    }
+    
+    .neon-text {
+        font-size: 1.8em;
     }
     
     .footer-bottom {
@@ -2177,23 +2347,37 @@
 }
 
 @media (max-width: 480px) {
-    .footer {
-        padding: 25px 0 15px;
+    .footer-modern {
+        padding: 30px 0 15px;
     }
     
     .footer-container {
         padding: 0 15px;
     }
     
-    .footer-brand h3 {
-        font-size: 1.3em;
+    .glass-card {
+        padding: 15px;
+        border-radius: 15px;
     }
     
-    .footer-section h4 {
-        font-size: 1em;
+    .brand-icon {
+        font-size: 2em;
+    }
+    
+    .neon-text {
+        font-size: 1.5em;
+    }
+    
+    .section-title {
+        font-size: 1.1em;
     }
     
     .footer-links a {
         font-size: 0.85em;
+    }
+    
+    .social-link-modern {
+        padding: 10px;
+        font-size: 1.1em;
     }
 } 
