@@ -2832,9 +2832,10 @@
     display: inline-block;
     position: absolute;
     top: 20%;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 47%;
+    transform: translate(-50%, 0);
     z-index: 10;
+    text-align: center;
 }
 
 .hero-text-content {
