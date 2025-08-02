@@ -2822,58 +2822,87 @@
     padding: 0 20px;
     position: relative;
     z-index: 1;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 .hero-balloon {
     font-size: 6em;
-    margin-bottom: 20px;
+    margin-bottom: 40px;
     animation: floatBalloon 6s ease-in-out infinite;
     display: inline-block;
+    position: relative;
+    z-index: 10;
 }
+
+.hero-text-content {
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.8s ease;
+    transform: translateY(20px);
+    text-align: center;
+    width: 100%;
+    max-width: 1200px;
+    position: relative;
+    z-index: 5;
+}
+
+.hero-text-content.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+
 
 .hero-title {
     font-size: 4.5em;
     font-weight: 700;
     color: white;
-    margin-bottom: 120px;
+    margin-bottom: 150px;
     line-height: 1.2;
     text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     animation: fadeInUp 1s ease-out 0.5s both;
 }
 
+/* Специальные стили для первого экрана */
+.hero-text-1 .hero-title {
+    font-size: 3.5em;
+    margin-bottom: 80px;
+}
+
 /* Специальные стили для второго экрана */
-.hero-screen-2 .hero-title {
+.hero-text-2 .hero-title {
     font-size: 3.8em;
 }
 
 /* Специальные стили для третьего экрана */
-.hero-screen-3 .hero-content {
-    transform: translateY(-10%);
-}
-
-.hero-screen-3 .hero-title {
+.hero-text-3 .hero-title {
     font-size: 5em;
     margin-bottom: 40px;
 }
 
-.hero-screen-3 .hero-subtitle {
+.hero-text-3 .hero-subtitle {
     font-size: 2.2em;
     color: #ffe082;
     text-shadow: 0 2px 15px rgba(255, 224, 130, 0.4);
-    margin-bottom: 80px;
+    margin-bottom: 120px;
 }
 
 .hero-subtitle {
     font-size: 2em;
     font-weight: 400;
     color: rgba(255, 255, 255, 0.9);
-    margin-bottom: 80px;
+    margin-bottom: 120px;
     text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     animation: fadeInUp 1s ease-out 0.8s both;
 }
 
 /* Специальные стили для подзаголовка второго экрана */
-.hero-screen-2 .hero-subtitle {
+.hero-text-2 .hero-subtitle {
     color: #ffe082;
     text-shadow: 0 2px 15px rgba(255, 224, 130, 0.4);
 }
@@ -2888,8 +2917,8 @@
 }
 
 .hero-scroll-indicator {
-    position: absolute;
-    bottom: 10px;
+    position: fixed;
+    bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
     text-align: center;
@@ -2900,15 +2929,7 @@
     margin-left: -100px;
 }
 
-/* Специальное позиционирование для второго экрана */
-.hero-screen-2 .hero-scroll-indicator {
-    bottom: 5px;
-}
 
-/* Специальное позиционирование для третьего экрана */
-.hero-screen-3 .hero-scroll-indicator {
-    bottom: 15px;
-}
 
 .scroll-arrow {
     font-size: 2em;

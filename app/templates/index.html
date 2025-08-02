@@ -53,50 +53,36 @@
     </nav>
 
     <!-- Полноэкранные секции лендинга -->
-    <section class="hero-screen hero-screen-1 active" id="hero-1">
+    <section class="hero-screen active" id="hero-container">
         <div class="hero-background">
             <div class="hero-particles"></div>
             <div class="hero-glow"></div>
         </div>
         <div class="hero-content">
             <div class="hero-balloon">🎈</div>
-            <h1 class="hero-title">Что в 8 миллионов раз</br>больше миллиарда?</h1>
-            <div class="hero-scroll-indicator">
-                <div class="scroll-arrow">↓</div>
-                <span>Прокрутите вниз</span>
+            
+            <!-- Текстовый контент для первого экрана -->
+            <div class="hero-text-content hero-text-1 active" id="hero-text-1">
+                <h1 class="hero-title">Что в 8 миллионов раз</br>больше миллиарда?</h1>
+            </div>
+            
+            <!-- Текстовый контент для второго экрана -->
+            <div class="hero-text-content hero-text-2" id="hero-text-2">
+                <h1 class="hero-title">Количество маршрутов фестиваля<br>«Безумные дни в Екатеринбурге»!</h1>
+                <h2 class="hero-subtitle"><span class="figaro-text">Figaro</span> поможет найти свой путь!</h2>
+            </div>
+            
+            <!-- Текстовый контент для третьего экрана -->
+            <div class="hero-text-content hero-text-3" id="hero-text-3">
+                <h1 class="hero-title"><span class="figaro-text">Figaro</span></h1>
+                <h2 class="hero-subtitle">ваш гид и конструктор персональных маршрутов</h2>
             </div>
         </div>
-    </section>
-
-    <section class="hero-screen hero-screen-2" id="hero-2">
-        <div class="hero-background">
-            <div class="hero-particles"></div>
-            <div class="hero-glow"></div>
-        </div>
-        <div class="hero-content">
-            <div class="hero-balloon">🎈</div>
-            <h1 class="hero-title">Количество маршрутов фестиваля<br>«Безумные дни в Екатеринбурге»!</h1>
-            <h2 class="hero-subtitle"><span class="figaro-text">Figaro</span> поможет найти свой путь!</h2>
-            <div class="hero-scroll-indicator">
-                <div class="scroll-arrow">↓</div>
-                <span>Прокрутите вниз</span>
-            </div>
-        </div>
-    </section>
-
-    <section class="hero-screen hero-screen-3" id="hero-3">
-        <div class="hero-background">
-            <div class="hero-particles"></div>
-            <div class="hero-glow"></div>
-        </div>
-        <div class="hero-content">
-            <div class="hero-balloon">🎈</div>
-            <h1 class="hero-title"><span class="figaro-text">Figaro</span></h1>
-            <h2 class="hero-subtitle">ваш гид и конструктор персональных маршрутов</h2>
-            <div class="hero-scroll-indicator">
-                <div class="scroll-arrow">↓</div>
-                <span>Начать</span>
-            </div>
+        
+        <!-- Индикатор прокрутки -->
+        <div class="hero-scroll-indicator" id="hero-scroll-indicator">
+            <div class="scroll-arrow">↓</div>
+            <span id="scroll-text">Прокрутите вниз</span>
         </div>
     </section>
 
@@ -514,8 +500,11 @@
             
             isTransitioning = true;
             
-            // Скрываем текущую секцию
-            document.getElementById(`hero-${currentHeroScreen}`).classList.remove('active');
+            // Скрываем текущий текстовый контент
+            const currentTextContent = document.getElementById(`hero-text-${currentHeroScreen}`);
+            if (currentTextContent) {
+                currentTextContent.classList.remove('active');
+            }
             
             currentHeroScreen++;
             
@@ -532,19 +521,35 @@
                 return;
             }
             
-            // Показываем следующую секцию на том же месте
+            // Показываем следующий текстовый контент
             setTimeout(() => {
-                document.getElementById(`hero-${currentHeroScreen}`).classList.add('active');
+                const nextTextContent = document.getElementById(`hero-text-${currentHeroScreen}`);
+                if (nextTextContent) {
+                    nextTextContent.classList.add('active');
+                }
+                
+                // Обновляем текст индикатора прокрутки
+                const scrollText = document.getElementById('scroll-text');
+                if (scrollText) {
+                    if (currentHeroScreen === 2) {
+                        scrollText.textContent = 'Прокрутите вниз';
+                    } else if (currentHeroScreen === 3) {
+                        scrollText.textContent = 'Начать';
+                    }
+                }
+                
                 isTransitioning = false;
             }, 800);
         }
         
         // Обработчик клика по hero-секциям
         document.addEventListener('DOMContentLoaded', function() {
-            const heroScreens = document.querySelectorAll('.hero-screen');
-            heroScreens.forEach(screen => {
-                screen.addEventListener('click', nextHeroScreen);
-            });
+            // Первый текстовый контент уже активен в HTML
+            
+            const heroContainer = document.getElementById('hero-container');
+            if (heroContainer) {
+                heroContainer.addEventListener('click', nextHeroScreen);
+            }
             
             // Обработчик прокрутки - только для hero-секций
             let scrollTimeout;
@@ -556,7 +561,7 @@
                     
                     // Если пользователь прокрутил вниз и мы на hero-секции
                     if (scrollTop > 50 && currentHeroScreen <= totalHeroScreens) {
-                        // Предотвращаем реальную прокрутку и переключаем секции
+                        // Предотвращаем реальную прокрутку и переключаем текстовый контент
                         window.scrollTo(0, 0);
                         nextHeroScreen();
                     }
