@@ -176,10 +176,14 @@ async def index(request: Request, session=Depends(get_session)):
         except:
             pass  # Пользователь не авторизован
 
+    # Получаем ссылку на бота из переменных окружения
+    bot_link = os.environ.get('BOT_LINK', 'https://t.me/Figaro_FestivalBot')
+
     context = {
         "login": current_user is not None,
         "request": request,
-        "user": current_user
+        "user": current_user,
+        "bot_link": bot_link
     }
 
     return templates.TemplateResponse("index.html", context)

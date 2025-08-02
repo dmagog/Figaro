@@ -206,7 +206,7 @@
 
 /* Отступ для основного контента под фиксированным меню */
 .container {
-    margin-top: 100px;
+    margin-top: 60px;
     padding-top: 0;
 }
 
@@ -2146,6 +2146,275 @@
     }
 } 
 
+/* Современные стили для главной страницы */
+.about-header {
+    text-align: center;
+    padding: 40px 30px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    position: relative;
+    margin-bottom: 40px;
+}
+
+.about-header:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.about-icon {
+    font-size: 3em;
+    margin-bottom: 20px;
+    display: block;
+    animation: floatIconAbout 4s ease-in-out infinite;
+}
+
+@keyframes floatIconAbout {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+}
+
+.about-title-modern {
+    font-family: 'Noteworthy', cursive;
+    font-size: 2.2em;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 15px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    letter-spacing: 1px;
+}
+
+.about-header-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: aboutHeaderGlow 5s ease-in-out infinite;
+    z-index: -1;
+}
+
+@keyframes aboutHeaderGlow {
+    0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+.about-content {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 30px;
+}
+
+.about-feature {
+    padding: 30px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.about-feature::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.about-feature:hover::before {
+    left: 100%;
+}
+
+.about-feature:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.feature-icon-modern {
+    font-size: 2.5em;
+    margin-bottom: 20px;
+    display: block;
+    text-align: center;
+}
+
+.feature-title-modern {
+    font-size: 1.4em;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 15px;
+    position: relative;
+    padding-bottom: 10px;
+}
+
+
+
+.feature-text p {
+    color: #666;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.about-cta-feature .feature-text p {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.about-cta-feature .feature-title-modern {
+    color: white;
+}
+
+.feature-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 150px;
+    height: 150px;
+    background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: featureGlow 4s ease-in-out infinite;
+    z-index: -1;
+}
+
+@keyframes featureGlow {
+    0%, 100% { opacity: 0.2; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 0.4; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+.about-cta-feature {
+    text-align: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+}
+
+.about-cta-feature:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a5acd 100%) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.cta-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(102, 126, 234, 0.15) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: ctaGlow 6s ease-in-out infinite;
+    z-index: -1;
+}
+
+@keyframes ctaGlow {
+    0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.2); }
+}
+
+.btn-next-modern {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 15px 30px;
+    border-radius: 25px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    margin-top: 20px;
+}
+
+.btn-next-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Адаптивность для современных блоков */
+@media (max-width: 768px) {
+    .about-header {
+        padding: 30px 20px;
+        margin-bottom: 30px;
+    }
+    
+    .about-icon {
+        font-size: 2.5em;
+    }
+    
+    .about-title-modern {
+        font-size: 1.8em;
+    }
+    
+    .about-content {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .about-feature {
+        padding: 25px;
+    }
+    
+
+    
+    .feature-icon-modern {
+        font-size: 2em;
+    }
+    
+    .feature-title-modern {
+        font-size: 1.2em;
+    }
+    
+    .btn-next-modern {
+        padding: 12px 25px;
+        font-size: 1em;
+    }
+}
+
+@media (max-width: 480px) {
+    .about-header {
+        padding: 25px 15px;
+    }
+    
+    .about-icon {
+        font-size: 2em;
+    }
+    
+    .about-title-modern {
+        font-size: 1.5em;
+    }
+    
+    .about-feature {
+        padding: 20px;
+    }
+    
+    .feature-icon-modern {
+        font-size: 1.8em;
+    }
+    
+    .feature-title-modern {
+        font-size: 1.1em;
+    }
+    
+    .btn-next-modern {
+        padding: 10px 20px;
+        font-size: 0.9em;
+    }
+} 
+
 /* Элегантные стили для подвала */
 .footer-modern {
     position: relative;
@@ -2363,15 +2632,28 @@
 }
 
 .social-link-modern {
-    display: inline-block;
-    font-size: 1.3em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
     color: rgba(255, 255, 255, 0.8);
     text-decoration: none;
     transition: all 0.3s ease;
-    padding: 10px;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.telegram-icon {
+    width: 32px;
+    height: 32px;
+    fill: currentColor;
+    transition: all 0.3s ease;
+}
+
+.social-link-modern:hover .telegram-icon {
+    transform: scale(1.1);
 }
 
 .social-link-modern:hover {
