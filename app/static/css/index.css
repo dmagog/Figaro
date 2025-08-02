@@ -2982,7 +2982,6 @@
     opacity: 0;
     transform: translateY(20px);
     transition: all 0.8s ease;
-    margin-top: 100vh; /* Отступ для hero-секций */
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
     position: relative;

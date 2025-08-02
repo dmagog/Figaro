@@ -496,6 +496,7 @@
         
         // Функция для перехода к следующей hero-секции
         function nextHeroScreen() {
+            console.log('nextHeroScreen called, currentHeroScreen:', currentHeroScreen, 'isTransitioning:', isTransitioning);
             if (isTransitioning) return;
             
             isTransitioning = true;
@@ -509,14 +510,23 @@
             currentHeroScreen++;
             
             if (currentHeroScreen > totalHeroScreens) {
+                console.log('Transitioning to main content');
                 // Переходим к основному контенту
                 setTimeout(() => {
-                    document.getElementById('main-content').classList.add('active');
-                    // Плавно прокручиваем к основному контенту
-                    document.getElementById('main-content').scrollIntoView({ 
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
+                    const mainContent = document.getElementById('main-content');
+                    const heroContainer = document.getElementById('hero-container');
+                    console.log('Main content element:', mainContent);
+                    if (mainContent && heroContainer) {
+                        // Скрываем hero-контейнер
+                        heroContainer.style.display = 'none';
+                        // Показываем основной контент
+                        mainContent.classList.add('active');
+                        // Прокручиваем к началу страницы
+                        window.scrollTo(0, 0);
+                    } else {
+                        console.error('Main content or hero container element not found!');
+                    }
+                    isTransitioning = false;
                 }, 800);
                 return;
             }

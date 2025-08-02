@@ -12,9 +12,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+SITE_LINK = os.getenv("SITE_LINK")
 BOT_LINK = os.getenv("BOT_LINK", "https://t.me/Figaro_FestivalBot")
 
-bot = Bot(token=TELEGRAM_TOKEN, parse_mode=ParseMode.HTML)
+bot = Bot(token=TELEGRAM_TOKEN, parse_mode=ParseMode.MARKDOWN)
 dp = Dispatcher(bot)
 
 # Создаем клавиатуры
@@ -22,14 +23,15 @@ def get_main_menu_keyboard():
     """Создает основное меню с кнопками"""
     keyboard = InlineKeyboardMarkup(row_width=2)
     keyboard.add(
-        InlineKeyboardButton("🎵 Мой маршрут", callback_data="my_route"),
+        InlineKeyboardButton("🗺️ Мой маршрут", callback_data="my_route"),
+        InlineKeyboardButton("🚶🏼‍➡️ Офф-программа", callback_data="offprog"),
         InlineKeyboardButton("📊 Статистика", callback_data="statistics"),
         InlineKeyboardButton("🎼 Концерты сегодня", callback_data="today_concerts"),
         InlineKeyboardButton("🏛️ Залы", callback_data="halls"),
-        InlineKeyboardButton("🎭 Жанры", callback_data="genres"),
         InlineKeyboardButton("👤 Мой профиль", callback_data="profile"),
         InlineKeyboardButton("❓ Помощь", callback_data="help"),
         InlineKeyboardButton("🔗 Личный кабинет", callback_data="web_profile")
+        InlineKeyboardButton("🌐 Сайт фестиваля", callback_data="site_official")
     )
     return keyboard
 
@@ -41,7 +43,7 @@ def get_route_menu_keyboard():
         InlineKeyboardButton("📖 Развернутый маршрут", callback_data="route_detailed"),
         InlineKeyboardButton("📊 Статистика маршрута", callback_data="route_stats"),
         InlineKeyboardButton("📅 Маршрут на день", callback_data="route_day"),
-        InlineKeyboardButton("🔙 Назад", callback_data="main_menu")
+        InlineKeyboardButton("«« Назад", callback_data="main_menu")
     )
     return keyboard
 
@@ -53,7 +55,7 @@ async def get_day_selection_keyboard(telegram_id: int):
         if "error" in result:
             # Если ошибка, возвращаем пустую клавиатуру с кнопкой назад
             keyboard = InlineKeyboardMarkup(row_width=1)
-            keyboard.add(InlineKeyboardButton("🔙 Назад", callback_data="route_menu"))
+            keyboard.add(InlineKeyboardButton("«« Назад", callback_data="route_menu"))
             return keyboard
         
         days = result.get("days", [])
@@ -72,14 +74,14 @@ async def get_day_selection_keyboard(telegram_id: int):
             button_text = f"День {day_number} ({formatted_date}) - {concerts_count} конц."
             keyboard.add(InlineKeyboardButton(button_text, callback_data=f"day_{day_number}"))
         
-        keyboard.add(InlineKeyboardButton("🔙 Назад", callback_data="route_menu"))
+        keyboard.add(InlineKeyboardButton("«« Назад", callback_data="route_menu"))
         return keyboard
         
     except Exception as e:
         print(f"Ошибка при создании клавиатуры дней: {e}")
         # Возвращаем простую клавиатуру с кнопкой назад
         keyboard = InlineKeyboardMarkup(row_width=1)
-        keyboard.add(InlineKeyboardButton("🔙 Назад", callback_data="route_menu"))
+        keyboard.add(InlineKeyboardButton("«« Назад", callback_data="route_menu"))
         return keyboard
 
 from services.api_client import ApiClient
@@ -372,13 +374,19 @@ async def process_callback(callback_query: types.CallbackQuery):
         
         elif action == "my_route":
             await safe_edit_message(
-                "🎵 Выберите формат маршрута:",
+                """🎵 Выберите формат маршрута:\n\n
+                   * *Краткий* — коротко и наглядно;
+                   * *Полный* — развернуто и информативно.
+                """,
                 reply_markup=get_route_menu_keyboard()
             )
         
         elif action == "route_menu":
             await safe_edit_message(
-                "🎵 Выберите формат маршрута:",
+                """🗺️ Выберите формат маршрута:\n\n
+                   * *Краткий* — коротко и наглядно;
+                   * *Полный* — развернуто и информативно.
+                """,
                 reply_markup=get_route_menu_keyboard()
             )
         
@@ -465,24 +473,24 @@ async def process_callback(callback_query: types.CallbackQuery):
             )
         
         elif action == "help":
-            help_text = "❓ *Помощь по боту:*\n\n"
-            help_text += "🎵 *Мой маршрут* - просмотр вашего маршрута фестиваля\n"
-            help_text += "📊 *Статистика* - итоговая статистика маршрута\n"
-            help_text += "🎼 *Концерты сегодня* - концерты на сегодня\n"
-            help_text += "🏛️ *Залы* - информация о залах\n"
-            help_text += "🎭 *Жанры* - информация о жанрах\n"
-            help_text += "👤 *Мой профиль* - информация о вашем аккаунте\n"
-            help_text += "🔗 *Личный кабинет* - ссылка на веб-версию\n\n"
+            help_text = "*Что есть что❓:*\n\n"
+            help_text += "🗺️ *Мой маршрут* — все концерты по порядку: кратко и нагляжно, или развернуто и информативно\n\n"
+            help_text += "📊 *Статистика* — ваш маршрут в цифрах и любопытных фактах\n\n"
+            help_text += "🎼 *Концерты сегодня* — маршрут этого дня\n\n"
+            help_text += "🏛️ *Залы* — где находятся и как их найти\n\n"
+            help_text += "👤 *Мой профиль* — убедиться, что Вы это Вы\n\n"
+            help_text += "🔗 *Личный кабинет* — ссылка на веб-версию\n\n"
             help_text += "Для привязки аккаунта используйте код из личного кабинета."
             
             await safe_edit_message(
                 help_text,
-                reply_markup=get_main_menu_keyboard()
+                reply_markup=get_main_menu_keyboard(),
+                parse_mode='Markdown'
             )
         
         elif action == "web_profile":
             # Ссылка на личный кабинет
-            web_url = "http://localhost:8000/profile"  # Можно сделать настраиваемым
+            web_url = SITE_LINK + "/profile"  # Можно сделать настраиваемым
             await safe_edit_message(
                 f"🔗 *Личный кабинет:*\n\nПерейдите по ссылке для доступа к полному функционалу:\n{web_url}",
                 reply_markup=get_main_menu_keyboard()
