@@ -101,7 +101,9 @@
             <div class="tab-content" id="tab-about" style="display:block;">
                 <div class="about-section">
                     <div class="survey-header">
-                        <h2>Заполните анкету — получите рекомендации</h2>
+                        <div class="survey-title-container">
+                            <h2>Заполните анкету — получите рекомендации</h2>
+                        </div>
                     </div>
                     
                     <div class="about-content">
@@ -147,9 +149,18 @@
             <!-- Вкладка Анкета -->
             <div class="tab-content" id="tab-form" style="display:none;">
                 <div class="survey-section" id="user-survey">
-                    <button id="reset-survey-btn" class="btn btn-prev" onclick="resetSurvey()">Сбросить анкету</button>
                     <div class="survey-header">
-                        <h2>Заполните анкету — получите рекомендации</h2>
+                        <div class="survey-title-container">
+                            <h2>Заполните анкету — получите рекомендации</h2>
+                        </div>
+                        {% if user and user.preferences %}
+                        <div class="survey-actions">
+                            <button id="reset-survey-btn" class="btn-reset-survey" onclick="resetSurvey()" title="Сбросить анкету">
+                                <span class="reset-icon">🔄</span>
+                                <span class="reset-text">Сбросить</span>
+                            </button>
+                        </div>
+                        {% endif %}
                     </div>
                     
                     <form class="survey-form" id="preferences-form">
@@ -207,8 +218,8 @@
                         <!-- Слайд 2: Количество концертов -->
                         <div class="survey-slide" data-step="2">
                             <div class="slide-content">
-                                <h3 class="slide-title">Сколько концертов в день — это нормально для вас?</h3>
-                                <p class="slide-description">Выберите комфортный для вас темп посещения</p>
+                                <h3 class="slide-title">Сколько концертов в день для Вас комфортно?</h3>
+                                <p class="slide-description">Концерты дляться всего 45 минут и, как правило, несут «лёгкую» программу</p>
                                 
                                 <div class="radio-group compact">
                                     <label class="radio-option compact">
@@ -243,7 +254,7 @@
                                         <div class="radio-content">
                                             <div class="radio-number infinity">∞</div>
                                             <div class="radio-text">
-                                                <div class="radio-title">Максимум!</div>
+                                                <div class="radio-title">Без ограничений</div>
                                             </div>
                                         </div>
                                     </label>
@@ -296,7 +307,7 @@
                         <div class="survey-slide" data-step="4">
                             <div class="slide-content">
                                 <h3 class="slide-title">Каких композиторов вы хотите услышать?</h3>
-                                <p class="slide-description">Выберите до 5 композиторов (размер шрифта показывает популярность)</p>
+                                <p class="slide-description">Выберите до 5 композиторов (чем крупнее фамилия — тем чаще он в программе фестиваля)</p>
                                 
                                 <div class="tag-cloud" id="composers-cloud">
                                     <div class="loading">Загрузка композиторов...</div>
@@ -347,8 +358,7 @@
                         <!-- Слайд 7: Резюме -->
                         <div class="survey-slide" data-step="7">
                             <div class="slide-content">
-                                <h3 class="slide-title">Ваши предпочтения</h3>
-                                <p class="slide-description">Проверьте, правильно ли мы поняли ваши пожелания</p>
+                                <p class="slide-description">Проверьте, правильно ли мы поняли Ваши пожелания</p>
                                 
                                 <div class="summary-container" id="summary-container">
                                     <div class="summary-section" data-type="priority">
@@ -497,6 +507,50 @@
         const totalHeroScreens = 3;
         let isTransitioning = false;
         
+        // Функция для проверки заполненности анкеты
+        function checkSurveyCompletion() {
+            // Проверяем, есть ли сохраненные данные анкеты в localStorage
+            const surveyData = localStorage.getItem('survey_data');
+            if (surveyData) {
+                try {
+                    const data = JSON.parse(surveyData);
+                    // Если есть хотя бы одно заполненное поле, показываем кнопку сброса
+                    if (Object.keys(data).length > 0) {
+                        showResetButton();
+                    }
+                } catch (e) {
+                    console.error('Error parsing survey data:', e);
+                }
+            }
+        }
+        
+        // Функция для показа кнопки сброса
+        function showResetButton() {
+            const surveyActions = document.querySelector('.survey-actions');
+            if (!surveyActions) {
+                const surveyHeader = document.querySelector('.survey-header');
+                if (surveyHeader) {
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'survey-actions';
+                    actionsDiv.innerHTML = `
+                        <button id="reset-survey-btn" class="btn-reset-survey" onclick="resetSurvey()" title="Сбросить анкету">
+                            <span class="reset-icon">🔄</span>
+                            <span class="reset-text">Сбросить</span>
+                        </button>
+                    `;
+                    surveyHeader.appendChild(actionsDiv);
+                }
+            }
+        }
+        
+        // Функция для скрытия кнопки сброса
+        function hideResetButton() {
+            const surveyActions = document.querySelector('.survey-actions');
+            if (surveyActions) {
+                surveyActions.remove();
+            }
+        }
+        
         // Функция для перехода к следующей hero-секции
         function nextHeroScreen() {
             console.log('nextHeroScreen called, currentHeroScreen:', currentHeroScreen, 'isTransitioning:', isTransitioning);
@@ -560,6 +614,9 @@
         
         // Обработчик клика по hero-секциям
         document.addEventListener('DOMContentLoaded', function() {
+            // Проверяем заполненность анкеты
+            checkSurveyCompletion();
+            
             // Проверяем, видел ли пользователь стартовые экраны
             const hasSeenIntro = localStorage.getItem('figaro_intro_seen');
             
