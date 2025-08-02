@@ -92,7 +92,7 @@
         <div class="container">
             <div class="tabs-container">
             <div class="tabs">
-                <button class="tab-btn active" id="tab-about-btn" onclick="showTab('about')">ℹ️ О проекте</button>
+                <button class="tab-btn active" id="tab-about-btn" onclick="showTab('about')">ℹ️ О сервисе</button>
                 <button class="tab-btn" id="tab-form-btn" onclick="showTab('form')">📝 Анкета</button>
                 <button class="tab-btn" id="tab-recs-btn" onclick="showTab('recs')">🎯 Рекомендации</button>
             </div>
@@ -100,6 +100,9 @@
             <!-- Вкладка О проекте -->
             <div class="tab-content" id="tab-about" style="display:block;">
                 <div class="about-section">
+                    <div class="survey-header">
+                        <h2>Заполните анкету — получите рекомендации</h2>
+                    </div>
                     
                     <div class="about-content">
                         <div class="about-feature glass-card">
@@ -115,7 +118,7 @@
                             <div class="feature-icon-modern">🧠</div>
                             <div class="feature-text">
                                 <h3 class="feature-title-modern">ИИ и машинное обучение</h3>
-                                <p>Предложим то, что не сможет человек — анализируем 8 000 000 000 000 000 000 реальных комбинаций концертов и предлагаем оптимальные пути.</p>
+                                <p>Предложим то, что не сможет человек — анализируем 8 × миллионов × миллиардов реальных комбинаций концертов и предлагаем оптимальные пути.</p>
                             </div>
                             <div class="feature-glow"></div>
                         </div>
@@ -511,6 +514,9 @@
             
             if (currentHeroScreen > totalHeroScreens) {
                 console.log('Transitioning to main content');
+                // Сохраняем, что пользователь видел стартовые экраны
+                localStorage.setItem('figaro_intro_seen', 'true');
+                
                 // Переходим к основному контенту
                 setTimeout(() => {
                     const mainContent = document.getElementById('main-content');
@@ -554,54 +560,69 @@
         
         // Обработчик клика по hero-секциям
         document.addEventListener('DOMContentLoaded', function() {
-            // Первый текстовый контент уже активен в HTML
+            // Проверяем, видел ли пользователь стартовые экраны
+            const hasSeenIntro = localStorage.getItem('figaro_intro_seen');
             
-            const heroContainer = document.getElementById('hero-container');
-            if (heroContainer) {
-                heroContainer.addEventListener('click', nextHeroScreen);
-            }
-            
-            // Обработчик прокрутки - только для hero-секций
-            let scrollTimeout;
-            window.addEventListener('scroll', function() {
-                if (scrollTimeout) clearTimeout(scrollTimeout);
+            if (hasSeenIntro) {
+                // Пользователь уже видел стартовые экраны - показываем основной контент
+                const heroContainer = document.getElementById('hero-container');
+                const mainContent = document.getElementById('main-content');
                 
-                scrollTimeout = setTimeout(() => {
-                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                    
-                    // Если пользователь прокрутил вниз и мы на hero-секции
-                    if (scrollTop > 50 && currentHeroScreen <= totalHeroScreens) {
-                        // Предотвращаем реальную прокрутку и переключаем текстовый контент
-                        window.scrollTo(0, 0);
-                        nextHeroScreen();
-                    }
-                }, 100);
-            });
-            
-            // Обработчик клавиш
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'ArrowDown' || e.key === ' ' || e.key === 'Enter') {
-                    e.preventDefault();
-                    nextHeroScreen();
+                if (heroContainer && mainContent) {
+                    heroContainer.style.display = 'none';
+                    mainContent.classList.add('active');
                 }
-            });
-            
-            // Обработчик колесика мыши для hero-секций
-            let wheelTimeout;
-            window.addEventListener('wheel', function(e) {
-                if (currentHeroScreen <= totalHeroScreens) {
-                    e.preventDefault();
+            } else {
+                // Первый визит - показываем стартовые экраны
+                // Первый текстовый контент уже активен в HTML
+                
+                const heroContainer = document.getElementById('hero-container');
+                if (heroContainer) {
+                    heroContainer.addEventListener('click', nextHeroScreen);
+                }
+                
+                // Обработчик прокрутки - только для hero-секций
+                let scrollTimeout;
+                window.addEventListener('scroll', function() {
+                    if (scrollTimeout) clearTimeout(scrollTimeout);
                     
-                    if (wheelTimeout) clearTimeout(wheelTimeout);
-                    
-                    wheelTimeout = setTimeout(() => {
-                        if (e.deltaY > 0) {
-                            // Прокрутка вниз
+                    scrollTimeout = setTimeout(() => {
+                        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                        
+                        // Если пользователь прокрутил вниз и мы на hero-секции
+                        if (scrollTop > 50 && currentHeroScreen <= totalHeroScreens) {
+                            // Предотвращаем реальную прокрутку и переключаем текстовый контент
+                            window.scrollTo(0, 0);
                             nextHeroScreen();
                         }
-                    }, 50);
-                }
-            }, { passive: false });
+                    }, 100);
+                });
+                
+                // Обработчик клавиш
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'ArrowDown' || e.key === ' ' || e.key === 'Enter') {
+                        e.preventDefault();
+                        nextHeroScreen();
+                    }
+                });
+                
+                // Обработчик колесика мыши для hero-секций
+                let wheelTimeout;
+                window.addEventListener('wheel', function(e) {
+                    if (currentHeroScreen <= totalHeroScreens) {
+                        e.preventDefault();
+                        
+                        if (wheelTimeout) clearTimeout(wheelTimeout);
+                        
+                        wheelTimeout = setTimeout(() => {
+                            if (e.deltaY > 0) {
+                                // Прокрутка вниз
+                                nextHeroScreen();
+                            }
+                        }, 50);
+                    }
+                }, { passive: false });
+            }
         });
     </script>
 </body>
