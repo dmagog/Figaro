@@ -52,9 +52,57 @@
         </div>
     </nav>
 
-    <div class="container">
-        <!-- Основной контент -->
-        <div class="tabs-container">
+    <!-- Полноэкранные секции лендинга -->
+    <section class="hero-screen hero-screen-1 active" id="hero-1">
+        <div class="hero-background">
+            <div class="hero-particles"></div>
+            <div class="hero-glow"></div>
+        </div>
+        <div class="hero-content">
+            <div class="hero-balloon">🎈</div>
+            <h1 class="hero-title">Что в 8 миллионов раз больше миллиарда?</h1>
+            <div class="hero-scroll-indicator">
+                <div class="scroll-arrow">↓</div>
+                <span>Прокрутите вниз</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="hero-screen hero-screen-2" id="hero-2">
+        <div class="hero-background">
+            <div class="hero-particles"></div>
+            <div class="hero-glow"></div>
+        </div>
+        <div class="hero-content">
+            <div class="hero-balloon">🎈</div>
+            <h1 class="hero-title">Количество маршрутов фестиваля<br>«Безумные дни в Екатеринбурге»!</h1>
+            <h2 class="hero-subtitle">Figaro поможет найти свой путь!</h2>
+            <div class="hero-scroll-indicator">
+                <div class="scroll-arrow">↓</div>
+                <span>Прокрутите вниз</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="hero-screen hero-screen-3" id="hero-3">
+        <div class="hero-background">
+            <div class="hero-particles"></div>
+            <div class="hero-glow"></div>
+        </div>
+        <div class="hero-content">
+            <div class="hero-balloon">🎈</div>
+            <h1 class="hero-title">Figaro — ваш персональный гид<br>и конструктор маршрутов фестиваля</h1>
+            <div class="hero-scroll-indicator">
+                <div class="scroll-arrow">↓</div>
+                <span>Начать</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Основной контент -->
+    <div class="main-content" id="main-content">
+        <div class="container">
+            <div class="tabs-container">
             <div class="tabs">
                 <button class="tab-btn active" id="tab-about-btn" onclick="showTab('about')">ℹ️ О проекте</button>
                 <button class="tab-btn" id="tab-form-btn" onclick="showTab('form')">📝 Анкета</button>
@@ -386,6 +434,7 @@
                 </div>
             </div>
         </div>
+        </div>
     </div>
     
     <!-- Современный подвал -->
@@ -451,5 +500,93 @@
     </footer>
     
     <script src="/static/js/index.js"></script>
+    
+    <script>
+        // Управление hero-секциями
+        let currentHeroScreen = 1;
+        const totalHeroScreens = 3;
+        let isTransitioning = false;
+        
+        // Функция для перехода к следующей hero-секции
+        function nextHeroScreen() {
+            if (isTransitioning) return;
+            
+            isTransitioning = true;
+            
+            // Скрываем текущую секцию
+            document.getElementById(`hero-${currentHeroScreen}`).classList.remove('active');
+            
+            currentHeroScreen++;
+            
+            if (currentHeroScreen > totalHeroScreens) {
+                // Переходим к основному контенту
+                setTimeout(() => {
+                    document.getElementById('main-content').classList.add('active');
+                    // Плавно прокручиваем к основному контенту
+                    document.getElementById('main-content').scrollIntoView({ 
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }, 800);
+                return;
+            }
+            
+            // Показываем следующую секцию на том же месте
+            setTimeout(() => {
+                document.getElementById(`hero-${currentHeroScreen}`).classList.add('active');
+                isTransitioning = false;
+            }, 800);
+        }
+        
+        // Обработчик клика по hero-секциям
+        document.addEventListener('DOMContentLoaded', function() {
+            const heroScreens = document.querySelectorAll('.hero-screen');
+            heroScreens.forEach(screen => {
+                screen.addEventListener('click', nextHeroScreen);
+            });
+            
+            // Обработчик прокрутки - только для hero-секций
+            let scrollTimeout;
+            window.addEventListener('scroll', function() {
+                if (scrollTimeout) clearTimeout(scrollTimeout);
+                
+                scrollTimeout = setTimeout(() => {
+                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    
+                    // Если пользователь прокрутил вниз и мы на hero-секции
+                    if (scrollTop > 50 && currentHeroScreen <= totalHeroScreens) {
+                        // Предотвращаем реальную прокрутку и переключаем секции
+                        window.scrollTo(0, 0);
+                        nextHeroScreen();
+                    }
+                }, 100);
+            });
+            
+            // Обработчик клавиш
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'ArrowDown' || e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    nextHeroScreen();
+                }
+            });
+            
+            // Обработчик колесика мыши для hero-секций
+            let wheelTimeout;
+            window.addEventListener('wheel', function(e) {
+                if (currentHeroScreen <= totalHeroScreens) {
+                    e.preventDefault();
+                    
+                    if (wheelTimeout) clearTimeout(wheelTimeout);
+                    
+                    wheelTimeout = setTimeout(() => {
+                        if (e.deltaY > 0) {
+                            // Прокрутка вниз
+                            nextHeroScreen();
+                        }
+                    }, 50);
+                }
+            }, { passive: false });
+        });
+    </script>
 </body>
 </html> 
