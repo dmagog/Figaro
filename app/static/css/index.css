@@ -2823,18 +2823,17 @@
     position: relative;
     z-index: 1;
     height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    width: 100%;
 }
 
 .hero-balloon {
     font-size: 6em;
-    margin-bottom: 40px;
     animation: floatBalloon 6s ease-in-out infinite;
     display: inline-block;
-    position: relative;
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 10;
 }
 
@@ -2846,14 +2845,17 @@
     text-align: center;
     width: 100%;
     max-width: 1200px;
-    position: relative;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     z-index: 5;
 }
 
 .hero-text-content.active {
     opacity: 1;
     visibility: visible;
-    transform: translateY(0);
+    transform: translate(-50%, -50%);
 }
 
 
@@ -2862,7 +2864,6 @@
     font-size: 4.5em;
     font-weight: 700;
     color: white;
-    margin-bottom: 150px;
     line-height: 1.2;
     text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     animation: fadeInUp 1s ease-out 0.5s both;
@@ -2870,8 +2871,7 @@
 
 /* Специальные стили для первого экрана */
 .hero-text-1 .hero-title {
-    font-size: 3.5em;
-    margin-bottom: 80px;
+    font-size: 3.8em;
 }
 
 /* Специальные стили для второго экрана */
@@ -2881,22 +2881,19 @@
 
 /* Специальные стили для третьего экрана */
 .hero-text-3 .hero-title {
-    font-size: 5em;
-    margin-bottom: 40px;
+    font-size: 3.8em;
 }
 
 .hero-text-3 .hero-subtitle {
-    font-size: 2.2em;
+    font-size: 2em;
     color: #ffe082;
     text-shadow: 0 2px 15px rgba(255, 224, 130, 0.4);
-    margin-bottom: 120px;
 }
 
 .hero-subtitle {
     font-size: 2em;
     font-weight: 400;
     color: rgba(255, 255, 255, 0.9);
-    margin-bottom: 120px;
     text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     animation: fadeInUp 1s ease-out 0.8s both;
 }
