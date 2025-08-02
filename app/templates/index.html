@@ -553,21 +553,21 @@
         
         // Функция для обновления счетчиков в навигаторе рекомендаций
         function updateRecommendationCounters() {
-            // Находим все блоки рекомендаций
-            const recommendationBlocks = document.querySelectorAll('.rec-group');
+            // Находим все блоки рекомендаций (разные возможные селекторы)
+            const recommendationBlocks = document.querySelectorAll('.rec-group, .recommendation-group, [data-recommendation-type]');
             
             recommendationBlocks.forEach(block => {
-                const groupTitle = block.querySelector('.group-title');
+                const groupTitle = block.querySelector('.group-title, .rec-group-title, h3');
                 if (groupTitle) {
                     const title = groupTitle.textContent.trim();
                     
                     // Находим соответствующую секцию в навигаторе
-                    const navSection = document.querySelector(`[data-category="${title}"]`);
+                    const navSection = document.querySelector(`[data-category="${title}"], .nav-section[data-title="${title}"]`);
                     if (navSection) {
                         const countElement = navSection.querySelector('.nav-section-count');
                         if (countElement) {
-                            // Подсчитываем количество маршрутов в блоке
-                            const routes = block.querySelectorAll('.route-item');
+                            // Подсчитываем количество маршрутов в блоке (разные возможные селекторы)
+                            const routes = block.querySelectorAll('.route-item, .rec-route, tr[data-route-id]');
                             const count = routes.length;
                             
                             // Обновляем счетчик
@@ -581,6 +581,33 @@
                                 countElement.classList.remove('zero');
                                 navSection.style.opacity = '1';
                             }
+                        }
+                    }
+                }
+            });
+            
+            // Также обновляем счетчики в карточках рекомендаций
+            updateRecommendationCards();
+        }
+        
+        // Функция для обновления счетчиков в карточках рекомендаций
+        function updateRecommendationCards() {
+            // Находим все карточки рекомендаций
+            const recommendationCards = document.querySelectorAll('.recommendation-card, .rec-card, [data-recommendation-card]');
+            
+            recommendationCards.forEach(card => {
+                const countElement = card.querySelector('.card-count, .route-count, [data-count]');
+                if (countElement) {
+                    // Находим соответствующий блок с маршрутами
+                    const cardTitle = card.querySelector('.card-title, .rec-title, h4');
+                    if (cardTitle) {
+                        const title = cardTitle.textContent.trim();
+                        const correspondingBlock = document.querySelector(`[data-group="${title}"], .rec-group[data-title="${title}"]`);
+                        
+                        if (correspondingBlock) {
+                            const routes = correspondingBlock.querySelectorAll('.route-item, .rec-route, tr[data-route-id]');
+                            const count = routes.length;
+                            countElement.textContent = `${count} маршрутов`;
                         }
                     }
                 }
@@ -612,7 +639,7 @@
             // Если переключаемся на вкладку рекомендаций, обновляем счетчики
             if (tabName === 'recs') {
                 setTimeout(() => {
-                    updateRecommendationCounters();
+                    forceUpdateAllCounters();
                 }, 100);
             }
         }
@@ -623,6 +650,44 @@
                 updateRecommendationCounters();
             }, 200);
         }
+        
+        // Функция для принудительного обновления всех счетчиков
+        function forceUpdateAllCounters() {
+            console.log('Обновляем все счетчики...');
+            
+            // Обновляем счетчики в навигаторе
+            updateRecommendationCounters();
+            
+            // Обновляем счетчики в карточках
+            updateRecommendationCards();
+            
+            // Дополнительно ищем и обновляем все элементы с текстом "10 маршрутов"
+            const allCountElements = document.querySelectorAll('*');
+            allCountElements.forEach(element => {
+                if (element.textContent && element.textContent.includes('10 маршрутов')) {
+                    // Находим соответствующий блок с маршрутами
+                    const parentCard = element.closest('.recommendation-card, .rec-card, .nav-section');
+                    if (parentCard) {
+                        const cardTitle = parentCard.querySelector('.card-title, .rec-title, h4, .nav-section-title');
+                        if (cardTitle) {
+                            const title = cardTitle.textContent.trim();
+                            const correspondingBlock = document.querySelector(`[data-group="${title}"], .rec-group[data-title="${title}"]`);
+                            
+                            if (correspondingBlock) {
+                                const routes = correspondingBlock.querySelectorAll('.route-item, .rec-route, tr[data-route-id]');
+                                const count = routes.length;
+                                element.textContent = element.textContent.replace('10 маршрутов', `${count} маршрутов`);
+                            }
+                        }
+                    }
+                }
+            });
+            
+            console.log('Счетчики обновлены');
+        }
+        
+        // Добавляем глобальную функцию для отладки
+        window.updateCounters = forceUpdateAllCounters;
         
         // Функция для перехода к следующей hero-секции
         function nextHeroScreen() {
@@ -691,7 +756,7 @@
             checkSurveyCompletion();
             
             // Обновляем счетчики рекомендаций
-            updateRecommendationCounters();
+            forceUpdateAllCounters();
             
             // Проверяем, видел ли пользователь стартовые экраны
             const hasSeenIntro = localStorage.getItem('figaro_intro_seen');
