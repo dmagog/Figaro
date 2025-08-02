@@ -2846,6 +2846,23 @@
     font-size: 3.8em;
 }
 
+/* Специальные стили для третьего экрана */
+.hero-screen-3 .hero-content {
+    transform: translateY(-10%);
+}
+
+.hero-screen-3 .hero-title {
+    font-size: 5em;
+    margin-bottom: 40px;
+}
+
+.hero-screen-3 .hero-subtitle {
+    font-size: 2.2em;
+    color: #ffe082;
+    text-shadow: 0 2px 15px rgba(255, 224, 130, 0.4);
+    margin-bottom: 80px;
+}
+
 .hero-subtitle {
     font-size: 2em;
     font-weight: 400;
@@ -2862,7 +2879,8 @@
 }
 
 /* Стили для слова Figaro */
-.hero-subtitle .figaro-text {
+.hero-subtitle .figaro-text,
+.hero-title .figaro-text {
     font-family: 'Noteworthy', cursive;
     font-weight: 700;
     color: #ffffff;
@@ -2885,6 +2903,11 @@
 /* Специальное позиционирование для второго экрана */
 .hero-screen-2 .hero-scroll-indicator {
     bottom: 5px;
+}
+
+/* Специальное позиционирование для третьего экрана */
+.hero-screen-3 .hero-scroll-indicator {
+    bottom: 15px;
 }
 
 .scroll-arrow {
