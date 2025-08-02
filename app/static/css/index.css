@@ -2841,6 +2841,11 @@
     animation: fadeInUp 1s ease-out 0.5s both;
 }
 
+/* Специальные стили для второго экрана */
+.hero-screen-2 .hero-title {
+    font-size: 3.8em;
+}
+
 .hero-subtitle {
     font-size: 2em;
     font-weight: 400;
@@ -2848,6 +2853,20 @@
     margin-bottom: 80px;
     text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     animation: fadeInUp 1s ease-out 0.8s both;
+}
+
+/* Специальные стили для подзаголовка второго экрана */
+.hero-screen-2 .hero-subtitle {
+    color: #ffe082;
+    text-shadow: 0 2px 15px rgba(255, 224, 130, 0.4);
+}
+
+/* Стили для слова Figaro */
+.hero-subtitle .figaro-text {
+    font-family: 'Noteworthy', cursive;
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
 }
 
 .hero-scroll-indicator {
@@ -2861,6 +2880,11 @@
     z-index: 10;
     width: 200px;
     margin-left: -100px;
+}
+
+/* Специальное позиционирование для второго экрана */
+.hero-screen-2 .hero-scroll-indicator {
+    bottom: 5px;
 }
 
 .scroll-arrow {
