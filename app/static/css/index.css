@@ -3132,3 +3132,14 @@
         padding: 0 15px;
     }
 }
+
+/* Дополнительные стили для счетчиков рекомендаций */
+.nav-section-count {
+    min-width: 20px;
+    text-align: center;
+}
+
+.nav-section-count.zero {
+    opacity: 0.5;
+    background: rgba(255, 255, 255, 0.5) !important;
+}

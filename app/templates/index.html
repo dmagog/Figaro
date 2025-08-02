@@ -551,6 +551,79 @@
             }
         }
         
+        // Функция для обновления счетчиков в навигаторе рекомендаций
+        function updateRecommendationCounters() {
+            // Находим все блоки рекомендаций
+            const recommendationBlocks = document.querySelectorAll('.rec-group');
+            
+            recommendationBlocks.forEach(block => {
+                const groupTitle = block.querySelector('.group-title');
+                if (groupTitle) {
+                    const title = groupTitle.textContent.trim();
+                    
+                    // Находим соответствующую секцию в навигаторе
+                    const navSection = document.querySelector(`[data-category="${title}"]`);
+                    if (navSection) {
+                        const countElement = navSection.querySelector('.nav-section-count');
+                        if (countElement) {
+                            // Подсчитываем количество маршрутов в блоке
+                            const routes = block.querySelectorAll('.route-item');
+                            const count = routes.length;
+                            
+                            // Обновляем счетчик
+                            countElement.textContent = count;
+                            
+                            // Если маршрутов нет, добавляем класс zero
+                            if (count === 0) {
+                                countElement.classList.add('zero');
+                                navSection.style.opacity = '0.5';
+                            } else {
+                                countElement.classList.remove('zero');
+                                navSection.style.opacity = '1';
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Переопределяем функцию showTab для обновления счетчиков
+        function showTab(tabName) {
+            // Скрываем все вкладки
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(tab => tab.style.display = 'none');
+            
+            // Убираем активный класс со всех кнопок
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // Показываем выбранную вкладку
+            const selectedTab = document.getElementById(`tab-${tabName}`);
+            if (selectedTab) {
+                selectedTab.style.display = 'block';
+            }
+            
+            // Добавляем активный класс к выбранной кнопке
+            const selectedButton = document.getElementById(`tab-${tabName}-btn`);
+            if (selectedButton) {
+                selectedButton.classList.add('active');
+            }
+            
+            // Если переключаемся на вкладку рекомендаций, обновляем счетчики
+            if (tabName === 'recs') {
+                setTimeout(() => {
+                    updateRecommendationCounters();
+                }, 100);
+            }
+        }
+        
+        // Функция для обновления счетчиков после загрузки рекомендаций
+        function onRecommendationsLoaded() {
+            setTimeout(() => {
+                updateRecommendationCounters();
+            }, 200);
+        }
+        
         // Функция для перехода к следующей hero-секции
         function nextHeroScreen() {
             console.log('nextHeroScreen called, currentHeroScreen:', currentHeroScreen, 'isTransitioning:', isTransitioning);
@@ -616,6 +689,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Проверяем заполненность анкеты
             checkSurveyCompletion();
+            
+            // Обновляем счетчики рекомендаций
+            updateRecommendationCounters();
             
             // Проверяем, видел ли пользователь стартовые экраны
             const hasSeenIntro = localStorage.getItem('figaro_intro_seen');
