@@ -2899,6 +2899,30 @@
     animation: fadeInUp 1s ease-out 0.8s both;
 }
 
+/* Стили для математического выражения на втором экране */
+.hero-math-expression {
+    font-size: 2.2em;
+    font-weight: 700;
+    color: #81c784; /* Изменен на зеленый */
+    text-shadow: 0 0 15px rgba(129, 199, 132, 0.6); /* Изменен на зеленый */
+    margin-top: 100px; /* Опускаем текст ниже */
+    margin-bottom: -15px; /* Сдвинут ближе к основному тексту */
+    letter-spacing: 2px;
+    animation: mathPulse 3s ease-in-out infinite;
+    font-family: 'Courier New', monospace;
+}
+
+@keyframes mathPulse {
+    0%, 100% { 
+        transform: scale(1);
+        text-shadow: 0 0 15px rgba(129, 199, 132, 0.6); /* Изменен на зеленый */
+    }
+    50% { 
+        transform: scale(1.05);
+        text-shadow: 0 0 25px rgba(129, 199, 132, 0.8); /* Изменен на зеленый */
+    }
+}
+
 /* Специальные стили для подзаголовка второго экрана */
 .hero-text-2 .hero-subtitle {
     color: #ffe082;
@@ -2982,7 +3006,6 @@
     opacity: 0;
     transform: translateY(20px);
     transition: all 0.8s ease;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
     position: relative;
 }
@@ -2999,34 +3022,7 @@
     z-index: 1;
 }
 
-/* Добавляем частицы и свечение для основного контента */
-.main-content::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: 
-        radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 40% 40%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
-    animation: heroParticles 20s ease-in-out infinite;
-    z-index: -1;
-}
-
-.main-content::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 600px;
-    height: 600px;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-    animation: heroGlow 8s ease-in-out infinite;
-    z-index: -1;
-}
+/* Убираем частицы и свечение для основного контента */
 
 /* Адаптивность для hero секций */
 @media (max-width: 768px) {
