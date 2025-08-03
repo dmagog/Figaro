@@ -4,7 +4,7 @@ from aiogram.types import ParseMode, InlineKeyboardMarkup, InlineKeyboardButton,
 from sqlalchemy import create_engine, text
 from sqlmodel import Session, select
 from app.database.simple_engine import simple_engine
-from app.models.user import User
+from app.models.user import User, TelegramLinkCode
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -89,9 +89,23 @@ from services.api_client import ApiClient
 # Создаем экземпляр API клиента
 api_client = ApiClient()
 
+def escape_markdown(text):
+    """Экранирует специальные символы Markdown"""
+    if not text:
+        return text
+    # Экранируем символы, которые могут сломать Markdown
+    escape_chars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']
+    for char in escape_chars:
+        text = text.replace(char, f'\\{char}')
+    return text
+
 async def send_template_message_async(template_id: int, telegram_id: int):
     """Отправляет сообщение пользователю по шаблону через HTTP API и Celery"""
-    return await api_client.send_template_message(telegram_id, template_id)
+    try:
+        return await api_client.send_template_message(telegram_id, template_id)
+    except Exception as e:
+        print(f"Ошибка при отправке шаблонного сообщения: {e}")
+        return {"error": f"Ошибка сети: {str(e)}"}
 
 def format_route_concerts_list(concerts_data, detailed=False, day_number=None):
     """Форматирует список концертов для отображения"""
@@ -122,10 +136,10 @@ def format_route_concerts_list(concerts_data, detailed=False, day_number=None):
                 concerts_by_day[day].append({
                     'index': i + 1,
                     'time': dt.strftime("%H:%M"),
-                    'name': concert.get('name', 'Название не указано'),
-                    'hall': concert.get('hall', {}).get('name', 'Зал не указан'),
-                    'duration': str(concert.get('duration', 'Длительность не указана')),
-                    'genre': concert.get('genre', 'Жанр не указан'),
+                    'name': escape_markdown(concert.get('name', 'Название не указано')),
+                    'hall': escape_markdown(concert.get('hall', {}).get('name', 'Зал не указан')),
+                    'duration': escape_markdown(str(concert.get('duration', 'Длительность не указана'))),
+                    'genre': escape_markdown(concert.get('genre', 'Жанр не указан')),
                     'concert_data': concert_data
                 })
         
@@ -154,14 +168,14 @@ def format_route_concerts_list(concerts_data, detailed=False, day_number=None):
                     for concert in day_concerts:
                         if detailed:
                             concerts_text += f"*{concert['time']}* • {concert['index']}. {concert['name']}\n"
-                            concerts_text += f"   🏛️ {concert['hall']} • ⏱️ {concert['duration']} • 🎭 {concert['genre']}\n"
+                            concerts_text += f"🏛️ {concert['hall']} • ⏱️ {concert['duration']} • 🎭 {concert['genre']}\n"
                             
                             if concert['concert_data'].get('transition_info'):
                                 transition = concert['concert_data']['transition_info']
                                 if transition.get('status') == 'success':
-                                    concerts_text += f"   🚶🏼‍➡️ Переход в другой зал: ~{transition.get('walk_time', 0)} мин • {transition.get('time_between', 0)} мин до следующего\n"
+                                    concerts_text += f"🚶🏼‍➡️ Переход в другой зал: ~{transition.get('walk_time', 0)} мин • {transition.get('time_between', 0)} мин до следующего\n"
                                 elif transition.get('status') == 'same_hall':
-                                    concerts_text += f"   📍 Остаёмся в том же зале • {transition.get('time_between', 0)} мин до следующего\n"
+                                    concerts_text += f"📍 Остаёмся в том же зале • {transition.get('time_between', 0)} мин до следующего\n"
                             
                             concerts_text += "\n"
                         else:
@@ -192,14 +206,14 @@ def format_route_concerts_list(concerts_data, detailed=False, day_number=None):
             for concert in day_concerts:
                 if detailed:
                     concerts_text += f"*{concert['time']}* • {concert['index']}. {concert['name']}\n"
-                    concerts_text += f"   🏛️ {concert['hall']} • ⏱️ {concert['duration']} • 🎭 {concert['genre']}\n"
+                    concerts_text += f"🏛️ {concert['hall']} • ⏱️ {concert['duration']} • 🎭 {concert['genre']}\n"
                     
                     if concert['concert_data'].get('transition_info'):
                         transition = concert['concert_data']['transition_info']
                         if transition.get('status') == 'success':
-                            concerts_text += f"   🚶🏼‍➡️ Переход в другой зал: ~{transition.get('walk_time', 0)} мин • {transition.get('time_between', 0)} мин до следующего\n"
+                            concerts_text += f"🚶🏼‍➡️ Переход в другой зал: ~{transition.get('walk_time', 0)} мин • {transition.get('time_between', 0)} мин до следующего\n"
                         elif transition.get('status') == 'same_hall':
-                            concerts_text += f"   📍 Остаёмся в том же зале • {transition.get('time_between', 0)} мин до следующего\n"
+                            concerts_text += f"📍 Остаёмся в том же зале • {transition.get('time_between', 0)} мин до следующего\n"
                     
                     concerts_text += "\n"
                 else:
@@ -271,10 +285,10 @@ async def send_welcome(message: types.Message):
             # Пользователь привязан - показываем меню
             await message.reply(
                 f"""Привет, {user.name or 'друг'}! 👋 \n\n
-                Я *Figaro* — твой помощник на фестивале _«Безумные дни в Екатеринбурге»_. 
-                С моей помощью фестиваль будет как на ладони: маршрутный лист перед глазами, билеты всегда под рукой и 
-                своевременные напоминания о событиях.\n\n
-                Выбери действие:
+Я *Figaro* — твой помощник на фестивале _«Безумные дни в Екатеринбурге»_. 
+С моей помощью фестиваль будет как на ладони: маршрутный лист перед глазами, билеты всегда под рукой и 
+своевременные напоминания о событиях.\n\n
+Выбери действие:
                 """,
                 reply_markup=get_main_menu_keyboard()
             )
@@ -282,10 +296,10 @@ async def send_welcome(message: types.Message):
             # Пользователь не привязан - просим код
             await message.reply(
                 """Привет! Я *Figaro* — твой помощник на фестивале _«Безумные дни в Екатеринбурге»_.\n\n
-                Чтобы воспользоваться всеми возможностями, привяжи свой аккакаунт. Для этого:\n\n
-                1. Перейди, в личный кабинет на моём сайте\n
-                2. Скоопируй уникальный код, по которому я тебя узнаю\n
-                3. Отправьте мне этот код в сообщении
+Чтобы воспользоваться всеми возможностями, привяжи свой аккакаунт. Для этого:\n\n
+1\. Перейди в личный кабинет на моём сайте\n
+2\. Скопируй уникальный код, по которому я тебя узнаю\n
+3\. Отправь мне этот код в сообщении
                 """,
                 reply=False
             )
@@ -385,8 +399,8 @@ async def process_callback(callback_query: types.CallbackQuery):
         elif action == "my_route":
             await safe_edit_message(
                 """🎵 Выберите формат маршрута:\n\n
-                   • *Краткий* — коротко и наглядно;
-                   • *Полный* — развернуто и информативно.
+• *Краткий* — коротко и наглядно\n
+• *Полный* — развернуто и информативно
                 """,
                 reply_markup=get_route_menu_keyboard()
             )
@@ -394,8 +408,8 @@ async def process_callback(callback_query: types.CallbackQuery):
         elif action == "route_menu":
             await safe_edit_message(
                 """🗺️ Выберите формат маршрута:\n\n
-                   * *Краткий* — коротко и наглядно;
-                   * *Полный* — развернуто и информативно.
+• *Краткий* — коротко и наглядно\n
+• *Полный* — развернуто и информативно
                 """,
                 reply_markup=get_route_menu_keyboard()
             )
@@ -403,38 +417,50 @@ async def process_callback(callback_query: types.CallbackQuery):
         elif action == "route_brief":
             # Получаем и отображаем краткий маршрут
             await safe_edit_message("🔄 Загружаю ваш маршрут...")
-            result = await api_client.get_route_data(callback_query.from_user.id)
-            if "error" in result:
-                await safe_edit_message(f"❌ Ошибка: {result['error']}", reply_markup=get_route_menu_keyboard())
-            else:
-                route_data = result.get("route_data", {})
-                formatted_route = format_route_concerts_list(route_data, detailed=False)
-                await safe_edit_message(f"🎵 *Ваш краткий маршрут:*\n\n{formatted_route}", 
-                                      reply_markup=get_route_menu_keyboard(), parse_mode='Markdown')
+            try:
+                result = await api_client.get_route_data(callback_query.from_user.id)
+                if "error" in result:
+                    await safe_edit_message(f"❌ Ошибка: {result['error']}", reply_markup=get_route_menu_keyboard())
+                else:
+                    route_data = result.get("route_data", {})
+                    formatted_route = format_route_concerts_list(route_data, detailed=False)
+                    await safe_edit_message(f"🎵 *Ваш краткий маршрут:*\n\n{formatted_route}", 
+                                          reply_markup=get_route_menu_keyboard(), parse_mode='Markdown')
+            except Exception as e:
+                print(f"Ошибка при получении маршрута: {e}")
+                await safe_edit_message("❌ Ошибка сети. Попробуйте позже.", reply_markup=get_route_menu_keyboard())
         
         elif action == "route_detailed":
             # Получаем и отображаем развернутый маршрут
             await safe_edit_message("🔄 Загружаю развернутый маршрут...")
-            result = await api_client.get_route_data(callback_query.from_user.id)
-            if "error" in result:
-                await safe_edit_message(f"❌ Ошибка: {result['error']}", reply_markup=get_route_menu_keyboard())
-            else:
-                route_data = result.get("route_data", {})
-                formatted_route = format_route_concerts_list(route_data, detailed=True)
-                await safe_edit_message(f"🎵 *Ваш развернутый маршрут:*\n\n{formatted_route}", 
-                                      reply_markup=get_route_menu_keyboard(), parse_mode='Markdown')
+            try:
+                result = await api_client.get_route_data(callback_query.from_user.id)
+                if "error" in result:
+                    await safe_edit_message(f"❌ Ошибка: {result['error']}", reply_markup=get_route_menu_keyboard())
+                else:
+                    route_data = result.get("route_data", {})
+                    formatted_route = format_route_concerts_list(route_data, detailed=True)
+                    await safe_edit_message(f"🎵 *Ваш развернутый маршрут:*\n\n{formatted_route}", 
+                                          reply_markup=get_route_menu_keyboard(), parse_mode='Markdown')
+            except Exception as e:
+                print(f"Ошибка при получении развернутого маршрута: {e}")
+                await safe_edit_message("❌ Ошибка сети. Попробуйте позже.", reply_markup=get_route_menu_keyboard())
         
         elif action == "route_stats":
             # Получаем и отображаем статистику маршрута
             await safe_edit_message("🔄 Загружаю статистику маршрута...")
-            result = await api_client.get_route_data(callback_query.from_user.id)
-            if "error" in result:
-                await safe_edit_message(f"❌ Ошибка: {result['error']}", reply_markup=get_route_menu_keyboard())
-            else:
-                route_data = result.get("route_data", {})
-                formatted_stats = format_route_summary(route_data)
-                await safe_edit_message(f"📊 *Статистика вашего маршрута:*\n\n{formatted_stats}", 
-                                      reply_markup=get_route_menu_keyboard(), parse_mode='Markdown')
+            try:
+                result = await api_client.get_route_data(callback_query.from_user.id)
+                if "error" in result:
+                    await safe_edit_message(f"❌ Ошибка: {result['error']}", reply_markup=get_route_menu_keyboard())
+                else:
+                    route_data = result.get("route_data", {})
+                    formatted_stats = format_route_summary(route_data)
+                    await safe_edit_message(f"📊 *Статистика вашего маршрута:*\n\n{formatted_stats}", 
+                                          reply_markup=get_route_menu_keyboard(), parse_mode='Markdown')
+            except Exception as e:
+                print(f"Ошибка при получении статистики маршрута: {e}")
+                await safe_edit_message("❌ Ошибка сети. Попробуйте позже.", reply_markup=get_route_menu_keyboard())
         
         elif action == "route_day":
             # Показываем выбор дня
@@ -449,15 +475,20 @@ async def process_callback(callback_query: types.CallbackQuery):
             # Получаем и отображаем маршрут на конкретный день
             day_number = action.split("_")[1]
             await safe_edit_message(f"🔄 Загружаю маршрут на день {day_number}...")
-            result = await api_client.get_route_day(callback_query.from_user.id, int(day_number))
-            if "error" in result:
+            try:
+                result = await api_client.get_route_day(callback_query.from_user.id, int(day_number))
+                if "error" in result:
+                    keyboard = await get_day_selection_keyboard(callback_query.from_user.id)
+                    await safe_edit_message(f"❌ Ошибка: {result['error']}", reply_markup=keyboard)
+                else:
+                    formatted_route = result.get("formatted_route", "Маршрут не найден")
+                    keyboard = await get_day_selection_keyboard(callback_query.from_user.id)
+                    await safe_edit_message(f"📅 *Маршрут на день {day_number}:*\n\n{formatted_route}", 
+                                          reply_markup=keyboard, parse_mode='Markdown')
+            except Exception as e:
+                print(f"Ошибка при получении маршрута на день: {e}")
                 keyboard = await get_day_selection_keyboard(callback_query.from_user.id)
-                await safe_edit_message(f"❌ Ошибка: {result['error']}", reply_markup=keyboard)
-            else:
-                formatted_route = result.get("formatted_route", "Маршрут не найден")
-                keyboard = await get_day_selection_keyboard(callback_query.from_user.id)
-                await safe_edit_message(f"📅 *Маршрут на день {day_number}:*\n\n{formatted_route}", 
-                                      reply_markup=keyboard, parse_mode='Markdown')
+                await safe_edit_message("❌ Ошибка сети. Попробуйте позже.", reply_markup=keyboard)
         
         elif action == "statistics":
             # Отправляем общую статистику по шаблону
@@ -484,13 +515,13 @@ async def process_callback(callback_query: types.CallbackQuery):
         
         elif action == "help":
             help_text = "*Что есть что❓:*\n\n"
-            help_text += "🗺️ *Мой маршрут* — все концерты по порядку: кратко и нагляжно, или развернуто и информативно\n\n"
+            help_text += "🗺️ *Мой маршрут* — все концерты по порядку: кратко и наглядно, или развернуто и информативно\n\n"
             help_text += "📊 *Статистика* — ваш маршрут в цифрах и любопытных фактах\n\n"
             help_text += "🎼 *Концерты сегодня* — маршрут этого дня\n\n"
             help_text += "🏛️ *Залы* — где находятся и как их найти\n\n"
             help_text += "👤 *Мой профиль* — убедиться, что Вы это Вы\n\n"
-            help_text += "🔗 *Личный кабинет* — ссылка на веб-версию\n\n"
-            help_text += "Для привязки аккаунта используйте код из личного кабинета."
+            help_text += "🔗 *Личный кабинет* — ссылка на веб\-версию\n\n"
+            help_text += "Для привязки аккаунта используйте код из личного кабинета\."
             
             await safe_edit_message(
                 help_text,
@@ -502,16 +533,35 @@ async def process_callback(callback_query: types.CallbackQuery):
             # Ссылка на личный кабинет
             web_url = SITE_LINK + "/profile"  # Можно сделать настраиваемым
             await safe_edit_message(
-                f"🔗 *Личный кабинет:*\n\nПерейдите по ссылке для доступа к полному функционалу:\n{web_url}",
-                reply_markup=get_main_menu_keyboard()
+                f"""🔗 *Личный кабинет*\n\n
+Функции, которые будут удобнее в веб\-версии сервиса:
+• Маршрутный лист
+• Детальная статистика
+• Настройки уведомлений
+
+[Перейти в личный кабинет]({web_url})
+                """,
+                reply_markup=get_main_menu_keyboard(),
+                parse_mode='Markdown'
             )
         
         elif action in ["today_concerts", "halls", "genres"]:
             # Заглушки для будущих функций
             await safe_edit_message(
                 "🚧 Эта функция находится в разработке. Скоро будет доступна!",
-                reply_markup=get_main_menu_keyboard()
+                reply_markup=get_main_menu_keyboard(),
+                parse_mode='Markdown'
             )
 
 if __name__ == "__main__":
-    executor.start_polling(dp, skip_updates=True) 
+    import asyncio
+    import time
+    
+    while True:
+        try:
+            print("Запуск бота...")
+            executor.start_polling(dp, skip_updates=True)
+        except Exception as e:
+            print(f"Ошибка в работе бота: {e}")
+            print("Перезапуск через 30 секунд...")
+            time.sleep(30) 

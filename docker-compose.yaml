@@ -75,6 +75,9 @@ services:
       - db
     networks:
       - figaro-network
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
 
   flower:
     image: mher/flower
