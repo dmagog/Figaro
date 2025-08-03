@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             nextStep();
         });
-        console.log('Обработчик для кнопки "Далее" добавлен');
+        console.log('Обработчик для кнопки "Пропустить" добавлен');
     }
     
     if (prevBtn) {
@@ -146,13 +146,6 @@ function nextStep() {
     if (autoTransitionTimeout) {
         clearTimeout(autoTransitionTimeout);
         autoTransitionTimeout = null;
-        
-        // Восстанавливаем текст кнопки
-        const nextBtn = document.getElementById('btn-next');
-        if (nextBtn) {
-            nextBtn.textContent = 'Далее →';
-            nextBtn.style.opacity = '1';
-        }
     }
     
     // Пользователь может пропустить любой шаг, валидация убрана
@@ -249,35 +242,17 @@ function handleRadioChange(name, value) {
     // Автоматический переход на следующий вопрос для единичного выбора
     const singleChoiceQuestions = ['priority', 'concerts_range', 'diversity'];
     if (singleChoiceQuestions.includes(name)) {
-        console.log('Единичный выбор, автоматический переход через 1 секунду...');
+        console.log('Единичный выбор, автоматический переход...');
         
         // Отменяем предыдущий автоматический переход, если он был
         if (autoTransitionTimeout) {
             clearTimeout(autoTransitionTimeout);
+            autoTransitionTimeout = null;
         }
         
-        // Показываем индикатор автоматического перехода
-        const nextBtn = document.getElementById('btn-next');
-        if (nextBtn) {
-            const originalText = nextBtn.textContent;
-            nextBtn.textContent = 'Переход через 1 сек...';
-            nextBtn.style.opacity = '0.7';
-            
-            autoTransitionTimeout = setTimeout(() => {
-                nextBtn.textContent = originalText;
-                nextBtn.style.opacity = '1';
-                autoTransitionTimeout = null;
-                if (currentStep < 7) {
-                    nextStep();
-                }
-            }, 1000);
-        } else {
-            autoTransitionTimeout = setTimeout(() => {
-                autoTransitionTimeout = null;
-                if (currentStep < 7) {
-                    nextStep();
-                }
-            }, 1000);
+        // Немедленный переход
+        if (currentStep < 7) {
+            nextStep();
         }
     }
 }
@@ -931,7 +906,7 @@ function renderGroup(title, routes, groupType) {
     } else if (groupType === 'balanced') {
         sorted.sort((a, b) => Math.abs((b.intellect || 0) - (b.comfort || 0)) - Math.abs((a.intellect || 0) - (a.comfort || 0)));
     }
-    const top3 = sorted.slice(0, 3);
+    const top3 = sorted.slice(0, 5);
     const description = recGroupDescriptions[groupType] ? `<div class='rec-group-desc'>${recGroupDescriptions[groupType]}</div>` : '';
     return `
         <div class="rec-group" data-group="${groupType}">
