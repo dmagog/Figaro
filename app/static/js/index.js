@@ -34,9 +34,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         console.log('Preferences загружены:', preferencesLoaded);
         
         if (preferencesLoaded) {
-            console.log('Preferences найдены, показываем вкладку анкеты со слайдом 7');
-            showTab('form');
-            showSlide(7); // Показываем слайд с резюме
+            console.log('Preferences найдены, показываем вкладку "О проекте" (анкета уже заполнена)');
+            showTab('about'); // Показываем вкладку "О проекте", так как анкета уже заполнена
         } else {
             console.log('Preferences не найдены, показываем вкладку "О проекте"');
             showTab('about');
@@ -51,6 +50,13 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (!selectedComposers.size && !selectedArtists.size && !selectedConcerts.size) {
             console.log('Обновляем резюме при инициализации (пустые данные)...');
             updateSummary();
+        } else {
+            console.log('Preferences загружены, устанавливаем слайд 7 для анкеты...');
+            // Если preferences загружены, устанавливаем слайд 7 как активный для анкеты
+            currentStep = 7;
+            // Обновляем прогресс-бар и навигацию для слайда 7
+            updateProgress();
+            updateNavigation();
         }
     }, 100);
     
@@ -1220,30 +1226,28 @@ async function onTabShow(tab) {
     const isAuthenticated = await checkAuthStatus();
     console.log('Пользователь авторизован:', isAuthenticated);
     
-    if (tab === 'form' || tab === 'recs') {
-        preferencesLoaded = await loadUserPreferences();
-    }
-    
-    // Дополнительная проверка для вкладки рекомендаций
+    // Дополнительная проверка для вкладки рекомендаций - ПЕРВЫМ ДЕЛОМ!
     if (tab === 'recs') {
-        // Проверяем, есть ли уже загруженные preferences
-        const hasPreferences = selectedComposers.size > 0 || selectedArtists.size > 0 || 
-                              selectedConcerts.size > 0 || selectedConcertsRange !== 'any' ||
-                              document.querySelector('input[name="priority"]:checked') ||
-                              document.querySelector('input[name="diversity"]:checked');
+        console.log('🔄 Открываем вкладку рекомендаций, проверяем preferences...');
         
-        console.log('Проверка preferences для рекомендаций:', {
-            preferencesLoaded,
+        // Сначала проверяем, есть ли уже загруженные preferences в памяти
+        const hasPreferencesInMemory = selectedComposers.size > 0 || selectedArtists.size > 0 || 
+                                      selectedConcerts.size > 0 || selectedConcertsRange !== 'any' ||
+                                      document.querySelector('input[name="priority"]:checked') ||
+                                      document.querySelector('input[name="diversity"]:checked');
+        
+        console.log('Проверка preferences в памяти:', {
             composers: selectedComposers.size,
             artists: selectedArtists.size,
             concerts: selectedConcerts.size,
             range: selectedConcertsRange,
             priority: document.querySelector('input[name="priority"]:checked')?.value,
-            diversity: document.querySelector('input[name="diversity"]:checked')?.value
+            diversity: document.querySelector('input[name="diversity"]:checked')?.value,
+            hasPreferencesInMemory
         });
         
-        if (hasPreferences) {
-            console.log('✅ Preferences найдены, загружаем рекомендации...');
+        if (hasPreferencesInMemory) {
+            console.log('✅ Preferences найдены в памяти, загружаем рекомендации...');
             // Создаем объект preferences из текущих значений
             const preferences = {
                 priority: document.querySelector('input[name="priority"]:checked')?.value,
@@ -1255,19 +1259,54 @@ async function onTabShow(tab) {
                 concerts: Array.from(selectedConcerts)
             };
             loadRecommendationsWithPreferences(preferences);
+            return; // Выходим, не загружаем preferences заново
         } else {
-            console.log('❌ Preferences не найдены, показываем CTA...');
-            // Показываем призыв к действию
-            const ctaElement = document.getElementById('recommendations-cta');
-            if (ctaElement) {
-                ctaElement.style.display = 'block';
-            }
-            // Удаляем блок с рекомендациями, если он есть
-            const recommendationsBlock = document.querySelector('.recommendations-block');
-            if (recommendationsBlock) {
-                recommendationsBlock.remove();
+            console.log('❌ Preferences не найдены в памяти, загружаем из API...');
+            // Если preferences нет в памяти, загружаем их
+            preferencesLoaded = await loadUserPreferences();
+            
+            // После загрузки снова проверяем
+            const hasPreferencesAfterLoad = selectedComposers.size > 0 || selectedArtists.size > 0 || 
+                                          selectedConcerts.size > 0 || selectedConcertsRange !== 'any' ||
+                                          document.querySelector('input[name="priority"]:checked') ||
+                                          document.querySelector('input[name="diversity"]:checked');
+            
+            if (hasPreferencesAfterLoad) {
+                console.log('✅ Preferences загружены из API, загружаем рекомендации...');
+                const preferences = {
+                    priority: document.querySelector('input[name="priority"]:checked')?.value,
+                    diversity: document.querySelector('input[name="diversity"]:checked')?.value,
+                    min_concerts: selectedConcertsRange === '2-3' ? 2 : selectedConcertsRange === '3-4' ? 3 : selectedConcertsRange === '4-5' ? 4 : undefined,
+                    max_concerts: selectedConcertsRange === '2-3' ? 3 : selectedConcertsRange === '3-4' ? 4 : selectedConcertsRange === '4-5' ? 5 : undefined,
+                    composers: Array.from(selectedComposers),
+                    artists: Array.from(selectedArtists),
+                    concerts: Array.from(selectedConcerts)
+                };
+                loadRecommendationsWithPreferences(preferences);
+            } else {
+                console.log('❌ Preferences не найдены ни в памяти, ни в API, показываем CTA...');
+                // Показываем призыв к действию
+                const ctaElement = document.getElementById('recommendations-cta');
+                if (ctaElement) {
+                    ctaElement.style.display = 'block';
+                }
+                // Удаляем блок с рекомендациями, если он есть
+                const recommendationsBlock = document.querySelector('.recommendations-block');
+                if (recommendationsBlock) {
+                    recommendationsBlock.remove();
+                }
             }
         }
+    }
+    
+    // Для других вкладок загружаем preferences как обычно
+    if (tab === 'form') {
+        preferencesLoaded = await loadUserPreferences();
+    }
+    
+    // Для вкладки "О проекте" ничего не делаем
+    if (tab === 'about') {
+        console.log('Открыта вкладка "О проекте"');
     }
 }
 // --- Учитываем hash вкладки в URL ---
