@@ -362,6 +362,12 @@ function updateTagClouds() {
         // Обновляем счетчики при инициализации
         updateComposersSummary();
         updateArtistsSummary();
+        
+        console.log('✅ Облака тегов обновлены с выделением:', {
+            composers: selectedComposers.size,
+            artists: selectedArtists.size,
+            concerts: selectedConcerts.size
+        });
     }
 }
 
@@ -1117,6 +1123,11 @@ async function restorePreferences(prefs) {
         const el = document.querySelector(`input[name="priority"][value="${prefs.priority}"]`);
         if (el) {
             el.checked = true;
+            // Добавляем класс selected к родительскому элементу
+            const optionDiv = el.closest('.radio-option');
+            if (optionDiv) {
+                optionDiv.classList.add('selected');
+            }
             console.log('✅ Восстановлен priority:', prefs.priority);
         } else {
             console.warn('❌ Элемент для priority не найден:', prefs.priority);
@@ -1126,6 +1137,11 @@ async function restorePreferences(prefs) {
         const el = document.querySelector(`input[name="diversity"][value="${prefs.diversity}"]`);
         if (el) {
             el.checked = true;
+            // Добавляем класс selected к родительскому элементу
+            const optionDiv = el.closest('.radio-option');
+            if (optionDiv) {
+                optionDiv.classList.add('selected');
+            }
             console.log('✅ Восстановлен diversity:', prefs.diversity);
         } else {
             console.warn('❌ Элемент для diversity не найден:', prefs.diversity);
@@ -1139,6 +1155,11 @@ async function restorePreferences(prefs) {
         const el = document.querySelector(`input[name="concerts_range"][value="${selectedConcertsRange}"]`);
         if (el) {
             el.checked = true;
+            // Добавляем класс selected к родительскому элементу
+            const optionDiv = el.closest('.radio-option');
+            if (optionDiv) {
+                optionDiv.classList.add('selected');
+            }
             console.log('✅ Восстановлен concerts_range:', selectedConcertsRange);
         } else {
             console.warn('❌ Элемент для concerts_range не найден:', selectedConcertsRange);
@@ -1222,7 +1243,7 @@ async function onTabShow(tab) {
         });
         
         if (hasPreferences) {
-            console.log('Preferences найдены, загружаем рекомендации...');
+            console.log('✅ Preferences найдены, загружаем рекомендации...');
             // Создаем объект preferences из текущих значений
             const preferences = {
                 priority: document.querySelector('input[name="priority"]:checked')?.value,
@@ -1235,7 +1256,17 @@ async function onTabShow(tab) {
             };
             loadRecommendationsWithPreferences(preferences);
         } else {
-            console.log('Preferences не найдены, показываем CTA...');
+            console.log('❌ Preferences не найдены, показываем CTA...');
+            // Показываем призыв к действию
+            const ctaElement = document.getElementById('recommendations-cta');
+            if (ctaElement) {
+                ctaElement.style.display = 'block';
+            }
+            // Удаляем блок с рекомендациями, если он есть
+            const recommendationsBlock = document.querySelector('.recommendations-block');
+            if (recommendationsBlock) {
+                recommendationsBlock.remove();
+            }
         }
     }
 }
