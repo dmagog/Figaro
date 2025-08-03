@@ -8,6 +8,12 @@
     <link rel="stylesheet" href="/static/css/index.css">
     <style>
         /* Стили шапки теперь подключаются из index.css */
+        
+        /* Дополнительные стили для корректного наслоения */
+        .top-navbar-modern {
+            position: relative !important;
+            z-index: 1000 !important;
+        }
 
         body {
             margin: 0;
@@ -20,7 +26,8 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
-            min-height: calc(100vh - 300px); /* Учитываем высоту шапки */
+            margin-top: 20px; /* Отступ от шапки */
+            min-height: calc(100vh - 320px); /* Учитываем высоту шапки + отступ */
             position: relative;
             z-index: 1;
         }
@@ -46,6 +53,8 @@
             border-radius: 15px;
             margin-bottom: 30px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 2;
         }
         
         .profile-header h1 {
@@ -87,6 +96,8 @@
             box-shadow: 0 5px 20px rgba(0,0,0,0.1);
             margin-bottom: 30px;
             overflow: hidden;
+            position: relative;
+            z-index: 2;
         }
         
         .tabs-nav {
