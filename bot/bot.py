@@ -373,6 +373,24 @@ async def process_callback(callback_query: types.CallbackQuery):
             if "Message is not modified" in str(e):
                 # Игнорируем ошибку если сообщение не изменилось
                 pass
+            elif "Can't parse entities" in str(e) and parse_mode == 'Markdown':
+                # Если не удается распарсить Markdown, пробуем без него
+                try:
+                    await bot.edit_message_text(
+                        text,
+                        callback_query.from_user.id,
+                        callback_query.message.message_id,
+                        reply_markup=reply_markup,
+                        parse_mode=None
+                    )
+                except Exception as e2:
+                    # Если и это не работает, отправляем новое сообщение
+                    await bot.send_message(
+                        callback_query.from_user.id,
+                        text,
+                        reply_markup=reply_markup,
+                        parse_mode=None
+                    )
             else:
                 # Отправляем новое сообщение если редактирование не удалось
                 await bot.send_message(
@@ -532,18 +550,40 @@ async def process_callback(callback_query: types.CallbackQuery):
         elif action == "web_profile":
             # Ссылка на личный кабинет
             web_url = SITE_LINK + "/profile"  # Можно сделать настраиваемым
-            await safe_edit_message(
-                f"""🔗 *Личный кабинет*\n\n
+            # Создаем безопасную ссылку без специальных символов
+            safe_url = web_url.replace('_', '\\_').replace('*', '\\*').replace('[', '\\[').replace(']', '\\]').replace('(', '\\(').replace(')', '\\)').replace('-', '\\-')
+            print(f"Debug: Original URL: {web_url}")
+            print(f"Debug: Safe URL: {safe_url}")
+            
+            # Пробуем сначала с Markdown
+            try:
+                await safe_edit_message(
+                    f"""🔗 *Личный кабинет*\n
 Функции, которые будут удобнее в веб\-версии сервиса:
 • Маршрутный лист
 • Детальная статистика
 • Настройки уведомлений
 
-[Перейти в личный кабинет]({web_url})
-                """,
-                reply_markup=get_main_menu_keyboard(),
-                parse_mode='Markdown'
-            )
+[Перейти в личный кабинет]({safe_url})
+                    """,
+                    reply_markup=get_main_menu_keyboard(),
+                    parse_mode='Markdown'
+                )
+            except Exception as e:
+                print(f"Markdown failed, trying HTML: {e}")
+                # Если Markdown не работает, пробуем HTML
+                await safe_edit_message(
+                    f"""🔗 <b>Личный кабинет</b>\n
+Функции, которые будут удобнее в веб-версии сервиса:
+• Маршрутный лист
+• Детальная статистика
+• Настройки уведомлений
+
+<a href="{web_url}">Перейти в личный кабинет</a>
+                    """,
+                    reply_markup=get_main_menu_keyboard(),
+                    parse_mode='HTML'
+                )
         
         elif action in ["today_concerts", "halls", "genres"]:
             # Заглушки для будущих функций

@@ -478,7 +478,7 @@
 
 /* Прогресс-бар */
 .survey-progress {
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     text-align: center;
 }
 
@@ -869,11 +869,11 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin: 20px 0 30px 0;
+    margin: 15px 0 20px 0;
     padding: 15px 20px;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     border-radius: 12px;
-    border: 1px solid #dee2e6;
+    border: none;
     gap: 20px;
     min-height: 60px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
