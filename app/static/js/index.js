@@ -13,6 +13,9 @@ let selectedConcertsRange = null;
 let shuffledArtists = null;
 let shuffledComposers = null;
 
+// Переменная для отслеживания автоматического перехода
+let autoTransitionTimeout = null;
+
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM loaded, initializing...');
@@ -138,6 +141,20 @@ function hideSlide(step) {
 
 function nextStep() {
     console.log('Переход к следующему шагу, текущий:', currentStep);
+    
+    // Отменяем автоматический переход, если он был запланирован
+    if (autoTransitionTimeout) {
+        clearTimeout(autoTransitionTimeout);
+        autoTransitionTimeout = null;
+        
+        // Восстанавливаем текст кнопки
+        const nextBtn = document.getElementById('btn-next');
+        if (nextBtn) {
+            nextBtn.textContent = 'Далее →';
+            nextBtn.style.opacity = '1';
+        }
+    }
+    
     // Пользователь может пропустить любой шаг, валидация убрана
     if (currentStep < 7) {
         hideSlide(currentStep);
@@ -227,6 +244,41 @@ function handleRadioChange(name, value) {
     updateSummary();
     if (name === 'concerts_range') {
         selectedConcertsRange = value;
+    }
+    
+    // Автоматический переход на следующий вопрос для единичного выбора
+    const singleChoiceQuestions = ['priority', 'concerts_range', 'diversity'];
+    if (singleChoiceQuestions.includes(name)) {
+        console.log('Единичный выбор, автоматический переход через 1 секунду...');
+        
+        // Отменяем предыдущий автоматический переход, если он был
+        if (autoTransitionTimeout) {
+            clearTimeout(autoTransitionTimeout);
+        }
+        
+        // Показываем индикатор автоматического перехода
+        const nextBtn = document.getElementById('btn-next');
+        if (nextBtn) {
+            const originalText = nextBtn.textContent;
+            nextBtn.textContent = 'Переход через 1 сек...';
+            nextBtn.style.opacity = '0.7';
+            
+            autoTransitionTimeout = setTimeout(() => {
+                nextBtn.textContent = originalText;
+                nextBtn.style.opacity = '1';
+                autoTransitionTimeout = null;
+                if (currentStep < 7) {
+                    nextStep();
+                }
+            }, 1000);
+        } else {
+            autoTransitionTimeout = setTimeout(() => {
+                autoTransitionTimeout = null;
+                if (currentStep < 7) {
+                    nextStep();
+                }
+            }, 1000);
+        }
     }
 }
 
@@ -786,28 +838,28 @@ function createRecommendationsNavigator(recommendations) {
     const sections = [
         {
             id: 'weighted',
-            title: '🎯 Топ по профилю',
+            title: 'Топ по профилю',
             icon: '🎯',
-            description: 'Максимально подходит вам',
+            description: 'Максимальное соответствие анкете',
             count: recommendations.top_weighted?.length || 0
         },
         {
             id: 'intellect', 
-            title: '🧠 Интеллектуальные',
+            title: 'Интеллектуальные',
             icon: '🧠',
             description: 'Высокая насыщенность',
             count: recommendations.top_intellect?.length || 0
         },
         {
             id: 'comfort',
-            title: '🛋️ Комфортные', 
+            title: 'Комфортные', 
             icon: '🛋️',
             description: 'Удобство и комфорт',
             count: recommendations.top_comfort?.length || 0
         },
         {
             id: 'balanced',
-            title: '⚖️ Сбалансированные',
+            title: 'Сбалансированные',
             icon: '⚖️', 
             description: 'Гармония впечатлений',
             count: recommendations.top_balanced?.length || 0
