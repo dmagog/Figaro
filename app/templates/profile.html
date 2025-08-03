@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Личный кабинет - конструктор маршрутов фестиваля «Безумные дни»</title>
     <link rel="stylesheet" href="/static/css/style.css?v=1.8&t={{ range(1, 10000) | random }}">
+    <link rel="stylesheet" href="/static/css/index.css">
     <style>
+        /* Стили шапки теперь подключаются из index.css */
+
         body {
             margin: 0;
             padding: 0;
@@ -17,7 +20,23 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
-            min-height: calc(100vh - 200px); /* Обеспечиваем минимальную высоту для правильного отображения подвала */
+            min-height: calc(100vh - 300px); /* Учитываем высоту шапки */
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Изоляция контента профиля от стилей index.css */
+        .profile-container * {
+            font-family: 'Segoe UI', 'Arial', sans-serif !important;
+        }
+
+        .profile-container .profile-header,
+        .profile-container .tabs-container,
+        .profile-container .tab-content {
+            backdrop-filter: none !important;
+            filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            -webkit-filter: none !important;
         }
         
         .profile-header {
@@ -2459,17 +2478,55 @@
     'compositions': []
   } %}
 {% endif %}
+
+    <!-- Современная шапка -->
+    <nav class="top-navbar-modern">
+        <div class="nav-background">
+            <div class="nav-particles"></div>
+            <div class="nav-glow"></div>
+        </div>
+        
+        <div class="nav-container">
+            <div class="nav-brand">
+                <a href="/" class="brand-icon-nav-link">
+                    <div class="brand-icon-nav">🎈</div>
+                </a>
+                <div class="brand-text">
+                    <h1 class="nav-title-modern">Figaro</h1>
+                    <span class="nav-subtitle">Проведёт по фестивалю</span>
+                </div>
+                <div class="nav-brand-glow"></div>
+            </div>
+            
+            <div class="nav-menu">
+                {% if user %}
+                <div class="nav-user">
+                    <span class="user-greeting">Привет, {{ user.name or user.email }}!</span>
+                    <div class="nav-actions">
+                        {% if user.is_superuser %}
+                        <a href="/admin" class="nav-btn-modern nav-btn-admin">Админка</a>
+                        {% endif %}
+                        <a href="/profile" class="nav-btn-modern nav-btn-primary">Личный кабинет</a>
+                        <a href="/logout" class="nav-btn-modern nav-btn-secondary">🚪 Выйти</a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="nav-auth">
+                    <a href="/login" class="nav-btn-modern nav-btn-primary">🔑 Войти</a>
+                    <a href="/register" class="nav-btn-modern nav-btn-secondary">📝 Регистрация</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
     <div class="profile-container">
-        <a href="/" class="back-link">← Назад на главную</a>
         
         <div class="profile-header">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
                     <h1>Личный кабинет</h1>
                     <p>Добро пожаловать, {{ user.name or user.email }}!</p>
-                </div>
-                <div class="header-actions">
-                    <a href="/logout" class="logout-btn">Выйти</a>
                 </div>
             </div>
             
