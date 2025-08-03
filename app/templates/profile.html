@@ -6,10 +6,18 @@
     <title>Личный кабинет - конструктор маршрутов фестиваля «Безумные дни»</title>
     <link rel="stylesheet" href="/static/css/style.css?v=1.8&t={{ range(1, 10000) | random }}">
     <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            background: #f6f7fb;
+        }
+        
         .profile-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+            min-height: calc(100vh - 200px); /* Обеспечиваем минимальную высоту для правильного отображения подвала */
         }
         
         .profile-header {
@@ -2103,6 +2111,341 @@
         .composer-tag.inactive .tag-check {
             color: #9ca3af;
         }
+        
+        /* Стили подвала */
+        .footer-modern {
+            position: relative;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            margin-top: 60px;
+            padding: 60px 0 30px;
+            overflow: hidden;
+        }
+
+        .footer-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+        }
+
+        .footer-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+        }
+
+        .footer-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, 
+                rgba(255, 255, 255, 0.02) 0%, 
+                rgba(255, 255, 255, 0.02) 100%);
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .footer-brand {
+            text-align: center;
+            position: relative;
+        }
+
+        .brand-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            display: block;
+            animation: floatIcon 3s ease-in-out infinite;
+        }
+
+        @keyframes floatIcon {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .brand-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            animation: brandGlow 4s ease-in-out infinite;
+        }
+
+        @keyframes brandGlow {
+            0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        .neon-text {
+            background: linear-gradient(45deg, #fff, #f0f0f0, #fff);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: neonGlow 3s ease-in-out infinite;
+            font-weight: bold;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        @keyframes neonGlow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .section-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #fff;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 30px;
+            height: 2px;
+            background: linear-gradient(90deg, #fff, transparent);
+        }
+
+        .footer-brand h3 {
+            margin: 0 0 10px 0;
+            font-size: 2em;
+        }
+
+        .footer-brand p {
+            margin: 0;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .footer-links li {
+            margin-bottom: 12px;
+        }
+
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            position: relative;
+            padding-left: 0;
+        }
+
+        .link-hover {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .link-hover::before {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: #fff;
+            transition: width 0.3s ease;
+        }
+
+        .link-hover:hover::before {
+            width: 100%;
+        }
+
+        .link-hover:hover {
+            color: #fff;
+            transform: translateX(5px);
+        }
+
+        .footer-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .footer-copyright p {
+            margin: 0;
+            opacity: 0.8;
+        }
+
+        .footer-social {
+            display: flex;
+            gap: 15px;
+        }
+
+        .social-link-modern {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 45px;
+            height: 45px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .telegram-icon {
+            width: 24px;
+            height: 24px;
+            fill: #fff;
+            transition: all 0.3s ease;
+        }
+
+        .social-link-modern:hover .telegram-icon {
+            transform: scale(1.1);
+        }
+
+        .social-link-modern:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .social-link-modern::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .social-link-modern:hover::after {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(-5px);
+        }
+
+        @media (max-width: 768px) {
+            .footer-modern {
+                padding: 40px 0 20px;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .glass-card {
+                padding: 20px;
+            }
+
+            .brand-icon {
+                font-size: 2.5em;
+            }
+
+            .neon-text {
+                font-size: 1.5em;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .footer-social {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .footer-modern {
+                padding: 30px 0 15px;
+            }
+
+            .footer-container {
+                padding: 0 15px;
+            }
+
+            .glass-card {
+                padding: 15px;
+            }
+
+            .brand-icon {
+                font-size: 2em;
+            }
+
+            .neon-text {
+                font-size: 1.3em;
+            }
+
+            .section-title {
+                font-size: 1.1em;
+            }
+
+            .footer-links a {
+                font-size: 0.9em;
+            }
+
+            .social-link-modern {
+                width: 40px;
+                height: 40px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -3740,5 +4083,69 @@
             return false;
         }
     </script>
+    
+    <!-- Современный подвал -->
+    <footer class="footer-modern">
+        <div class="footer-background">
+            <div class="footer-particles"></div>
+            <div class="footer-glow"></div>
+        </div>
+        
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-section glass-card">
+                    <div class="footer-brand">
+                        <div class="brand-icon">🎈</div>
+                        <h3 class="neon-text">Figaro</h3>
+                        <p>Ваш персональный гид</br>и конструктор маршрутов фестиваля</br>«Безумные дни в Екатеринбурге»</p>
+                        <div class="brand-glow"></div>
+                    </div>
+                </div>
+                
+                <div class="footer-section glass-card">
+                    <h4 class="section-title">О проекте</h4>
+                    <ul class="footer-links">
+                        <li><a href="/" class="link-hover">Главная страница</a></li>
+                        <li><a href="/#about" class="link-hover">Как это работает</a></li>
+                        <li><a href="/#features" class="link-hover">Возможности</a></li>
+                        <li><a href="/#ai" class="link-hover">ИИ-алгоритмы</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section glass-card">
+                    <h4 class="section-title">Фестиваль</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://bd.sgaf.ru/festival/31491" target="_blank" class="link-hover">Официальный сайт</a></li>
+                        <li><a href="https://bd.sgaf.ru/festival/31491/afisha" target="_blank" class="link-hover">Программа</a></li>
+                        <li><a href="https://bd.sgaf.ru/festival/31491/musicians" target="_blank" class="link-hover">Участники</a></li>
+                        <li><a href="https://bd.sgaf.ru/festival/31491/zaly" target="_blank" class="link-hover">Площадки</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section glass-card">
+                    <h4 class="section-title">Личный кабинет</h4>
+                    <ul class="footer-links">
+                        <li><a href="/profile" class="link-hover">Мои концерты</a></li>
+                        <li><a href="/profile?tab=route" class="link-hover">Маршрутный лист</a></li>
+                        <li><a href="/profile?tab=characteristics" class="link-hover">Характеристика</a></li>
+                        <li><a href="/profile?tab=achievements" class="link-hover">Ачивки</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom glass-card">
+                <div class="footer-copyright">
+                    <p>&copy; 2025 Figaro. Все права защищены.</p>
+                </div>
+                <div class="footer-social">
+                    <a href="{{ bot_link }}" target="_blank" class="social-link-modern" data-tooltip="Наш Telegram-бот">
+                        <svg class="telegram-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.295-.6.295-.002 0-.003 0-.005 0l.213-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.941z"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
 </body>
 </html> 
