@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     setTimeout(() => {
         if (!selectedComposers.size && !selectedArtists.size && !selectedConcerts.size) {
             console.log('Обновляем резюме при инициализации (пустые данные)...');
-            updateSummary();
+        updateSummary();
         } else {
             console.log('Preferences загружены, устанавливаем слайд 7 для анкеты...');
             // Если preferences загружены, устанавливаем слайд 7 как активный для анкеты
@@ -729,8 +729,8 @@ async function submitSurvey() {
             console.log('Preferences сохранены в localStorage');
         }
         
-        showTab('recs');
-        await loadRecommendationsWithPreferences(preferences);
+            showTab('recs');
+            await loadRecommendationsWithPreferences(preferences);
     } catch (error) {
         console.error('Ошибка отправки анкеты:', error);
         // Даже при ошибке API сохраняем в localStorage и показываем рекомендации
@@ -1124,9 +1124,9 @@ async function loadUserPreferences() {
 async function restorePreferences(prefs) {
     console.log('🔄 Восстанавливаем preferences:', prefs);
     
-    // Восстанавливаем значения в форме
-    if (prefs.priority) {
-        const el = document.querySelector(`input[name="priority"][value="${prefs.priority}"]`);
+            // Восстанавливаем значения в форме
+            if (prefs.priority) {
+                const el = document.querySelector(`input[name="priority"][value="${prefs.priority}"]`);
         if (el) {
             el.checked = true;
             // Добавляем класс selected к родительскому элементу
@@ -1138,9 +1138,9 @@ async function restorePreferences(prefs) {
         } else {
             console.warn('❌ Элемент для priority не найден:', prefs.priority);
         }
-    }
-    if (prefs.diversity) {
-        const el = document.querySelector(`input[name="diversity"][value="${prefs.diversity}"]`);
+            }
+            if (prefs.diversity) {
+                const el = document.querySelector(`input[name="diversity"][value="${prefs.diversity}"]`);
         if (el) {
             el.checked = true;
             // Добавляем класс selected к родительскому элементу
@@ -1152,13 +1152,13 @@ async function restorePreferences(prefs) {
         } else {
             console.warn('❌ Элемент для diversity не найден:', prefs.diversity);
         }
-    }
-    if (prefs.min_concerts !== undefined && prefs.max_concerts !== undefined) {
-        if (prefs.min_concerts === 2 && prefs.max_concerts === 3) selectedConcertsRange = '2-3';
-        else if (prefs.min_concerts === 3 && prefs.max_concerts === 4) selectedConcertsRange = '3-4';
-        else if (prefs.min_concerts === 4 && prefs.max_concerts === 5) selectedConcertsRange = '4-5';
-        else selectedConcertsRange = 'any';
-        const el = document.querySelector(`input[name="concerts_range"][value="${selectedConcertsRange}"]`);
+            }
+            if (prefs.min_concerts !== undefined && prefs.max_concerts !== undefined) {
+                if (prefs.min_concerts === 2 && prefs.max_concerts === 3) selectedConcertsRange = '2-3';
+                else if (prefs.min_concerts === 3 && prefs.max_concerts === 4) selectedConcertsRange = '3-4';
+                else if (prefs.min_concerts === 4 && prefs.max_concerts === 5) selectedConcertsRange = '4-5';
+                else selectedConcertsRange = 'any';
+                const el = document.querySelector(`input[name="concerts_range"][value="${selectedConcertsRange}"]`);
         if (el) {
             el.checked = true;
             // Добавляем класс selected к родительскому элементу
@@ -1170,13 +1170,13 @@ async function restorePreferences(prefs) {
         } else {
             console.warn('❌ Элемент для concerts_range не найден:', selectedConcertsRange);
         }
-    } else {
-        selectedConcertsRange = 'any';
-    }
+            } else {
+                selectedConcertsRange = 'any';
+            }
     
-    selectedComposers = new Set(prefs.composers || []);
-    selectedArtists = new Set(prefs.artists || []);
-    selectedConcerts = new Set(prefs.concerts || []);
+            selectedComposers = new Set(prefs.composers || []);
+            selectedArtists = new Set(prefs.artists || []);
+            selectedConcerts = new Set(prefs.concerts || []);
     
     console.log('✅ Восстановлены множества:', {
         composers: selectedComposers.size,
@@ -1184,21 +1184,21 @@ async function restorePreferences(prefs) {
         concerts: selectedConcerts.size
     });
     
-    updateSummary();
+            updateSummary();
     updateTagClouds(); // <--- ДОБАВЛЕНО: обновляем облака тегов после восстановления
     
-    // --- Если мы на вкладке рекомендаций, сразу загружаем рекомендации ---
-    const recsTab = document.getElementById('tab-recs-btn');
-    if (recsTab && recsTab.classList.contains('active')) {
+            // --- Если мы на вкладке рекомендаций, сразу загружаем рекомендации ---
+            const recsTab = document.getElementById('tab-recs-btn');
+            if (recsTab && recsTab.classList.contains('active')) {
         console.log('🔄 Переходим на вкладку рекомендаций, загружаем рекомендации...');
-        loadRecommendationsWithPreferences(prefs);
-    }
-    // --- Если мы на анкете, сразу показываем последний слайд (резюме) ---
-    const formTab = document.getElementById('tab-form-btn');
-    if (formTab && formTab.classList.contains('active')) {
+                loadRecommendationsWithPreferences(prefs);
+            }
+            // --- Если мы на анкете, сразу показываем последний слайд (резюме) ---
+            const formTab = document.getElementById('tab-form-btn');
+            if (formTab && formTab.classList.contains('active')) {
         console.log('🔄 Переходим на вкладку анкеты, показываем слайд 7...');
-        showSlide(7);
-    }
+                showSlide(7);
+            }
     
     console.log('✅ Preferences восстановлены успешно');
 }

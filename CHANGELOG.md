@@ -133,10 +133,10 @@
 
 ## 🔗 Ссылки
 
-- [GitHub Repository](https://github.com/your-username/figaro-festival)
+- [GitHub Repository](https://github.com/dmagog/Figaro)
 - [Документация](https://docs.figaro-festival.com)
-- [Issues](https://github.com/your-username/figaro-festival/issues)
-- [Discussions](https://github.com/your-username/figaro-festival/discussions)
+- [Issues](https://github.com/dmagog/Figaro/issues)
+- [Discussions](https://github.com/dmagog/Figaro/discussions)
 
 ## 📝 Примечания
 
