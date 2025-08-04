@@ -2550,10 +2550,7 @@
                     <h3>Дата регистрации</h3>
                     <p>{{ user.created_at.strftime('%d.%m.%Y') if user.created_at else 'Не указана' }}</p>
                 </div>
-                <div class="info-card">
-                    <h3>Всего концертов</h3>
-                    <p>{{ purchase_summary['total_concerts'] }}</p>
-                </div>
+
                 <div class="info-card">
                     <h3>Потрачено</h3>
                     <p>{{ "{:,}".format(purchase_summary['total_spent']) }} ₽</p>
