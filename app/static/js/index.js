@@ -13,24 +13,51 @@ let selectedConcertsRange = null;
 let shuffledArtists = null;
 let shuffledComposers = null;
 
+// Переменная для отслеживания автоматического перехода
+let autoTransitionTimeout = null;
+
 // Инициализация при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     console.log('DOM loaded, initializing...');
     
-    // Сбрасываем текущий шаг на первый
-    currentStep = 1;
+    // Проверяем авторизацию при загрузке
+    const isAuthenticated = await checkAuthStatus();
+    console.log('Авторизация при загрузке:', isAuthenticated);
     
-    loadSurveyData();
-    showTab('about'); // Показываем вкладку "О проекте" по умолчанию
+    // Загружаем данные анкеты
+    await loadSurveyData();
     
-    // Убеждаемся, что первый слайд активен
-    setTimeout(() => {
-        showSlide(1);
-        console.log('Первый слайд активирован');
+    // Если пользователь авторизован, сразу загружаем preferences
+    if (isAuthenticated) {
+        console.log('Пользователь авторизован, загружаем preferences...');
+        const preferencesLoaded = await loadUserPreferences();
+        console.log('Preferences загружены:', preferencesLoaded);
         
-        // Обновляем резюме при инициализации
-        console.log('Обновляем резюме при инициализации...');
+        if (preferencesLoaded) {
+            console.log('Preferences найдены, показываем вкладку "О проекте" (анкета уже заполнена)');
+            showTab('about'); // Показываем вкладку "О проекте", так как анкета уже заполнена
+        } else {
+            console.log('Preferences не найдены, показываем вкладку "О проекте"');
+            showTab('about');
+        }
+    } else {
+        console.log('Пользователь не авторизован, показываем вкладку "О проекте"');
+        showTab('about');
+    }
+    
+    // Обновляем резюме при инициализации (только если preferences не были загружены)
+    setTimeout(() => {
+        if (!selectedComposers.size && !selectedArtists.size && !selectedConcerts.size) {
+            console.log('Обновляем резюме при инициализации (пустые данные)...');
         updateSummary();
+        } else {
+            console.log('Preferences загружены, устанавливаем слайд 7 для анкеты...');
+            // Если preferences загружены, устанавливаем слайд 7 как активный для анкеты
+            currentStep = 7;
+            // Обновляем прогресс-бар и навигацию для слайда 7
+            updateProgress();
+            updateNavigation();
+        }
     }, 100);
     
     // Инициализация поиска
@@ -46,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             nextStep();
         });
-        console.log('Обработчик для кнопки "Далее" добавлен');
+        console.log('Обработчик для кнопки "Пропустить" добавлен');
     }
     
     if (prevBtn) {
@@ -72,7 +99,9 @@ document.addEventListener('DOMContentLoaded', function() {
 async function loadSurveyData() {
     try {
         console.log('Загружаем данные анкеты...');
-        const response = await fetch('/api/survey-data');
+        const response = await fetch('/api/survey-data', {
+        credentials: 'include'  // Важно! Это заставляет браузер отправлять cookies
+    });
         const data = await response.json();
         
         if (data.success) {
@@ -138,6 +167,13 @@ function hideSlide(step) {
 
 function nextStep() {
     console.log('Переход к следующему шагу, текущий:', currentStep);
+    
+    // Отменяем автоматический переход, если он был запланирован
+    if (autoTransitionTimeout) {
+        clearTimeout(autoTransitionTimeout);
+        autoTransitionTimeout = null;
+    }
+    
     // Пользователь может пропустить любой шаг, валидация убрана
     if (currentStep < 7) {
         hideSlide(currentStep);
@@ -228,6 +264,23 @@ function handleRadioChange(name, value) {
     if (name === 'concerts_range') {
         selectedConcertsRange = value;
     }
+    
+    // Автоматический переход на следующий вопрос для единичного выбора
+    const singleChoiceQuestions = ['priority', 'concerts_range', 'diversity'];
+    if (singleChoiceQuestions.includes(name)) {
+        console.log('Единичный выбор, автоматический переход...');
+        
+        // Отменяем предыдущий автоматический переход, если он был
+        if (autoTransitionTimeout) {
+            clearTimeout(autoTransitionTimeout);
+            autoTransitionTimeout = null;
+        }
+        
+        // Немедленный переход
+        if (currentStep < 7) {
+            nextStep();
+        }
+    }
 }
 
 // Обработка выбора композиторов
@@ -296,7 +349,9 @@ function toggleConcert(concertId) {
 function updateTagClouds() {
     if (surveyData) {
         // Перемешиваем артистов и композиторов только один раз при обновлении данных
-        shuffledArtists = [...surveyData.artists];
+        // Фильтруем артистов, исключая "_Прочее"
+        const filteredArtists = surveyData.artists.filter(artist => artist.name !== '_Прочее');
+        shuffledArtists = [...filteredArtists];
         for (let i = shuffledArtists.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [shuffledArtists[i], shuffledArtists[j]] = [shuffledArtists[j], shuffledArtists[i]];
@@ -313,6 +368,12 @@ function updateTagClouds() {
         // Обновляем счетчики при инициализации
         updateComposersSummary();
         updateArtistsSummary();
+        
+        console.log('✅ Облака тегов обновлены с выделением:', {
+            composers: selectedComposers.size,
+            artists: selectedArtists.size,
+            concerts: selectedConcerts.size
+        });
     }
 }
 
@@ -351,7 +412,9 @@ function renderArtistsCloud() {
     cloud.innerHTML = '';
     // Используем заранее перемешанный массив
     const artists = shuffledArtists || surveyData.artists;
-    artists.forEach(artist => {
+    // Фильтруем артистов, исключая "_Прочее"
+    const filteredArtists = artists.filter(artist => artist.name !== '_Прочее');
+    filteredArtists.forEach(artist => {
         const tag = document.createElement('span');
         tag.className = 'tag';
         tag.textContent = artist.name;
@@ -653,21 +716,28 @@ async function submitSurvey() {
             headers: {
                 'Content-Type': 'application/json'
             },
+            credentials: 'include',  // Важно! Это заставляет браузер отправлять cookies
             body: JSON.stringify(preferences)
         });
         
         const data = await response.json();
         console.log('Ответ от API preferences:', data);
         
+        // Сохраняем preferences в localStorage для неавторизованных пользователей
         if (data.success) {
+            localStorage.setItem('figaro_preferences', JSON.stringify(preferences));
+            console.log('Preferences сохранены в localStorage');
+        }
+        
             showTab('recs');
             await loadRecommendationsWithPreferences(preferences);
-        } else {
-            alert('Ошибка при сохранении предпочтений: ' + (data.message || 'Неизвестная ошибка'));
-        }
     } catch (error) {
         console.error('Ошибка отправки анкеты:', error);
-        alert('Ошибка при отправке анкеты. Попробуйте еще раз.');
+        // Даже при ошибке API сохраняем в localStorage и показываем рекомендации
+        localStorage.setItem('figaro_preferences', JSON.stringify(preferences));
+        console.log('Preferences сохранены в localStorage (fallback)');
+        showTab('recs');
+        await loadRecommendationsWithPreferences(preferences);
     }
 }
 
@@ -681,6 +751,7 @@ async function loadRecommendationsWithPreferences(preferences) {
         const response = await fetch('/api/recommendations', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',  // Важно! Это заставляет браузер отправлять cookies
             body: JSON.stringify({preferences: preferences})
         });
         const data = await response.json();
@@ -726,6 +797,7 @@ function showRecommendationsLoading() {
 function renderRecommendations(recommendations) {
     console.log('renderRecommendations получил:', recommendations);
     console.log('Тип recommendations:', typeof recommendations);
+    console.log('Создаем навигатор...');
     
     if (!recommendations) {
         const block = document.getElementById('recommendations-block');
@@ -749,14 +821,26 @@ function renderRecommendations(recommendations) {
     
     const block = document.createElement('div');
     block.className = 'recommendations-block';
+    
+    // Создаем навигатор
+    console.log('Вызываем createRecommendationsNavigator...');
+    const navigator = createRecommendationsNavigator(recommendations);
+    console.log('Навигатор создан:', navigator);
+    
     block.innerHTML = `
         <h2>🎯 Персональные рекомендации</h2>
-        ${renderGroup('Топ по вашему профилю', recommendations.top_weighted, 'weighted')}
-        ${renderGroup('🧠 Интеллектуальные маршруты', recommendations.top_intellect, 'intellect')}
-        ${renderGroup('🛋️ Комфортные маршруты', recommendations.top_comfort, 'comfort')}
-        ${renderGroup('⚖️ Сбалансированные маршруты', recommendations.top_balanced, 'balanced')}
+        ${navigator}
+        <div class="recommendations-content">
+            ${renderGroup('Топ по вашему профилю', recommendations.top_weighted, 'weighted')}
+            ${renderGroup('🧠 Интеллектуальные маршруты', recommendations.top_intellect, 'intellect')}
+            ${renderGroup('🛋️ Комфортные маршруты', recommendations.top_comfort, 'comfort')}
+            ${renderGroup('⚖️ Сбалансированные маршруты', recommendations.top_balanced, 'balanced')}
+        </div>
     `;
     document.getElementById('recommendations-block').appendChild(block);
+    
+    // Добавляем обработчики для навигатора
+    setupNavigatorHandlers();
 }
 
 // --- Поясняющие тексты для блоков рекомендаций ---
@@ -766,6 +850,91 @@ const recGroupDescriptions = {
     comfort: 'Маршруты, подобранные с акцентом на удобство: минимальные переходы между залами, оптимальное время ожидания и сбалансированная нагрузка.',
     balanced: 'Маршруты, в которых гармонично сочетаются интеллектуальная насыщенность и комфорт посещения. Лучший выбор для тех, кто ценит баланс впечатлений и удобства.'
 };
+
+// Создание навигатора для рекомендаций
+function createRecommendationsNavigator(recommendations) {
+    console.log('createRecommendationsNavigator вызвана с:', recommendations);
+    const sections = [
+        {
+            id: 'weighted',
+            title: 'Топ по профилю',
+            icon: '🎯',
+            description: 'Максимальное соответствие анкете',
+            count: recommendations.top_weighted?.length || 0
+        },
+        {
+            id: 'intellect', 
+            title: 'Интеллектуальные',
+            icon: '🧠',
+            description: 'Высокая насыщенность',
+            count: recommendations.top_intellect?.length || 0
+        },
+        {
+            id: 'comfort',
+            title: 'Комфортные', 
+            icon: '🛋️',
+            description: 'Удобство и комфорт',
+            count: recommendations.top_comfort?.length || 0
+        },
+        {
+            id: 'balanced',
+            title: 'Сбалансированные',
+            icon: '⚖️', 
+            description: 'Гармония впечатлений',
+            count: recommendations.top_balanced?.length || 0
+        }
+    ];
+    
+    return `
+        <div class="recommendations-navigator">
+            <div class="nav-sections">
+                ${sections.map(section => `
+                    <div class="nav-section" data-section="${section.id}">
+                        <div class="nav-section-icon">${section.icon}</div>
+                        <div class="nav-section-content">
+                            <div class="nav-section-title">${section.title}</div>
+                            <div class="nav-section-desc">${section.description}</div>
+                            <div class="nav-section-count">${section.count} маршрутов</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+// Настройка обработчиков для навигатора
+function setupNavigatorHandlers() {
+    const navSections = document.querySelectorAll('.nav-section');
+    
+    navSections.forEach(section => {
+        section.addEventListener('click', function() {
+            const sectionId = this.getAttribute('data-section');
+            scrollToSection(sectionId);
+            
+            // Обновляем активное состояние
+            navSections.forEach(s => s.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+}
+
+// Скролл к разделу
+function scrollToSection(sectionId) {
+    const targetSection = document.querySelector(`.rec-group[data-group="${sectionId}"]`);
+    if (targetSection) {
+        targetSection.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+        });
+        
+        // Добавляем подсветку
+        targetSection.classList.add('highlighted');
+        setTimeout(() => {
+            targetSection.classList.remove('highlighted');
+        }, 2000);
+    }
+}
 
 // Рендеринг группы рекомендаций
 function renderGroup(title, routes, groupType) {
@@ -781,10 +950,10 @@ function renderGroup(title, routes, groupType) {
     } else if (groupType === 'balanced') {
         sorted.sort((a, b) => Math.abs((b.intellect || 0) - (b.comfort || 0)) - Math.abs((a.intellect || 0) - (a.comfort || 0)));
     }
-    const top3 = sorted.slice(0, 3);
+    const top3 = sorted.slice(0, 5);
     const description = recGroupDescriptions[groupType] ? `<div class='rec-group-desc'>${recGroupDescriptions[groupType]}</div>` : '';
     return `
-        <div class="rec-group">
+        <div class="rec-group" data-group="${groupType}">
             <h3>${title}</h3>
             ${description}
             <div class="rec-table-wrapper">
@@ -878,6 +1047,10 @@ function resetSurvey() {
         }
     });
     
+    // Очищаем localStorage
+    localStorage.removeItem('figaro_preferences');
+    console.log('Preferences удалены из localStorage');
+    
     showSlide(1);
     updateSummary();
     updateTagClouds();
@@ -900,18 +1073,85 @@ function resetSurvey() {
 // --- Автоматическая подгрузка preferences при открытии анкеты или рекомендаций ---
 async function loadUserPreferences() {
     try {
-        const response = await fetch('/api/preferences');
+        console.log('Начинаем загрузку preferences...');
+        const response = await fetch('/api/preferences', {
+            credentials: 'include'  // Важно! Это заставляет браузер отправлять cookies
+        });
         const data = await response.json();
+        console.log('Ответ от API preferences:', data);
+        
         if (data.success && data.has_preferences && data.preferences) {
             const prefs = data.preferences;
+            console.log('✅ Загружены preferences из API:', prefs);
+            await restorePreferences(prefs);
+            return true; // Preferences были загружены из API
+        } else {
+            console.log('❌ Preferences не найдены в API (has_preferences:', data.has_preferences, ')');
+            // Проверяем localStorage как fallback
+            const localPrefs = localStorage.getItem('figaro_preferences');
+            if (localPrefs) {
+                try {
+                    const prefs = JSON.parse(localPrefs);
+                    console.log('✅ Загружены preferences из localStorage:', prefs);
+                    await restorePreferences(prefs);
+                    return true; // Preferences были загружены из localStorage
+                } catch (e) {
+                    console.warn('❌ Ошибка парсинга preferences из localStorage:', e);
+                }
+            }
+            console.log('❌ Preferences не найдены ни в API, ни в localStorage');
+            return false; // Preferences не были загружены
+        }
+    } catch (e) {
+        console.warn('❌ Не удалось загрузить preferences из API:', e);
+        // Проверяем localStorage как fallback
+        const localPrefs = localStorage.getItem('figaro_preferences');
+        if (localPrefs) {
+            try {
+                const prefs = JSON.parse(localPrefs);
+                console.log('✅ Загружены preferences из localStorage (fallback):', prefs);
+                await restorePreferences(prefs);
+                return true; // Preferences были загружены из localStorage
+            } catch (e) {
+                console.warn('❌ Ошибка парсинга preferences из localStorage:', e);
+            }
+        }
+        return false; // Ошибка при загрузке
+    }
+}
+
+// Вспомогательная функция для восстановления preferences
+async function restorePreferences(prefs) {
+    console.log('🔄 Восстанавливаем preferences:', prefs);
+    
             // Восстанавливаем значения в форме
             if (prefs.priority) {
                 const el = document.querySelector(`input[name="priority"][value="${prefs.priority}"]`);
-                if (el) el.checked = true;
+        if (el) {
+            el.checked = true;
+            // Добавляем класс selected к родительскому элементу
+            const optionDiv = el.closest('.radio-option');
+            if (optionDiv) {
+                optionDiv.classList.add('selected');
+            }
+            console.log('✅ Восстановлен priority:', prefs.priority);
+        } else {
+            console.warn('❌ Элемент для priority не найден:', prefs.priority);
+        }
             }
             if (prefs.diversity) {
                 const el = document.querySelector(`input[name="diversity"][value="${prefs.diversity}"]`);
-                if (el) el.checked = true;
+        if (el) {
+            el.checked = true;
+            // Добавляем класс selected к родительскому элементу
+            const optionDiv = el.closest('.radio-option');
+            if (optionDiv) {
+                optionDiv.classList.add('selected');
+            }
+            console.log('✅ Восстановлен diversity:', prefs.diversity);
+        } else {
+            console.warn('❌ Элемент для diversity не найден:', prefs.diversity);
+        }
             }
             if (prefs.min_concerts !== undefined && prefs.max_concerts !== undefined) {
                 if (prefs.min_concerts === 2 && prefs.max_concerts === 3) selectedConcertsRange = '2-3';
@@ -919,35 +1159,154 @@ async function loadUserPreferences() {
                 else if (prefs.min_concerts === 4 && prefs.max_concerts === 5) selectedConcertsRange = '4-5';
                 else selectedConcertsRange = 'any';
                 const el = document.querySelector(`input[name="concerts_range"][value="${selectedConcertsRange}"]`);
-                if (el) el.checked = true;
+        if (el) {
+            el.checked = true;
+            // Добавляем класс selected к родительскому элементу
+            const optionDiv = el.closest('.radio-option');
+            if (optionDiv) {
+                optionDiv.classList.add('selected');
+            }
+            console.log('✅ Восстановлен concerts_range:', selectedConcertsRange);
+        } else {
+            console.warn('❌ Элемент для concerts_range не найден:', selectedConcertsRange);
+        }
             } else {
                 selectedConcertsRange = 'any';
             }
+    
             selectedComposers = new Set(prefs.composers || []);
             selectedArtists = new Set(prefs.artists || []);
             selectedConcerts = new Set(prefs.concerts || []);
+    
+    console.log('✅ Восстановлены множества:', {
+        composers: selectedComposers.size,
+        artists: selectedArtists.size,
+        concerts: selectedConcerts.size
+    });
+    
             updateSummary();
+    updateTagClouds(); // <--- ДОБАВЛЕНО: обновляем облака тегов после восстановления
+    
             // --- Если мы на вкладке рекомендаций, сразу загружаем рекомендации ---
             const recsTab = document.getElementById('tab-recs-btn');
             if (recsTab && recsTab.classList.contains('active')) {
+        console.log('🔄 Переходим на вкладку рекомендаций, загружаем рекомендации...');
                 loadRecommendationsWithPreferences(prefs);
             }
             // --- Если мы на анкете, сразу показываем последний слайд (резюме) ---
             const formTab = document.getElementById('tab-form-btn');
             if (formTab && formTab.classList.contains('active')) {
+        console.log('🔄 Переходим на вкладку анкеты, показываем слайд 7...');
                 showSlide(7);
             }
-            updateTagClouds(); // <--- ДОБАВЛЕНО: обновляем облака тегов после восстановления
-        }
+    
+    console.log('✅ Preferences восстановлены успешно');
+}
+
+// Функция для проверки авторизации
+async function checkAuthStatus() {
+    try {
+        const response = await fetch('/api/auth/check', {
+            credentials: 'include'
+        });
+        const data = await response.json();
+        console.log('Статус авторизации:', data);
+        return data.authenticated;
     } catch (e) {
-        console.warn('Не удалось загрузить preferences:', e);
+        console.warn('Ошибка проверки авторизации:', e);
+        return false;
     }
 }
 
 // Вызов при открытии анкеты или рекомендаций
-function onTabShow(tab) {
-    if (tab === 'form' || tab === 'recs') {
-        loadUserPreferences();
+async function onTabShow(tab) {
+    let preferencesLoaded = false;
+    
+    // Проверяем авторизацию
+    const isAuthenticated = await checkAuthStatus();
+    console.log('Пользователь авторизован:', isAuthenticated);
+    
+    // Дополнительная проверка для вкладки рекомендаций - ПЕРВЫМ ДЕЛОМ!
+    if (tab === 'recs') {
+        console.log('🔄 Открываем вкладку рекомендаций, проверяем preferences...');
+        
+        // Сначала проверяем, есть ли уже загруженные preferences в памяти
+        const hasPreferencesInMemory = selectedComposers.size > 0 || selectedArtists.size > 0 || 
+                                      selectedConcerts.size > 0 || selectedConcertsRange !== 'any' ||
+                                      document.querySelector('input[name="priority"]:checked') ||
+                                      document.querySelector('input[name="diversity"]:checked');
+        
+        console.log('Проверка preferences в памяти:', {
+            composers: selectedComposers.size,
+            artists: selectedArtists.size,
+            concerts: selectedConcerts.size,
+            range: selectedConcertsRange,
+            priority: document.querySelector('input[name="priority"]:checked')?.value,
+            diversity: document.querySelector('input[name="diversity"]:checked')?.value,
+            hasPreferencesInMemory
+        });
+        
+        if (hasPreferencesInMemory) {
+            console.log('✅ Preferences найдены в памяти, загружаем рекомендации...');
+            // Создаем объект preferences из текущих значений
+            const preferences = {
+                priority: document.querySelector('input[name="priority"]:checked')?.value,
+                diversity: document.querySelector('input[name="diversity"]:checked')?.value,
+                min_concerts: selectedConcertsRange === '2-3' ? 2 : selectedConcertsRange === '3-4' ? 3 : selectedConcertsRange === '4-5' ? 4 : undefined,
+                max_concerts: selectedConcertsRange === '2-3' ? 3 : selectedConcertsRange === '3-4' ? 4 : selectedConcertsRange === '4-5' ? 5 : undefined,
+                composers: Array.from(selectedComposers),
+                artists: Array.from(selectedArtists),
+                concerts: Array.from(selectedConcerts)
+            };
+            loadRecommendationsWithPreferences(preferences);
+            return; // Выходим, не загружаем preferences заново
+        } else {
+            console.log('❌ Preferences не найдены в памяти, загружаем из API...');
+            // Если preferences нет в памяти, загружаем их
+            preferencesLoaded = await loadUserPreferences();
+            
+            // После загрузки снова проверяем
+            const hasPreferencesAfterLoad = selectedComposers.size > 0 || selectedArtists.size > 0 || 
+                                          selectedConcerts.size > 0 || selectedConcertsRange !== 'any' ||
+                                          document.querySelector('input[name="priority"]:checked') ||
+                                          document.querySelector('input[name="diversity"]:checked');
+            
+            if (hasPreferencesAfterLoad) {
+                console.log('✅ Preferences загружены из API, загружаем рекомендации...');
+                const preferences = {
+                    priority: document.querySelector('input[name="priority"]:checked')?.value,
+                    diversity: document.querySelector('input[name="diversity"]:checked')?.value,
+                    min_concerts: selectedConcertsRange === '2-3' ? 2 : selectedConcertsRange === '3-4' ? 3 : selectedConcertsRange === '4-5' ? 4 : undefined,
+                    max_concerts: selectedConcertsRange === '2-3' ? 3 : selectedConcertsRange === '3-4' ? 4 : selectedConcertsRange === '4-5' ? 5 : undefined,
+                    composers: Array.from(selectedComposers),
+                    artists: Array.from(selectedArtists),
+                    concerts: Array.from(selectedConcerts)
+                };
+                loadRecommendationsWithPreferences(preferences);
+            } else {
+                console.log('❌ Preferences не найдены ни в памяти, ни в API, показываем CTA...');
+                // Показываем призыв к действию
+                const ctaElement = document.getElementById('recommendations-cta');
+                if (ctaElement) {
+                    ctaElement.style.display = 'block';
+                }
+                // Удаляем блок с рекомендациями, если он есть
+                const recommendationsBlock = document.querySelector('.recommendations-block');
+                if (recommendationsBlock) {
+                    recommendationsBlock.remove();
+                }
+            }
+        }
+    }
+    
+    // Для других вкладок загружаем preferences как обычно
+    if (tab === 'form') {
+        preferencesLoaded = await loadUserPreferences();
+    }
+    
+    // Для вкладки "О проекте" ничего не делаем
+    if (tab === 'about') {
+        console.log('Открыта вкладка "О проекте"');
     }
 }
 // --- Учитываем hash вкладки в URL ---
@@ -962,10 +1321,10 @@ function activateTabFromHash() {
 window.addEventListener('DOMContentLoaded', activateTabFromHash);
 
 // Обновляем hash при переключении вкладок
-const origShowTab = window.showTab;
-window.showTab = function(tab) {
+const origShowTab = showTab;
+window.showTab = async function(tab) {
     origShowTab(tab);
-    onTabShow(tab);
+    await onTabShow(tab);
     window.location.hash = tab;
 };
 

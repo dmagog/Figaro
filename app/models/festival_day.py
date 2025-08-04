@@ -3,7 +3,7 @@ from datetime import date, time
 from sqlmodel import SQLModel, Field
 
 
-class FestivalDay(SQLModel, table=True):
+class FestivalDay(SQLModel, table=True, extend_existing=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     day: date = Field(index=True, description="Дата фестивального дня")
     first_concert_time: time = Field(description="Время начала первого концерта")

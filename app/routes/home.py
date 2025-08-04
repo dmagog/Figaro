@@ -176,10 +176,14 @@ async def index(request: Request, session=Depends(get_session)):
         except:
             pass  # Пользователь не авторизован
 
+    # Получаем ссылку на бота из переменных окружения
+    bot_link = os.environ.get('BOT_LINK', 'https://t.me/Figaro_FestivalBot')
+
     context = {
         "login": current_user is not None,
         "request": request,
-        "user": current_user
+        "user": current_user,
+        "bot_link": bot_link
     }
 
     return templates.TemplateResponse("index.html", context)
@@ -207,11 +211,23 @@ async def admin_index(request: Request, session=Depends(get_session)):
     # Получаем количество маршрутов из кэша
     routes_count = summary.get("routes_count", 0)
 
+    # Добавляем заглушки для новых разделов
+    alerts = {
+        "critical": 0,
+        "notifications": 2
+    }
+    
+    telegram_stats = {
+        "sent": 15
+    }
+
     context = {
         "user": user_obj,
         "request": request,
         "summary": summary,
-        "routes_count": routes_count
+        "routes_count": routes_count,
+        "alerts": alerts,
+        "telegram_stats": telegram_stats
     }
     return templates.TemplateResponse("admin_index.html", context)
 
@@ -338,115 +354,7 @@ async def admin_users(request: Request, session=Depends(get_session)):
     return templates.TemplateResponse("admin_users.html", context)
 
 
-@home_route.get("/admin/halls", response_class=HTMLResponse)
-async def admin_halls(request: Request, session=Depends(get_session)):
-    token = request.cookies.get(settings.COOKIE_NAME)
-    if token:
-        user = await authenticate_cookie(token)
-    else:
-        user = None
-
-    user_obj = None
-    if user:
-        user_obj = UsersService.get_user_by_email(user, session)
-    if not user_obj or not getattr(user_obj, 'is_superuser', False):
-        return RedirectResponse(url="/login", status_code=302)
-
-    from models import Hall, Concert, Purchase, HallTransition
-    from sqlalchemy import select, func
-    halls = session.exec(select(Hall)).all()
-    concerts = session.exec(select(Concert)).all()
-    
-    # Получаем переходы между залами
-    transitions = session.exec(select(HallTransition)).all()
-
-    # Для расчёта средней заполняемости по каждому залу
-    concerts_by_hall = {}
-    for c in concerts:
-        concerts_by_hall.setdefault(get_field(c, 'hall_id'), []).append(c)
-
-    # Используем новый сервис билетов
-    from services.crud.tickets import get_tickets_left
-
-    # Считаем количество концертов и мест по каждому залу
-    hall_stats = {get_field(h, 'id'): {"concerts": 0, "seats": get_field(h, 'seats'), "tickets_sold": 0, "available_concerts": 0} for h in halls}
-    for c in concerts:
-        if get_field(c, 'hall_id') in hall_stats:
-            hall_stats[get_field(c, 'hall_id')]["concerts"] += 1
-            hall_stats[get_field(c, 'hall_id')]["seats"] = hall_stats[get_field(c, 'hall_id')]["seats"] or 0
-            tickets_left = get_tickets_left(get_field(c, 'id'))
-            if tickets_left > 0:
-                hall_stats[get_field(c, 'hall_id')]["available_concerts"] += 1
-
-    # Считаем количество купленных билетов по каждому залу
-    result = session.exec(
-        select(Concert.hall_id, func.count(Purchase.id))
-        .join(Purchase, Purchase.concert_id == Concert.id)
-        .group_by(Concert.hall_id)
-    ).all()
-    tickets_per_hall = {row[0]: row[1] for row in result}
-    for hall_id, tickets in tickets_per_hall.items():
-        if hall_id in hall_stats:
-            hall_stats[hall_id]["tickets_sold"] = tickets
-
-    # Формируем данные для шаблона
-    halls_data = []
-    all_fill_percents = []
-    for h in halls:
-        stats = hall_stats[get_field(h, 'id')]
-        fill_percent = (stats["tickets_sold"] / (stats["seats"] * stats["concerts"]) * 100) if stats["seats"] and stats["concerts"] else 0
-        # Средняя заполняемость по всем концертам этого зала
-        fill_percents = []
-        for c in concerts_by_hall.get(get_field(h, 'id'), []):
-            seats = get_field(h, 'seats') or 0
-            if seats > 0:
-                # Считаем количество купленных билетов для этого концерта
-                from models import Purchase
-                tickets_row = session.exec(select(func.count(Purchase.id)).where(Purchase.concert_id == get_field(c, 'id'))).scalars().first()
-                tickets = tickets_row or 0
-                fill_percents.append((tickets / seats) * 100)
-                all_fill_percents.append((tickets / seats) * 100)
-        mean_fill_percent = round(sum(fill_percents) / len(fill_percents), 1) if fill_percents else 0
-        halls_data.append({
-            "hall": h,
-            "concerts": stats["concerts"],
-            "seats": stats["seats"],
-            "tickets_sold": stats["tickets_sold"],
-            "fill_percent": fill_percent,
-            "available_concerts": stats["available_concerts"],
-            "mean_fill_percent": mean_fill_percent
-        })
-    mean_fill_percent_all_halls = round(sum(all_fill_percents) / len(all_fill_percents), 1) if all_fill_percents else 0
-    hall_ids = [get_field(h["hall"], 'id') for h in halls_data]
-    
-    # Формируем данные о переходах между залами в виде матрицы
-    halls_by_id = {get_field(h, 'id'): h for h in halls}
-    hall_names = [get_field(h, 'name') for h in halls]
-    
-    # Создаем матрицу переходов
-    transitions_matrix = {}
-    for from_hall in halls:
-        transitions_matrix[get_field(from_hall, 'name')] = {}
-        for to_hall in halls:
-            transitions_matrix[get_field(from_hall, 'name')][get_field(to_hall, 'name')] = None
-    
-    # Заполняем матрицу данными о переходах
-    for transition in transitions:
-        from_hall = halls_by_id.get(get_field(transition, 'from_hall_id'))
-        to_hall = halls_by_id.get(get_field(transition, 'to_hall_id'))
-        if from_hall and to_hall:
-            transitions_matrix[get_field(from_hall, 'name')][get_field(to_hall, 'name')] = get_field(transition, 'transition_time')
-    
-    context = {
-        "user": user_obj,
-        "halls_data": halls_data,
-        "hall_ids": hall_ids,
-        "mean_fill_percent_all_halls": mean_fill_percent_all_halls,
-        "transitions_matrix": transitions_matrix,
-        "hall_names": hall_names,
-        "request": request
-    }
-    return templates.TemplateResponse("admin_halls.html", context)
+# Маршрут /admin/halls перенесен в admin_halls.py
 
 
 @home_route.post("/admin/halls/update_seats")
@@ -1683,6 +1591,158 @@ async def get_recommendations_api(
         import traceback
         traceback.print_exc()
         return {"success": False, "message": str(e)}
+
+
+@home_route.get("/admin/api/dashboard-stats")
+async def get_dashboard_stats(request: Request, session=Depends(get_session)):
+    """API для получения статистики дашборда"""
+    try:
+        # Проверяем авторизацию
+        token = request.cookies.get(settings.COOKIE_NAME)
+        if token:
+            user = await authenticate_cookie(token)
+        else:
+            user = None
+
+        user_obj = None
+        if user:
+            user_obj = UsersService.get_user_by_email(user, session)
+        if not user_obj or not getattr(user_obj, 'is_superuser', False):
+            raise HTTPException(status_code=403, detail="Доступ запрещен")
+
+        # Получаем базовую статистику
+        from models import User, Purchase, Concert, Hall
+        from sqlalchemy import func
+        
+        users_count = session.exec(select(func.count(User.id))).first()
+        # customers_count = 0  # Модель Customer не существует
+        tickets_count = session.exec(select(func.count(Purchase.id))).first()
+        concerts_count = session.exec(select(func.count(Concert.id))).first()
+        halls_count = session.exec(select(func.count(Hall.id))).first()
+        
+        # Статистика Telegram
+        telegram_users = session.exec(select(func.count(User.id)).where(User.telegram_id.is_not(None))).first()
+        
+        # Алерты (заглушка для демонстрации)
+        alerts = {
+            "critical": 0,  # Здесь будет логика проверки критических ситуаций
+            "notifications": 2
+        }
+        
+        # Статистика Telegram рассылок
+        telegram_stats = {
+            "sent": 15,  # Здесь будет реальная статистика
+            "users": telegram_users or 0
+        }
+        
+        return {
+            "users_count": users_count,
+            "customers_count": 0,  # Модель Customer не существует
+            "tickets_count": tickets_count,
+            "concerts_count": concerts_count,
+            "halls_count": halls_count,
+            "alerts": alerts,
+            "telegram_stats": telegram_stats
+        }
+        
+    except Exception as e:
+        print(f"Error getting dashboard stats: {e}")
+        raise HTTPException(status_code=500, detail="Ошибка получения статистики")
+
+
+@home_route.get("/admin/api/alerts")
+async def get_alerts(request: Request, session=Depends(get_session)):
+    """API для получения алертов"""
+    try:
+        # Проверяем авторизацию
+        token = request.cookies.get(settings.COOKIE_NAME)
+        if token:
+            user = await authenticate_cookie(token)
+        else:
+            user = None
+
+        user_obj = None
+        if user:
+            user_obj = UsersService.get_user_by_email(user, session)
+        if not user_obj or not getattr(user_obj, 'is_superuser', False):
+            raise HTTPException(status_code=403, detail="Доступ запрещен")
+
+        alerts = []
+        
+        # Проверяем концерты с низкой заполняемостью
+        from models import Concert
+        low_fill_concerts = session.exec(
+            select(Concert)
+            .where(Concert.available_seats < 10)
+            .limit(5)
+        ).all()
+        
+        for concert in low_fill_concerts:
+            alerts.append({
+                "type": "critical",
+                "message": f"Низкая заполняемость: {concert.name} - {concert.available_seats} мест",
+                "concert_id": concert.id
+            })
+        
+        # Проверяем проблемы с Telegram ботом
+        # Здесь можно добавить проверку статуса бота
+        
+        return {
+            "critical": alerts,
+            "notifications": []
+        }
+        
+    except Exception as e:
+        print(f"Error getting alerts: {e}")
+        raise HTTPException(status_code=500, detail="Ошибка получения алертов")
+
+
+@home_route.get("/admin/telegram/stats", response_class=HTMLResponse)
+async def admin_telegram_stats(request: Request, session=Depends(get_session)):
+    """Страница статистики Telegram (заглушка)"""
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return RedirectResponse(url="/login", status_code=302)
+
+    context = {
+        "user": user_obj,
+        "request": request
+    }
+    return templates.TemplateResponse("admin_telegram_stats.html", context)
+
+
+@home_route.get("/admin/notifications/settings", response_class=HTMLResponse)
+async def admin_notifications_settings(request: Request, session=Depends(get_session)):
+    """Страница настроек уведомлений (заглушка)"""
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return RedirectResponse(url="/login", status_code=302)
+
+    context = {
+        "user": user_obj,
+        "request": request
+    }
+    return templates.TemplateResponse("admin_notifications_settings.html", context)
+
+
+
+
 
 home_route.include_router(admin_customers_router)
 home_route.include_router(admin_users_router)

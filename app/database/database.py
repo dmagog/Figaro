@@ -18,6 +18,8 @@ def init_db(demostart = None):
     if demostart:
         SQLModel.metadata.drop_all(engine)
         SQLModel.metadata.create_all(engine)
+        
+        # Пропускаем создание таблиц, они уже должны существовать
 
         with Session(engine) as session:
                 print("\nЗагружаем данные из Excel файлов...")

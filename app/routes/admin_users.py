@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from services.crud import user as UsersService
 from database.config import get_settings
@@ -7,6 +7,11 @@ from database.database import get_session
 from auth.authenticate import authenticate_cookie
 import logging
 from sqlalchemy import select, func
+import asyncio
+import sys
+sys.path.append("../../bot")
+from bot.utils import send_telegram_message
+from datetime import datetime
 
 settings = get_settings()
 admin_users_router = APIRouter()
@@ -125,4 +130,417 @@ async def admin_users(request: Request, session=Depends(get_session)):
         "route_matches": route_matches,
         "request": request
     }
-    return templates.TemplateResponse("admin_users.html", context) 
+    return templates.TemplateResponse("admin_users.html", context)
+
+@admin_users_router.get("/admin/telegram", response_class=HTMLResponse)
+async def admin_telegram_page(request: Request, session=Depends(get_session)):
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return RedirectResponse(url="/login", status_code=302)
+    
+    # Инициализируем шаблоны по умолчанию
+    from services.telegram_service import TelegramService
+    TelegramService.initialize_default_templates(session)
+    
+    # Получаем данные для страницы
+    message_templates = TelegramService.get_templates(session)
+    user_categories = TelegramService.get_user_categories(session)
+    
+    # Получаем последние кампании
+    from models import TelegramCampaign
+    recent_campaigns = session.exec(
+        select(TelegramCampaign).order_by(TelegramCampaign.created_at.desc()).limit(5)
+    ).all()
+    
+    # Обновляем статистику для каждой кампании
+    from services.telegram_service import TelegramService
+    for campaign in recent_campaigns:
+        # Проверяем, что это объект модели, а не Row
+        if hasattr(campaign, 'id'):
+            campaign_id = str(campaign.id)
+        else:
+            # Если это Row объект, получаем id по-другому
+            campaign_id = str(campaign[0]) if isinstance(campaign, (list, tuple)) else str(getattr(campaign, 'id', None))
+        
+        if campaign_id and campaign_id != 'None':
+            stats = TelegramService.get_campaign_stats(session, campaign_id)
+            print(f"DEBUG: Кампания {campaign_id} - stats: {stats}")
+            # Обновляем объект кампании из базы
+            session.refresh(campaign)
+    
+
+    
+    context = {
+        "request": request, 
+        "templates": message_templates,
+        "user_categories": user_categories,
+        "recent_campaigns": recent_campaigns,
+        "total_users": len(user_categories["all"]),
+        "users_with_purchases": len(user_categories["with_purchases"]),
+        "users_without_purchases": len(user_categories["without_purchases"]),
+        "new_users": len(user_categories["new_users"]),
+        "active_users": len(user_categories["active_users"])
+    }
+    return templates.TemplateResponse("admin_telegram.html", context)
+
+@admin_users_router.post("/admin/send-telegram")
+async def send_telegram(request: Request, session=Depends(get_session)):
+    # Проверяем авторизацию
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
+    
+    form = await request.form()
+    
+    # Получаем данные из формы
+    user_ids = form.getlist("user_ids")
+    category = form.get("category")
+    message = form.get("message")
+    template_id = form.get("template_id")
+    campaign_name = form.get("campaign_name")
+    markdown = form.get("markdown") == '1'
+    file = form.get("file")
+    
+    # Сохраняем файл, если он есть
+    file_path = None
+    file_type = None
+    if file and hasattr(file, 'filename') and file.filename:
+        import tempfile
+        suffix = '.' + file.filename.split('.')[-1] if '.' in file.filename else ''
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            tmp.write(await file.read())
+            file_path = tmp.name
+        # Определяем тип файла
+        if file.content_type.startswith('image/'):
+            file_type = 'photo'
+        else:
+            file_type = 'document'
+    
+    # Определяем пользователей для отправки
+    users_to_send = []
+    
+    if category:
+        # Отправка по категории
+        from services.telegram_service import TelegramService
+        user_categories = TelegramService.get_user_categories(session)
+        if category in user_categories:
+            users_to_send = user_categories[category]
+    elif user_ids:
+        # Отправка по выбранным пользователям
+        for uid in user_ids:
+            if not uid or not str(uid).isdigit():
+                continue
+            user = session.exec(select(UsersService.User).where(UsersService.User.id == int(uid))).first()
+            if user and hasattr(user, 'telegram_id') and user.telegram_id:
+                users_to_send.append(user)
+    
+    if not users_to_send:
+        return JSONResponse({"success": False, "error": "Не выбран ни один пользователь с Telegram ID"}, status_code=400)
+    
+    # Отправляем кампанию через сервис
+    from services.telegram_service import TelegramService
+    campaign_id = TelegramService.send_campaign(
+        session=session,
+        users=users_to_send,
+        message_text=message,
+        campaign_name=campaign_name,
+        template_id=int(template_id) if template_id else None,
+        file_path=file_path,
+        file_type=file_type,
+        parse_mode='Markdown' if markdown else None
+    )
+    
+    # Удаляем временный файл
+    if file_path:
+        import os
+        try:
+            os.remove(file_path)
+        except Exception:
+            pass
+    
+    return JSONResponse({
+        "success": True, 
+        "campaign_id": campaign_id,
+        "users_count": len(users_to_send),
+        "message": f"Кампания запущена! Отправка {len(users_to_send)} сообщений через Celery."
+    }) 
+
+@admin_users_router.get("/admin/telegram/campaign/{campaign_id}/stats")
+async def get_campaign_stats(campaign_id: str, request: Request, session=Depends(get_session)):
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
+    
+    from services.telegram_service import TelegramService
+    stats = TelegramService.get_campaign_stats(session, campaign_id)
+    
+    return JSONResponse({"success": True, "stats": stats})
+
+@admin_users_router.get("/admin/telegram/campaigns")
+async def get_campaigns(request: Request, session=Depends(get_session)):
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
+    
+    from models import TelegramCampaign
+    campaigns = session.exec(
+        select(TelegramCampaign).order_by(TelegramCampaign.created_at.desc()).limit(20)
+    ).all()
+    
+    campaigns_data = []
+    for campaign in campaigns:
+        from services.telegram_service import TelegramService
+        stats = TelegramService.get_campaign_stats(session, str(campaign.id))
+        campaigns_data.append({
+            "id": campaign.id,
+            "name": campaign.name,
+            "created_at": campaign.created_at.isoformat() if campaign.created_at else None,
+            "sent_at": campaign.sent_at.isoformat() if campaign.sent_at else None,
+            "target_users_count": campaign.target_users_count,
+            "stats": stats
+        })
+    
+    return JSONResponse({"success": True, "campaigns": campaigns_data}) 
+
+@admin_users_router.get("/admin/telegram/test")
+async def test_telegram_data(request: Request, session=Depends(get_session)):
+    """Тестовый маршрут для проверки данных кампаний"""
+    from models import TelegramCampaign
+    from services.telegram_service import TelegramService
+    
+    campaigns = session.exec(
+        select(TelegramCampaign).order_by(TelegramCampaign.created_at.desc()).limit(3)
+    ).all()
+    
+    result = []
+    for campaign in campaigns:
+        stats = TelegramService.get_campaign_stats(session, str(campaign.id))
+        session.refresh(campaign)
+        result.append({
+            "id": campaign.id,
+            "name": campaign.name,
+            "target_users_count": campaign.target_users_count,
+            "sent_count": campaign.sent_count,
+            "delivered_count": campaign.delivered_count,
+            "failed_count": campaign.failed_count,
+            "stats": stats
+        })
+    
+    return JSONResponse({"campaigns": result}) 
+
+@admin_users_router.get("/admin/telegram/templates")
+async def get_templates(request: Request, session=Depends(get_session)):
+    """Получает список всех шаблонов"""
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
+    
+    from models import MessageTemplate
+    # Получаем все шаблоны как SQLModel объекты
+    templates = session.exec(select(MessageTemplate).order_by(MessageTemplate.created_at.desc())).all()
+    
+    templates_data = []
+    for template_tuple in templates:
+        # Получаем SQLModel объект из кортежа
+        template = template_tuple[0]
+        
+        # Получаем данные из SQLModel объекта
+        templates_data.append({
+            "id": template.id,
+            "name": template.name,
+            "content": template.content,
+            "variables": template.variables,
+            "is_active": template.is_active,
+            "created_at": template.created_at.isoformat() if template.created_at else None,
+            "updated_at": template.updated_at.isoformat() if template.updated_at else None
+        })
+    
+    return JSONResponse({"success": True, "templates": templates_data})
+
+@admin_users_router.post("/admin/telegram/templates")
+async def create_template(request: Request, session=Depends(get_session)):
+    """Создает новый шаблон"""
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
+    
+    form = await request.form()
+    name = form.get("name", "").strip()
+    content = form.get("content", "").strip()
+    variables = form.get("variables", "").strip()
+    is_active = form.get("is_active") == "on"
+    
+    if not name or not content:
+        return JSONResponse({"success": False, "error": "Название и содержимое обязательны"}, status_code=400)
+    
+    from services.telegram_service import TelegramService
+    try:
+        template = TelegramService.create_template(session, name, content, variables, is_active)
+        return JSONResponse({
+            "success": True, 
+            "template": {
+                "id": template.id,
+                "name": template.name,
+                "content": template.content,
+                "variables": template.variables,
+                "is_active": template.is_active
+            }
+        })
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+@admin_users_router.put("/admin/telegram/templates/{template_id}")
+async def update_template(template_id: int, request: Request, session=Depends(get_session)):
+    """Обновляет существующий шаблон"""
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
+    
+    from models import MessageTemplate
+    template_tuple = session.exec(select(MessageTemplate).where(MessageTemplate.id == template_id)).first()
+    if not template_tuple:
+        return JSONResponse({"success": False, "error": "Шаблон не найден"}, status_code=404)
+    
+    # Получаем SQLModel объект из кортежа
+    template = template_tuple[0]
+    
+    form = await request.form()
+    name = form.get("name", "").strip()
+    content = form.get("content", "").strip()
+    variables = form.get("variables", "").strip()
+    is_active = form.get("is_active") == "on"
+    
+    if not name or not content:
+        return JSONResponse({"success": False, "error": "Название и содержимое обязательны"}, status_code=400)
+    
+    try:
+        template.name = name
+        template.content = content
+        template.variables = variables
+        template.is_active = is_active
+        template.updated_at = datetime.utcnow()
+        
+        session.add(template)
+        session.commit()
+        session.refresh(template)
+        
+        return JSONResponse({
+            "success": True, 
+            "template": {
+                "id": template.id,
+                "name": template.name,
+                "content": template.content,
+                "variables": template.variables,
+                "is_active": template.is_active
+            }
+        })
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+@admin_users_router.delete("/admin/telegram/templates/{template_id}")
+async def delete_template(template_id: int, request: Request, session=Depends(get_session)):
+    """Удаляет шаблон (деактивирует)"""
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return JSONResponse({"success": False, "error": "Доступ запрещён"}, status_code=403)
+    
+    from models import MessageTemplate
+    template_tuple = session.exec(select(MessageTemplate).where(MessageTemplate.id == template_id)).first()
+    if not template_tuple:
+        return JSONResponse({"success": False, "error": "Шаблон не найден"}, status_code=404)
+    
+    # Получаем SQLModel объект из кортежа
+    template = template_tuple[0]
+    
+    try:
+        # Деактивируем шаблон вместо удаления
+        template.is_active = False
+        template.updated_at = datetime.utcnow()
+        
+        session.add(template)
+        session.commit()
+        
+        return JSONResponse({"success": True, "message": "Шаблон деактивирован"})
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500) 
+
+@admin_users_router.get("/admin/telegram/templates-page", response_class=HTMLResponse)
+async def admin_telegram_templates_page(request: Request, session=Depends(get_session)):
+    """Страница управления шаблонами Telegram"""
+    token = request.cookies.get(settings.COOKIE_NAME)
+    if token:
+        user = await authenticate_cookie(token)
+    else:
+        user = None
+
+    user_obj = None
+    if user:
+        user_obj = UsersService.get_user_by_email(user, session)
+    if not user_obj or not getattr(user_obj, 'is_superuser', False):
+        return RedirectResponse(url="/login", status_code=302)
+    
+    return templates.TemplateResponse("admin_telegram_templates.html", {"request": request}) 

@@ -8,7 +8,7 @@ from .composition import Composition, ConcertCompositionLink
 from .genre import Genre, ConcertGenreLink
 
 
-class Concert(SQLModel, table=True):
+class Concert(SQLModel, table=True, extend_existing=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     external_id: int = Field(index=True)
     name: str

@@ -1,88 +1,133 @@
 version: "3"
-services: 
+services:
+  # Базовый образ с общими зависимостями
+  base:
+    build:
+      context: .
+      dockerfile: Dockerfile.base
+    image: figaro-base:latest
+    profiles:
+      - build-only 
   app:
-    build: ./app/
+    build:
+      context: .
+      dockerfile: ./app/Dockerfile
+      cache_from:
+        - figaro-base:latest
+        - figaro-api:latest
     image: figaro-api:latest 
     restart: unless-stopped
     env_file:
     - .env
+    environment:
+      - PYTHONPATH=/:/app:/worker:/bot
     volumes:
       - ./app:/app
     depends_on:
       db:
         condition: service_started
-      # rabbitmq:
-      #   condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - figaro-network
-    # healthcheck:
-    #   test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
-    #   interval: 30s
-    #   timeout: 10s
-    #   retries: 3
-    #   start_period: 20s  
 
-  # ml_worker:
-  #   build: ./ml_worker/
-  #   image: my-ml-service-worker:latest
-  #   container_name: my-ml-service-worker
-  #   restart: unless-stopped
-  #   env_file:
-  #   - ./ml_worker/.env
-  #   volumes:
-  #     - ./ml_worker:/app
-  #   depends_on:
-  #     db:
-  #       condition: service_started
-  #     rabbitmq:
-  #       condition: service_healthy
-  #   networks:
-  #     - ml-service-network
-  
-          
+  worker:
+    build:
+      context: .
+      dockerfile: ./worker/Dockerfile
+      cache_from:
+        - figaro-base:latest
+        - figaro-worker:latest
+    image: figaro-worker:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/:/app:/worker:/bot
+    volumes:
+      - ./worker:/worker
+      - ./bot:/bot
+    depends_on:
+      - app
+      - rabbitmq
+      - db
+    networks:
+      - figaro-network
+    command: celery -A celery_worker worker --loglevel=info -Q telegram
+
+  bot:
+    build:
+      context: .
+      dockerfile: ./bot/Dockerfile
+      cache_from:
+        - figaro-base:latest
+        - figaro-bot:latest
+    image: figaro-bot:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/:/app:/worker:/bot
+    volumes:
+      - ./bot:/bot
+      - ./app:/app
+    depends_on:
+      - db
+    networks:
+      - figaro-network
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+  flower:
+    image: mher/flower
+    restart: unless-stopped
+    ports:
+      - 5555:5555
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - CELERY_BROKER_URL=amqp://${RABBITMQ_USER:-user}:${RABBITMQ_PASS:-password}@rabbitmq:5672//
+    networks:
+      - figaro-network
+
   web:
     build: ./nginx
     restart: unless-stopped
     ports:
       - 80:80
       - 443:443
-    # depends_on:
-    #   app:
-    #     condition: service_healthy
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf    
     networks:
       - figaro-network
-  
 
-
-  # rabbitmq:
-  #   image: rabbitmq:3-management
-  #   ports:
-  #     - "15672:15672"  # Management UI
-  #     - "5672:5672"    # AMQP protocol
-  #   hostname: rabbitmq
-  #   restart: on-failure
-  #   volumes:
-  #     - rabbitmq_data:/var/lib/rabbitmq/data/
-  #   environment:
-  #     - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
-  #     - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS}
-  #     - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit disk_free_limit 2147483648  
-  #   healthcheck:
-  #     test: ["CMD", "rabbitmq-diagnostics", "check_running"]
-  #     interval: 20s
-  #     timeout: 10s
-  #     retries: 3
-  #   networks:
-  #     - ml-service-network
-
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "15672:15672"  # Management UI
+      - "5672:5672"    # AMQP protocol
+    hostname: rabbitmq
+    restart: on-failure
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq/data/
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS}
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit disk_free_limit 2147483648  
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 20s
+      timeout: 10s
+      retries: 3
+    networks:
+      - figaro-network
 
   db:
     image: postgres:17.4
     restart: unless-stopped
     shm_size: 128mb
-    # or set shared memory limit when deploy via swarm stack
     volumes:
       - postgres_data:/var/lib/postgresql/data/
       - type: tmpfs
@@ -95,13 +140,9 @@ services:
       POSTGRES_PASSWORD: ${DB_PASS}
       PGDATA: "/var/lib/postgresql/data/pgdata"
     ports:
-      #- ${DB_PORT}:${DB_PORT}
       - 5432:5432
-    #expose:
-    #  - 5432
     networks:
       - figaro-network
-
 
   adminer:
     image: adminer
@@ -110,8 +151,6 @@ services:
       - 8080:8080 
     networks:
       - figaro-network
-
-
 
 volumes:
     postgres_data:

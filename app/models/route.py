@@ -2,7 +2,7 @@ from typing import Optional
 from sqlmodel import SQLModel, Field
 from datetime import datetime
 
-class Route(SQLModel, table=True):
+class Route(SQLModel, table=True, extend_existing=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     Sostav: str
     Days: int
@@ -48,7 +48,7 @@ class Route(SQLModel, table=True):
     GMM_Cluster: Optional[int] = None
 
 
-class AvailableRoute(SQLModel, table=True):
+class AvailableRoute(SQLModel, table=True, extend_existing=True):
     # Все поля из Route (копия структуры)
     id: Optional[int] = Field(default=None, primary_key=True)
     Sostav: str

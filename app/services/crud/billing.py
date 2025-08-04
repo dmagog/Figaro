@@ -1,6 +1,6 @@
 # services/crud/billing.py
 from sqlmodel import Session, select
-from models import User
+from models.user import User
 from typing import Optional
 
 def get_bill(user_id: int, session: Session) -> Optional[dict]:

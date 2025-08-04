@@ -5,11 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Личный кабинет - конструктор маршрутов фестиваля «Безумные дни»</title>
     <link rel="stylesheet" href="/static/css/style.css?v=1.8&t={{ range(1, 10000) | random }}">
+    <link rel="stylesheet" href="/static/css/index.css">
     <style>
+        /* Стили шапки теперь подключаются из index.css */
+        
+        /* Дополнительные стили для корректного наслоения */
+        .top-navbar-modern {
+            position: relative !important;
+            z-index: 1000 !important;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            background: #f6f7fb;
+        }
+        
         .profile-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+            margin-top: 20px; /* Отступ от шапки */
+            min-height: calc(100vh - 320px); /* Учитываем высоту шапки + отступ */
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Изоляция контента профиля от стилей index.css */
+        .profile-container * {
+            font-family: 'Segoe UI', 'Arial', sans-serif !important;
+        }
+
+        .profile-container .profile-header,
+        .profile-container .tabs-container,
+        .profile-container .tab-content {
+            backdrop-filter: none !important;
+            filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            -webkit-filter: none !important;
         }
         
         .profile-header {
@@ -19,6 +53,8 @@
             border-radius: 15px;
             margin-bottom: 30px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 2;
         }
         
         .profile-header h1 {
@@ -60,6 +96,8 @@
             box-shadow: 0 5px 20px rgba(0,0,0,0.1);
             margin-bottom: 30px;
             overflow: hidden;
+            position: relative;
+            z-index: 2;
         }
         
         .tabs-nav {
@@ -1692,6 +1730,72 @@
             margin-left: 8px;
         }
         
+        .not-visited {
+            color: #9ca3af;
+            font-size: 1.1em;
+            margin-left: 8px;
+        }
+        
+        .position-number {
+            display: inline-block;
+            font-size: 1.1em;
+            font-weight: 600;
+            padding: 6px 10px;
+            border-radius: 16px;
+            margin-right: 8px;
+            min-width: 24px;
+            text-align: center;
+        }
+        
+        .position-number[data-position="1"] {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #92400e;
+            box-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
+        }
+        
+        .position-number[data-position="2"] {
+            background: linear-gradient(135deg, #c0c0c0, #e5e5e5);
+            color: #525252;
+            box-shadow: 0 2px 4px rgba(192, 192, 192, 0.3);
+        }
+        
+        .position-number[data-position="3"] {
+            background: linear-gradient(135deg, #cd7f32, #daa520);
+            color: #ffffff;
+            box-shadow: 0 2px 4px rgba(205, 127, 50, 0.3);
+        }
+        
+        .position-number[data-position]:not([data-position="1"]):not([data-position="2"]):not([data-position="3"]) {
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            color: #6b7280;
+        }
+        
+        .position-with-status {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .status-indicator {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        
+        .status-indicator.active {
+            color: #10b981;
+        }
+        
+        .position-emoji {
+            margin-right: 8px;
+            font-size: 1.1em;
+        }
+        
+        .not-visited-circle {
+            color: #6b7280;
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+        
         /* Стили для таблиц дней фестиваля */
         .day-table-container {
             margin-bottom: 24px;
@@ -1931,20 +2035,509 @@
         .day-simple-card.inactive .day-simple-label {
             color: #9ca3af;
         }
+        
+        /* Стили для разворачивания списков */
+        .hidden-composer {
+            display: none;
+        }
+        
+        .hidden-artist {
+            display: none;
+        }
+        
+        .hidden-composer-user {
+            display: none;
+        }
+        
+        .hidden-composition {
+            display: none;
+        }
+        
+        .expand-button-container {
+            text-align: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .expand-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.2);
+        }
+        
+        .expand-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+        }
+        
+        .expand-button .expand-icon {
+            transition: transform 0.3s ease;
+        }
+        
+        .expand-button.expanded .expand-icon {
+            transform: rotate(180deg);
+        }
+        
+        /* Стили для облака редких композиторов */
+        .rare-composers-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 10px 16px;
+        }
+        
+        .composer-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #f8f9fa;
+            color: #495057;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #e9ecef;
+            position: relative;
+        }
+        
+        .composer-tag:hover {
+            background: #e9ecef;
+            border-color: #dee2e6;
+            transform: translateY(-1px);
+        }
+        
+        .composer-tag.inactive {
+            background: #f8f9fa;
+            color: #9ca3af;
+            border-color: #e9ecef;
+        }
+        
+        .composer-tag.inactive:hover {
+            background: #f1f3f4;
+            border-color: #dee2e6;
+        }
+        
+        .tag-check {
+            font-size: 10px;
+            color: #10b981;
+            font-weight: bold;
+        }
+        
+
+        
+        .composer-tag.inactive .tag-check {
+            color: #9ca3af;
+        }
+        
+        /* Стили подвала */
+        .footer-modern {
+            position: relative;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            margin-top: 60px;
+            padding: 60px 0 30px;
+            overflow: hidden;
+        }
+
+        .footer-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+        }
+
+        .footer-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+        }
+
+        .footer-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, 
+                rgba(255, 255, 255, 0.02) 0%, 
+                rgba(255, 255, 255, 0.02) 100%);
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .footer-brand {
+            text-align: center;
+            position: relative;
+        }
+
+        .brand-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            display: block;
+            animation: floatIcon 3s ease-in-out infinite;
+        }
+
+        @keyframes floatIcon {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .brand-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            animation: brandGlow 4s ease-in-out infinite;
+        }
+
+        @keyframes brandGlow {
+            0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        .neon-text {
+            background: linear-gradient(45deg, #fff, #f0f0f0, #fff);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: neonGlow 3s ease-in-out infinite;
+            font-weight: bold;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        @keyframes neonGlow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .section-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #fff;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 30px;
+            height: 2px;
+            background: linear-gradient(90deg, #fff, transparent);
+        }
+
+        .footer-brand h3 {
+            margin: 0 0 10px 0;
+            font-size: 2em;
+        }
+
+        .footer-brand p {
+            margin: 0;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .footer-links li {
+            margin-bottom: 12px;
+        }
+
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            position: relative;
+            padding-left: 0;
+        }
+
+        .link-hover {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .link-hover::before {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: #fff;
+            transition: width 0.3s ease;
+        }
+
+        .link-hover:hover::before {
+            width: 100%;
+        }
+
+        .link-hover:hover {
+            color: #fff;
+            transform: translateX(5px);
+        }
+
+        .footer-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .footer-copyright p {
+            margin: 0;
+            opacity: 0.8;
+        }
+
+        .footer-social {
+            display: flex;
+            gap: 15px;
+        }
+
+        .social-link-modern {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 45px;
+            height: 45px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .telegram-icon {
+            width: 24px;
+            height: 24px;
+            fill: #fff;
+            transition: all 0.3s ease;
+        }
+
+        .social-link-modern:hover .telegram-icon {
+            transform: scale(1.1);
+        }
+
+        .social-link-modern:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .social-link-modern::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .social-link-modern:hover::after {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(-5px);
+        }
+
+        @media (max-width: 768px) {
+            .footer-modern {
+                padding: 40px 0 20px;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .glass-card {
+                padding: 20px;
+            }
+
+            .brand-icon {
+                font-size: 2.5em;
+            }
+
+            .neon-text {
+                font-size: 1.5em;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .footer-social {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .footer-modern {
+                padding: 30px 0 15px;
+            }
+
+            .footer-container {
+                padding: 0 15px;
+            }
+
+            .glass-card {
+                padding: 15px;
+            }
+
+            .brand-icon {
+                font-size: 2em;
+            }
+
+            .neon-text {
+                font-size: 1.3em;
+            }
+
+            .section-title {
+                font-size: 1.1em;
+            }
+
+            .footer-links a {
+                font-size: 0.9em;
+            }
+
+            .social-link-modern {
+                width: 40px;
+                height: 40px;
+            }
+        }
     </style>
 </head>
 <body>
+{% if not characteristics or 'total_concerts' not in characteristics %}
+  {% set characteristics = {
+    'total_concerts': 0,
+    'halls': [],
+    'genres': [],
+    'artists': [],
+    'composers': [],
+    'compositions': []
+  } %}
+{% endif %}
+
+    <!-- Современная шапка -->
+    <nav class="top-navbar-modern">
+        <div class="nav-background">
+            <div class="nav-particles"></div>
+            <div class="nav-glow"></div>
+        </div>
+        
+        <div class="nav-container">
+            <div class="nav-brand">
+                <a href="/" class="brand-icon-nav-link">
+                    <div class="brand-icon-nav">🎈</div>
+                </a>
+                <div class="brand-text">
+                    <h1 class="nav-title-modern">Figaro</h1>
+                    <span class="nav-subtitle">Проведёт по фестивалю</span>
+                </div>
+                <div class="nav-brand-glow"></div>
+            </div>
+            
+            <div class="nav-menu">
+                {% if user %}
+                <div class="nav-user">
+                    <span class="user-greeting">Привет, {{ user.name or user.email }}!</span>
+                    <div class="nav-actions">
+                        {% if user.is_superuser %}
+                        <a href="/admin" class="nav-btn-modern nav-btn-admin">Админка</a>
+                        {% endif %}
+                        <a href="/profile" class="nav-btn-modern nav-btn-primary">Личный кабинет</a>
+                        <a href="/logout" class="nav-btn-modern nav-btn-secondary">🚪 Выйти</a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="nav-auth">
+                    <a href="/login" class="nav-btn-modern nav-btn-primary">🔑 Войти</a>
+                    <a href="/register" class="nav-btn-modern nav-btn-secondary">📝 Регистрация</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
     <div class="profile-container">
-        <a href="/" class="back-link">← Назад на главную</a>
         
         <div class="profile-header">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
                     <h1>Личный кабинет</h1>
                     <p>Добро пожаловать, {{ user.name or user.email }}!</p>
-                </div>
-                <div class="header-actions">
-                    <a href="/logout" class="logout-btn">Выйти</a>
                 </div>
             </div>
             
@@ -1957,13 +2550,32 @@
                     <h3>Дата регистрации</h3>
                     <p>{{ user.created_at.strftime('%d.%m.%Y') if user.created_at else 'Не указана' }}</p>
                 </div>
-                <div class="info-card">
-                    <h3>Всего концертов</h3>
-                    <p>{{ purchase_summary.total_concerts }}</p>
-                </div>
+
                 <div class="info-card">
                     <h3>Потрачено</h3>
-                    <p>{{ "{:,}".format(purchase_summary.total_spent) }} ₽</p>
+                    <p>{{ "{:,}".format(purchase_summary['total_spent']) }} ₽</p>
+                </div>
+                <!-- Блок Telegram -->
+                <div class="info-card" style="background: linear-gradient(135deg, #8f5fd7 0%, #667eea 100%); color: white; box-shadow: 0 2px 12px rgba(102,126,234,0.10); position: relative;">
+                    <h3 style="color: #fff; display: flex; align-items: center; gap: 8px; font-size: 1.1em;"><span style="font-size:1.3em;">💬</span> Telegram</h3>
+                    {% if not user.external_id %}
+                        <p style="color: #eee;">Привязка Telegram недоступна для этого пользователя</p>
+                    {% elif telegram_linked %}
+                        <div style="color: #10b981; font-weight: bold; font-size:1.1em; margin-bottom: 6px;">Привязан ✅</div>
+                        <div style="font-size:0.95em; color:#fff;">ID: {{ telegram_id }}{% if telegram_username %} <span style="color:#ffe082;">@{{ telegram_username }}</span>{% endif %}</div>
+                    {% else %}
+                        <div style="color: #ffb4b4; font-weight: bold; font-size:1.1em; margin-bottom: 6px;">Не привязан</div>
+                        <form id="tg-link-form" method="post" action="/telegram/link-code" onsubmit="return generateTelegramCode(event);">
+                            <button type="submit" style="margin-top: 8px; background: linear-gradient(90deg, #667eea 0%, #8f5fd7 100%); color: white; border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-size:1em; font-weight:600; box-shadow:0 2px 8px rgba(102,126,234,0.10); transition: background 0.2s;">Привязать Telegram</button>
+                        </form>
+                        <div id="tg-link-status" style="margin-top: 12px; color: #fff; font-size: 1em;">
+                            {% if telegram_link_code %}
+                                <div style="margin-bottom: 4px;">Ваш код: <b style="font-size:1.1em; letter-spacing:1px;">{{ telegram_link_code }}</b></div>
+                                <div style="font-size:0.95em; color:#ffe082;">Действителен до: {{ telegram_link_code_expires.strftime('%H:%M:%S') }}</div>
+                                <div style="margin-top:8px; font-size:0.97em; color:#fff;">Отправьте этот код нашему <a href="{{ bot_link }}" target="_blank" style="color:#ffe082; text-decoration:underline; font-weight:500;">Telegram-боту</a></div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
                 </div>
                 {% if user.is_superuser %}
                 <a href="/admin" class="info-card status-card-superuser" title="Перейти в админку">
@@ -2014,8 +2626,8 @@
                                 {% endif %}
                             </div>
                             <div style="background: #667eea; color: white; padding: 10px 20px; border-radius: 25px; font-weight: bold;">
-                                {{ purchase_summary.total_concerts }}
-                                {% set n = purchase_summary.total_concerts %}
+                                {{ purchase_summary['total_concerts'] }}
+                                {% set n = purchase_summary['total_concerts'] %}
                                 {% if n == 1 %}
                                     концерт
                                 {% elif n >= 2 and n <= 4 %}
@@ -2029,7 +2641,7 @@
                 </div>
                 
                 
-                {% if purchase_summary.total_concerts > 0 %}
+                {% if purchase_summary['total_concerts'] > 0 %}
                     <!-- Дни фестиваля -->
                     {% if route_sheet.concerts_by_day %}
                     <div class="festival-days-section">
@@ -2521,7 +3133,7 @@
                                                                 <div class="off-program-event-title" style="flex-direction: row !important; align-items: center !important;">
                                                                     {{ event.event_name }}
                                                                     <div class="off-program-collapsed-format">{{ event.format }}</div>
-                                                                    <span style="color: #666; font-size: 0.8em; margin-left: 8px;">📍 {{ event.hall_name }}</span>
+                                                                <span style="color: #666; font-size: 0.8em; margin-left: 8px;">�� {{ event.hall_name }}</span>
                                                                 </div>
                                                                 
                                                                 {% if event.description %}
@@ -2621,12 +3233,13 @@
                             <div class="finish-dot">🏁</div>
                             <div class="finish-card">
                                 <div class="finish-title">Маршрут завершён!</div>
+
                                 <div class="finish-stats">
                                     <div class="finish-stats-row">
                                         <span>Дней: {{ route_sheet.summary.total_days }}</span>
                                         <span>Концертов: {{ route_sheet.summary.total_concerts }}</span>
                                         <span>Залов: {{ route_sheet.summary.total_halls }}</span>
-                                        <span>Потрачено: {{ "{:,}".format(route_sheet.summary.total_spent) }} ₽</span>
+                                        <span>Жанров: {{ route_sheet.summary.total_genres }}</span>
                                     </div>
                                     <div class="finish-stats-row">
                                         <span>Время концертов: {{ route_sheet.summary.total_concert_time_minutes }} мин</span>
@@ -2659,8 +3272,8 @@
                     <div class="concerts-count">
                         <div style="display: flex; gap: 12px; align-items: center;">
                             <div style="background: #667eea; color: white; padding: 10px 20px; border-radius: 25px; font-weight: bold;">
-                                {{ characteristics.total_concerts }}
-                                {% set n = characteristics.total_concerts %}
+                            {{ characteristics.get('total_concerts', 0) }}
+                            {% set n = characteristics.get('total_concerts', 0) %}
                                 {% if n == 1 %}
                                     концерт
                                 {% elif n >= 2 and n <= 4 %}
@@ -2673,7 +3286,7 @@
                     </div>
                 </div>
                 
-                {% if characteristics.total_concerts > 0 %}
+            {% if characteristics.get('total_concerts', 0) > 0 %}
                     <!-- Дни фестиваля -->
                     {% if festival_days %}
                     <div class="characteristic-section">
@@ -2721,12 +3334,12 @@
                                 <div class="characteristic-icon">🏛️</div>
                                 <div class="characteristic-title">
                                     <h3>Залы фестиваля</h3>
-                                    <p>Места проведения концертов</p>
+                                    <p>Места, где вы проводите эти дни</p>
                                 </div>
-                                <div class="characteristic-count">{{ characteristics.halls|selectattr('is_visited')|list|length }}</div>
+                            <div class="characteristic-count">{{ characteristics.get('halls', [])|selectattr('is_visited')|list|length }}</div>
                             </div>
                             <div class="characteristic-content">
-                                {% for hall in characteristics.halls %}
+                            {% for hall in characteristics.get('halls', []) %}
                                 <div class="characteristic-item{% if not hall.is_visited %} inactive{% endif %}">
                                     <div class="item-info">
                                         <div class="item-name">
@@ -2743,7 +3356,7 @@
                                     </div>
                                     <div class="item-count">
                                         {% if hall.visit_count > 0 %}
-                                            <span class="count-visited">{{ hall.visit_count }}</span>
+                                            <span class="count-visited" {% if hall.concerts %}title="Концерты: {{ hall.concerts|join(', ') }}"{% endif %}>{{ hall.visit_count }}</span>
                                         {% else %}
                                             <span class="count-not-visited">0</span>
                                         {% endif %}
@@ -2761,10 +3374,10 @@
                                     <h3>Музыкальные жанры</h3>
                                     <p>Направления в вашем маршруте</p>
                                 </div>
-                                <div class="characteristic-count">{{ characteristics.genres|selectattr('is_visited')|list|length }}</div>
+                            <div class="characteristic-count">{{ characteristics.get('genres', [])|selectattr('is_visited')|list|length }}</div>
                             </div>
                             <div class="characteristic-content">
-                                {% for genre in characteristics.genres %}
+                            {% for genre in characteristics.get('genres', []) %}
                                 <div class="characteristic-item{% if not genre.is_visited %} inactive{% endif %}">
                                     <div class="item-info">
                                         <div class="item-name">
@@ -2780,7 +3393,7 @@
                                     </div>
                                     <div class="item-count">
                                         {% if genre.visit_count > 0 %}
-                                            <span class="count-visited">{{ genre.visit_count }}</span>
+                                            <span class="count-visited" {% if genre.concerts %}title="Концерты: {{ genre.concerts|join(', ') }}"{% endif %}>{{ genre.visit_count }}</span>
                                         {% else %}
                                             <span class="count-not-visited">0</span>
                                         {% endif %}
@@ -2791,78 +3404,203 @@
                         </div>
                     </div>
                     
-                    <!-- Артисты -->
-                    <div class="characteristic-section">
-                        <div class="characteristic-header">
-                            <div class="characteristic-icon">🎤</div>
-                            <div class="characteristic-title">
-                                <h3>Артисты и исполнители</h3>
-                                <p>Музыканты, которых вы увидите</p>
+                    <!-- Артисты и Произведения в две колонки -->
+                    <div class="characteristics-row">
+                        <!-- Артисты -->
+                        <div class="characteristic-section">
+                            <div class="characteristic-header">
+                                <div class="characteristic-icon">🎤</div>
+                                <div class="characteristic-title">
+                                    <h3>Артисты и исполнители</h3>
+                                    <p>Музыканты, которых вы услышите</p>
+                                </div>
+                                <div class="characteristic-count">
+                                    {{ characteristics.get('artists', [])|length }}
+                                </div>
                             </div>
-                            <div class="characteristic-count">{{ characteristics.artists|length }}</div>
+                            <div class="characteristic-content">
+                            {% for artist in characteristics.get('artists', []) %}
+                                <div class="characteristic-item{% if loop.index > 5 %} hidden-artist{% endif %}">
+                                    <div class="item-info">
+                                        <div class="item-name">{{ artist.name }}</div>
+                                        <div class="item-description">
+                                            {{ artist.count }} концерт{{ 'а' if artist.count >= 2 and artist.count <= 4 else 'ов' if artist.count >= 5 else '' }}
+                                        </div>
+                                    </div>
+                                    <div class="item-count">
+                                        <span class="count-visited" {% if artist.concerts %}title="Концерты: {{ artist.concerts|join(', ') }}"{% endif %}>{{ artist.count }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                
+                                <!-- Кнопка разворачивания для артистов -->
+                                {% if characteristics.get('artists', [])|length > 5 %}
+                                <div class="expand-button-container">
+                                    <button id="expand-artists" class="expand-button">
+                                        <span class="expand-text">Показать всех артистов</span>
+                                        <span class="expand-icon">▼</span>
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </div>
                         </div>
-                        <div class="characteristic-content">
-                            {% for artist in characteristics.artists %}
-                            <div class="characteristic-item">
-                                <div class="item-info">
-                                    <div class="item-name">{{ artist.name }}</div>
-                                    <div class="item-description">{{ artist.count }} концерт{{ 'а' if artist.count >= 2 and artist.count <= 4 else 'ов' if artist.count >= 5 else '' }}</div>
+                        
+                        <!-- Произведения -->
+                        <div class="characteristic-section">
+                            <div class="characteristic-header">
+                                <div class="characteristic-icon">📜</div>
+                                <div class="characteristic-title">
+                                    <h3>Музыкальные произведения</h3>
+                                    <p>В концертных программах фестиваля</p>
                                 </div>
-                                <div class="item-count">
-                                    <span class="count-visited">{{ artist.count }}</span>
+                                <div class="characteristic-count">
+                                    {{ characteristics.get('compositions', [])|length }}
                                 </div>
                             </div>
-                            {% endfor %}
+                            <div class="characteristic-content">
+                            {% for composition in characteristics.get('compositions', []) %}
+                                <div class="characteristic-item{% if loop.index > 5 %} hidden-composition{% endif %}">
+                                    <div class="item-info">
+                                        <div class="item-name">{{ composition.name }}</div>
+                                        <div class="item-description">
+                                            {{ composition.count }} исполнени{{ 'е' if composition.count % 10 == 1 and composition.count % 100 != 11 else 'я' if composition.count % 10 >= 2 and composition.count % 10 <= 4 and (composition.count % 100 < 10 or composition.count % 100 >= 20) else 'й' }}
+                                        </div>
+                                    </div>
+                                    <div class="item-count">
+                                        <span class="count-visited" {% if composition.concerts %}title="Концерты: {{ composition.concerts|join(', ') }}"{% endif %}>{{ composition.count }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                
+                                <!-- Кнопка разворачивания для произведений -->
+                                {% if characteristics.get('compositions', [])|length > 5 %}
+                                <div class="expand-button-container">
+                                    <button id="expand-compositions" class="expand-button">
+                                        <span class="expand-text">Показать все произведения</span>
+                                        <span class="expand-icon">▼</span>
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- Композиторы -->
-                    <div class="characteristic-section">
-                        <div class="characteristic-header">
-                            <div class="characteristic-icon">🎼</div>
-                            <div class="characteristic-title">
-                                <h3>Композиторы</h3>
-                                <p>Авторы музыкальных произведений</p>
+                    <!-- Композиторы и ТОП композиторов в две колонки -->
+                    <div class="characteristics-row">
+                        <!-- Композиторы -->
+                        <div class="characteristic-section">
+                            <div class="characteristic-header">
+                                <div class="characteristic-icon">🎼</div>
+                                <div class="characteristic-title">
+                                    <h3>Композиторы</h3>
+                                    <p>Авторы музыкальных произведений</p>
+                                </div>
+                                <div class="characteristic-count">
+                                    <span id="composers-visible-count">{{ characteristics.get('composers', [])|length }}</span>
+                                </div>
                             </div>
-                            <div class="characteristic-count">{{ characteristics.composers|length }}</div>
+                            <div class="characteristic-content">
+                            {% for composer in characteristics.get('composers', []) %}
+                                <div class="characteristic-item{% if loop.index > 10 %} hidden-composer-user{% endif %}">
+                                    <div class="item-info">
+                                        <div class="item-name">{{ composer.name }}</div>
+                                        <div class="item-description">{{ composer.count }} произведени{{ 'е' if composer.count % 10 == 1 and composer.count % 100 != 11 else 'я' if composer.count % 10 >= 2 and composer.count % 10 <= 4 and (composer.count % 100 < 10 or composer.count % 100 >= 20) else 'й' }}</div>
+                                    </div>
+                                    <div class="item-count">
+                                        <span class="count-visited" {% if composer.concerts %}title="Концерты: {{ composer.concerts|join(', ') }}"{% endif %}>{{ composer.count }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                
+                                <!-- Кнопка разворачивания для композиторов -->
+                                {% if characteristics.get('composers', [])|length > 10 %}
+                                <div class="expand-button-container">
+                                    <button id="expand-composers" class="expand-button">
+                                        <span class="expand-text">Показать всех композиторов</span>
+                                        <span class="expand-icon">▼</span>
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </div>
                         </div>
-                        <div class="characteristic-content">
-                            {% for composer in characteristics.composers %}
-                            <div class="characteristic-item">
-                                <div class="item-info">
-                                    <div class="item-name">{{ composer.name }}</div>
-                                    <div class="item-description">{{ composer.count }} произведение{{ 'я' if composer.count >= 2 and composer.count <= 4 else 'ий' if composer.count >= 5 else 'е' }}</div>
+                        
+                        <!-- ТОП композиторов фестиваля -->
+                        <div class="characteristic-section">
+                            <div class="characteristic-header">
+                                <div class="characteristic-icon">🏆</div>
+                                <div class="characteristic-title">
+                                    <h3>ТОП композиторов</h3>
+                                    <p>Самые исполняемые авторы фестиваля</p>
                                 </div>
-                                <div class="item-count">
-                                    <span class="count-visited">{{ composer.count }}</span>
+                                <div class="characteristic-count">
+                                    <span id="top-composers-active-count">{{ top_festival_composers|selectattr('position', '<=', 5)|selectattr('is_active')|list|length }}</span> из <span id="top-composers-total-count">{{ top_festival_composers|selectattr('position', '<=', 5)|list|length }}</span>
                                 </div>
                             </div>
-                            {% endfor %}
+                            <div class="characteristic-content">
+                            {% for composer in top_festival_composers %}
+                                <div class="characteristic-item{% if not composer.is_active %} inactive{% endif %}{% if composer.position > 5 %} hidden-composer{% endif %}">
+                                    <div class="item-info">
+                                        <div class="item-name">
+                                            <span class="position-emoji">
+                                                {% if composer.position == 1 %}🥇
+                                                {% elif composer.position == 2 %}🥈
+                                                {% elif composer.position == 3 %}🥉
+                                                {% else %}{{ composer.position }}
+                                                {% endif %}
+                                            </span>
+                                            {{ composer.name }}
+                                        </div>
+                                        <div class="item-description">
+                                            {{ composer.count }} произведени{{ 'е' if composer.count % 10 == 1 and composer.count % 100 != 11 else 'я' if composer.count % 10 >= 2 and composer.count % 10 <= 4 and (composer.count % 100 < 10 or composer.count % 100 >= 20) else 'й' }}
+                                            {% if not composer.is_active %}
+                                                • Нет в вашем маршруте
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="item-count">
+                                        {% if composer.is_active %}
+                                            <span class="visit-check" title="Есть в вашем маршруте">✓</span>
+                                        {% else %}
+                                            <span class="not-visited-circle" title="Нет в вашем маршруте">○</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                
+                                <!-- Кнопка разворачивания -->
+                                {% if top_festival_composers|length > 5 %}
+                                <div class="expand-button-container">
+                                    <button id="expand-top-composers" class="expand-button">
+                                        <span class="expand-text">Показать ТОП-10</span>
+                                        <span class="expand-icon">▼</span>
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- Произведения -->
+                    <!-- Редкие композиторы -->
                     <div class="characteristic-section">
                         <div class="characteristic-header">
-                            <div class="characteristic-icon">📜</div>
+                            <div class="characteristic-icon">💎</div>
                             <div class="characteristic-title">
-                                <h3>Музыкальные произведения</h3>
-                                <p>Композиции в программе</p>
+                                <h3>Редкие композиторы</h3>
+                                <p>Самые редкие авторы в программе фестиваля</p>
                             </div>
-                            <div class="characteristic-count">{{ characteristics.compositions|length }}</div>
+                            <div class="characteristic-count">{{ rare_festival_composers|selectattr('is_active')|list|length }} из {{ rare_festival_composers|length }}</div>
                         </div>
                         <div class="characteristic-content">
-                            {% for composition in characteristics.compositions %}
-                            <div class="characteristic-item">
-                                <div class="item-info">
-                                    <div class="item-name">{{ composition.name }}</div>
-                                    <div class="item-description">{{ composition.count }} исполнение{{ 'я' if composition.count >= 2 and composition.count <= 4 else 'й' if composition.count >= 5 else 'е' }}</div>
-                                </div>
-                                <div class="item-count">
-                                    <span class="count-visited">{{ composition.count }}</span>
-                                </div>
+                            <div class="rare-composers-cloud">
+                                {% for composer in rare_festival_composers %}
+                                <span class="composer-tag{% if not composer.is_active %} inactive{% endif %}" title="{{ composer.name }} - {{ composer.count }} произведени{{ 'е' if composer.count % 10 == 1 and composer.count % 100 != 11 else 'я' if composer.count % 10 >= 2 and composer.count % 10 <= 4 and (composer.count % 100 < 10 or composer.count % 100 >= 20) else 'й' }}">
+                                    {{ composer.name }}
+                                    {% if composer.is_active %}
+                                        <span class="tag-check">✓</span>
+                                    {% endif %}
+                                </span>
+                                {% endfor %}
                             </div>
-                            {% endfor %}
                         </div>
                     </div>
                 {% else %}
@@ -2973,6 +3711,7 @@
             </div>
         </div>
     </div>
+
     
     <script>
         // Функция для получения параметра из URL
@@ -3073,6 +3812,229 @@
             }
         }
         
+        // Разворачивание/сворачивание ТОП композиторов
+        function toggleTopComposers() {
+            const hiddenComposers = document.querySelectorAll('.hidden-composer');
+            const button = document.getElementById('expand-top-composers');
+            const expandText = button.querySelector('.expand-text');
+            const expandIcon = button.querySelector('.expand-icon');
+            const activeCountSpan = document.getElementById('top-composers-active-count');
+            const totalCountSpan = document.getElementById('top-composers-total-count');
+            
+            if (hiddenComposers.length > 0 && (hiddenComposers[0].style.display === 'none' || hiddenComposers[0].style.display === '')) {
+                // Разворачиваем до ТОП-10
+                hiddenComposers.forEach(composer => {
+                    composer.style.display = 'flex';
+                });
+                expandText.textContent = 'Свернуть';
+                expandIcon.textContent = '▲';
+                button.classList.add('expanded');
+                
+                // Обновляем счетчик для ТОП-10
+                // Считаем только композиторов с позицией ≤ 10
+                const allComposerItems = document.querySelectorAll('.characteristic-item');
+                let top10Count = 0;
+                let top10ActiveCount = 0;
+                
+                allComposerItems.forEach(item => {
+                    const positionElement = item.querySelector('.position-emoji');
+                    if (positionElement) {
+                        const positionText = positionElement.textContent.trim();
+                        // Проверяем позицию (медали или числа)
+                        let position = 0;
+                        if (positionText === '🥇') position = 1;
+                        else if (positionText === '🥈') position = 2;
+                        else if (positionText === '🥉') position = 3;
+                        else {
+                            // Извлекаем число из текста
+                            const match = positionText.match(/\d+/);
+                            if (match) position = parseInt(match[0]);
+                        }
+                        
+                        if (position <= 10) {
+                            top10Count++;
+                            if (!item.classList.contains('inactive')) {
+                                top10ActiveCount++;
+                            }
+                        }
+                    }
+                });
+                
+                activeCountSpan.textContent = top10ActiveCount;
+                totalCountSpan.textContent = top10Count;
+            } else {
+                // Сворачиваем до ТОП-5
+                hiddenComposers.forEach(composer => {
+                    composer.style.display = 'none';
+                });
+                expandText.textContent = 'Показать ТОП-10';
+                expandIcon.textContent = '▼';
+                button.classList.remove('expanded');
+                
+                // Обновляем счетчик для ТОП-5
+                // Считаем только композиторов с позицией ≤ 5
+                const allComposerItems = document.querySelectorAll('.characteristic-item');
+                let top5Count = 0;
+                let top5ActiveCount = 0;
+                
+                allComposerItems.forEach(item => {
+                    const positionElement = item.querySelector('.position-emoji');
+                    if (positionElement) {
+                        const positionText = positionElement.textContent.trim();
+                        // Проверяем позицию (медали или числа)
+                        let position = 0;
+                        if (positionText === '🥇') position = 1;
+                        else if (positionText === '🥈') position = 2;
+                        else if (positionText === '🥉') position = 3;
+                        else {
+                            // Извлекаем число из текста
+                            const match = positionText.match(/\d+/);
+                            if (match) position = parseInt(match[0]);
+                        }
+                        
+                        if (position <= 5) {
+                            top5Count++;
+                            if (!item.classList.contains('inactive')) {
+                                top5ActiveCount++;
+                            }
+                        }
+                    }
+                });
+                
+                activeCountSpan.textContent = top5ActiveCount;
+                totalCountSpan.textContent = top5Count;
+                
+                // Прокручиваем к началу блока ТОП композиторов
+                const headers = document.querySelectorAll('.characteristic-section h3');
+                for (let header of headers) {
+                    if (header.textContent.includes('ТОП композиторов')) {
+                        header.closest('.characteristic-section').scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'start' 
+                        });
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Разворачивание/сворачивание артистов
+        function toggleArtists() {
+            const hiddenArtists = document.querySelectorAll('.hidden-artist');
+            const button = document.getElementById('expand-artists');
+            const expandText = button.querySelector('.expand-text');
+            const expandIcon = button.querySelector('.expand-icon');
+            
+            if (hiddenArtists.length > 0 && (hiddenArtists[0].style.display === 'none' || hiddenArtists[0].style.display === '')) {
+                // Разворачиваем всех артистов
+                hiddenArtists.forEach(artist => {
+                    artist.style.display = 'flex';
+                });
+                expandText.textContent = 'Свернуть';
+                expandIcon.textContent = '▲';
+                button.classList.add('expanded');
+            } else {
+                // Сворачиваем до первых 5
+                hiddenArtists.forEach(artist => {
+                    artist.style.display = 'none';
+                });
+                expandText.textContent = 'Показать всех артистов';
+                expandIcon.textContent = '▼';
+                button.classList.remove('expanded');
+                
+                // Прокручиваем к заголовку блока артистов
+                const headers = document.querySelectorAll('.characteristic-section h3');
+                for (let header of headers) {
+                    if (header.textContent.includes('Артисты и исполнители')) {
+                        header.closest('.characteristic-section').scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'start' 
+                        });
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Разворачивание/сворачивание композиторов пользователя
+        function toggleComposers() {
+            const hiddenComposers = document.querySelectorAll('.hidden-composer-user');
+            const button = document.getElementById('expand-composers');
+            const expandText = button.querySelector('.expand-text');
+            const expandIcon = button.querySelector('.expand-icon');
+            const visibleCountSpan = document.getElementById('composers-visible-count');
+            
+            if (hiddenComposers.length > 0 && (hiddenComposers[0].style.display === 'none' || hiddenComposers[0].style.display === '')) {
+                // Разворачиваем всех композиторов
+                hiddenComposers.forEach(composer => {
+                    composer.style.display = 'flex';
+                });
+                expandText.textContent = 'Свернуть';
+                expandIcon.textContent = '▲';
+                button.classList.add('expanded');
+                visibleCountSpan.textContent = document.querySelectorAll('.characteristic-item:not(.hidden-composer-user)').length + hiddenComposers.length;
+            } else {
+                // Сворачиваем до первых 10
+                hiddenComposers.forEach(composer => {
+                    composer.style.display = 'none';
+                });
+                expandText.textContent = 'Показать всех композиторов';
+                expandIcon.textContent = '▼';
+                button.classList.remove('expanded');
+                visibleCountSpan.textContent = '10';
+                
+                // Прокручиваем к заголовку блока композиторов
+                const headers = document.querySelectorAll('.characteristic-section h3');
+                for (let header of headers) {
+                    if (header.textContent.includes('Композиторы')) {
+                        header.closest('.characteristic-section').scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'start' 
+                        });
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Разворачивание/сворачивание произведений
+        function toggleCompositions() {
+            const hiddenCompositions = document.querySelectorAll('.hidden-composition');
+            const button = document.getElementById('expand-compositions');
+            const expandText = button.querySelector('.expand-text');
+            const expandIcon = button.querySelector('.expand-icon');
+            
+            if (hiddenCompositions.length > 0 && (hiddenCompositions[0].style.display === 'none' || hiddenCompositions[0].style.display === '')) {
+                // Разворачиваем все произведения
+                hiddenCompositions.forEach(composition => {
+                    composition.style.display = 'flex';
+                });
+                expandText.textContent = 'Свернуть';
+                expandIcon.textContent = '▲';
+                button.classList.add('expanded');
+            } else {
+                // Сворачиваем до первых 5
+                hiddenCompositions.forEach(composition => {
+                    composition.style.display = 'none';
+                });
+                expandText.textContent = 'Показать все произведения';
+                expandIcon.textContent = '▼';
+                button.classList.remove('expanded');
+                
+                // Прокручиваем к заголовку блока произведений
+                const headers = document.querySelectorAll('.characteristic-section h3');
+                for (let header of headers) {
+                    if (header.textContent.includes('Музыкальные произведения')) {
+                        header.closest('.characteristic-section').scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'start' 
+                        });
+                        break;
+                    }
+                }
+            }
+        }
+        
         // Раскрытие/скрытие блока офф-программы
         function toggleOffProgram(offProgramId) {
             const collapsedContent = document.getElementById('off-program-collapsed-' + offProgramId);
@@ -3117,6 +4079,8 @@
             });
         }
         
+
+        
         // Экспорт в PDF (заглушка)
         function exportToPDF() {
             const btn = document.getElementById('export-btn');
@@ -3146,9 +4110,107 @@
             if (activeTab === 'route') {
                 setTimeout(initializeProgressBars, 100);
             }
+            
+            // Инициализация кнопок разворачивания
+            const expandTopComposersButton = document.getElementById('expand-top-composers');
+            if (expandTopComposersButton) {
+                expandTopComposersButton.addEventListener('click', toggleTopComposers);
+            }
+            
+            const expandArtistsButton = document.getElementById('expand-artists');
+            if (expandArtistsButton) {
+                expandArtistsButton.addEventListener('click', toggleArtists);
+            }
+            
+            const expandComposersButton = document.getElementById('expand-composers');
+            if (expandComposersButton) {
+                expandComposersButton.addEventListener('click', toggleComposers);
+            }
+            
+            const expandCompositionsButton = document.getElementById('expand-compositions');
+            if (expandCompositionsButton) {
+                expandCompositionsButton.addEventListener('click', toggleCompositions);
+            }
         });
+
+        function generateTelegramCode(event) {
+            event.preventDefault();
+            fetch('/telegram/link-code', {method: 'POST', credentials: 'same-origin'})
+                .then(r => r.json())
+                .then(data => {
+                    let status = document.getElementById('tg-link-status');
+                    if (data.success) {
+                        status.innerHTML = `<div>Ваш код: <b>${data.code}</b></div><div style='font-size:0.9em; color:#888;'>Действителен до: ${new Date(data.expires_at).toLocaleTimeString()}</div><div style='margin-top:6px;'>Отправьте этот код нашему <a href='{{ bot_link }}' target='_blank' style='color:#ffe082; text-decoration:underline; font-weight:500;'>Telegram-боту</a></div>`;
+                    } else {
+                        status.innerHTML = `<span style='color:#dc2626;'>Ошибка: ${data.error || 'Не удалось сгенерировать код'}</span>`;
+                    }
+                });
+            return false;
+        }
     </script>
-</body>
-</html> 
+    
+    <!-- Современный подвал -->
+    <footer class="footer-modern">
+        <div class="footer-background">
+            <div class="footer-particles"></div>
+            <div class="footer-glow"></div>
+        </div>
+        
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-section glass-card">
+                    <div class="footer-brand">
+                        <div class="brand-icon">🎈</div>
+                        <h3 class="neon-text">Figaro</h3>
+                        <p>Ваш персональный гид</br>и конструктор маршрутов фестиваля</br>«Безумные дни в Екатеринбурге»</p>
+                        <div class="brand-glow"></div>
+                    </div>
+                </div>
+                
+                <div class="footer-section glass-card">
+                    <h4 class="section-title">О проекте</h4>
+                    <ul class="footer-links">
+                        <li><a href="/" class="link-hover">Главная страница</a></li>
+                        <li><a href="/#about" class="link-hover">Как это работает</a></li>
+                        <li><a href="/#features" class="link-hover">Возможности</a></li>
+                        <li><a href="/#ai" class="link-hover">ИИ-алгоритмы</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section glass-card">
+                    <h4 class="section-title">Фестиваль</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://bd.sgaf.ru/festival/31491" target="_blank" class="link-hover">Официальный сайт</a></li>
+                        <li><a href="https://bd.sgaf.ru/festival/31491/afisha" target="_blank" class="link-hover">Программа</a></li>
+                        <li><a href="https://bd.sgaf.ru/festival/31491/musicians" target="_blank" class="link-hover">Участники</a></li>
+                        <li><a href="https://bd.sgaf.ru/festival/31491/zaly" target="_blank" class="link-hover">Площадки</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section glass-card">
+                    <h4 class="section-title">Личный кабинет</h4>
+                    <ul class="footer-links">
+                        <li><a href="/profile" class="link-hover">Мои концерты</a></li>
+                        <li><a href="/profile?tab=route" class="link-hover">Маршрутный лист</a></li>
+                        <li><a href="/profile?tab=characteristics" class="link-hover">Характеристика</a></li>
+                        <li><a href="/profile?tab=achievements" class="link-hover">Ачивки</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom glass-card">
+                <div class="footer-copyright">
+                    <p>&copy; 2025 Figaro. Все права защищены.</p>
+                </div>
+                <div class="footer-social">
+                    <a href="{{ bot_link }}" target="_blank" class="social-link-modern" data-tooltip="Наш Telegram-бот">
+                        <svg class="telegram-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.295-.6.295-.002 0-.003 0-.005 0l.213-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.941z"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
 </body>
 </html> 

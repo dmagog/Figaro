@@ -5,7 +5,7 @@ if TYPE_CHECKING:
     pass  # Для избежания циклических импортов
 
 
-class Hall(SQLModel, table=True):
+class Hall(SQLModel, table=True, extend_existing=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(index=True, description="Название зала")
     concert_count: int = Field(description="Количество концертов в зале")
@@ -25,7 +25,7 @@ class Hall(SQLModel, table=True):
     )
 
 
-class HallTransition(SQLModel, table=True):
+class HallTransition(SQLModel, table=True, extend_existing=True):
     """Модель для хранения времени переходов между залами"""
     
     __tablename__ = "hall_transition"

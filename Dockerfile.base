@@ -1,0 +1,40 @@
+FROM python:3.11-slim
+
+# Устанавливаем системные зависимости
+RUN apt-get update && apt-get install -y \
+    curl \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Устанавливаем Rust (нужен для некоторых Python пакетов)
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+
+# Копируем requirements файлы
+COPY app/requirements.txt /tmp/app-requirements.txt
+COPY worker/requirements.txt /tmp/worker-requirements.txt
+COPY bot/requirements.txt /tmp/bot-requirements.txt
+
+# Устанавливаем общие зависимости
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org \
+    sqlmodel \
+    psycopg2-binary \
+    python-dotenv \
+    pandas \
+    celery \
+    aiogram==2.25.2
+
+# Устанавливаем зависимости app
+RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org \
+    -r /tmp/app-requirements.txt
+
+# Устанавливаем зависимости worker
+RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org \
+    -r /tmp/worker-requirements.txt
+
+# Устанавливаем зависимости bot
+RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org \
+    -r /tmp/bot-requirements.txt
+
+# Очищаем временные файлы
+RUN rm -rf /tmp/*.txt 

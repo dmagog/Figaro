@@ -6,14 +6,28 @@
     <title>Figaro — конструктор маршрутов фестиваля «Безумные дни в Екатеринбурге»</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/index.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noteworthy:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Верхнее навигационное меню -->
-    <nav class="top-navbar">
+    <!-- Современная шапка -->
+    <nav class="top-navbar-modern">
+        <div class="nav-background">
+            <div class="nav-particles"></div>
+            <div class="nav-glow"></div>
+        </div>
+        
         <div class="nav-container">
             <div class="nav-brand">
-                <h1 class="nav-title">🎈 Figaro</h1>
-                <span class="nav-subtitle">Конструктор маршрутов</span>
+                <a href="/" class="brand-icon-nav-link">
+                    <div class="brand-icon-nav">🎈</div>
+                </a>
+                <div class="brand-text">
+                    <h1 class="nav-title-modern">Figaro</h1>
+                    <span class="nav-subtitle">Проведёт по фестивалю</span>
+                </div>
+                <div class="nav-brand-glow"></div>
             </div>
             
             <div class="nav-menu">
@@ -22,27 +36,63 @@
                     <span class="user-greeting">Привет, {{ user.name or user.email }}!</span>
                     <div class="nav-actions">
                         {% if user.is_superuser %}
-                        <a href="/admin" class="nav-btn nav-btn-admin">Админка</a>
+                        <a href="/admin" class="nav-btn-modern nav-btn-admin">Админка</a>
                         {% endif %}
-                        <a href="/profile" class="nav-btn nav-btn-primary">Личный кабинет</a>
-                        <a href="/logout" class="nav-btn nav-btn-secondary">🚪 Выйти</a>
+                        <a href="/profile" class="nav-btn-modern nav-btn-primary">Личный кабинет</a>
+                        <a href="/logout" class="nav-btn-modern nav-btn-secondary">🚪 Выйти</a>
                     </div>
                 </div>
                 {% else %}
                 <div class="nav-auth">
-                    <a href="/login" class="nav-btn nav-btn-primary">🔑 Войти</a>
-                    <a href="/register" class="nav-btn nav-btn-secondary">📝 Регистрация</a>
+                    <a href="/login" class="nav-btn-modern nav-btn-primary">🔑 Войти</a>
+                    <a href="/register" class="nav-btn-modern nav-btn-secondary">📝 Регистрация</a>
                 </div>
                 {% endif %}
             </div>
         </div>
     </nav>
 
-    <div class="container">
-        <!-- Основной контент -->
-        <div class="tabs-container">
+    <!-- Полноэкранные секции лендинга -->
+    <section class="hero-screen active" id="hero-container">
+        <div class="hero-background">
+            <div class="hero-particles"></div>
+            <div class="hero-glow"></div>
+        </div>
+        <div class="hero-content">
+            <div class="hero-balloon">🎈</div>
+            
+            <!-- Текстовый контент для первого экрана -->
+            <div class="hero-text-content hero-text-1 active" id="hero-text-1">
+                <h1 class="hero-title">Что в 8 миллионов раз</br>больше миллиарда?</h1>
+            </div>
+            
+            <!-- Текстовый контент для второго экрана -->
+            <div class="hero-text-content hero-text-2" id="hero-text-2">
+                <div class="hero-math-expression">8 × миллионов × миллиардов</div>
+                <h1 class="hero-title">Количество маршрутов фестиваля<br>«Безумные дни»!</h1>
+                <h2 class="hero-subtitle"><span class="figaro-text">Figaro</span> поможет найти свой путь!</h2>
+            </div>
+            
+            <!-- Текстовый контент для третьего экрана -->
+            <div class="hero-text-content hero-text-3" id="hero-text-3">
+                <h1 class="hero-title"><span class="figaro-text">Figaro</span></h1>
+                <h2 class="hero-subtitle">ваш конструктор персональных маршрутов</h2>
+            </div>
+        </div>
+        
+        <!-- Индикатор прокрутки -->
+        <div class="hero-scroll-indicator" id="hero-scroll-indicator">
+            <div class="scroll-arrow">↓</div>
+            <span id="scroll-text">Прокрутите вниз</span>
+        </div>
+    </section>
+
+    <!-- Основной контент -->
+    <div class="main-content" id="main-content">
+        <div class="container">
+            <div class="tabs-container">
             <div class="tabs">
-                <button class="tab-btn active" id="tab-about-btn" onclick="showTab('about')">ℹ️ О проекте</button>
+                <button class="tab-btn active" id="tab-about-btn" onclick="showTab('about')">ℹ️ О сервисе</button>
                 <button class="tab-btn" id="tab-form-btn" onclick="showTab('form')">📝 Анкета</button>
                 <button class="tab-btn" id="tab-recs-btn" onclick="showTab('recs')">🎯 Рекомендации</button>
             </div>
@@ -50,48 +100,47 @@
             <!-- Вкладка О проекте -->
             <div class="tab-content" id="tab-about" style="display:block;">
                 <div class="about-section">
-                    <div class="about-header">
-                        <h2>🎈 Figaro - Персональный гид по фестивалю</h2>
-                        <p class="about-subtitle">Умная система рекомендаций для идеального музыкального дня</p>
+                    <div class="survey-header">
+                        <div class="survey-title-container">
+                            <h2>Заполните анкету — получите рекомендации</h2>
+                        </div>
                     </div>
                     
                     <div class="about-content">
-                        <div class="about-feature">
-                            <div class="feature-icon">🎯</div>
+                        <div class="about-feature glass-card">
+                            <div class="feature-icon-modern">🎯</div>
                             <div class="feature-text">
-                                <h3>Персонализированные маршруты</h3>
-                                <p>Наша система анализирует ваши предпочтения и создает уникальные маршруты, учитывая ваши интересы, темп и стиль посещения фестиваля.</p>
+                                <h3 class="feature-title-modern">Персонализированные маршруты</h3>
+                                <p>Анализируем предпочтения — создаем уникальные маршруты: учтём ваши интересы, сбалансируем насыщенность и темп фестиваля.</p>
                             </div>
+                            <div class="feature-glow"></div>
                         </div>
                         
-                        <div class="about-feature">
-                            <div class="feature-icon">🧠</div>
+                        <div class="about-feature glass-card">
+                            <div class="feature-icon-modern">🧠</div>
                             <div class="feature-text">
-                                <h3>Искусственный интеллект</h3>
-                                <p>Используем современные алгоритмы машинного обучения для анализа тысяч возможных комбинаций концертов и выбора оптимальных вариантов.</p>
+                                <h3 class="feature-title-modern">ИИ и машинное обучение</h3>
+                                <p>Предложим то, что не сможет человек — анализируем 8 × миллионов × миллиардов реальных комбинаций концертов и предлагаем оптимальные пути.</p>
                             </div>
+                            <div class="feature-glow"></div>
                         </div>
                         
-                        <div class="about-feature">
-                            <div class="feature-icon">⚡</div>
+                        <div class="about-feature glass-card">
+                            <div class="feature-icon-modern">⚡</div>
                             <div class="feature-text">
-                                <h3>Быстрые рекомендации</h3>
-                                <p>Получите персональные рекомендации за считанные секунды. Наша система учитывает время между концертами, стоимость билетов и ваши предпочтения.</p>
+                                <h3 class="feature-title-modern">Решительно и быстро</h3>
+                                <p>Десять минут вместо часа: выбрать, сравнить и быть уверенным. Исключаем повторы программ и накладки по времени. Учитываем время переходов между залами, уместность офф-программы и время на обед.</p>
                             </div>
+                            <div class="feature-glow"></div>
                         </div>
                         
-                        <div class="about-feature">
-                            <div class="feature-icon">🎼</div>
+                        <div class="about-feature about-cta-feature glass-card">
                             <div class="feature-text">
-                                <h3>Богатая база данных</h3>
-                                <p>Доступ к полной информации о концертах, исполнителях, композиторах и залах фестиваля. Мы знаем каждый уголок музыкального мира.</p>
+                                <h3 class="feature-title-modern">Готовы найти свой идеальный маршрут?</h3>
+                                <p>Заполните короткую анкету и получите персональные рекомендации уже через несколько минут!</p>
+                                <button class="btn btn-next-modern" onclick="showTab('form')">📝 Начать анкету</button>
                             </div>
-                        </div>
-                        
-                        <div class="about-cta">
-                            <h3>Готовы найти свой идеальный маршрут?</h3>
-                            <p>Заполните короткую анкету и получите персональные рекомендации уже через несколько минут!</p>
-                            <button class="btn btn-next" onclick="showTab('form')">📝 Начать анкету</button>
+                            <div class="cta-glow"></div>
                         </div>
                     </div>
                 </div>
@@ -100,10 +149,18 @@
             <!-- Вкладка Анкета -->
             <div class="tab-content" id="tab-form" style="display:none;">
                 <div class="survey-section" id="user-survey">
-                    <button id="reset-survey-btn" class="btn btn-prev" onclick="resetSurvey()">Сбросить анкету</button>
                     <div class="survey-header">
-                        <h2>🎵 Персонализация вашего маршрута</h2>
-                        <p>Помогите нам подобрать идеальные концерты для вас</p>
+                        <div class="survey-title-container">
+                            <h2>Заполните анкету — получите рекомендации</h2>
+                        </div>
+                        {% if user and user.preferences %}
+                        <div class="survey-actions">
+                            <button id="reset-survey-btn" class="btn-reset-survey" onclick="resetSurvey()" title="Сбросить анкету">
+                                <span class="reset-icon">🔄</span>
+                                <span class="reset-text">Сбросить</span>
+                            </button>
+                        </div>
+                        {% endif %}
                     </div>
                     
                     <form class="survey-form" id="preferences-form">
@@ -115,6 +172,13 @@
                             <div class="progress-text">
                                 <span id="current-step">1</span> из <span id="total-steps">7</span>
                             </div>
+                        </div>
+                        
+                        <!-- Навигация -->
+                        <div class="survey-navigation">
+                            <button type="button" class="btn-prev" id="btn-prev" style="display: none;">← Назад</button>
+                            <button type="button" class="btn-next" id="btn-next">Далее →</button>
+                            <button type="submit" class="btn-submit" id="btn-submit" style="display: none;">🎯 Получить рекомендации</button>
                         </div>
                         
                         <!-- Слайд 1: Приоритет -->
@@ -161,8 +225,8 @@
                         <!-- Слайд 2: Количество концертов -->
                         <div class="survey-slide" data-step="2">
                             <div class="slide-content">
-                                <h3 class="slide-title">Сколько концертов в день — это нормально для вас?</h3>
-                                <p class="slide-description">Выберите комфортный для вас темп посещения</p>
+                                <h3 class="slide-title">Сколько концертов в день для Вас комфортно?</h3>
+                                <p class="slide-description">Концерты дляться всего 45 минут и, как правило, несут «лёгкую» программу</p>
                                 
                                 <div class="radio-group compact">
                                     <label class="radio-option compact">
@@ -197,7 +261,7 @@
                                         <div class="radio-content">
                                             <div class="radio-number infinity">∞</div>
                                             <div class="radio-text">
-                                                <div class="radio-title">Максимум!</div>
+                                                <div class="radio-title">Без ограничений</div>
                                             </div>
                                         </div>
                                     </label>
@@ -250,7 +314,7 @@
                         <div class="survey-slide" data-step="4">
                             <div class="slide-content">
                                 <h3 class="slide-title">Каких композиторов вы хотите услышать?</h3>
-                                <p class="slide-description">Выберите до 5 композиторов (размер шрифта показывает популярность)</p>
+                                <p class="slide-description">Выберите до 5 композиторов (чем крупнее фамилия — тем чаще он в программе фестиваля)</p>
                                 
                                 <div class="tag-cloud" id="composers-cloud">
                                     <div class="loading">Загрузка композиторов...</div>
@@ -301,8 +365,7 @@
                         <!-- Слайд 7: Резюме -->
                         <div class="survey-slide" data-step="7">
                             <div class="slide-content">
-                                <h3 class="slide-title">Ваши предпочтения</h3>
-                                <p class="slide-description">Проверьте, правильно ли мы поняли ваши пожелания</p>
+                                <p class="slide-description">Проверьте, правильно ли мы поняли Ваши пожелания</p>
                                 
                                 <div class="summary-container" id="summary-container">
                                     <div class="summary-section" data-type="priority">
@@ -336,13 +399,6 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <!-- Навигация -->
-                        <div class="survey-navigation">
-                            <button type="button" class="btn-prev" id="btn-prev" style="display: none;">← Назад</button>
-                            <button type="button" class="btn-next" id="btn-next">Далее →</button>
-                            <button type="submit" class="btn-submit" id="btn-submit" style="display: none;">🎯 Получить рекомендации</button>
                         </div>
                     </form>
                 </div>
@@ -378,8 +434,394 @@
                 </div>
             </div>
         </div>
+        </div>
     </div>
     
+    <!-- Современный подвал -->
+    <footer class="footer-modern">
+        <div class="footer-background">
+            <div class="footer-particles"></div>
+            <div class="footer-glow"></div>
+        </div>
+        
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-section glass-card">
+                    <div class="footer-brand">
+                        <div class="brand-icon">🎈</div>
+                        <h3 class="neon-text">Figaro</h3>
+                        <p>Ваш персональный гид</br>и конструктор маршрутов фестиваля</br>«Безумные дни в Екатеринбурге»</p>
+                        <div class="brand-glow"></div>
+                    </div>
+                </div>
+                
+                <div class="footer-section glass-card">
+                    <h4 class="section-title">О проекте</h4>
+                    <ul class="footer-links">
+                        <li><a href="#about" class="link-hover">Как это работает</a></li>
+                        <li><a href="#features" class="link-hover">Возможности</a></li>
+                        <li><a href="#ai" class="link-hover">ИИ-алгоритмы</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section glass-card">
+                    <h4 class="section-title">Фестиваль</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://bd.sgaf.ru/festival/31491" target="_blank" class="link-hover">Официальный сайт</a></li>
+                        <li><a href="https://bd.sgaf.ru/festival/31491/afisha" target="_blank" class="link-hover">Программа</a></li>
+                        <li><a href="https://bd.sgaf.ru/festival/31491/musicians" target="_blank" class="link-hover">Участник</a></li>
+                        <li><a href="https://bd.sgaf.ru/festival/31491/zaly" target="_blank" class="link-hover">Площадки</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section glass-card">
+                    <h4 class="section-title">Поддержка</h4>
+                    <ul class="footer-links">
+                        <li><a href="/profile" class="link-hover">Личный кабинет</a></li>
+                        <li><a href="/profile?tab=route" class="link-hover">Маршрутный лист</a></li>
+                        <li><a href="" class="link-hover">Контакты</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom glass-card">
+                <div class="footer-copyright">
+                    <p>&copy; 2025 Figaro. Все права защищены.</p>
+                </div>
+                <div class="footer-social">
+                    <a href="{{ bot_link }}" target="_blank" class="social-link-modern" data-tooltip="Наш Telegram-бот">
+                        <svg class="telegram-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.295-.6.295-.002 0-.003 0-.005 0l.213-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.941z"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
     <script src="/static/js/index.js"></script>
+    
+    <script>
+        // Управление hero-секциями
+        let currentHeroScreen = 1;
+        const totalHeroScreens = 3;
+        let isTransitioning = false;
+        
+        // Функция для проверки заполненности анкеты
+        function checkSurveyCompletion() {
+            // Проверяем, есть ли сохраненные данные анкеты в localStorage
+            const surveyData = localStorage.getItem('survey_data');
+            if (surveyData) {
+                try {
+                    const data = JSON.parse(surveyData);
+                    // Если есть хотя бы одно заполненное поле, показываем кнопку сброса
+                    if (Object.keys(data).length > 0) {
+                        showResetButton();
+                    }
+                } catch (e) {
+                    console.error('Error parsing survey data:', e);
+                }
+            }
+        }
+        
+        // Функция для показа кнопки сброса
+        function showResetButton() {
+            const surveyActions = document.querySelector('.survey-actions');
+            if (!surveyActions) {
+                const surveyHeader = document.querySelector('.survey-header');
+                if (surveyHeader) {
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'survey-actions';
+                    actionsDiv.innerHTML = `
+                        <button id="reset-survey-btn" class="btn-reset-survey" onclick="resetSurvey()" title="Сбросить анкету">
+                            <span class="reset-icon">🔄</span>
+                            <span class="reset-text">Сбросить</span>
+                        </button>
+                    `;
+                    surveyHeader.appendChild(actionsDiv);
+                }
+            }
+        }
+        
+        // Функция для скрытия кнопки сброса
+        function hideResetButton() {
+            const surveyActions = document.querySelector('.survey-actions');
+            if (surveyActions) {
+                surveyActions.remove();
+            }
+        }
+        
+        // Функция для обновления счетчиков в навигаторе рекомендаций
+        function updateRecommendationCounters() {
+            // Находим все блоки рекомендаций (разные возможные селекторы)
+            const recommendationBlocks = document.querySelectorAll('.rec-group, .recommendation-group, [data-recommendation-type]');
+            
+            recommendationBlocks.forEach(block => {
+                const groupTitle = block.querySelector('.group-title, .rec-group-title, h3');
+                if (groupTitle) {
+                    const title = groupTitle.textContent.trim();
+                    
+                    // Находим соответствующую секцию в навигаторе
+                    const navSection = document.querySelector(`[data-category="${title}"], .nav-section[data-title="${title}"]`);
+                    if (navSection) {
+                        const countElement = navSection.querySelector('.nav-section-count');
+                        if (countElement) {
+                            // Подсчитываем количество маршрутов в блоке (разные возможные селекторы)
+                            const routes = block.querySelectorAll('.route-item, .rec-route, tr[data-route-id]');
+                            const count = routes.length;
+                            
+                            // Обновляем счетчик
+                            countElement.textContent = count;
+                            
+                            // Если маршрутов нет, добавляем класс zero
+                            if (count === 0) {
+                                countElement.classList.add('zero');
+                                navSection.style.opacity = '0.5';
+                            } else {
+                                countElement.classList.remove('zero');
+                                navSection.style.opacity = '1';
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Также обновляем счетчики в карточках рекомендаций
+            updateRecommendationCards();
+        }
+        
+        // Функция для обновления счетчиков в карточках рекомендаций
+        function updateRecommendationCards() {
+            // Находим все карточки рекомендаций
+            const recommendationCards = document.querySelectorAll('.recommendation-card, .rec-card, [data-recommendation-card]');
+            
+            recommendationCards.forEach(card => {
+                const countElement = card.querySelector('.card-count, .route-count, [data-count]');
+                if (countElement) {
+                    // Находим соответствующий блок с маршрутами
+                    const cardTitle = card.querySelector('.card-title, .rec-title, h4');
+                    if (cardTitle) {
+                        const title = cardTitle.textContent.trim();
+                        const correspondingBlock = document.querySelector(`[data-group="${title}"], .rec-group[data-title="${title}"]`);
+                        
+                        if (correspondingBlock) {
+                            const routes = correspondingBlock.querySelectorAll('.route-item, .rec-route, tr[data-route-id]');
+                            const count = routes.length;
+                            countElement.textContent = `${count} маршрутов`;
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Переопределяем функцию showTab для обновления счетчиков
+        function showTab(tabName) {
+            // Скрываем все вкладки
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(tab => tab.style.display = 'none');
+            
+            // Убираем активный класс со всех кнопок
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // Показываем выбранную вкладку
+            const selectedTab = document.getElementById(`tab-${tabName}`);
+            if (selectedTab) {
+                selectedTab.style.display = 'block';
+            }
+            
+            // Добавляем активный класс к выбранной кнопке
+            const selectedButton = document.getElementById(`tab-${tabName}-btn`);
+            if (selectedButton) {
+                selectedButton.classList.add('active');
+            }
+            
+            // Если переключаемся на вкладку рекомендаций, обновляем счетчики
+            if (tabName === 'recs') {
+                setTimeout(() => {
+                    forceUpdateAllCounters();
+                }, 100);
+            }
+        }
+        
+        // Функция для обновления счетчиков после загрузки рекомендаций
+        function onRecommendationsLoaded() {
+            setTimeout(() => {
+                updateRecommendationCounters();
+            }, 200);
+        }
+        
+        // Функция для принудительного обновления всех счетчиков
+        function forceUpdateAllCounters() {
+            console.log('Обновляем все счетчики...');
+            
+            // Обновляем счетчики в навигаторе
+            updateRecommendationCounters();
+            
+            // Обновляем счетчики в карточках
+            updateRecommendationCards();
+            
+            // Дополнительно ищем и обновляем все элементы с текстом "10 маршрутов"
+            const allCountElements = document.querySelectorAll('*');
+            allCountElements.forEach(element => {
+                if (element.textContent && element.textContent.includes('10 маршрутов')) {
+                    // Находим соответствующий блок с маршрутами
+                    const parentCard = element.closest('.recommendation-card, .rec-card, .nav-section');
+                    if (parentCard) {
+                        const cardTitle = parentCard.querySelector('.card-title, .rec-title, h4, .nav-section-title');
+                        if (cardTitle) {
+                            const title = cardTitle.textContent.trim();
+                            const correspondingBlock = document.querySelector(`[data-group="${title}"], .rec-group[data-title="${title}"]`);
+                            
+                            if (correspondingBlock) {
+                                const routes = correspondingBlock.querySelectorAll('.route-item, .rec-route, tr[data-route-id]');
+                                const count = routes.length;
+                                element.textContent = element.textContent.replace('10 маршрутов', `${count} маршрутов`);
+                            }
+                        }
+                    }
+                }
+            });
+            
+            console.log('Счетчики обновлены');
+        }
+        
+        // Добавляем глобальную функцию для отладки
+        window.updateCounters = forceUpdateAllCounters;
+        
+        // Функция для перехода к следующей hero-секции
+        function nextHeroScreen() {
+            console.log('nextHeroScreen called, currentHeroScreen:', currentHeroScreen, 'isTransitioning:', isTransitioning);
+            if (isTransitioning) return;
+            
+            isTransitioning = true;
+            
+            // Скрываем текущий текстовый контент
+            const currentTextContent = document.getElementById(`hero-text-${currentHeroScreen}`);
+            if (currentTextContent) {
+                currentTextContent.classList.remove('active');
+            }
+            
+            currentHeroScreen++;
+            
+            if (currentHeroScreen > totalHeroScreens) {
+                console.log('Transitioning to main content');
+                // Сохраняем, что пользователь видел стартовые экраны
+                localStorage.setItem('figaro_intro_seen', 'true');
+                
+                // Переходим к основному контенту
+                setTimeout(() => {
+                    const mainContent = document.getElementById('main-content');
+                    const heroContainer = document.getElementById('hero-container');
+                    console.log('Main content element:', mainContent);
+                    if (mainContent && heroContainer) {
+                        // Скрываем hero-контейнер
+                        heroContainer.style.display = 'none';
+                        // Показываем основной контент
+                        mainContent.classList.add('active');
+                        // Прокручиваем к началу страницы
+                        window.scrollTo(0, 0);
+                    } else {
+                        console.error('Main content or hero container element not found!');
+                    }
+                    isTransitioning = false;
+                }, 800);
+                return;
+            }
+            
+            // Показываем следующий текстовый контент
+            setTimeout(() => {
+                const nextTextContent = document.getElementById(`hero-text-${currentHeroScreen}`);
+                if (nextTextContent) {
+                    nextTextContent.classList.add('active');
+                }
+                
+                // Обновляем текст индикатора прокрутки
+                const scrollText = document.getElementById('scroll-text');
+                if (scrollText) {
+                    if (currentHeroScreen === 2) {
+                        scrollText.textContent = 'Прокрутите вниз';
+                    } else if (currentHeroScreen === 3) {
+                        scrollText.textContent = 'Начать';
+                    }
+                }
+                
+                isTransitioning = false;
+            }, 800);
+        }
+        
+        // Обработчик клика по hero-секциям
+        document.addEventListener('DOMContentLoaded', function() {
+            // Проверяем заполненность анкеты
+            checkSurveyCompletion();
+            
+            // Обновляем счетчики рекомендаций
+            forceUpdateAllCounters();
+            
+            // Проверяем, видел ли пользователь стартовые экраны
+            const hasSeenIntro = localStorage.getItem('figaro_intro_seen');
+            
+            if (hasSeenIntro) {
+                // Пользователь уже видел стартовые экраны - показываем основной контент
+                const heroContainer = document.getElementById('hero-container');
+                const mainContent = document.getElementById('main-content');
+                
+                if (heroContainer && mainContent) {
+                    heroContainer.style.display = 'none';
+                    mainContent.classList.add('active');
+                }
+            } else {
+                // Первый визит - показываем стартовые экраны
+                // Первый текстовый контент уже активен в HTML
+                
+                const heroContainer = document.getElementById('hero-container');
+                if (heroContainer) {
+                    heroContainer.addEventListener('click', nextHeroScreen);
+                }
+                
+                // Обработчик прокрутки - только для hero-секций
+                let scrollTimeout;
+                window.addEventListener('scroll', function() {
+                    if (scrollTimeout) clearTimeout(scrollTimeout);
+                    
+                    scrollTimeout = setTimeout(() => {
+                        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                        
+                        // Если пользователь прокрутил вниз и мы на hero-секции
+                        if (scrollTop > 50 && currentHeroScreen <= totalHeroScreens) {
+                            // Предотвращаем реальную прокрутку и переключаем текстовый контент
+                            window.scrollTo(0, 0);
+                            nextHeroScreen();
+                        }
+                    }, 100);
+                });
+                
+                // Обработчик клавиш
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'ArrowDown' || e.key === ' ' || e.key === 'Enter') {
+                        e.preventDefault();
+                        nextHeroScreen();
+                    }
+                });
+                
+                // Обработчик колесика мыши для hero-секций
+                let wheelTimeout;
+                window.addEventListener('wheel', function(e) {
+                    if (currentHeroScreen <= totalHeroScreens) {
+                        e.preventDefault();
+                        
+                        if (wheelTimeout) clearTimeout(wheelTimeout);
+                        
+                        wheelTimeout = setTimeout(() => {
+                            if (e.deltaY > 0) {
+                                // Прокрутка вниз
+                                nextHeroScreen();
+                            }
+                        }, 50);
+                    }
+                }, { passive: false });
+            }
+        });
+    </script>
 </body>
 </html> 

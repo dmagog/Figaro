@@ -168,8 +168,24 @@ def load_concerts(session: Session, df_concerts: pd.DataFrame):
 def load_artists(session: Session, df_artists: pd.DataFrame):
     logger.info(f"Загружаем артистов из Excel")
     
-    # Загружаем концерты в память
-    concerts = {concert.external_id: concert.id for concert in session.exec(select(Concert)).all()}
+    # Загружаем концерты в память - используем ShowNum как ключ
+    # Нам нужно создать маппинг ShowNum -> concert.id
+    concerts = {}
+    for concert in session.exec(select(Concert)).all():
+        # Находим соответствующий ShowNum из файла концертов
+        # Для этого нужно загрузить файл концертов и найти соответствие
+        pass
+    
+    # Временное решение: загружаем файл концертов для создания маппинга
+    concerts_df = pd.read_excel('/app/data/ConcertList-good.xlsx')
+    concerts_mapping = {}
+    for _, row in concerts_df.iterrows():
+        show_num = row['ShowNum']
+        show_id = row['ShowId']
+        # Находим концерт по external_id (ShowId)
+        concert = session.exec(select(Concert).where(Concert.external_id == show_id)).first()
+        if concert:
+            concerts_mapping[show_num] = concert.id
     
     # Сначала создаем уникальных артистов
     unique_artists = df_artists["Artists"].dropna().unique()
@@ -199,18 +215,18 @@ def load_artists(session: Session, df_artists: pd.DataFrame):
     
     # Создаем связи с концертами
     for _, row in df_artists.drop_duplicates(["ShowNum", "Artists"]).iterrows():
-        concert_id = concerts.get(row["ShowNum"])
+        concert_id = concerts_mapping.get(row["ShowNum"])
         if concert_id:
             artist_name = row["Artists"]
             artist = artists_dict.get(artist_name)
             
-        if artist:
-            get_or_create(
-                session,
-                ConcertArtistLink,
-                concert_id=concert_id,
-                artist_id=artist.id
-            )
+            if artist:
+                get_or_create(
+                    session,
+                    ConcertArtistLink,
+                    concert_id=concert_id,
+                    artist_id=artist.id
+                )
     
     count = session.exec(select(Artist)).all()
     logger.info(f"В базе теперь {len(count)} артистов")
@@ -219,8 +235,17 @@ def load_artists(session: Session, df_artists: pd.DataFrame):
 def load_compositions(session: Session, df_details: pd.DataFrame):
     logger.info(f"Загружаем композиции из Excel")
     
-    # Загружаем концерты в память
-    concerts = {concert.external_id: concert.id for concert in session.exec(select(Concert)).all()}
+    # Загружаем концерты в память - используем ShowNum как ключ
+    # Временное решение: загружаем файл концертов для создания маппинга
+    concerts_df = pd.read_excel('/app/data/ConcertList-good.xlsx')
+    concerts_mapping = {}
+    for _, row in concerts_df.iterrows():
+        show_num = row['ShowNum']
+        show_id = row['ShowId']
+        # Находим концерт по external_id (ShowId)
+        concert = session.exec(select(Concert).where(Concert.external_id == show_id)).first()
+        if concert:
+            concerts_mapping[show_num] = concert.id
     
     # Сначала создаем уникальных авторов
     unique_authors = df_details["Author"].dropna().unique()
@@ -256,27 +281,27 @@ def load_compositions(session: Session, df_details: pd.DataFrame):
     
     # Создаем связи с концертами
     for _, row in df_details.drop_duplicates(["ShowNum", "Author", "Programm"]).iterrows():
-        concert_id = concerts.get(row["ShowNum"])
+        concert_id = concerts_mapping.get(row["ShowNum"])
         if concert_id:
             author_name = row["Author"]
             composition_name = row["Programm"]
             
-        composition = session.exec(
-            select(Composition)
-            .join(Author)
-            .where(
-                    Composition.name == composition_name,
-                    Author.name == author_name
-            )
-        ).first()
-        
-        if composition:
-            get_or_create(
-                session,
-                ConcertCompositionLink,
-                concert_id=concert_id,
-                composition_id=composition.id
-            )
+            composition = session.exec(
+                select(Composition)
+                .join(Author)
+                .where(
+                        Composition.name == composition_name,
+                        Author.name == author_name
+                )
+            ).first()
+            
+            if composition:
+                get_or_create(
+                    session,
+                    ConcertCompositionLink,
+                    concert_id=concert_id,
+                    composition_id=composition.id
+                )
 
     count = session.exec(select(Composition)).all()
     logger.info(f"В базе теперь {len(count)} композиций")

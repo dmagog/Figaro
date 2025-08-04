@@ -71,6 +71,27 @@
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 24px;
         }
+        
+        /* Стили для разделов */
+        .admin-section {
+            margin-bottom: 40px;
+        }
+        .admin-section-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e7ff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .admin-section-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
         .summary-card {
             background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 100%);
             border-radius: 12px;
@@ -181,6 +202,7 @@
                 <a href="/admin/authors" class="admin-menu-btn">Авторы</a>
                 <a href="/admin/compositions" class="admin-menu-btn">Произведения</a>
                 <a href="/admin/genres" class="admin-menu-btn">Жанры</a>
+                <a href="/admin/telegram" class="admin-menu-btn">Рассылка Telegram</a>
                 <a href="/" class="admin-menu-btn"><span style="font-size:1.1em; margin-right:6px;">��</span>На сайт</a>
                 <div class="admin-menu-dropdown" id="adminMenuDropdown" style="display:none;">
                     <button class="admin-menu-dropdown-btn" id="dropdownBtn">Ещё <span style="font-size:1.1em;">▼</span></button>
@@ -196,90 +218,228 @@
             <h2>Добро пожаловать, {{ user.name or user.email }}!</h2>
             <p>Это главная страница админки. Здесь будет сводная статистика и быстрый доступ к разделам управления.</p>
         </div>
-        <div class="admin-summary">
-            <a href="/admin/users" style="text-decoration:none; color:inherit;" title="Перейти к пользователям">
-                <div class="summary-card" style="cursor:pointer;">
-                <h3>Пользователей</h3>
-                <p>{{ summary.users_count }}</p>
+        
+        <!-- 👥 Пользователи и аудитория -->
+        <div class="admin-section">
+            <div class="admin-section-title">
+                <span style="font-size: 1.3em;">👥</span>
+                Пользователи и аудитория
             </div>
-            </a>
-            <a href="/admin/customers" style="text-decoration:none; color:inherit;" title="Перейти к покупателям">
-                <div class="summary-card" style="cursor:pointer;">
-                <h3>Покупателей</h3>
-                <p>{{ summary.customers_count or 0 }}</p>
-            </div>
-            </a>
-            <a href="/admin/concerts" style="text-decoration:none; color:inherit;" title="Перейти к концертам">
-                <div class="summary-card" style="cursor:pointer;">
-                <h3>Концертов</h3>
-                <p>{{ summary.concerts_count }}</p>
-            </div>
-            </a>
-            <a href="/admin/halls" style="text-decoration:none; color:inherit;" title="Перейти к залам">
-                <div class="summary-card" style="cursor:pointer;">
-                    <h3>Залов</h3>
-                    <p>{{ summary.halls_count }}</p>
-                </div>
-            </a>
-            <a href="/admin/purchases" style="text-decoration:none; color:inherit;" title="Перейти к истории покупок">
-                <div class="summary-card">
-                    <h3>Билетов куплено</h3>
-                    <p>{{ summary.tickets_count }}</p>
-                </div>
-            </a>    
-            <div class="summary-card">
-                <h3>Сумма покупок</h3>
-                <p>{{ "{: }".format(summary.total_spent) }} ₽</p>
-            </div>
-            <div class="summary-card">
-                <h3>Средняя заполняемость</h3>
-                <p>{{ '%.2f' % summary.avg_fill }}</p>
-            </div>
-            <a href="/admin/routes/view" style="text-decoration:none; color:inherit;" title="Перейти к маршрутам">
-                <div class="summary-card" style="cursor:pointer;">
-                    <h3>Маршрутов</h3>
-                    <p>{{ routes_count }}</p>
-                </div>
-            </a>
-            <a href="/admin/offprogram" style="text-decoration:none; color:inherit;" title="Перейти к офф-программе">
-                <div class="summary-card" style="cursor:pointer;">
-                    <h3>Офф-программа</h3>
-                    <p>{{ summary.off_program_count or 0 }}</p>
-                </div>
-            </a>
-            <a href="/admin/artists" style="text-decoration:none; color:inherit;" title="Перейти к артистам">
-                <div class="summary-card" style="cursor:pointer;">
-                    <h3>Артистов</h3>
-                    <p>{{ summary.artists_count or 0 }}</p>
-                </div>
-            </a>
-            <a href="/admin/authors" style="text-decoration:none; color:inherit;" title="Перейти к авторам">
-                <div class="summary-card" style="cursor:pointer;">
-                    <h3>Авторов</h3>
-                    <p>{{ summary.authors_count or 0 }}</p>
-                </div>
-            </a>
-            <a href="/admin/compositions" style="text-decoration:none; color:inherit;" title="Перейти к произведениям">
-                <div class="summary-card" style="cursor:pointer;">
-                    <h3>Произведений</h3>
-                    <p>{{ summary.compositions_count or 0 }}</p>
-                </div>
-            </a>
-            <a href="/admin/genres" style="text-decoration:none; color:inherit;" title="Перейти к жанрам">
-                <div class="summary-card" style="cursor:pointer;">
-                    <h3>Жанров</h3>
-                    <p>{{ summary.genres_count or 0 }}</p>
-                </div>
-            </a>
-            <a href="/profile" style="text-decoration:none; color:inherit;" title="Перейти в профиль">
-                <div class="summary-card profile-card" style="cursor:pointer; transition:box-shadow 0.18s, background 0.18s;">
-                    <div class="profile-avatar">👑 </div>
-                    <div class="profile-info">
-                        <div class="profile-name">{{ user.name or user.email }}</div>
-                        <div class="profile-role">Суперадмин</div>
+            <div class="admin-section-grid">
+                <a href="/admin/users" style="text-decoration:none; color:inherit;" title="Перейти к пользователям">
+                    <div class="summary-card" style="cursor:pointer;">
+                        <h3>Пользователей</h3>
+                        <p>{{ summary.users_count }}</p>
                     </div>
+                </a>
+                <a href="/admin/customers" style="text-decoration:none; color:inherit;" title="Перейти к покупателям">
+                    <div class="summary-card" style="cursor:pointer;">
+                        <h3>Покупателей</h3>
+                        <p>{{ summary.customers_count or 0 }}</p>
+                    </div>
+                </a>
+                <a href="/admin/purchases" style="text-decoration:none; color:inherit;" title="Перейти к истории покупок">
+                    <div class="summary-card">
+                        <h3>Билетов куплено</h3>
+                        <p>{{ summary.tickets_count }}</p>
+                    </div>
+                </a>
+                <a href="/profile" style="text-decoration:none; color:inherit;" title="Перейти в профиль">
+                    <div class="summary-card profile-card" style="cursor:pointer; transition:box-shadow 0.18s, background 0.18s;">
+                        <div class="profile-avatar">👑 </div>
+                        <div class="profile-info">
+                            <div class="profile-name">{{ user.name or user.email }}</div>
+                            <div class="profile-role">Суперадмин</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- 📊 Аналитика и статистика -->
+        <div class="admin-section">
+            <div class="admin-section-title">
+                <span style="font-size: 1.3em;">📊</span>
+                Аналитика и статистика
+            </div>
+            <div class="admin-section-grid">
+                <div class="summary-card">
+                    <h3>Сумма покупок</h3>
+                    <p>{{ "{: }".format(summary.total_spent) }} ₽</p>
                 </div>
-            </a>
+                <div class="summary-card">
+                    <h3>Средняя заполняемость</h3>
+                    <p>{{ '%.2f' % summary.avg_fill }}</p>
+                </div>
+                <a href="/admin/routes/view" style="text-decoration:none; color:inherit;" title="Перейти к маршрутам">
+                    <div class="summary-card" style="cursor:pointer;">
+                        <h3>Маршрутов</h3>
+                        <p>{{ routes_count }}</p>
+                    </div>
+                </a>
+                <div class="summary-card" style="background: linear-gradient(135deg, #e8f5e8 0%, #f0fff0 100%);">
+                    <h3>Концертов в продаже</h3>
+                    <p>{{ summary.available_concerts_count or 0 }}</p>
+                    <small style="color: #666; font-size: 0.85em;">из {{ summary.concerts_count or 0 }}</small>
+                </div>
+                <div class="summary-card" style="background: linear-gradient(135deg, #e8f5e8 0%, #f0fff0 100%);">
+                    <h3>Доступных маршрутов</h3>
+                    <p>{{ summary.available_routes_count or 0 }}</p>
+                    <small style="color: #666; font-size: 0.85em;">из {{ summary.routes_count or 0 }}</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 🎵 Контент фестиваля -->
+        <div class="admin-section">
+            <div class="admin-section-title">
+                <span style="font-size: 1.3em;">🎵</span>
+                Контент фестиваля
+            </div>
+            <div class="admin-section-grid">
+                <a href="/admin/concerts" style="text-decoration:none; color:inherit;" title="Перейти к концертам">
+                    <div class="summary-card" style="cursor:pointer;">
+                        <h3>Концертов</h3>
+                        <p>{{ summary.concerts_count }}</p>
+                    </div>
+                </a>
+                <a href="/admin/halls" style="text-decoration:none; color:inherit;" title="Перейти к залам">
+                    <div class="summary-card" style="cursor:pointer;">
+                        <h3>Залов</h3>
+                        <p>{{ summary.halls_count }}</p>
+                    </div>
+                </a>
+                <a href="/admin/artists" style="text-decoration:none; color:inherit;" title="Перейти к артистам">
+                    <div class="summary-card" style="cursor:pointer;">
+                        <h3>Артистов</h3>
+                        <p>{{ summary.artists_count or 0 }}</p>
+                    </div>
+                </a>
+                <a href="/admin/authors" style="text-decoration:none; color:inherit;" title="Перейти к авторам">
+                    <div class="summary-card" style="cursor:pointer;">
+                        <h3>Авторов</h3>
+                        <p>{{ summary.authors_count or 0 }}</p>
+                    </div>
+                </a>
+                <a href="/admin/compositions" style="text-decoration:none; color:inherit;" title="Перейти к произведениям">
+                    <div class="summary-card" style="cursor:pointer;">
+                        <h3>Произведений</h3>
+                        <p>{{ summary.compositions_count or 0 }}</p>
+                    </div>
+                </a>
+                <a href="/admin/genres" style="text-decoration:none; color:inherit;" title="Перейти к жанрам">
+                    <div class="summary-card" style="cursor:pointer;">
+                        <h3>Жанров</h3>
+                        <p>{{ summary.genres_count or 0 }}</p>
+                    </div>
+                </a>
+                <a href="/admin/offprogram" style="text-decoration:none; color:inherit;" title="Перейти к офф-программе">
+                    <div class="summary-card" style="cursor:pointer;">
+                        <h3>Офф-программа</h3>
+                        <p>{{ summary.off_program_count or 0 }}</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- 🛠️ Дополнительные возможности -->
+        <div class="admin-section">
+            <div class="admin-section-title">
+                <span style="font-size: 1.3em;">🛠️</span>
+                Дополнительные возможности
+            </div>
+            <div class="admin-section-grid">
+                <a href="/admin/telegram" style="text-decoration:none; color:inherit;" title="Перейти к рассылке Telegram">
+                    <div class="summary-card" style="cursor:pointer;">
+                        <h3>📱 Telegram рассылка</h3>
+                        <p>Отправка сообщений</p>
+                    </div>
+                </a>
+                <a href="http://localhost:5555" target="_blank" style="text-decoration:none; color:inherit;" title="Открыть мониторинг Celery">
+                    <div class="summary-card" style="cursor:pointer;">
+                        <h3>⚡ Очереди Celery</h3>
+                        <p>Мониторинг задач</p>
+                    </div>
+                </a>
+                <a href="http://localhost:8080" target="_blank" style="text-decoration:none; color:inherit;" title="Открыть Adminer">
+                    <div class="summary-card" style="cursor:pointer;">
+                        <h3>🗄️ База данных</h3>
+                        <p>Управление БД</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- 📈 Интерактивная аналитика -->
+        <div class="admin-section">
+            <div class="admin-section-title">
+                <span style="font-size: 1.3em;">📈</span>
+                Интерактивная аналитика
+            </div>
+            <div class="admin-section-grid">
+                <a href="/admin/analytics/sales" style="text-decoration:none; color:inherit;" title="Анализ продаж">
+                    <div class="summary-card" style="cursor:pointer; background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);">
+                        <h3>📊 Анализ продаж</h3>
+                        <p>Графики и тренды</p>
+                        <small style="color: #666; font-size: 0.85em;">Динамика по дням</small>
+                    </div>
+                </a>
+                <a href="/admin/analytics/halls" style="text-decoration:none; color:inherit;" title="Популярность залов">
+                    <div class="summary-card" style="cursor:pointer; background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);">
+                        <h3>🏛️ Популярность залов</h3>
+                        <p>Тепловая карта</p>
+                        <small style="color: #666; font-size: 0.85em;">Заполняемость</small>
+                    </div>
+                </a>
+                <a href="/admin/analytics/telegram" style="text-decoration:none; color:inherit;" title="Telegram статистика">
+                    <div class="summary-card" style="cursor:pointer; background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);">
+                        <h3>📱 Telegram аналитика</h3>
+                        <p>Активность бота</p>
+                        <small style="color: #666; font-size: 0.85em;">Пользователи и команды</small>
+                    </div>
+                </a>
+                <a href="/admin/analytics/routes" style="text-decoration:none; color:inherit;" title="Анализ маршрутов">
+                    <div class="summary-card" style="cursor:pointer; background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);">
+                        <h3>🗺️ Анализ маршрутов</h3>
+                        <p>Популярные пути</p>
+                        <small style="color: #666; font-size: 0.85em;">Паттерны посещений</small>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- 🔔 Система уведомлений -->
+        <div class="admin-section">
+            <div class="admin-section-title">
+                <span style="font-size: 1.3em;">🔔</span>
+                Система уведомлений
+            </div>
+            <div class="admin-section-grid">
+                <div class="summary-card" style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);">
+                    <h3>⚠️ Критические алерты</h3>
+                    <p>{{ alerts.critical or 0 }}</p>
+                    <small style="color: #666; font-size: 0.85em;">Требуют внимания</small>
+                </div>
+                <div class="summary-card" style="background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);">
+                    <h3>📢 Уведомления</h3>
+                    <p>{{ alerts.notifications or 0 }}</p>
+                    <small style="color: #666; font-size: 0.85em;">Информационные</small>
+                </div>
+                <a href="/admin/telegram/stats" style="text-decoration:none; color:inherit;" title="Статистика Telegram">
+                    <div class="summary-card" style="cursor:pointer; background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);">
+                        <h3>📱 Telegram рассылки</h3>
+                        <p>{{ telegram_stats.sent or 0 }}</p>
+                        <small style="color: #666; font-size: 0.85em;">Отправлено сегодня</small>
+                    </div>
+                </a>
+                <a href="/admin/notifications/settings" style="text-decoration:none; color:inherit;" title="Настройки уведомлений">
+                    <div class="summary-card" style="cursor:pointer;">
+                        <h3>⚙️ Настройки</h3>
+                        <p>Управление</p>
+                        <small style="color: #666; font-size: 0.85em;">Алерты и уведомления</small>
+                    </div>
+                </a>
+            </div>
         </div>
         {% endblock %}
     </div>
@@ -363,6 +523,138 @@
         document.body.addEventListener('click', function() {
             dropdown.classList.remove('open');
         });
+    });
+    
+    // Система уведомлений и обновления данных
+    document.addEventListener('DOMContentLoaded', function() {
+        // Функция для обновления счетчиков
+        function updateCounters() {
+            fetch('/admin/api/dashboard-stats')
+                .then(response => response.json())
+                .then(data => {
+                    // Обновляем счетчики на странице
+                    if (data.alerts) {
+                        const criticalEl = document.querySelector('.summary-card h3:contains("Критические алерты")');
+                        if (criticalEl) {
+                            criticalEl.nextElementSibling.textContent = data.alerts.critical || 0;
+                        }
+                        
+                        const notificationsEl = document.querySelector('.summary-card h3:contains("Уведомления")');
+                        if (notificationsEl) {
+                            notificationsEl.nextElementSibling.textContent = data.alerts.notifications || 0;
+                        }
+                    }
+                    
+                    if (data.telegram_stats) {
+                        const telegramEl = document.querySelector('.summary-card h3:contains("Telegram рассылки")');
+                        if (telegramEl) {
+                            telegramEl.nextElementSibling.textContent = data.telegram_stats.sent || 0;
+                        }
+                    }
+                })
+                .catch(error => console.error('Ошибка обновления данных:', error));
+        }
+        
+        // Обновляем данные каждые 30 секунд
+        setInterval(updateCounters, 30000);
+        
+        // Показываем уведомления о критических алертах
+        function checkAlerts() {
+            fetch('/admin/api/alerts')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.critical && data.critical.length > 0) {
+                        showAlertNotification(data.critical);
+                    }
+                })
+                .catch(error => console.error('Ошибка проверки алертов:', error));
+        }
+        
+        function showAlertNotification(alerts) {
+            // Создаем уведомление в правом верхнем углу
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #dc3545;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 10000;
+                max-width: 300px;
+                animation: slideIn 0.3s ease-out;
+            `;
+            
+            notification.innerHTML = `
+                <div style="font-weight: bold; margin-bottom: 8px;">⚠️ Критические алерты</div>
+                <div style="font-size: 0.9em;">
+                    ${alerts.slice(0, 2).map(alert => `• ${alert.message}`).join('<br>')}
+                    ${alerts.length > 2 ? `<br><small>...и еще ${alerts.length - 2}</small>` : ''}
+                </div>
+                <button onclick="this.parentElement.remove()" style="
+                    position: absolute;
+                    top: 5px;
+                    right: 5px;
+                    background: none;
+                    border: none;
+                    color: white;
+                    font-size: 18px;
+                    cursor: pointer;
+                ">×</button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Автоматически убираем через 10 секунд
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 10000);
+        }
+        
+        // Проверяем алерты каждые 60 секунд
+        setInterval(checkAlerts, 60000);
+        
+        // Добавляем CSS анимации
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            
+            .summary-card {
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+            
+            .summary-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            }
+            
+            .admin-section-title {
+                position: relative;
+            }
+            
+            .admin-section-title::after {
+                content: '';
+                position: absolute;
+                bottom: -2px;
+                left: 0;
+                width: 0;
+                height: 2px;
+                background: linear-gradient(90deg, #667eea, #764ba2);
+                transition: width 0.3s ease;
+            }
+            
+            .admin-section:hover .admin-section-title::after {
+                width: 100%;
+            }
+        `;
+        document.head.appendChild(style);
     });
     </script>
 </body>
