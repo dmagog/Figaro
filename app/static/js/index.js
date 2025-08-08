@@ -62,6 +62,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             updateProgress();
             updateNavigation();
         }
+        
+        // Обновляем кнопки в мобильных карточках
+        updateMobileCardButtons();
     }, 100);
     
     // Инициализация поиска
@@ -328,6 +331,7 @@ function toggleComposer(composerId) {
     renderComposersCloud(); // Добавлено для обновления выделения
     console.log('Вызываем updateSummary...');
     updateSummary();
+    updateMobileCardButtons();
 }
 
 // Обработка выбора артистов
@@ -349,6 +353,7 @@ function toggleArtist(artistId) {
     renderArtistsCloud(); // Добавлено для обновления выделения
     console.log('Вызываем updateSummary...');
     updateSummary();
+    updateMobileCardButtons();
 }
 
 // Обработка выбора концертов
@@ -369,6 +374,7 @@ function toggleConcert(concertId) {
     updateTagClouds();
     console.log('Вызываем updateSummary...');
     updateSummary();
+    updateMobileCardButtons();
 }
 
 // Обновление облаков тегов
@@ -1094,6 +1100,7 @@ function resetSurvey() {
     }
     
     console.log('Анкета сброшена');
+    updateMobileCardButtons();
 }
 
 // --- Автоматическая подгрузка preferences при открытии анкеты или рекомендаций ---
@@ -1227,6 +1234,7 @@ async function restorePreferences(prefs) {
             }
     
     console.log('✅ Preferences восстановлены успешно');
+    updateMobileCardButtons();
 }
 
 // Функция для проверки авторизации
@@ -1394,13 +1402,52 @@ function initMobileCards() {
     cardButtons.forEach(button => {
         button.addEventListener('click', (e) => {
             e.preventDefault();
-            console.log('Кнопка в мобильной карточке нажата, переключаем на анкету');
-            showTab('form');
-            // Устанавливаем первый слайд анкеты
-            currentStep = 1;
-            showSlide(1);
+            
+            // Проверяем, заполнена ли анкета
+            const hasSurveyData = selectedComposers.size > 0 || selectedArtists.size > 0 || selectedConcerts.size > 0;
+            
+            if (hasSurveyData) {
+                console.log('Анкета заполнена, переключаем на рекомендации');
+                showTab('recs');
+            } else {
+                console.log('Анкета не заполнена, переключаем на анкету');
+                showTab('form');
+                // Устанавливаем первый слайд анкеты
+                currentStep = 1;
+                showSlide(1);
+            }
         });
     });
+    
+    // Обновляем текст кнопок в зависимости от состояния анкеты
+    updateMobileCardButtons();
+}
+
+// Функция для обновления текста кнопок в мобильных карточках
+function updateMobileCardButtons() {
+    if (window.innerWidth > 768) return; // Только для мобильных
+    
+    const tabAbout = document.getElementById('tab-about');
+    if (!tabAbout) return;
+    
+    const cardButtons = tabAbout.querySelectorAll('.mobile-card .btn');
+    if (cardButtons.length === 0) return;
+    
+    // Проверяем, заполнена ли анкета
+    const hasSurveyData = selectedComposers.size > 0 || selectedArtists.size > 0 || selectedConcerts.size > 0;
+    
+    cardButtons.forEach(button => {
+        if (hasSurveyData) {
+            button.textContent = '🎯 Смотреть рекомендации';
+            button.classList.remove('mobile-card-btn-survey');
+            button.classList.add('mobile-card-btn-recs');
+        } else {
+            button.textContent = '📝 Заполнить анкету';
+            button.classList.remove('mobile-card-btn-recs');
+            button.classList.add('mobile-card-btn-survey');
+        }
+    });
+}
     
     // Добавляем обработчики для свайпов
     let startX = 0;

@@ -4306,8 +4306,8 @@ body {
     overflow-y: hidden;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
-    padding: 20px 0;
-    margin: 20px 0;
+    padding: 10px 0 20px 0;
+    margin: 10px 0 20px 0;
 }
 
 .mobile-cards-track {
@@ -4442,7 +4442,7 @@ body {
     transform: scale(1.2);
 }
 
-/* Скрываем обычные CTA блоки на мобильных */
+/* Скрываем обычные CTA блоки и вкладки на мобильных */
 @media (max-width: 768px) {
     .recommendations-cta,
     .about-cta-feature,
@@ -4450,8 +4450,22 @@ body {
         display: none;
     }
     
+    .tabs {
+        display: none;
+    }
+    
+    .survey-header h2 {
+        display: none;
+    }
+    
     .mobile-cards-container {
         display: block;
+        margin: 5px 0 10px 0;
+        padding: 5px 0 10px 0;
+    }
+    
+    .survey-header {
+        margin-bottom: 0px;
     }
     
     .mobile-cards-track {
