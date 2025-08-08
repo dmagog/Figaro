@@ -16,6 +16,10 @@ let shuffledComposers = null;
 // Переменная для отслеживания автоматического перехода
 let autoTransitionTimeout = null;
 
+// Мобильный карточный интерфейс
+let currentCardIndex = 0;
+let cardAutoScrollInterval = null;
+
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('DOM loaded, initializing...');
@@ -93,6 +97,28 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     console.log('Initialization complete');
+    
+    // Инициализируем мобильные карточки
+    setTimeout(() => {
+        initMobileCards();
+    }, 500);
+    
+    // Обработчик изменения размера окна для мобильных карточек
+    window.addEventListener('resize', () => {
+        const tabAbout = document.getElementById('tab-about');
+        if (!tabAbout) return;
+        
+        const container = tabAbout.querySelector('#mobile-cards-container');
+        if (!container) return;
+        
+        if (window.innerWidth <= 768) {
+            container.style.display = 'block';
+            initMobileCards();
+        } else {
+            container.style.display = 'none';
+            stopAutoScroll();
+        }
+    });
 });
 
 // Загрузка данных для анкеты
@@ -1328,4 +1354,182 @@ window.showTab = async function(tab) {
     window.location.hash = tab;
 };
 
- 
+// Инициализация мобильного карточного интерфейса
+function initMobileCards() {
+    // Ищем мобильные карточки внутри вкладки "О сервисе"
+    const tabAbout = document.getElementById('tab-about');
+    if (!tabAbout) {
+        console.log('Вкладка "О сервисе" не найдена');
+        return;
+    }
+    
+    const container = tabAbout.querySelector('#mobile-cards-container');
+    const track = tabAbout.querySelector('#mobile-cards-track');
+    const indicators = tabAbout.querySelector('#mobile-cards-indicators');
+    
+    if (!container || !track || !indicators) {
+        console.log('Мобильные карточки не найдены во вкладке "О сервисе"');
+        return;
+    }
+    
+    // Показываем контейнер только на мобильных устройствах
+    if (window.innerWidth > 768) {
+        container.style.display = 'none';
+        return;
+    }
+    
+    container.style.display = 'block';
+    console.log('Мобильный карточный интерфейс инициализирован');
+    
+    // Добавляем обработчики для индикаторов
+    const indicatorElements = indicators.querySelectorAll('.mobile-card-indicator');
+    indicatorElements.forEach((indicator, index) => {
+        indicator.addEventListener('click', () => {
+            goToCard(index);
+        });
+    });
+    
+    // Добавляем обработчики для кнопок в карточках
+    const cardButtons = container.querySelectorAll('.mobile-card .btn');
+    cardButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Кнопка в мобильной карточке нажата, переключаем на анкету');
+            showTab('form');
+            // Устанавливаем первый слайд анкеты
+            currentStep = 1;
+            showSlide(1);
+        });
+    });
+    
+    // Добавляем обработчики для свайпов
+    let startX = 0;
+    let currentX = 0;
+    let isDragging = false;
+    
+    track.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        isDragging = true;
+        stopAutoScroll();
+    });
+    
+    track.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        currentX = e.touches[0].clientX;
+        const diff = startX - currentX;
+        
+        // Предотвращаем вертикальную прокрутку при горизонтальном свайпе
+        if (Math.abs(diff) > 10) {
+            e.preventDefault();
+        }
+    });
+    
+    track.addEventListener('touchend', (e) => {
+        if (!isDragging) return;
+        
+        const diff = startX - currentX;
+        const threshold = 50;
+        
+        if (Math.abs(diff) > threshold) {
+            if (diff > 0 && currentCardIndex < 2) {
+                // Свайп влево - следующая карточка
+                goToCard(currentCardIndex + 1);
+            } else if (diff < 0 && currentCardIndex > 0) {
+                // Свайп вправо - предыдущая карточка
+                goToCard(currentCardIndex - 1);
+            }
+        }
+        
+        isDragging = false;
+        startAutoScroll();
+    });
+    
+    // Добавляем обработчики для мыши
+    track.addEventListener('mousedown', (e) => {
+        startX = e.clientX;
+        isDragging = true;
+        stopAutoScroll();
+    });
+    
+    track.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        currentX = e.clientX;
+    });
+    
+    track.addEventListener('mouseup', (e) => {
+        if (!isDragging) return;
+        
+        const diff = startX - currentX;
+        const threshold = 50;
+        
+        if (Math.abs(diff) > threshold) {
+            if (diff > 0 && currentCardIndex < 2) {
+                goToCard(currentCardIndex + 1);
+            } else if (diff < 0 && currentCardIndex > 0) {
+                goToCard(currentCardIndex - 1);
+            }
+        }
+        
+        isDragging = false;
+        startAutoScroll();
+    });
+    
+    // Запускаем автоматическую прокрутку
+    startAutoScroll();
+}
+
+// Переход к конкретной карточке
+function goToCard(index) {
+    if (index < 0 || index > 2) return;
+    
+    currentCardIndex = index;
+    const tabAbout = document.getElementById('tab-about');
+    if (!tabAbout) return;
+    
+    const track = tabAbout.querySelector('#mobile-cards-track');
+    const indicators = tabAbout.querySelector('#mobile-cards-indicators');
+    
+    if (!track || !indicators) return;
+    
+    // Прокручиваем к карточке
+    const cardWidth = 280 + 20; // ширина карточки + отступ
+    track.scrollTo({
+        left: index * cardWidth,
+        behavior: 'smooth'
+    });
+    
+    // Обновляем индикаторы
+    const indicatorElements = indicators.querySelectorAll('.mobile-card-indicator');
+    indicatorElements.forEach((indicator, i) => {
+        if (i === index) {
+            indicator.classList.add('active');
+        } else {
+            indicator.classList.remove('active');
+        }
+    });
+    
+    // Перезапускаем автоматическую прокрутку
+    stopAutoScroll();
+    startAutoScroll();
+}
+
+// Автоматическая прокрутка карточек
+function startAutoScroll() {
+    if (cardAutoScrollInterval) {
+        clearInterval(cardAutoScrollInterval);
+    }
+    
+    cardAutoScrollInterval = setInterval(() => {
+        const nextIndex = (currentCardIndex + 1) % 3;
+        goToCard(nextIndex);
+    }, 5000); // Смена карточки каждые 5 секунд
+}
+
+// Остановка автоматической прокрутки
+function stopAutoScroll() {
+    if (cardAutoScrollInterval) {
+        clearInterval(cardAutoScrollInterval);
+        cardAutoScrollInterval = null;
+    }
+}
+

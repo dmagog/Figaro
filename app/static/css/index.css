@@ -1,3 +1,10 @@
+/* Убираем лишние отступы у body */
+body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
 /* Современная шапка */
 .top-navbar-modern {
     position: fixed;
@@ -3521,6 +3528,8 @@
     visibility: hidden;
     transition: all 0.8s ease;
     z-index: 1000;
+    margin: 0;
+    padding: 0;
 }
 
 .hero-screen.active {
@@ -3821,8 +3830,10 @@
     opacity: 0;
     transform: translateY(20px);
     transition: all 0.8s ease;
-    min-height: 100vh;
+    min-height: calc(100vh - 80px);
     position: relative;
+    margin-top: 80px;
+    padding-top: 0;
 }
 
 .main-content.active {
@@ -4284,5 +4295,286 @@
     
     .tabs-container {
         padding: 0 10px;
+    }
+}
+
+/* Мобильный карточный интерфейс */
+.mobile-cards-container {
+    display: none;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding: 20px 0;
+    margin: 20px 0;
+}
+
+.mobile-cards-track {
+    display: flex;
+    gap: 20px;
+    padding: 0 20px;
+    min-width: max-content;
+}
+
+.mobile-card {
+    flex: 0 0 280px;
+    scroll-snap-align: start;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 400px;
+}
+
+.mobile-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(138, 43, 226, 0.05), rgba(75, 0, 130, 0.05));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.mobile-card:hover::before {
+    opacity: 1;
+}
+
+.mobile-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.mobile-card-icon {
+    font-size: 3em;
+    text-align: center;
+    margin-bottom: 20px;
+    display: block;
+}
+
+.mobile-card-title {
+    font-size: 1.4em;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 15px;
+    line-height: 1.3;
+    text-align: center;
+}
+
+.mobile-card-description {
+    font-size: 1em;
+    color: #666;
+    line-height: 1.5;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.mobile-card-features {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 25px;
+    flex-grow: 1;
+}
+
+.mobile-card-feature {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9em;
+    color: #555;
+}
+
+.mobile-card-feature .feature-icon {
+    font-size: 1.2em;
+    color: #8a2be2;
+}
+
+.mobile-card .btn {
+    width: 100%;
+    background: linear-gradient(135deg, #8a2be2, #4b0082);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    padding: 15px 20px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(138, 43, 226, 0.3);
+    text-align: center;
+    margin-top: auto;
+}
+
+.mobile-card .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(138, 43, 226, 0.4);
+}
+
+.mobile-cards-indicators {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.mobile-card-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(138, 43, 226, 0.3);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.mobile-card-indicator.active {
+    background: #8a2be2;
+    transform: scale(1.2);
+}
+
+/* Скрываем обычные CTA блоки на мобильных */
+@media (max-width: 768px) {
+    .recommendations-cta,
+    .about-cta-feature,
+    .about-feature {
+        display: none;
+    }
+    
+    .mobile-cards-container {
+        display: block;
+    }
+    
+    .mobile-cards-track {
+        gap: 15px;
+        padding: 0 15px;
+    }
+    
+    .mobile-card {
+        flex: 0 0 260px;
+        padding: 20px;
+        min-height: 380px;
+    }
+    
+    .mobile-card-icon {
+        font-size: 2.5em;
+        margin-bottom: 15px;
+    }
+    
+    .mobile-card-title {
+        font-size: 1.3em;
+        margin-bottom: 12px;
+    }
+    
+    .mobile-card-description {
+        font-size: 0.95em;
+        margin-bottom: 18px;
+    }
+    
+    .mobile-card-features {
+        gap: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .mobile-card-feature {
+        font-size: 0.85em;
+    }
+    
+    .mobile-card .btn {
+        padding: 12px 18px;
+        font-size: 0.95em;
+    }
+}
+
+@media (max-width: 480px) {
+    .mobile-cards-track {
+        gap: 12px;
+        padding: 0 12px;
+    }
+    
+    .mobile-card {
+        flex: 0 0 240px;
+        padding: 18px;
+        min-height: 360px;
+    }
+    
+    .mobile-card-icon {
+        font-size: 2.2em;
+        margin-bottom: 12px;
+    }
+    
+    .mobile-card-title {
+        font-size: 1.2em;
+        margin-bottom: 10px;
+    }
+    
+    .mobile-card-description {
+        font-size: 0.9em;
+        margin-bottom: 15px;
+    }
+    
+    .mobile-card-features {
+        gap: 6px;
+        margin-bottom: 18px;
+    }
+    
+    .mobile-card-feature {
+        font-size: 0.8em;
+    }
+    
+    .mobile-card .btn {
+        padding: 10px 16px;
+        font-size: 0.9em;
+    }
+}
+
+@media (max-width: 360px) {
+    .mobile-cards-track {
+        gap: 10px;
+        padding: 0 10px;
+    }
+    
+    .mobile-card {
+        flex: 0 0 220px;
+        padding: 15px;
+        min-height: 340px;
+    }
+    
+    .mobile-card-icon {
+        font-size: 2em;
+        margin-bottom: 10px;
+    }
+    
+    .mobile-card-title {
+        font-size: 1.1em;
+        margin-bottom: 8px;
+    }
+    
+    .mobile-card-description {
+        font-size: 0.85em;
+        margin-bottom: 12px;
+    }
+    
+    .mobile-card-features {
+        gap: 5px;
+        margin-bottom: 15px;
+    }
+    
+    .mobile-card-feature {
+        font-size: 0.75em;
+    }
+    
+    .mobile-card .btn {
+        padding: 8px 14px;
+        font-size: 0.85em;
     }
 }
