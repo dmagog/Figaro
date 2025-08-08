@@ -297,6 +297,165 @@
     }
 }
 
+@media (max-width: 360px) {
+    .top-navbar-modern {
+        height: 55px;
+    }
+    
+    .nav-container {
+        padding: 0 10px;
+    }
+    
+    .nav-brand {
+        gap: 6px;
+    }
+    
+    .brand-icon-nav {
+        font-size: 2em;
+    }
+    
+    .nav-title-modern {
+        font-size: 1.1em;
+    }
+    
+    .nav-user, .nav-auth {
+        gap: 6px;
+    }
+    
+    .user-greeting {
+        font-size: 0.75em;
+        display: none;
+    }
+    
+    .nav-actions {
+        gap: 4px;
+    }
+    
+    .nav-btn-modern {
+        padding: 4px 8px;
+        font-size: 0.7em;
+        min-width: auto;
+    }
+    
+    .container {
+        margin-top: 75px;
+    }
+    
+    .tabs-container {
+        padding: 0 8px;
+    }
+    
+    .survey-section {
+        padding: 8px;
+    }
+    
+    .tab-content {
+        padding: 3px;
+    }
+    
+    .tab-btn {
+        padding: 10px 8px;
+        font-size: 0.85em;
+        min-height: 40px;
+    }
+    
+    .radio-group {
+        gap: 8px;
+        margin: 10px 0;
+    }
+    
+    .radio-option {
+        padding: 10px;
+        margin: 0 2px;
+    }
+    
+    .radio-content {
+        gap: 5px;
+        padding: 2px;
+        min-height: 45px;
+    }
+    
+    .radio-icon, .radio-number {
+        font-size: 1.4em;
+    }
+    
+    .radio-title {
+        font-size: 0.85em;
+        line-height: 1.3;
+    }
+    
+    .radio-description {
+        font-size: 0.7em;
+        line-height: 1.3;
+    }
+    
+    .tag {
+        font-size: 0.7em;
+        padding: 3px 6px;
+        min-width: 32px;
+        height: 24px;
+    }
+    
+    .survey-navigation {
+        gap: 8px;
+        padding: 8px 10px;
+    }
+    
+    .btn-prev, .btn-next, .btn-submit {
+        padding: 8px 12px;
+        font-size: 0.85em;
+        min-height: 40px;
+    }
+    
+    .summary-section {
+        padding: 8px;
+    }
+    
+    .summary-section h4 {
+        font-size: 0.85em;
+        gap: 4px;
+        margin-bottom: 5px;
+    }
+    
+    .summary-item {
+        font-size: 0.7em;
+        padding: 4px 5px;
+        line-height: 1.3;
+    }
+    
+    .summary-pills {
+        gap: 2px;
+        margin-top: 2px;
+    }
+    
+    .summary-pill {
+        padding: 2px 5px;
+        font-size: 0.65em;
+    }
+    
+    .slide-title {
+        font-size: 1.1em;
+        margin-bottom: 5px;
+    }
+    
+    .slide-description {
+        font-size: 0.8em;
+        margin-bottom: 12px;
+    }
+    
+    .survey-header h2 {
+        font-size: 1.4em;
+    }
+    
+    .progress-bar {
+        height: 5px;
+    }
+    
+    .progress-text {
+        font-size: 0.75em;
+    }
+}
+
 /* Основные стили для главной страницы */
 
 .tabs-container {
@@ -1346,105 +1505,261 @@
 /* Адаптивность */
 @media (max-width: 768px) {
     .survey-section {
-        padding: 20px;
+        padding: 15px;
     }
     
     .tab-content {
-        padding: 10px;
+        padding: 8px;
+    }
+    
+    .tabs {
+        flex-direction: column;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .tab-btn {
+        padding: 14px 12px;
+        font-size: 0.95em;
+        border-radius: 0;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .tab-btn:first-child {
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+    
+    .tab-btn:last-child {
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
+        border-bottom: none;
     }
     
     .radio-group {
         grid-template-columns: 1fr;
-        gap: 15px;
-        margin: 20px 0;
+        gap: 12px;
+        margin: 15px 0;
     }
     
     .radio-group.compact {
         grid-template-columns: 1fr;
-        gap: 12px;
+        gap: 10px;
     }
     
     .radio-option {
         min-width: auto;
         max-width: none;
-        padding: 16px;
+        padding: 14px;
+        margin: 0 5px;
     }
     
     .radio-option.compact {
-        padding: 14px;
+        padding: 12px;
         min-width: auto;
         max-width: none;
     }
     
     .radio-content {
-        gap: 10px;
-        padding: 6px;
-        min-height: 70px;
+        gap: 8px;
+        padding: 4px;
+        min-height: 60px;
     }
     
     .radio-icon, .radio-number {
-        font-size: 2em;
+        font-size: 1.8em;
     }
     
     .radio-title {
-        font-size: 1em;
+        font-size: 0.95em;
+        line-height: 1.3;
     }
     
     .radio-description {
-        font-size: 0.85em;
+        font-size: 0.8em;
+        line-height: 1.4;
     }
     
     .tag-cloud {
-        gap: 8px;
+        gap: 6px;
+        margin: 15px 0;
     }
     
     .tag {
-        font-size: 0.85em;
-        padding: 6px 12px;
+        font-size: 0.8em;
+        padding: 5px 10px;
+        min-width: 40px;
+        height: 32px;
     }
     
     .survey-navigation {
         flex-direction: column;
-        gap: 15px;
+        gap: 12px;
+        padding: 12px 15px;
     }
     
     .btn-prev, .btn-next, .btn-submit {
         width: 100%;
-        max-width: 200px;
+        max-width: none;
+        padding: 12px 16px;
+        font-size: 0.95em;
     }
     
     .summary-container {
         grid-template-columns: 1fr;
-        gap: 15px;
+        gap: 12px;
     }
     
     .summary-section {
-        padding: 15px;
+        padding: 12px;
     }
     
     .summary-section h4 {
-        font-size: 1em;
-        gap: 8px;
+        font-size: 0.95em;
+        gap: 6px;
+        margin-bottom: 8px;
     }
     
     .summary-section h4::before {
-        width: 24px;
-        height: 24px;
-        font-size: 0.8em;
+        width: 3px;
+        height: 14px;
     }
     
     .summary-item {
-        font-size: 0.85em;
-        padding: 8px 10px;
+        font-size: 0.8em;
+        padding: 6px 8px;
+        line-height: 1.4;
     }
     
     .summary-pills {
-        gap: 6px;
-        margin-top: 6px;
+        gap: 4px;
+        margin-top: 4px;
     }
     
     .summary-pill {
-        padding: 5px 10px;
+        padding: 4px 8px;
+        font-size: 0.75em;
+    }
+    
+    .slide-title {
+        font-size: 1.5em;
+        margin-bottom: 8px;
+    }
+    
+    .slide-description {
+        font-size: 0.9em;
+        margin-bottom: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .survey-section {
+        padding: 10px;
+    }
+    
+    .tab-content {
+        padding: 5px;
+    }
+    
+    .tab-btn {
+        padding: 12px 10px;
+        font-size: 0.9em;
+        min-height: 44px;
+    }
+    
+    .radio-group {
+        gap: 10px;
+        margin: 12px 0;
+    }
+    
+    .radio-option {
+        padding: 12px;
+        margin: 0 3px;
+    }
+    
+    .radio-content {
+        gap: 6px;
+        padding: 3px;
+        min-height: 50px;
+    }
+    
+    .radio-icon, .radio-number {
+        font-size: 1.6em;
+    }
+    
+    .radio-title {
+        font-size: 0.9em;
+        line-height: 1.3;
+    }
+    
+    .radio-description {
+        font-size: 0.75em;
+        line-height: 1.3;
+    }
+    
+    .tag {
+        font-size: 0.75em;
+        padding: 4px 8px;
+        min-width: 36px;
+        height: 28px;
+    }
+    
+    .survey-navigation {
+        gap: 10px;
+        padding: 10px 12px;
+    }
+    
+    .btn-prev, .btn-next, .btn-submit {
+        padding: 10px 14px;
+        font-size: 0.9em;
+        min-height: 44px;
+    }
+    
+    .summary-section {
+        padding: 10px;
+    }
+    
+    .summary-section h4 {
+        font-size: 0.9em;
+        gap: 5px;
+        margin-bottom: 6px;
+    }
+    
+    .summary-item {
+        font-size: 0.75em;
+        padding: 5px 6px;
+        line-height: 1.3;
+    }
+    
+    .summary-pills {
+        gap: 3px;
+        margin-top: 3px;
+    }
+    
+    .summary-pill {
+        padding: 3px 6px;
+        font-size: 0.7em;
+    }
+    
+    .slide-title {
+        font-size: 1.3em;
+        margin-bottom: 6px;
+    }
+    
+    .slide-description {
+        font-size: 0.85em;
+        margin-bottom: 15px;
+    }
+    
+    .survey-header h2 {
+        font-size: 1.6em;
+    }
+    
+    .progress-bar {
+        height: 6px;
+    }
+    
+    .progress-text {
         font-size: 0.8em;
     }
 } 
@@ -1656,8 +1971,122 @@
         font-size: 1em;
         padding: 14px 28px;
     }
-    
+}
 
+@media (max-width: 480px) {
+    .about-section {
+        padding: 10px;
+    }
+    
+    .about-header {
+        margin-bottom: 15px;
+    }
+    
+    .about-header h2 {
+        font-size: 1.5em;
+    }
+    
+    .about-subtitle {
+        font-size: 0.9em;
+    }
+    
+    .about-content {
+        gap: 12px;
+        margin-bottom: 15px;
+    }
+    
+    .about-feature {
+        padding: 15px 12px;
+        min-height: 140px;
+    }
+    
+    .feature-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.6em;
+    }
+    
+    .feature-text h3 {
+        font-size: 1em;
+        margin-bottom: 8px;
+    }
+    
+    .feature-text p {
+        font-size: 0.85em;
+        line-height: 1.4;
+    }
+    
+    .about-cta-feature .feature-text h3 {
+        font-size: 1.2em;
+    }
+    
+    .about-cta-feature .feature-text p {
+        font-size: 0.9em;
+        margin-bottom: 15px;
+    }
+    
+    .about-cta-feature .btn {
+        font-size: 0.9em;
+        padding: 12px 24px;
+    }
+}
+
+@media (max-width: 360px) {
+    .about-section {
+        padding: 8px;
+    }
+    
+    .about-header {
+        margin-bottom: 12px;
+    }
+    
+    .about-header h2 {
+        font-size: 1.3em;
+    }
+    
+    .about-subtitle {
+        font-size: 0.8em;
+    }
+    
+    .about-content {
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+    
+    .about-feature {
+        padding: 12px 10px;
+        min-height: 120px;
+    }
+    
+    .feature-icon {
+        width: 35px;
+        height: 35px;
+        font-size: 1.4em;
+    }
+    
+    .feature-text h3 {
+        font-size: 0.9em;
+        margin-bottom: 6px;
+    }
+    
+    .feature-text p {
+        font-size: 0.8em;
+        line-height: 1.3;
+    }
+    
+    .about-cta-feature .feature-text h3 {
+        font-size: 1.1em;
+    }
+    
+    .about-cta-feature .feature-text p {
+        font-size: 0.85em;
+        margin-bottom: 12px;
+    }
+    
+    .about-cta-feature .btn {
+        font-size: 0.85em;
+        padding: 10px 20px;
+    }
 } 
 
 /* Призыв к действию на вкладке рекомендаций */
@@ -1788,6 +2217,74 @@
     
     .cta-feature span:last-child {
         font-size: 0.85em;
+    }
+}
+
+@media (max-width: 480px) {
+    .recommendations-cta {
+        padding: 30px 10px;
+    }
+    
+    .cta-content {
+        padding: 30px 20px;
+    }
+    
+    .cta-icon {
+        font-size: 2.5em;
+    }
+    
+    .cta-content h2 {
+        font-size: 1.5em;
+    }
+    
+    .cta-content p {
+        font-size: 1em;
+    }
+    
+    .cta-features {
+        gap: 20px;
+    }
+    
+    .cta-feature .feature-icon {
+        font-size: 1.2em;
+    }
+    
+    .cta-feature span:last-child {
+        font-size: 0.8em;
+    }
+}
+
+@media (max-width: 360px) {
+    .recommendations-cta {
+        padding: 25px 8px;
+    }
+    
+    .cta-content {
+        padding: 25px 15px;
+    }
+    
+    .cta-icon {
+        font-size: 2em;
+    }
+    
+    .cta-content h2 {
+        font-size: 1.3em;
+    }
+    
+    .cta-content p {
+        font-size: 0.9em;
+    }
+    
+    .cta-features {
+        gap: 15px;
+    }
+    
+    .cta-feature .feature-icon {
+        font-size: 1.1em;
+    }
+    
+    .cta-feature span:last-child {
+        font-size: 0.75em;
     }
 }
 
@@ -2211,6 +2708,80 @@
     .nav-section-count {
         font-size: 0.7em;
         padding: 1px 4px;
+    }
+}
+
+@media (max-width: 480px) {
+    .recommendations-navigator {
+        padding: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .nav-sections {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+    }
+    
+    .nav-section {
+        padding: 10px 6px;
+        gap: 5px;
+        min-height: 60px;
+    }
+    
+    .nav-section-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 1.2em;
+    }
+    
+    .nav-section-title {
+        font-size: 0.8em;
+    }
+    
+    .nav-section-desc {
+        font-size: 0.7em;
+    }
+    
+    .nav-section-count {
+        font-size: 0.65em;
+        padding: 1px 3px;
+    }
+}
+
+@media (max-width: 360px) {
+    .recommendations-navigator {
+        padding: 8px;
+        margin-bottom: 12px;
+    }
+    
+    .nav-sections {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 5px;
+    }
+    
+    .nav-section {
+        padding: 8px 5px;
+        gap: 4px;
+        min-height: 55px;
+    }
+    
+    .nav-section-icon {
+        width: 24px;
+        height: 24px;
+        font-size: 1.1em;
+    }
+    
+    .nav-section-title {
+        font-size: 0.75em;
+    }
+    
+    .nav-section-desc {
+        font-size: 0.65em;
+    }
+    
+    .nav-section-count {
+        font-size: 0.6em;
+        padding: 1px 2px;
     }
 }
 
@@ -2818,6 +3389,90 @@
 @media (max-width: 480px) {
     .footer-modern {
         padding: 30px 0 15px;
+        margin-top: 30px;
+    }
+    
+    .footer-container {
+        padding: 0 15px;
+    }
+    
+    .glass-card {
+        padding: 15px;
+        border-radius: 12px;
+    }
+    
+    .brand-icon {
+        font-size: 2em;
+    }
+    
+    .neon-text {
+        font-size: 1.5em;
+    }
+    
+    .section-title {
+        font-size: 1.1em;
+    }
+    
+    .footer-links a {
+        font-size: 0.85em;
+    }
+    
+    .social-link-modern {
+        width: 45px;
+        height: 45px;
+    }
+    
+    .telegram-icon {
+        width: 28px;
+        height: 28px;
+    }
+}
+
+@media (max-width: 360px) {
+    .footer-modern {
+        padding: 25px 0 12px;
+        margin-top: 25px;
+    }
+    
+    .footer-container {
+        padding: 0 10px;
+    }
+    
+    .glass-card {
+        padding: 12px;
+        border-radius: 10px;
+    }
+    
+    .brand-icon {
+        font-size: 1.8em;
+    }
+    
+    .neon-text {
+        font-size: 1.3em;
+    }
+    
+    .section-title {
+        font-size: 1em;
+    }
+    
+    .footer-links a {
+        font-size: 0.8em;
+    }
+    
+    .social-link-modern {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .telegram-icon {
+        width: 24px;
+        height: 24px;
+    }
+}
+
+@media (max-width: 480px) {
+    .footer-modern {
+        padding: 30px 0 15px;
     }
     
     .footer-container {
@@ -2920,7 +3575,7 @@
 }
 
 .hero-balloon {
-    font-size: 6em;
+    font-size: 10em;
     animation: floatBalloon 6s ease-in-out infinite;
     display: inline-block;
     position: absolute;
@@ -2940,10 +3595,12 @@
     width: 100%;
     max-width: 1200px;
     position: absolute;
-    top: 50%;
+    top: 55%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 5;
+    padding: 0 20px;
+    box-sizing: border-box;
 }
 
 .hero-text-content.active {
@@ -2961,27 +3618,70 @@
     line-height: 1.2;
     text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     animation: fadeInUp 1s ease-out 0.5s both;
+    word-wrap: break-word;
+    hyphens: auto;
+    max-width: 90vw;
+    margin: 0 auto;
 }
 
 /* Специальные стили для первого экрана */
 .hero-text-1 .hero-title {
     font-size: 3.8em;
+    line-height: 1.1;
+    word-break: keep-all;
+    white-space: normal;
 }
 
 /* Специальные стили для второго экрана */
 .hero-text-2 .hero-title {
     font-size: 3.8em;
+    line-height: 1.1;
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.hero-text-2 .hero-subtitle {
+    margin-top: 15px;
+    margin-bottom: 0;
 }
 
 /* Специальные стили для третьего экрана */
 .hero-text-3 .hero-title {
     font-size: 3.8em;
+    line-height: 1.1;
 }
 
 .hero-text-3 .hero-subtitle {
     font-size: 2em;
     color: #ffe082;
     text-shadow: 0 2px 15px rgba(255, 224, 130, 0.4);
+}
+
+/* Специальное позиционирование шарика для третьего экрана */
+.hero-text-3 ~ .hero-balloon,
+.hero-text-3 + .hero-balloon {
+    top: 20%;
+    font-size: 9em;
+    left: 50%;
+    transform: translate(-50%, 0);
+}
+
+/* Специальное позиционирование шарика для второго экрана */
+.hero-text-2 ~ .hero-balloon,
+.hero-text-2 + .hero-balloon {
+    top: 15%;
+    font-size: 6.5em;
+    left: 50%;
+    transform: translate(-50%, 0);
+}
+
+/* Специальное позиционирование шарика для первого экрана */
+.hero-text-1 ~ .hero-balloon,
+.hero-text-1 + .hero-balloon {
+    top: 18%;
+    font-size: 8.5em;
+    left: 50%;
+    transform: translate(-50%, 0);
 }
 
 .hero-subtitle {
@@ -2998,11 +3698,18 @@
     font-weight: 700;
     color: #81c784; /* Изменен на зеленый */
     text-shadow: 0 0 15px rgba(129, 199, 132, 0.6); /* Изменен на зеленый */
-    margin-top: 100px; /* Опускаем текст ниже */
-    margin-bottom: -15px; /* Сдвинут ближе к основному тексту */
+    margin-top: 0; /* Убираем большой отступ сверху */
+    margin-bottom: 30px; /* Увеличиваем отступ от основного текста */
     letter-spacing: 2px;
     animation: mathPulse 3s ease-in-out infinite;
     font-family: 'Courier New', monospace;
+    word-wrap: break-word;
+    hyphens: auto;
+    max-width: 95vw;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.2;
+    text-align: center;
 }
 
 @keyframes mathPulse {
@@ -3011,8 +3718,21 @@
         text-shadow: 0 0 15px rgba(129, 199, 132, 0.6); /* Изменен на зеленый */
     }
     50% { 
-        transform: scale(1.05);
-        text-shadow: 0 0 25px rgba(129, 199, 132, 0.8); /* Изменен на зеленый */
+        transform: scale(1.02);
+        text-shadow: 0 0 20px rgba(129, 199, 132, 0.7); /* Изменен на зеленый */
+    }
+}
+
+/* Уменьшаем анимацию на мобильных устройствах */
+@media (max-width: 768px) {
+    .hero-math-expression {
+        animation: mathPulse 4s ease-in-out infinite;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-math-expression {
+        animation: mathPulse 5s ease-in-out infinite;
     }
 }
 
@@ -3020,6 +3740,8 @@
 .hero-text-2 .hero-subtitle {
     color: #ffe082;
     text-shadow: 0 2px 15px rgba(255, 224, 130, 0.4);
+    font-size: 1.8em;
+    line-height: 1.3;
 }
 
 /* Стили для слова Figaro */
@@ -3120,33 +3842,320 @@
 /* Адаптивность для hero секций */
 @media (max-width: 768px) {
     .hero-title {
-        font-size: 3em;
+        font-size: 2.4em;
+        line-height: 1.2;
+        padding: 0 15px;
+        max-width: 95vw;
+        margin-bottom: 15px;
+    }
+    
+    /* Специальные стили для первого экрана на планшетах */
+    .hero-text-1 .hero-title {
+        font-size: 2.2em;
+        line-height: 1.3;
+        padding: 0 20px;
+        max-width: 98vw;
+        margin-top: 60px;
     }
     
     .hero-subtitle {
-        font-size: 1.8em;
+        font-size: 1.4em;
+        line-height: 1.3;
+        padding: 0 20px;
+        max-width: 95vw;
+        margin-top: 10px;
     }
     
     .hero-balloon {
         font-size: 4em;
+        top: 15%;
+        left: 50%;
+        transform: translate(-50%, 0);
+    }
+    
+    /* Специальное позиционирование для третьего экрана на планшетах */
+    .hero-text-3 ~ .hero-balloon,
+    .hero-text-3 + .hero-balloon {
+        top: 18%;
+        font-size: 7.5em;
+        left: 50%;
+        transform: translate(-50%, 0);
+    }
+    
+    /* Специальное позиционирование для второго экрана на планшетах */
+    .hero-text-2 ~ .hero-balloon,
+    .hero-text-2 + .hero-balloon {
+        top: 12%;
+        font-size: 5.5em;
+        left: 50%;
+        transform: translate(-50%, 0);
+    }
+    
+    /* Специальное позиционирование для первого экрана на планшетах */
+    .hero-text-1 ~ .hero-balloon,
+    .hero-text-1 + .hero-balloon {
+        top: 18%;
+        font-size: 5.5em;
+        left: 50%;
+        transform: translate(-50%, 0);
+    }
+    
+    .hero-math-expression {
+        font-size: 1.8em;
+        margin-top: 0;
+        padding: 0 15px;
+        max-width: 98vw;
+        line-height: 1.2;
+        margin-bottom: 25px;
+    }
+    
+    .hero-text-2 .hero-title {
+        font-size: 2.2em;
+        line-height: 1.3;
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+    
+    .hero-text-2 .hero-subtitle {
+        margin-top: 10px;
+        margin-bottom: 0;
+    }
+    
+    .hero-text-content {
+        padding: 0 20px;
+        top: 50%;
+    }
+    
+    .hero-text-2 {
+        top: 55%;
+    }
+    
+    .hero-scroll-indicator {
+        bottom: 25px;
+        width: 180px;
+        margin-left: -90px;
     }
 }
 
 @media (max-width: 480px) {
     .hero-title {
-        font-size: 2.5em;
+        font-size: 1.8em;
+        line-height: 1.3;
+        padding: 0 12px;
+        word-wrap: break-word;
+        hyphens: auto;
+        max-width: 98vw;
+        margin-bottom: 10px;
+    }
+    
+    /* Специальные стили для первого экрана на телефонах */
+    .hero-text-1 .hero-title {
+        font-size: 1.6em;
+        line-height: 1.4;
+        padding: 0 15px;
+        max-width: 99vw;
+        word-break: normal;
+        hyphens: auto;
+        margin-top: 40px;
     }
     
     .hero-subtitle {
-        font-size: 1.5em;
+        font-size: 1.1em;
+        line-height: 1.3;
+        padding: 0 15px;
+        max-width: 98vw;
+        margin-top: 8px;
     }
     
     .hero-balloon {
         font-size: 3.5em;
+        top: 12%;
+        left: 50%;
+        transform: translate(-50%, 0);
+    }
+    
+    /* Специальное позиционирование для третьего экрана на телефонах */
+    .hero-text-3 ~ .hero-balloon,
+    .hero-text-3 + .hero-balloon {
+        top: 15%;
+        font-size: 6.5em;
+        left: 50%;
+        transform: translate(-50%, 0);
+    }
+    
+    /* Специальное позиционирование для второго экрана на телефонах */
+    .hero-text-2 ~ .hero-balloon,
+    .hero-text-2 + .hero-balloon {
+        top: 10%;
+        font-size: 4.5em;
+        left: 50%;
+        transform: translate(-50%, 0);
+    }
+    
+    /* Специальное позиционирование для первого экрана на телефонах */
+    .hero-text-1 ~ .hero-balloon,
+    .hero-text-1 + .hero-balloon {
+        top: 15%;
+        font-size: 4.5em;
+        left: 50%;
+        transform: translate(-50%, 0);
+    }
+    
+    .hero-math-expression {
+        font-size: 1.5em;
+        margin-top: 0;
+        padding: 0 12px;
+        line-height: 1.2;
+        max-width: 99vw;
+        margin-bottom: 20px;
+    }
+    
+    .hero-text-2 .hero-title {
+        font-size: 1.6em;
+        line-height: 1.4;
+        margin-top: 0;
+        margin-bottom: 12px;
+    }
+    
+    .hero-text-2 .hero-subtitle {
+        margin-top: 8px;
+        margin-bottom: 0;
+        font-size: 1.1em;
     }
     
     .hero-content {
+        padding: 0 10px;
+    }
+    
+    .hero-text-content {
         padding: 0 15px;
+        top: 48%;
+    }
+    
+    .hero-text-2 {
+        top: 52%;
+    }
+    
+    .hero-scroll-indicator {
+        bottom: 20px;
+        width: 140px;
+        margin-left: -70px;
+    }
+    
+    .scroll-arrow {
+        font-size: 1.4em;
+        margin-bottom: 8px;
+    }
+    
+    .hero-scroll-indicator span {
+        font-size: 0.75em;
+    }
+}
+
+@media (max-width: 360px) {
+    .hero-title {
+        font-size: 1.5em;
+        padding: 0 8px;
+        max-width: 99vw;
+        margin-bottom: 8px;
+    }
+    
+    /* Специальные стили для первого экрана на маленьких экранах */
+    .hero-text-1 .hero-title {
+        font-size: 1.4em;
+        line-height: 1.5;
+        padding: 0 10px;
+        max-width: 99vw;
+        word-break: normal;
+        hyphens: auto;
+        margin-top: 30px;
+    }
+    
+    .hero-subtitle {
+        font-size: 1em;
+        padding: 0 10px;
+        max-width: 99vw;
+        margin-top: 6px;
+    }
+    
+    .hero-balloon {
+        font-size: 3em;
+        top: 10%;
+        left: 50%;
+        transform: translate(-50%, 0);
+    }
+    
+    /* Специальное позиционирование для третьего экрана на маленьких экранах */
+    .hero-text-3 ~ .hero-balloon,
+    .hero-text-3 + .hero-balloon {
+        top: 12%;
+        font-size: 5.5em;
+        left: 50%;
+        transform: translate(-50%, 0);
+    }
+    
+    /* Специальное позиционирование для второго экрана на маленьких экранах */
+    .hero-text-2 ~ .hero-balloon,
+    .hero-text-2 + .hero-balloon {
+        top: 8%;
+        font-size: 4em;
+        left: 50%;
+        transform: translate(-50%, 0);
+    }
+    
+    /* Специальное позиционирование для первого экрана на маленьких экранах */
+    .hero-text-1 ~ .hero-balloon,
+    .hero-text-1 + .hero-balloon {
+        top: 12%;
+        font-size: 4em;
+        left: 50%;
+        transform: translate(-50%, 0);
+    }
+    
+    .hero-math-expression {
+        font-size: 1.3em;
+        margin-top: 0;
+        padding: 0 8px;
+        max-width: 99vw;
+        line-height: 1.3;
+        margin-bottom: 15px;
+    }
+    
+    .hero-text-2 .hero-title {
+        font-size: 1.4em;
+        line-height: 1.4;
+        margin-top: 0;
+        margin-bottom: 10px;
+    }
+    
+    .hero-text-2 .hero-subtitle {
+        margin-top: 6px;
+        margin-bottom: 0;
+        font-size: 1em;
+    }
+    
+    .hero-text-content {
+        padding: 0 10px;
+        top: 45%;
+    }
+    
+    .hero-text-2 {
+        top: 48%;
+    }
+    
+    .hero-scroll-indicator {
+        bottom: 15px;
+        width: 120px;
+        margin-left: -60px;
+    }
+    
+    .scroll-arrow {
+        font-size: 1.2em;
+        margin-bottom: 6px;
+    }
+    
+    .hero-scroll-indicator span {
+        font-size: 0.7em;
     }
 }
 
@@ -3159,4 +4168,121 @@
 .nav-section-count.zero {
     opacity: 0.5;
     background: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Дополнительные стили для очень маленьких экранов */
+@media (max-width: 360px) {
+    .survey-section {
+        padding: 8px;
+    }
+    
+    .tab-content {
+        padding: 3px;
+    }
+    
+    .tab-btn {
+        padding: 10px 8px;
+        font-size: 0.85em;
+        min-height: 40px;
+    }
+    
+    .radio-group {
+        gap: 8px;
+        margin: 10px 0;
+    }
+    
+    .radio-option {
+        padding: 10px;
+        margin: 0 2px;
+    }
+    
+    .radio-content {
+        gap: 5px;
+        padding: 2px;
+        min-height: 45px;
+    }
+    
+    .radio-icon, .radio-number {
+        font-size: 1.4em;
+    }
+    
+    .radio-title {
+        font-size: 0.85em;
+        line-height: 1.3;
+    }
+    
+    .radio-description {
+        font-size: 0.7em;
+        line-height: 1.3;
+    }
+    
+    .tag {
+        font-size: 0.7em;
+        padding: 3px 6px;
+        min-width: 32px;
+        height: 24px;
+    }
+    
+    .survey-navigation {
+        gap: 8px;
+        padding: 8px 10px;
+    }
+    
+    .btn-prev, .btn-next, .btn-submit {
+        padding: 8px 12px;
+        font-size: 0.85em;
+        min-height: 40px;
+    }
+    
+    .summary-section {
+        padding: 8px;
+    }
+    
+    .summary-section h4 {
+        font-size: 0.85em;
+        gap: 4px;
+        margin-bottom: 5px;
+    }
+    
+    .summary-item {
+        font-size: 0.7em;
+        padding: 4px 5px;
+        line-height: 1.3;
+    }
+    
+    .summary-pills {
+        gap: 2px;
+        margin-top: 2px;
+    }
+    
+    .summary-pill {
+        padding: 2px 5px;
+        font-size: 0.65em;
+    }
+    
+    .slide-title {
+        font-size: 1.1em;
+        margin-bottom: 5px;
+    }
+    
+    .slide-description {
+        font-size: 0.8em;
+        margin-bottom: 12px;
+    }
+    
+    .survey-header h2 {
+        font-size: 1.4em;
+    }
+    
+    .progress-bar {
+        height: 5px;
+    }
+    
+    .progress-text {
+        font-size: 0.75em;
+    }
+    
+    .tabs-container {
+        padding: 0 10px;
+    }
 }
