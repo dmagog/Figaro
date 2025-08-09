@@ -77,6 +77,34 @@
                 margin-bottom: 20px !important;
             }
 
+            /* Компактные карточки дней на мобильных */
+            .festival-days-simple-container {
+                gap: 8px !important;
+            }
+
+            .day-simple-card {
+                min-width: 0 !important;
+                flex: 1 !important;
+            }
+
+            .day-simple-header {
+                padding: 12px 8px !important;
+                font-size: 0.9em !important;
+            }
+
+            .day-simple-count {
+                padding: 16px 8px !important;
+            }
+
+            .day-simple-count .count-visited,
+            .day-simple-count .count-not-visited {
+                font-size: 2.2em !important;
+            }
+
+            .day-simple-label {
+                font-size: 0.8em !important;
+            }
+
 
         }
         
@@ -110,6 +138,29 @@
                 margin-bottom: 15px !important;
             }
 
+            /* Еще более компактные карточки дней */
+            .festival-days-simple-container {
+                gap: 6px !important;
+            }
+
+            .day-simple-header {
+                padding: 10px 6px !important;
+                font-size: 0.85em !important;
+            }
+
+            .day-simple-count {
+                padding: 12px 6px !important;
+            }
+
+            .day-simple-count .count-visited,
+            .day-simple-count .count-not-visited {
+                font-size: 2em !important;
+            }
+
+            .day-simple-label {
+                font-size: 0.75em !important;
+            }
+
         }
         
         @media (max-width: 360px) {
@@ -140,6 +191,41 @@
             .characteristic-section {
                 padding-left: 0 !important;
                 margin-bottom: 10px !important;
+            }
+
+            /* Максимально компактные карточки дней - возможна компоновка 2+1 */
+            .festival-days-simple-container {
+                gap: 4px !important;
+            }
+
+            .day-simple-card {
+                min-width: 110px !important;
+                flex: 1 1 calc(50% - 2px) !important;
+            }
+
+            /* Если карточек 3, третья займет всю ширину */
+            .day-simple-card:nth-child(3):last-child {
+                flex: 1 1 100% !important;
+                max-width: calc(50% + 50px) !important;
+                margin: 0 auto !important;
+            }
+
+            .day-simple-header {
+                padding: 8px 4px !important;
+                font-size: 0.8em !important;
+            }
+
+            .day-simple-count {
+                padding: 10px 4px !important;
+            }
+
+            .day-simple-count .count-visited,
+            .day-simple-count .count-not-visited {
+                font-size: 1.8em !important;
+            }
+
+            .day-simple-label {
+                font-size: 0.7em !important;
             }
         }
 
