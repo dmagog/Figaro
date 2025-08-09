@@ -1364,6 +1364,8 @@ window.showTab = async function(tab) {
 
 // Инициализация мобильного карточного интерфейса
 function initMobileCards() {
+    console.log('Инициализация мобильных карточек...');
+    
     // Ищем мобильные карточки внутри вкладки "О сервисе"
     const tabAbout = document.getElementById('tab-about');
     if (!tabAbout) {
@@ -1399,44 +1401,67 @@ function initMobileCards() {
     
     // Добавляем обработчики для кнопок в карточках
     const cardButtons = container.querySelectorAll('.mobile-card .btn');
-    cardButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
-            e.preventDefault();
-            
-            // Проверяем, заполнена ли анкета
-            const hasSurveyData = selectedComposers.size > 0 || selectedArtists.size > 0 || selectedConcerts.size > 0;
-            
-            if (hasSurveyData) {
-                console.log('Анкета заполнена, переключаем на рекомендации');
-                showTab('recs');
-            } else {
-                console.log('Анкета не заполнена, переключаем на анкету');
-                showTab('form');
-                // Устанавливаем первый слайд анкеты
-                currentStep = 1;
-                showSlide(1);
-            }
-        });
+    console.log('Найдено кнопок в мобильных карточках:', cardButtons.length);
+    
+    cardButtons.forEach((button, index) => {
+        console.log(`Добавляем обработчик для кнопки ${index}:`, button);
+        
+        // Удаляем существующие обработчики
+        button.removeEventListener('click', handleCardButtonClick);
+        
+        // Добавляем новый обработчик
+        button.addEventListener('click', handleCardButtonClick);
     });
     
     // Обновляем текст кнопок в зависимости от состояния анкеты
     updateMobileCardButtons();
 }
 
-// Функция для обновления текста кнопок в мобильных карточках
-function updateMobileCardButtons() {
-    if (window.innerWidth > 768) return; // Только для мобильных
+// Обработчик клика по кнопкам в мобильных карточках
+function handleCardButtonClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
     
-    const tabAbout = document.getElementById('tab-about');
-    if (!tabAbout) return;
-    
-    const cardButtons = tabAbout.querySelectorAll('.mobile-card .btn');
-    if (cardButtons.length === 0) return;
+    console.log('Клик по кнопке мобильной карточки');
     
     // Проверяем, заполнена ли анкета
     const hasSurveyData = selectedComposers.size > 0 || selectedArtists.size > 0 || selectedConcerts.size > 0;
     
-    cardButtons.forEach(button => {
+    if (hasSurveyData) {
+        console.log('Анкета заполнена, переключаем на рекомендации');
+        showTab('recs');
+    } else {
+        console.log('Анкета не заполнена, переключаем на анкету');
+        showTab('form');
+        // Устанавливаем первый слайд анкеты
+        currentStep = 1;
+        showSlide(1);
+    }
+}
+
+// Функция для обновления текста кнопок в мобильных карточках
+function updateMobileCardButtons() {
+    console.log('updateMobileCardButtons вызвана, ширина окна:', window.innerWidth);
+    
+    if (window.innerWidth > 768) return; // Только для мобильных
+    
+    const tabAbout = document.getElementById('tab-about');
+    if (!tabAbout) {
+        console.log('tabAbout не найден');
+        return;
+    }
+    
+    const cardButtons = tabAbout.querySelectorAll('.mobile-card .btn');
+    console.log('Найдено кнопок в мобильных карточках для обновления:', cardButtons.length);
+    
+    if (cardButtons.length === 0) return;
+    
+    // Проверяем, заполнена ли анкета
+    const hasSurveyData = selectedComposers.size > 0 || selectedArtists.size > 0 || selectedConcerts.size > 0;
+    console.log('Данные анкеты:', { hasSurveyData, composers: selectedComposers.size, artists: selectedArtists.size, concerts: selectedConcerts.size });
+    
+    cardButtons.forEach((button, index) => {
+        console.log(`Обновляем кнопку ${index}`);
         if (hasSurveyData) {
             button.textContent = '🎯 Смотреть рекомендации';
             button.classList.remove('mobile-card-btn-survey');
@@ -1447,82 +1472,6 @@ function updateMobileCardButtons() {
             button.classList.add('mobile-card-btn-survey');
         }
     });
-}
-    
-    // Добавляем обработчики для свайпов
-    let startX = 0;
-    let currentX = 0;
-    let isDragging = false;
-    
-    track.addEventListener('touchstart', (e) => {
-        startX = e.touches[0].clientX;
-        isDragging = true;
-        stopAutoScroll();
-    });
-    
-    track.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
-        currentX = e.touches[0].clientX;
-        const diff = startX - currentX;
-        
-        // Предотвращаем вертикальную прокрутку при горизонтальном свайпе
-        if (Math.abs(diff) > 10) {
-            e.preventDefault();
-        }
-    });
-    
-    track.addEventListener('touchend', (e) => {
-        if (!isDragging) return;
-        
-        const diff = startX - currentX;
-        const threshold = 50;
-        
-        if (Math.abs(diff) > threshold) {
-            if (diff > 0 && currentCardIndex < 2) {
-                // Свайп влево - следующая карточка
-                goToCard(currentCardIndex + 1);
-            } else if (diff < 0 && currentCardIndex > 0) {
-                // Свайп вправо - предыдущая карточка
-                goToCard(currentCardIndex - 1);
-            }
-        }
-        
-        isDragging = false;
-        startAutoScroll();
-    });
-    
-    // Добавляем обработчики для мыши
-    track.addEventListener('mousedown', (e) => {
-        startX = e.clientX;
-        isDragging = true;
-        stopAutoScroll();
-    });
-    
-    track.addEventListener('mousemove', (e) => {
-        if (!isDragging) return;
-        currentX = e.clientX;
-    });
-    
-    track.addEventListener('mouseup', (e) => {
-        if (!isDragging) return;
-        
-        const diff = startX - currentX;
-        const threshold = 50;
-        
-        if (Math.abs(diff) > threshold) {
-            if (diff > 0 && currentCardIndex < 2) {
-                goToCard(currentCardIndex + 1);
-            } else if (diff < 0 && currentCardIndex > 0) {
-                goToCard(currentCardIndex - 1);
-            }
-        }
-        
-        isDragging = false;
-        startAutoScroll();
-    });
-    
-    // Запускаем автоматическую прокрутку
-    startAutoScroll();
 }
 
 // Переход к конкретной карточке

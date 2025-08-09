@@ -39,16 +39,31 @@
                     <span class="user-greeting">Привет, {{ user.name or user.email }}!</span>
                     <div class="nav-actions">
                         {% if user.is_superuser %}
-                        <a href="/admin" class="nav-btn-modern nav-btn-admin">Админка</a>
+                        <a href="/admin" class="nav-btn-modern nav-btn-admin">
+                            <span class="btn-text">Админка</span>
+                            <span class="btn-icon">⚙️</span>
+                        </a>
                         {% endif %}
-                        <a href="/profile" class="nav-btn-modern nav-btn-primary">Личный кабинет</a>
-                        <a href="/logout" class="nav-btn-modern nav-btn-secondary">🚪 Выйти</a>
+                        <a href="/profile" class="nav-btn-modern nav-btn-primary">
+                            <span class="btn-text">Личный кабинет</span>
+                            <span class="btn-icon">👤</span>
+                        </a>
+                        <a href="/logout" class="nav-btn-modern nav-btn-secondary">
+                            <span class="btn-text">🚪 Выйти</span>
+                            <span class="btn-icon">🚪</span>
+                        </a>
                     </div>
                 </div>
                 {% else %}
                 <div class="nav-auth">
-                    <a href="/login" class="nav-btn-modern nav-btn-primary">🔑 Войти</a>
-                    <a href="/register" class="nav-btn-modern nav-btn-secondary">📝 Регистрация</a>
+                    <a href="/login" class="nav-btn-modern nav-btn-primary">
+                        <span class="btn-text">🔑 Войти</span>
+                        <span class="btn-icon">🔑</span>
+                    </a>
+                    <a href="/register" class="nav-btn-modern nav-btn-secondary">
+                        <span class="btn-text">📝 Регистрация</span>
+                        <span class="btn-icon">📝</span>
+                    </a>
                 </div>
                 {% endif %}
             </div>
