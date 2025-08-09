@@ -25,8 +25,8 @@
         .profile-container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
-            margin-top: 20px; /* Отступ от шапки */
+            padding: 15px;
+            margin-top: 15px; /* Отступ от шапки */
             min-height: calc(100vh - 270px); /* Учитываем высоту шапки + отступ */
             position: relative;
             z-index: 1;
@@ -35,25 +35,84 @@
         /* Адаптивные отступы для профиля */
         @media (max-width: 768px) {
             .profile-container {
-                margin-top: 10px;
+                margin-top: 5px;
                 min-height: calc(100vh - 240px);
-                padding: 10px;
+                padding: 0px;
             }
+
+            /* Компактная кнопка PDF на мобильных */
+            .compact-export-btn {
+                padding: 8px !important;
+                font-size: 0.9em !important;
+                width: 36px !important;
+                height: 36px !important;
+            }
+
+            /* Мобильная адаптация контейнера */
+            .concerts-count > div {
+                gap: 4px !important;
+            }
+
+            /* Мобильная адаптация заголовка - остается в одну строку */
+            .concerts-header {
+                gap: 6px !important;
+            }
+
+            .concerts-header h2 {
+                font-size: 1.2em !important;
+            }
+
+            /* Компактные пилюли на мобильных */
+            .concerts-count div[style*="background"] {
+                padding: 8px 14px !important;
+                font-size: 0.9em !important;
+            }
+
+
         }
         
         @media (max-width: 480px) {
             .profile-container {
-                margin-top: 5px;
+                margin-top: 0px;
                 min-height: calc(100vh - 220px);
-                padding: 8px;
+                padding: 0px;
             }
+
+            /* Еще более компактные пилюли на маленьких экранах */
+            .concerts-count div[style*="background"] {
+                padding: 6px 12px !important;
+                font-size: 0.85em !important;
+            }
+
+            .concerts-header {
+                gap: 4px !important;
+            }
+
+            .concerts-header h2 {
+                font-size: 1.1em !important;
+            }
+
         }
         
         @media (max-width: 360px) {
             .profile-container {
-                margin-top: 5px;
+                margin-top: 0px;
                 min-height: calc(100vh - 210px);
-                padding: 5px;
+                padding: 0px;
+            }
+
+            /* Максимально компактные пилюли */
+            .concerts-count div[style*="background"] {
+                padding: 4px 8px !important;
+                font-size: 0.8em !important;
+            }
+
+            .concerts-header {
+                gap: 2px !important;
+            }
+
+            .concerts-header h2 {
+                font-size: 1em !important;
             }
         }
 
@@ -373,11 +432,23 @@
         
         .tab-content {
             display: none;
-            padding: 30px;
+            padding: 20px;
         }
         
         .tab-content.active {
             display: block;
+            animation: fadeInTab 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeInTab {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         .concerts-section {
@@ -407,7 +478,7 @@
         /* Мобильная адаптация контента вкладок */
         @media (max-width: 768px) {
             .tab-content {
-                padding: 15px;
+                padding: 3px;
             }
             
             .concerts-section {
@@ -432,7 +503,7 @@
         
         @media (max-width: 480px) {
             .tab-content {
-                padding: 10px;
+                padding: 1px;
             }
             
             .concerts-section {
@@ -457,7 +528,7 @@
         
         @media (max-width: 360px) {
             .tab-content {
-                padding: 8px;
+                padding: 0px;
             }
             
             .concerts-section {
@@ -898,7 +969,7 @@
         /* Стили для маршрутного листа */
         .route-timeline {
             position: relative;
-            padding: 20px 0;
+            padding: 10px 0;
         }
         
         .timeline-line {
@@ -1014,64 +1085,95 @@
             }
             
             .route-timeline {
-                padding: 10px 0;
+                padding: 5px 0;
             }
             
             .concert-event.compact {
-                margin-left: 4px;
+                margin-left: 0px;
+                padding: 6px 8px 6px 8px;
             }
             
             .off-program-section {
-                margin-left: 4px;
-                width: 95%;
+                margin-left: 0px;
+                width: 100%;
             }
             
             .off-program-section.after-concert {
-                margin-left: 4px;
+                margin-left: 0px;
             }
             
             .transition-info {
-                margin-left: 4px;
+                margin-left: 0px;
             }
             
             .route-finish {
-                margin-left: 4px;
+                margin-left: 0px;
             }
             
             .concert-event.compact .concert-number {
-                left: -50px;
+                left: -52px;
+            }
+            
+            /* Заголовки в деталях концертов на мобильных */
+            .concert-details-content .section-title {
+                font-size: 0.9em !important;
+                color: #333 !important;
+                display: block !important;
+                margin-bottom: 8px !important;
             }
             
             /* Уменьшение заголовков дат на мобильных */
             .day-header h3 {
-                font-size: 1em !important;
+                font-size: 1.15em !important;
+                font-weight: 600 !important;
             }
             
             .day-header {
-                padding: 10px 12px !important;
-                margin-bottom: 12px !important;
+                padding: 12px 15px !important;
+                margin: 10px -3px 12px -3px !important;
+                border-radius: 0 !important;
+                font-size: 1em !important;
             }
         }
         
         /* Дополнительные мобильные стили для очень маленьких экранов */
         @media (max-width: 480px) {
             .day-header h3 {
-                font-size: 0.95em !important;
+                font-size: 1.05em !important;
+                font-weight: 600 !important;
             }
             
             .day-header {
+                padding: 10px 12px !important;
+                margin: 8px -1px 10px -1px !important;
+                border-radius: 0 !important;
+                font-size: 0.95em !important;
+            }
+        }
+        
+        /* Стили для очень маленьких экранов */
+        @media (max-width: 360px) {
+            .day-header {
                 padding: 8px 10px !important;
-                margin-bottom: 10px !important;
+                margin: 6px 0px 8px 0px !important;
+                border-radius: 0 !important;
+                font-size: 0.9em !important;
+            }
+            
+            .day-header h3 {
+                font-size: 1em !important;
+                font-weight: 600 !important;
             }
         }
         
         .day-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 15px 20px;
+            padding: 18px 20px;
             border-radius: 12px;
-            margin-bottom: 20px;
+            margin: 15px 0 20px 0;
             box-shadow: 0 4px 12px rgba(102,126,234,0.2);
+            font-size: 1.1em;
         }
         
         .day-header h3 {
@@ -1079,6 +1181,8 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            font-size: 1.3em;
+            font-weight: 600;
         }
         
         .day-concerts-count {
@@ -1156,8 +1260,8 @@
         
         .concert-event.compact {
             padding: 8px 12px 8px 12px;
-            margin-bottom: 8px;
-            margin-left: 8px;
+            margin-bottom: 6px;
+            margin-left: 4px;
             background: #fafafa;
             border-left: 3px solid #ddd;
             border-radius: 8px;
@@ -1170,7 +1274,7 @@
         
         .concert-event.compact .concert-number {
             position: absolute;
-            left: -48px;
+            left: -52px;
             top: 12px;
             z-index: 10;
             width: 50px;
@@ -1201,12 +1305,12 @@
             background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
             border: 1px solid #f59e0b;
             border-radius: 8px;
-            padding: 12px;
-            margin: 15px 0;
-            margin-left: 20px;
+            padding: 10px;
+            margin: 12px 0;
+            margin-left: 10px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             font-size: 0.9em;
         }
         
@@ -1398,14 +1502,14 @@
         
         /* Стили для офф-программы */
         .off-program-section {
-            margin: 0 0 12px 20px;
-            padding: 8px 12px;
+            margin: 0 0 8px 10px;
+            padding: 6px 10px;
             border-radius: 6px;
             background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
             border-left: 2px dashed #3b82f6;
             border-right: 2px dashed #3b82f6;
             border-bottom: 2px dashed #3b82f6;
-            width: 90%;
+            width: 92%;
             opacity: 0;
             transform: translateX(-20px);
             animation: slideInLeft 0.5s ease forwards;
@@ -1541,7 +1645,7 @@
             border-left: 2px dashed #3b82f6;
             border-right: 2px dashed #3b82f6;
             border-bottom: 2px dashed #3b82f6;
-            margin: 0 0 4px 20px; /* Уменьшаем отступ снизу */
+            margin: 0 0 4px 10px; /* Уменьшаем отступ снизу */
         }
         
         .off-program-event {
@@ -1636,13 +1740,16 @@
             margin-bottom: 20px;
         }
         
-        .section-title {
+        .concert-details-content .section-title {
             font-weight: bold;
-            color: #333;
+            color: #333 !important;
             margin-bottom: 10px;
-            display: flex;
+            display: flex !important;
             align-items: center;
             gap: 8px;
+            font-size: 1em;
+            opacity: 1 !important;
+            visibility: visible !important;
         }
         
         .artists-list,
@@ -1747,6 +1854,51 @@
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
+        }
+
+        /* Компактная кнопка PDF в заголовке - размер как у пилюль */
+        .compact-export-btn {
+            padding: 10px !important;
+            font-size: 1.1em !important;
+            font-weight: bold !important;
+            border-radius: 25px !important;
+            white-space: nowrap;
+            flex-shrink: 0;
+            min-width: auto !important;
+            height: auto !important;
+            width: 44px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        /* Скрытие текста PDF везде - оставляем только иконку */
+        .compact-export-btn .pdf-btn-text {
+            display: none !important;
+        }
+
+        /* Контейнер с пилюлями и кнопкой PDF */
+        .concerts-count {
+            width: 100%;
+        }
+
+        .concerts-count > div {
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        /* Скрытие старой секции экспорта везде (используем компактную) */
+        .export-section {
+            display: none !important;
+        }
+
+        /* Адаптация для узких экранов (планшеты в портрете) */
+        @media (max-width: 900px) {
+            .compact-export-btn {
+                padding: 8px !important;
+                width: 40px !important;
+                font-size: 1em !important;
+            }
         }
         
         /* Анимация загрузки */
@@ -2106,8 +2258,8 @@
         .route-finish {
             display: flex;
             align-items: center;
-            margin: 40px 0 0 20px;
-            gap: 24px;
+            margin: 30px 0 0 10px;
+            gap: 20px;
             animation: fadeInUp 0.7s;
         }
         .finish-dot {
@@ -2386,7 +2538,7 @@
             
             .tab-content {
                 overflow-x: hidden;
-                padding: 12px 8px;
+                padding: 0px;
             }
         }
         
@@ -2947,7 +3099,7 @@
             50% { background-position: 100% 50%; }
         }
 
-        .section-title {
+        .footer-modern .section-title {
             font-size: 1.2em;
             font-weight: 600;
             margin-bottom: 20px;
@@ -2955,7 +3107,7 @@
             position: relative;
         }
 
-        .section-title::after {
+        .footer-modern .section-title::after {
             content: '';
             position: absolute;
             bottom: -8px;
@@ -3146,7 +3298,7 @@
                 font-size: 1.3em;
             }
 
-            .section-title {
+            .footer-modern .section-title {
                 font-size: 1.1em;
             }
 
@@ -3471,10 +3623,10 @@
             
             <!-- Вкладка "Маршрутный лист" -->
             <div id="route-tab" class="tab-content">
-                <div class="concerts-header">
-                    <h2>Маршрутный лист</h2>
+                <div class="concerts-header" style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                    <h2 style="margin: 0; flex-shrink: 0;">Маршрутный лист</h2>
                     <div class="concerts-count">
-                        <div style="display: flex; gap: 12px; align-items: center;">
+                        <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
                             <div style="background: #667eea; color: white; padding: 10px 20px; border-radius: 25px; font-weight: bold;">
                                 {{ route_sheet.concerts_by_day|length }}
                                 {% set days_count = route_sheet.concerts_by_day|length %}
@@ -3497,6 +3649,11 @@
                                     концертов
                                 {% endif %}
                             </div>
+                            <!-- Компактная кнопка PDF -->
+                            <button class="export-btn compact-export-btn" onclick="exportToPDF()" id="export-btn-compact" title="Скачать маршрут в PDF">
+                                <span>↓</span>
+                                <span class="pdf-btn-text">PDF</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -3638,13 +3795,13 @@
                                     </div>
                                     {% endif %}
                                     
-    <div class="concert-event compact" style="animation-delay: {{ loop.index * 0.1 }}s; padding: 4px 6px 4px 8px; margin-bottom: 0px; {% if is_conflict %}background-color: #fef2f2; border-left: 4px solid #dc2626;{% endif %}">
+    <div class="concert-event compact" style="animation-delay: {{ loop.index * 0.1 }}s; padding: 6px 8px 6px 8px; margin-bottom: 0px; {% if is_conflict %}background-color: #fef2f2; border-left: 4px solid #dc2626;{% endif %}">
         <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
             <!-- Время начала концерта в ярлычке -->
             <div class="concert-number {% if is_conflict %}concert-number-conflict{% else %}concert-number-day{{ day_index }}{% endif %}">{{ concert.concert.datetime.strftime('%H:%M') if concert.concert.datetime else 'TBD' }}</div>
             
             <!-- Название концерта -->
-            <span style="font-weight:600; color:#333; font-size:1em; flex:1 1 200px; min-width:150px; margin-left:12px; margin-top:6px; display:inline-block;">{{ concert.concert.id }}. {{ concert.concert.name }}</span>
+            <span style="font-weight:600; color:#333; font-size:1em; flex:1 1 200px; min-width:150px; margin-left:8px; margin-top:6px; display:inline-block;">{{ concert.concert.id }}. {{ concert.concert.name }}</span>
             
             <!-- Жанр и длительность справа -->
             <div style="display: flex; flex-direction: column; align-items: flex-end; margin-top: 2px; margin-right: 10px;">
@@ -3653,7 +3810,7 @@
             </div>
             
             <!-- Адрес зала -->
-            <div style="color:#666; font-size:0.9em; width: 100%; margin-top: -6px; margin-left: 12px;">{{ concert.concert.hall.name if concert.concert.hall else '—' }} • {% if concert.concert.hall and concert.concert.hall.address %}{{ concert.concert.hall.address }}{% endif %}</div>
+            <div style="color:#666; font-size:0.9em; width: 100%; margin-top: -6px; margin-left: 8px;">{{ concert.concert.hall.name if concert.concert.hall else '—' }} • {% if concert.concert.hall and concert.concert.hall.address %}{{ concert.concert.hall.address }}{% endif %}</div>
 
             <!-- Кнопка подробнее -->
             <button onclick="toggleConcertDetails({{ concert.concert.id }})" class="expand-btn" data-concert-id="{{ concert.concert.id }}" title="Показать подробности концерта" style="margin-left:6px; background:none; border:none; color:#dddddd; font-size:1.2em; cursor:pointer; padding:2px; transition:transform 0.2s ease; position:relative; transform:translateY(-4px);">▽</button>
@@ -4456,10 +4613,56 @@
                 }
             });
             
+            // Прокрутка к контенту вкладки на мобильных устройствах
+            scrollToTabContent(tabName);
+            
             // Если открываем маршрутный лист, инициализируем прогресс-бары
             if (tabName === 'route') {
                 setTimeout(initializeProgressBars, 100);
             }
+        }
+        
+        // Улучшенная функция прокрутки к контенту вкладки
+        function scrollToTabContent(tabName) {
+            if (window.innerWidth > 768) return; // Только для мобильных устройств
+            
+            const activeTabContent = document.getElementById(tabName + '-tab');
+            if (!activeTabContent) {
+                console.log('Tab content not found for:', tabName);
+                return;
+            }
+            
+            // Ждем, чтобы контент стал видимым после переключения
+            setTimeout(() => {
+                const contentRect = activeTabContent.getBoundingClientRect();
+                const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+                
+                console.log('Scroll debug:', {
+                    tabName,
+                    contentTop: contentRect.top,
+                    currentScroll,
+                    viewportHeight: window.innerHeight
+                });
+                
+                // Проверяем, видим ли мы уже начало контента
+                const viewportHeight = window.innerHeight;
+                const isContentVisible = contentRect.top >= -50 && contentRect.top <= viewportHeight * 0.4;
+                
+                if (!isContentVisible) {
+                    // Прокручиваем к началу контента с отступом
+                    const targetPosition = currentScroll + contentRect.top - 30;
+                    const finalPosition = Math.max(0, targetPosition);
+                    
+                    console.log('Scrolling to:', finalPosition);
+                    
+                    window.scrollTo({
+                        top: finalPosition,
+                        behavior: 'smooth'
+                    });
+                } else {
+                    console.log('Content already visible, no scroll needed');
+                }
+            }, 50); // Даем время контенту появиться
         }
         
         // Фильтрация по дням
@@ -4487,6 +4690,23 @@
                         section.classList.add('hidden');
                     }
                 });
+            }
+            
+            // Прокрутка к первому видимому дню на мобильных устройствах
+            if (window.innerWidth <= 768) {
+                setTimeout(() => {
+                    const firstVisibleDay = document.querySelector('.day-section:not(.hidden)');
+                    if (firstVisibleDay) {
+                        const rect = firstVisibleDay.getBoundingClientRect();
+                        const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+                        const targetPosition = currentScroll + rect.top - 20;
+                        
+                        window.scrollTo({
+                            top: targetPosition,
+                            behavior: 'smooth'
+                        });
+                    }
+                }, 100); // Задержка для завершения анимации скрытия/показа
             }
         }
         
@@ -4785,18 +5005,39 @@
         
         // Экспорт в PDF (заглушка)
         function exportToPDF() {
-            const btn = document.getElementById('export-btn');
-            const originalText = btn.innerHTML;
+            // Определяем какая кнопка была нажата
+            const btn = document.getElementById('export-btn') || document.getElementById('export-btn-compact');
+            const compactBtn = document.getElementById('export-btn-compact');
+            const originalBtn = document.getElementById('export-btn');
             
-            // Показываем состояние загрузки
-            btn.innerHTML = '<div class="loading-spinner" style="width: 16px; height: 16px; border-width: 2px;"></div> Экспорт...';
-            btn.disabled = true;
+            // Сохраняем оригинальный текст для обеих кнопок
+            const originalText = btn ? btn.innerHTML : '';
+            const originalCompactText = compactBtn ? compactBtn.innerHTML : '';
+            const originalMainText = originalBtn ? originalBtn.innerHTML : '';
+            
+            // Отключаем обе кнопки
+            if (compactBtn) {
+                compactBtn.innerHTML = '<div class="loading-spinner" style="width: 12px; height: 12px; border-width: 2px;"></div>';
+                compactBtn.disabled = true;
+            }
+            if (originalBtn) {
+                originalBtn.innerHTML = '<div class="loading-spinner" style="width: 16px; height: 16px; border-width: 2px;"></div> Экспорт...';
+                originalBtn.disabled = true;
+            }
             
             // Имитируем процесс экспорта
             setTimeout(() => {
                 alert('Функция экспорта в PDF будет реализована в ближайшее время!');
-                btn.innerHTML = originalText;
-                btn.disabled = false;
+                
+                // Восстанавливаем оригинальный текст для обеих кнопок
+                if (compactBtn) {
+                    compactBtn.innerHTML = originalCompactText;
+                    compactBtn.disabled = false;
+                }
+                if (originalBtn) {
+                    originalBtn.innerHTML = originalMainText;
+                    originalBtn.disabled = false;
+                }
             }, 2000);
         }
         
@@ -4833,6 +5074,20 @@
             if (expandCompositionsButton) {
                 expandCompositionsButton.addEventListener('click', toggleCompositions);
             }
+            
+            // Обработчик изменения размера окна для адаптации логики прокрутки
+            window.addEventListener('resize', function() {
+                // Дебаунс для оптимизации производительности
+                clearTimeout(window.resizeTimeout);
+                window.resizeTimeout = setTimeout(function() {
+                    // Обновляем логику прокрутки при изменении размера
+                    const activeTab = document.querySelector('.tab-content.active');
+                    if (activeTab && window.innerWidth <= 768) {
+                        const tabName = activeTab.id.replace('-tab', '');
+                        scrollToTabContent(tabName);
+                    }
+                }, 250);
+            });
         });
 
         function generateTelegramCode(event) {
