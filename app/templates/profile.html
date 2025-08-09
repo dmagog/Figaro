@@ -27,9 +27,34 @@
             margin: 0 auto;
             padding: 20px;
             margin-top: 20px; /* Отступ от шапки */
-            min-height: calc(100vh - 320px); /* Учитываем высоту шапки + отступ */
+            min-height: calc(100vh - 270px); /* Учитываем высоту шапки + отступ */
             position: relative;
             z-index: 1;
+        }
+        
+        /* Адаптивные отступы для профиля */
+        @media (max-width: 768px) {
+            .profile-container {
+                margin-top: 15px;
+                min-height: calc(100vh - 240px);
+                padding: 15px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .profile-container {
+                margin-top: 10px;
+                min-height: calc(100vh - 220px);
+                padding: 10px;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            .profile-container {
+                margin-top: 10px;
+                min-height: calc(100vh - 210px);
+                padding: 8px;
+            }
         }
 
         /* Изоляция контента профиля от стилей index.css */
@@ -2514,17 +2539,36 @@
                 <div class="nav-user">
                     <span class="user-greeting">Привет, {{ user.name or user.email }}!</span>
                     <div class="nav-actions">
+                        <a href="/" class="nav-btn-modern nav-btn-secondary">
+                            <span class="btn-text">🏠 Главная</span>
+                            <span class="btn-icon">🏠</span>
+                        </a>
                         {% if user.is_superuser %}
-                        <a href="/admin" class="nav-btn-modern nav-btn-admin">Админка</a>
+                        <a href="/admin" class="nav-btn-modern nav-btn-admin">
+                            <span class="btn-text">Админка</span>
+                            <span class="btn-icon">⚙️</span>
+                        </a>
                         {% endif %}
-                        <a href="/profile" class="nav-btn-modern nav-btn-primary">Личный кабинет</a>
-                        <a href="/logout" class="nav-btn-modern nav-btn-secondary">🚪 Выйти</a>
+                        <a href="/profile" class="nav-btn-modern nav-btn-primary">
+                            <span class="btn-text">Личный кабинет</span>
+                            <span class="btn-icon">👤</span>
+                        </a>
+                        <a href="/logout" class="nav-btn-modern nav-btn-secondary">
+                            <span class="btn-text">🚪 Выйти</span>
+                            <span class="btn-icon">🚪</span>
+                        </a>
                     </div>
                 </div>
                 {% else %}
                 <div class="nav-auth">
-                    <a href="/login" class="nav-btn-modern nav-btn-primary">🔑 Войти</a>
-                    <a href="/register" class="nav-btn-modern nav-btn-secondary">📝 Регистрация</a>
+                    <a href="/login" class="nav-btn-modern nav-btn-primary">
+                        <span class="btn-text">🔑 Войти</span>
+                        <span class="btn-icon">🔑</span>
+                    </a>
+                    <a href="/register" class="nav-btn-modern nav-btn-secondary">
+                        <span class="btn-text">📝 Регистрация</span>
+                        <span class="btn-icon">📝</span>
+                    </a>
                 </div>
                 {% endif %}
             </div>
