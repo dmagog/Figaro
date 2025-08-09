@@ -4239,10 +4239,10 @@
             
             <!-- Вкладка "Характеристика" -->
             <div id="characteristics-tab" class="tab-content">
-                <div class="concerts-header">
-                    <h2>Характеристика вашего маршрута</h2>
+                <div class="concerts-header" style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                    <h2 style="margin: 0; flex-shrink: 0;">Характеристика вашего маршрута</h2>
                     <div class="concerts-count">
-                        <div style="display: flex; gap: 12px; align-items: center;">
+                        <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
                             <div style="background: #667eea; color: white; padding: 10px 20px; border-radius: 25px; font-weight: bold;">
                             {{ characteristics.get('total_concerts', 0) }}
                             {% set n = characteristics.get('total_concerts', 0) %}
