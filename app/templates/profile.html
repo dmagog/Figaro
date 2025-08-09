@@ -32,6 +32,38 @@
             z-index: 1;
         }
         
+        /* ПРИНУДИТЕЛЬНЫЕ стили для десктопа - максимальная специфичность */
+        @media screen and (min-width: 900px) {
+            body .profile-container .tab-content .route-timeline .day-section {
+                padding-left: 90px !important;
+            }
+            
+            body .profile-container .tab-content .route-timeline .day-section .concert-event.compact .concert-number {
+                left: -52px !important;
+                position: absolute !important;
+            }
+        }
+
+        /* Средние экраны - тоже принудительно */
+        @media screen and (min-width: 769px) and (max-width: 899px) {
+            body .profile-container .tab-content .route-timeline .day-section {
+                padding-left: 60px !important;
+            }
+            
+            body .profile-container .tab-content .route-timeline .day-section .concert-event.compact .concert-number {
+                left: -52px !important;
+                position: absolute !important;
+            }
+        }
+
+        /* Дополнительный принудительный стиль для всех больших экранов */
+        @media screen and (min-width: 769px) {
+            html body .profile-container div[id*="tab-route"] .route-timeline .day-section {
+                padding-left: 60px !important;
+                margin-left: 0px !important;
+            }
+        }
+
         /* Адаптивные отступы для профиля */
         @media (max-width: 768px) {
             .profile-container {
@@ -105,6 +137,42 @@
                 font-size: 0.8em !important;
             }
 
+            /* Оптимизация Маршрутного листа на мобильных */
+            .route-timeline .day-section {
+                padding-left: 30px !important;
+            }
+
+            .route-timeline .day-section .concert-event.compact .concert-number {
+                left: -30px !important;
+                position: absolute !important;
+            }
+
+            /* Сдвигаем заголовок концерта соответственно */
+            .concert-event.compact span[style*="margin-left"] {
+                margin-left: 20px !important;
+            }
+
+            /* Корректируем отступ адреса для 768px */
+            .concert-event.compact div[style*="margin-left: 12px"] {
+                margin-left: 20px !important;
+            }
+
+            /* Компактное расположение типа события и зала в офф-программе для 768px */
+            .off-program-collapsed-title {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 4px !important;
+            }
+
+            .off-program-collapsed-format {
+                margin: 0 !important;
+            }
+
+            .off-program-collapsed-title span[style*="margin-left: 8px"] {
+                margin-left: 0 !important;
+                margin-top: 4px !important;
+            }
 
         }
         
@@ -159,6 +227,43 @@
 
             .day-simple-label {
                 font-size: 0.75em !important;
+            }
+
+            /* Еще более компактный Маршрутный лист на мобильных */
+            .route-timeline .day-section {
+                padding-left: 25px !important;
+            }
+
+            .route-timeline .day-section .concert-event.compact .concert-number {
+                left: -25px !important;
+                position: absolute !important;
+            }
+
+            /* Корректируем отступы заголовка и адреса для 480px */
+            .concert-event.compact span[style*="margin-left"] {
+                margin-left: 38px !important;
+            }
+
+            /* Корректируем отступ адреса */
+            .concert-event.compact div[style*="margin-left: 12px"] {
+                margin-left: 18px !important;
+            }
+
+            /* Компактное расположение типа события и зала в офф-программе для 480px */
+            .off-program-collapsed-title {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 3px !important;
+            }
+
+            .off-program-collapsed-format {
+                margin: 0 !important;
+            }
+
+            .off-program-collapsed-title span[style*="margin-left: 8px"] {
+                margin-left: 0 !important;
+                margin-top: 3px !important;
             }
 
         }
@@ -226,6 +331,50 @@
 
             .day-simple-label {
                 font-size: 0.7em !important;
+            }
+
+            /* Максимально компактный Маршрутный лист */
+            .route-timeline .day-section {
+                padding-left: 20px !important;
+            }
+
+            .route-timeline .day-section .concert-event.compact .concert-number {
+                left: -20px !important;
+                position: absolute !important;
+            }
+
+            /* Более компактный ярлычок времени */
+            .concert-event.compact .concert-number {
+                width: 40px !important;
+                height: 24px !important;
+                font-size: 0.8em !important;
+            }
+
+            /* Корректируем отступы заголовка и адреса для 360px */
+            .concert-event.compact span[style*="margin-left"] {
+                margin-left: 26px !important;
+            }
+
+            /* Корректируем отступ адреса для 360px */
+            .concert-event.compact div[style*="margin-left: 12px"] {
+                margin-left: 16px !important;
+            }
+
+            /* Компактное расположение типа события и зала в офф-программе */
+            .off-program-collapsed-title {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 2px !important;
+            }
+
+            .off-program-collapsed-format {
+                margin: 0 !important;
+            }
+
+            .off-program-collapsed-title span[style*="margin-left: 8px"] {
+                margin-left: 0 !important;
+                margin-top: 2px !important;
             }
         }
 
@@ -1157,10 +1306,14 @@
         .day-section {
             position: relative;
             margin-bottom: 40px;
-            padding-left: 60px;
             opacity: 0;
             transform: translateY(20px);
             animation: fadeInUp 0.6s ease forwards;
+        }
+
+        /* Базовый отступ - НЕ для мобильных */
+        .day-section {
+            padding-left: 60px;
         }
         
         @keyframes fadeInUp {
@@ -1223,8 +1376,9 @@
                 margin-left: 0px;
             }
             
-            .concert-event.compact .concert-number {
-                left: -52px;
+            .route-timeline .day-section .concert-event.compact .concert-number {
+                left: -30px !important;
+                position: absolute !important;
             }
             
             /* Заголовки в деталях концертов на мобильных */
@@ -1387,8 +1541,7 @@
         
         .concert-event.compact .concert-number {
             position: absolute;
-            left: -52px;
-            top: 12px;
+            top: 8px;
             z-index: 10;
             width: 50px;
             height: 30px;
@@ -1399,6 +1552,23 @@
             font-weight: 600;
             border-radius: 15px 0 0 15px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        /* Базовая позиция ярлычка для десктопа - дублируем для надежности */
+        @media screen and (min-width: 769px) {
+            .route-timeline .day-section .concert-event.compact .concert-number {
+                left: -52px !important;
+                position: absolute !important;
+            }
+            
+            /* Дополнительные принудительные стили для десктопа */
+            .day-section[data-day] {
+                padding-left: 60px !important;
+            }
+            
+            [data-day] {
+                padding-left: 60px !important;
+            }
         }
         
         @keyframes slideInLeft {
@@ -3424,8 +3594,23 @@
                 height: 40px;
             }
         }
-    </style>
-</head>
+            
+
+        
+        
+        /* САМЫЙ ПРИНУДИТЕЛЬНЫЙ СТИЛЬ - ГАРАНТИРОВАННО ПОСЛЕДНИЙ */
+        @media screen and (min-width: 769px) {
+            div.day-section[data-day],
+            .day-section,
+            .route-timeline > .day-section,
+            body .profile-container .day-section,
+            html body .profile-container .route-timeline .day-section {
+                padding-left: 60px !important;
+            }
+        }
+        
+        </style>
+    </head>
 <body>
 {% if not characteristics or 'total_concerts' not in characteristics %}
   {% set characteristics = {
@@ -3923,7 +4108,7 @@
             </div>
             
             <!-- Адрес зала -->
-            <div style="color:#666; font-size:0.9em; width: 100%; margin-top: -6px; margin-left: 8px;">{{ concert.concert.hall.name if concert.concert.hall else '—' }} • {% if concert.concert.hall and concert.concert.hall.address %}{{ concert.concert.hall.address }}{% endif %}</div>
+            <div style="color:#666; font-size:0.9em; width: 100%; margin-top: -6px; margin-left: 12px;">{{ concert.concert.hall.name if concert.concert.hall else '—' }} • {% if concert.concert.hall and concert.concert.hall.address %}{{ concert.concert.hall.address }}{% endif %}</div>
 
             <!-- Кнопка подробнее -->
             <button onclick="toggleConcertDetails({{ concert.concert.id }})" class="expand-btn" data-concert-id="{{ concert.concert.id }}" title="Показать подробности концерта" style="margin-left:6px; background:none; border:none; color:#dddddd; font-size:1.2em; cursor:pointer; padding:2px; transition:transform 0.2s ease; position:relative; transform:translateY(-4px);">▽</button>
