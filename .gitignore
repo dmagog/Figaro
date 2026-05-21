@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.behave/
+
+# Окружение и секреты
+.env
+*.local
+
+# Состояние/данные рантайма
+instance/
+*.sqlite
+
+# OS / редакторы
+.DS_Store
+.idea/
+.vscode/

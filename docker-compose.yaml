@@ -1,0 +1,45 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: [.env]
+    command: uvicorn figaro.web.app:app --host 0.0.0.0 --port 8080 --reload
+    volumes:
+      - .:/app
+    ports:
+      - "49080:8080"   # нестандартный хост-порт, чтобы не толкаться с другими проектами
+    depends_on:
+      - db
+      - redis
+
+  scheduler:
+    build: .
+    restart: unless-stopped
+    env_file: [.env]
+    command: python -m figaro.scheduler
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: figaro
+      POSTGRES_PASSWORD: figaro
+      POSTGRES_DB: figaro
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "49432:5432"
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    ports:
+      - "49379:6379"
+
+volumes:
+  pg_data:
