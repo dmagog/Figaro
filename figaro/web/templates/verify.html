@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Подтверждение почты — Figaro{% endblock %}
+{% block content %}
+<article style="max-width: 28rem; margin: 2rem auto;">
+  {% if ok %}
+    <h1>Почта подтверждена</h1>
+    <p>Теперь можно <a href="/login">войти</a>.</p>
+  {% else %}
+    <h1>Не удалось подтвердить</h1>
+    <p style="color: var(--pico-del-color)">{{ msg }}</p>
+    <p><a href="/login">Вернуться ко входу</a></p>
+  {% endif %}
+</article>
+{% endblock %}

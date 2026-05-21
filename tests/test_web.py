@@ -182,6 +182,43 @@ def test_questionnaire_get_renders(app_world):
     assert r.status_code == 200 and "Анкета" in r.text and "Марафон" in r.text
 
 
+def test_register_requires_consent(app_world):
+    app, _, _ = app_world
+    client = TestClient(app)
+    client.get("/register")
+    csrf = client.cookies.get("figaro_csrf")
+    r = client.post("/register", data={"email": "new@figaro.dev", "password": PW, "csrf": csrf})
+    assert r.status_code == 200 and "согласие" in r.text.lower()
+
+
+def test_register_verify_then_login(app_world):
+    import re
+    app, _, _ = app_world
+    client = TestClient(app)
+    client.get("/register")
+    csrf = client.cookies.get("figaro_csrf")
+    r = client.post("/register", data={"email": "new@figaro.dev", "password": PW,
+                                       "name": "Новый", "consent": "on", "csrf": csrf})
+    assert r.status_code == 200 and "Аккаунт создан" in r.text
+    m = re.search(r"/verify\?token=([\w\-]+)", r.text)
+    assert m
+    # до верификации логин уже работает (домен не блокирует), но проверим саму верификацию
+    v = client.get(f"/verify?token={m.group(1)}")
+    assert v.status_code == 200 and "подтверждена" in v.text.lower()
+    # новый аккаунт может войти
+    assert _login_as(client, "new@figaro.dev").status_code == 303
+
+
+def test_register_duplicate_email(app_world):
+    app, _, _ = app_world
+    client = TestClient(app)
+    client.get("/register")
+    csrf = client.cookies.get("figaro_csrf")
+    r = client.post("/register", data={"email": "u@figaro.dev", "password": PW,
+                                       "consent": "on", "csrf": csrf})
+    assert r.status_code == 200 and "занят" in r.text.lower()
+
+
 def test_pult_requires_admin(app_world):
     app, _, _ = app_world
     client = TestClient(app)

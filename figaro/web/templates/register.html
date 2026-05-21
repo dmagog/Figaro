@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Регистрация — Figaro{% endblock %}
+{% block content %}
+<article style="max-width: 28rem; margin: 2rem auto;">
+  <hgroup>
+    <h1>Регистрация</h1>
+    <p class="muted">Создайте аккаунт, чтобы сохранять маршрутные листы.</p>
+  </hgroup>
+  {% if error %}<p style="color: var(--pico-del-color)">{{ error }}</p>{% endif %}
+  <form method="post" action="/register">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label>Email
+      <input type="email" name="email" value="{{ email or '' }}" required autofocus>
+    </label>
+    <label>Имя
+      <input type="text" name="name" value="{{ name or '' }}">
+    </label>
+    <label>Пароль
+      <input type="password" name="password" required>
+    </label>
+    <label>
+      <input type="checkbox" name="consent" value="on"> Согласен на обработку персональных данных
+    </label>
+    <label>
+      <input type="checkbox" name="marketing" value="on"> Хочу получать новости (необязательно)
+    </label>
+    <button type="submit">Зарегистрироваться</button>
+  </form>
+  <p class="muted">Уже есть аккаунт? <a href="/login">Войти</a></p>
+</article>
+{% endblock %}

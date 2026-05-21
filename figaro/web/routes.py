@@ -141,6 +141,44 @@ def logout(request: Request, csrf: str = Form(...),
     return resp
 
 
+# --- регистрация / верификация почты ---
+@router.get("/register")
+def register_form(request: Request, user=Depends(current_user)):
+    if user:
+        return RedirectResponse("/recommend", status_code=303)
+    return _page(request, "register.html", None, {})
+
+
+@router.post("/register")
+def register_submit(request: Request, email: str = Form(...), password: str = Form(...),
+                    name: str = Form(""), consent: str = Form(""), marketing: str = Form(""),
+                    csrf: str = Form(...), session: Session = Depends(get_session)):
+    _verify_csrf(request, csrf)
+    try:
+        u = auth.register(session, email=email, password=password, name=(name or None),
+                          consent=bool(consent), marketing=bool(marketing))
+    except auth.ConsentRequired:
+        return _page(request, "register.html", None,
+                     {"error": "Нужно согласие на обработку персональных данных",
+                      "email": email, "name": name})
+    except auth.AuthError as e:
+        return _page(request, "register.html", None,
+                     {"error": str(e), "email": email, "name": name})
+    # почтового транспорта пока нет (no-op outbox) — показываем ссылку верификации здесь (dev)
+    token = auth.request_email_verification(session, u)
+    return _page(request, "register_done.html", None,
+                 {"email": email, "verify_url": f"/verify?token={token}"})
+
+
+@router.get("/verify")
+def verify(request: Request, token: str = "", session: Session = Depends(get_session)):
+    try:
+        auth.verify_email(session, token)
+        return _page(request, "verify.html", None, {"ok": True})
+    except auth.AuthError as e:
+        return _page(request, "verify.html", None, {"ok": False, "msg": str(e)})
+
+
 # --- анкета (холодный старт) ---
 PACE_OPTIONS = [("relaxed", "Расслабленно"), ("balanced", "Баланс"), ("marathon", "Марафон")]
 INTEREST_OPTIONS = [("new", "Открывать новое"), ("deep", "Глубже в любимое")]

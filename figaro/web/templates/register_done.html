@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Почти готово — Figaro{% endblock %}
+{% block content %}
+<article style="max-width: 32rem; margin: 2rem auto;">
+  <hgroup>
+    <h1>Аккаунт создан</h1>
+    <p class="muted">Для <strong>{{ email }}</strong>. Подтвердите почту по ссылке.</p>
+  </hgroup>
+  <p class="muted">Почтовая рассылка пока не подключена (зона роста). Для демо ссылка верификации здесь:</p>
+  <p><a href="{{ verify_url }}" role="button">Подтвердить почту</a></p>
+  <p class="muted">Войти можно и без подтверждения: <a href="/login">страница входа</a>.</p>
+</article>
+{% endblock %}
