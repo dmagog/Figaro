@@ -1,8 +1,8 @@
-"""schema v3.3 (users, auth, prefs, sheets)
+"""schema v3.4 (availability)
 
-Revision ID: 7501467c79d5
+Revision ID: 0ba19c51de4e
 Revises: 
-Create Date: 2026-05-21 14:56:52.927408
+Create Date: 2026-05-21 15:19:29.728361
 """
 from typing import Sequence, Union
 
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 import sqlmodel
 
 
-revision: str = '7501467c79d5'
+revision: str = '0ba19c51de4e'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -275,6 +275,15 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['concert_id'], ['concert.id'], ),
     sa.PrimaryKeyConstraint('concert_id', 'artist_id')
     )
+    op.create_table('concertavailability',
+    sa.Column('concert_id', sa.Integer(), nullable=False),
+    sa.Column('is_on_sale', sa.Boolean(), nullable=False),
+    sa.Column('tickets_left', sa.Integer(), nullable=True),
+    sa.Column('source', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['concert_id'], ['concert.id'], ),
+    sa.PrimaryKeyConstraint('concert_id')
+    )
     op.create_table('concertcomposition',
     sa.Column('concert_id', sa.Integer(), nullable=False),
     sa.Column('composition_id', sa.Integer(), nullable=False),
@@ -349,6 +358,7 @@ def downgrade() -> None:
     op.drop_table('dayrouteconcert')
     op.drop_table('concertgenre')
     op.drop_table('concertcomposition')
+    op.drop_table('concertavailability')
     op.drop_table('concertartist')
     op.drop_index(op.f('ix_offprogram_festival_id'), table_name='offprogram')
     op.drop_table('offprogram')

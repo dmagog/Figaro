@@ -39,7 +39,7 @@ def _ensure_archetypes(session: Session, fid: int) -> Dict[str, int]:
     return out
 
 
-def _resolver(session: Session, fid: int) -> TransitionResolver:
+def build_resolver(session: Session, fid: int) -> TransitionResolver:
     matrix = {(t.from_hall_id, t.to_hall_id): t.minutes for t in session.exec(
         select(HallTransition).where(HallTransition.festival_id == fid)).all()}
     coords = {}
@@ -89,7 +89,7 @@ def precompute_day(session: Session, festival_id: int, day_id: int) -> int:
         Concert.festival_id == fid, Concert.festival_day_id == day_id)).all()
     if not concerts:
         return 0
-    resolver = _resolver(session, fid)
+    resolver = build_resolver(session, fid)
     lites = [_concert_lite(session, c) for c in concerts]
     candidates = pareto_filter(build_day_routes(lites, resolver))
     arche = _ensure_archetypes(session, fid)

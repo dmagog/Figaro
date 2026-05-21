@@ -5,8 +5,9 @@ import os
 import sys
 from datetime import date, datetime, timedelta, timezone
 
-# repo root → чтобы импортировался пакет figaro
+# repo root → чтобы импортировался пакет figaro; steps/ → чтобы шаги видели _world
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "steps")))
 
 from sqlmodel import Session  # noqa: E402
 

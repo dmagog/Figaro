@@ -138,6 +138,15 @@ class Purchase(SQLModel, table=True):
     price_kopecks: int = 0
 
 
+# --- наличие билетов (состояние; движок curve/replay — этап 5) ---
+class ConcertAvailability(SQLModel, table=True):
+    concert_id: int = Field(foreign_key="concert.id", primary_key=True)
+    is_on_sale: bool = True
+    tickets_left: Optional[int] = None
+    source: str = "crm_import"  # crm_import | sim_curve | sim_replay
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 # --- маршруты (предрасчёт, этап 2) ---
 class Archetype(SQLModel, table=True):
     __table_args__ = (UniqueConstraint("festival_id", "key", name="uq_archetype"),)

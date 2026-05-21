@@ -100,3 +100,94 @@ def rank(cands, prof: WeightProfile):
     """Фильтр (жёсткий) → сортировка по скору (с бонусом за любимое)."""
     filtered = filter_candidates(cands, prof)
     return sorted(filtered, key=lambda c: score(c, prof), reverse=True)
+
+
+# ============ подбор по архетипам над предрассчитанными DayRoute (этап 4) ============
+@dataclass
+class RouteCard:
+    id: int
+    archetype_key: str
+    concerts_count: int
+    days: int
+    transition_minutes: int
+    wait_minutes: int
+    cost_kopecks: int
+    comfort_score: float
+    diversity_score: float
+    authors: FrozenSet[str] = field(default_factory=frozenset)
+    key_authors: tuple = ()
+
+
+def _minmax(vals):
+    lo, hi = min(vals), max(vals)
+    if hi == lo:
+        return [1.0 for _ in vals]
+    return [(v - lo) / (hi - lo) for v in vals]
+
+
+def rank_cards(cards, prof: WeightProfile):
+    """Нормируем comfort/diversity внутри набора, складываем с весами + бонус за любимое."""
+    if not cards:
+        return []
+    cn = _minmax([c.comfort_score for c in cards])
+    dn = _minmax([c.diversity_score for c in cards])
+    scored = []
+    for i, c in enumerate(cards):
+        bonus = 0.5 * len(set(c.authors) & set(prof.fav_authors))
+        s = prof.w_comfort * cn[i] + prof.w_diversity * dn[i] + bonus
+        scored.append((s, c))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [c for _, c in scored]
+
+
+def group_by_archetype(cards):
+    out = {}
+    for c in cards:
+        out.setdefault(c.archetype_key, []).append(c)
+    return out
+
+
+def recommend(session, festival_id: int, prof: WeightProfile, top_k: int = 10):
+    """Подбор: карточки дневных маршрутов, сгруппированные по архетипам и ранжированные."""
+    from figaro.domain.models import (Archetype, Author, Composition,
+                                      ConcertComposition, DayRoute,
+                                      DayRouteConcert)
+    from sqlmodel import select
+
+    arche = {a.id: a.key for a in session.exec(
+        select(Archetype).where(Archetype.festival_id == festival_id)).all()}
+    cards = []
+    for dr in session.exec(select(DayRoute).where(DayRoute.festival_id == festival_id)).all():
+        concert_ids = [link.concert_id for link in session.exec(
+            select(DayRouteConcert).where(DayRouteConcert.day_route_id == dr.id)).all()]
+        authors = set()
+        for cid in concert_ids:
+            authors |= set(session.exec(select(Author.name).where(
+                Author.id == Composition.author_id,
+                Composition.id == ConcertComposition.composition_id,
+                ConcertComposition.concert_id == cid)).all())
+        cards.append(RouteCard(
+            id=dr.id, archetype_key=arche.get(dr.archetype_id, "other"),
+            concerts_count=dr.concerts_count, days=1,
+            transition_minutes=dr.transition_minutes, wait_minutes=dr.wait_minutes,
+            cost_kopecks=dr.cost_kopecks, comfort_score=dr.comfort_score,
+            diversity_score=dr.diversity_score, authors=frozenset(authors),
+            key_authors=tuple(sorted(authors))[:3]))
+    grouped = group_by_archetype(cards)
+    return {key: rank_cards(group, prof)[:top_k] for key, group in grouped.items()}
+
+
+def relax_by_concert_count(cards, target_min: int, target_max: int):
+    """Релаксация: если в [min,max] пусто — расширяем диапазон, пока не появятся варианты.
+    Возвращает (cards, relaxed: bool). Дни/наличие НЕ ослабляем (это делается раньше/отдельно)."""
+    lo, hi, relaxed = target_min, target_max, False
+    while lo >= 0 or hi <= 99:
+        sel = [c for c in cards if lo <= c.concerts_count <= hi]
+        if sel:
+            return sel, relaxed
+        lo = max(0, lo - 1)
+        hi = min(99, hi + 1)
+        relaxed = True
+        if lo == 0 and hi == 99:
+            return [c for c in cards], True
+    return [], True
