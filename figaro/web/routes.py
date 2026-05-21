@@ -48,15 +48,15 @@ def _verify_csrf(request: Request, form_csrf: Optional[str]) -> None:
     auth.verify_csrf(form_csrf, request.cookies.get(CSRF_COOKIE))
 
 
-# статус перехода → подпись и цветовой класс чипа (см. routing/conflicts.Status)
+# статус перехода → пиктограмма, подпись и цветовой класс чипа (см. routing/conflicts.Status)
 TRANSITION_UI = {
-    "ok": ("хватает времени", "ok"),
-    "tight": ("впритык", "warn"),
-    "hurry": ("нужно поторопиться", "bad"),
-    "overlap": ("накладка по времени", "bad"),
-    "same_hall": ("тот же зал", "muted"),
-    "same_building": ("то же здание", "muted"),
-    "no_data": ("нет данных о переходе", "muted"),
+    "ok": ("🚶", "хватает времени", "ok"),
+    "tight": ("🚶", "впритык", "warn"),
+    "hurry": ("🏃", "нужно поторопиться", "bad"),
+    "overlap": ("⚠️", "накладка по времени", "bad"),
+    "same_hall": ("📍", "тот же зал", "muted"),
+    "same_building": ("🏛️", "то же здание", "muted"),
+    "no_data": ("❔", "нет данных о переходе", "muted"),
 }
 
 
@@ -68,12 +68,18 @@ def _concert_disp(session: Session, concert_id: int) -> dict:
             "end": c.starts_at + timedelta(minutes=c.duration_min)}
 
 
-def _transition_disp(trans) -> Optional[dict]:
+def _transition_disp(trans, prev_d: Optional[dict], cur_d: dict) -> Optional[dict]:
     if trans is None:
         return None
-    status, walk = trans
-    label, kind = TRANSITION_UI.get(status.value, (status.value, "muted"))
-    return {"label": label, "kind": kind, "walk": walk, "overlap": status.value == "overlap"}
+    status, walk, gap = trans
+    icon, label, kind = TRANSITION_UI.get(status.value, ("•", status.value, "muted"))
+    # домен помечает walk=0 как same_hall даже для РАЗНЫХ залов (рядом, 0 мин) — уточняем подпись
+    if status.value == "same_hall" and prev_d and prev_d["hall"] != cur_d["hall"]:
+        icon, label = "🏛️", "рядом, переход не нужен"
+    return {"icon": icon, "label": label, "kind": kind, "walk": walk, "gap": gap,
+            "buffer": (gap - walk) if walk is not None else None,
+            "overlap": status.value == "overlap",
+            "prev_end": prev_d["end"] if prev_d else None, "cur_start": cur_d["start"]}
 
 
 def _sheet_view(session: Session, sheet: RouteSheet) -> dict:
@@ -81,11 +87,13 @@ def _sheet_view(session: Session, sheet: RouteSheet) -> dict:
         RouteSheetItem.route_sheet_id == sheet.id)).all()
     pinned = {r.concert_id: r.is_pinned for r in rows}
     items = []
+    prev_d = None
     for c, trans in sheets.chain_with_transitions(session, sheet):
         d = _concert_disp(session, c.id)
         d["pinned"] = pinned.get(c.id, False)
-        d["transition"] = _transition_disp(trans)
+        d["transition"] = _transition_disp(trans, prev_d, d)
         items.append(d)
+        prev_d = d
     suggestions = []
     for s in sheets.suggest_additions(session, sheet):
         d = _concert_disp(session, s.concert_id)

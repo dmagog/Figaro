@@ -78,14 +78,20 @@ def _status_between(a: Concert, b: Concert, resolver, cfg) -> Status:
 
 
 def chain_with_transitions(session, sheet):
-    """Концерты листа по времени + (статус, минуты) перехода с предыдущим — для отображения."""
+    """Концерты листа по времени + переход с предыдущим: (статус, минуты ходьбы, окно между концертами).
+
+    «Окно» (gap) = минуты от конца предыдущего концерта до начала следующего —
+    содержательнее «голого» времени перехода (видно запас/нехватку времени)."""
     resolver = build_resolver(session, sheet.festival_id)
     cfg = TransitionConfig()
     out, prev = [], None
     for c in _concerts_in(session, sheet):
         trans = None
         if prev is not None:
-            trans = (_status_between(prev, c, resolver, cfg), resolver.walk(prev.hall_id, c.hall_id))
+            status = _status_between(prev, c, resolver, cfg)
+            walk = resolver.walk(prev.hall_id, c.hall_id)
+            gap = int((c.starts_at - _end(prev)).total_seconds() // 60)
+            trans = (status, walk, gap)
         out.append((c, trans))
         prev = c
     return out

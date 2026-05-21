@@ -1,22 +1,24 @@
 {% if notice %}<div class="notice">{{ notice }}</div>{% endif %}
 
 <section class="section">
-  <h3>В маршруте</h3>
+  <h3>🗺️ В маршруте</h3>
   {% if not view.items %}
     <p class="muted">Лист пуст. Добавьте концерты из подсказок ниже.</p>
   {% else %}
   <div class="timeline">
     {% for it in view.items %}
       {% if it.transition %}
+      {% set t = it.transition %}
       <div class="gap">
         <span class="gap__rule"></span>
-        {% if it.transition.overlap %}
-          <span class="chip chip--bad">⚠ накладка по времени</span>
-        {% else %}
-          <span class="chip chip--{{ it.transition.kind }}">↓ переход
-            {%- if it.transition.walk is not none %} {{ it.transition.walk }} мин ·{% endif %}
-            {{ it.transition.label }}</span>
-        {% endif %}
+        <span class="chip chip--{{ t.kind }}">{{ t.icon }} {{ t.label }}</span>
+        <span class="gap__text muted">
+          {% if t.overlap %}
+            концерт до {{ t.prev_end | hhmm }}, следующий в {{ t.cur_start | hhmm }} — не успеть{% if t.walk is not none %} ({{ t.walk }} мин на переход){% endif %}
+          {% else %}
+            <span class="sep">·</span> между концертами {{ t.gap }} мин{% if t.walk is not none and t.walk > 0 %}<span class="sep">·</span> переход {{ t.walk }} мин<span class="sep">·</span> запас {{ t.buffer }} мин{% endif %}
+          {% endif %}
+        </span>
       </div>
       {% endif %}
       <article class="concert-card{% if it.pinned %} is-pinned{% endif %}">
@@ -25,8 +27,8 @@
           <div class="concert-card__body">
             <div class="concert-card__title">{{ it.title }}</div>
             <div class="concert-card__meta">
-              {{ it.start | hhmm }}–{{ it.end | hhmm }} · {{ it.hall }}
-              {% if it.pinned %} · <span class="chip chip--brand">закреплён</span>{% endif %}
+              🕒 {{ it.start | hhmm }}–{{ it.end | hhmm }} · 📍 {{ it.hall }}
+              {% if it.pinned %} · <span class="chip chip--brand">📌 закреплён</span>{% endif %}
             </div>
           </div>
           <div class="concert-card__actions">
@@ -47,7 +49,7 @@
 </section>
 
 <section class="section">
-  <h3>Что добавить</h3>
+  <h3>➕ Что добавить</h3>
   {% if not view.suggestions %}
     <p class="muted">Нет подходящих концертов для дополнения.</p>
   {% else %}
@@ -59,10 +61,10 @@
         <div class="concert-card__body">
           <div class="concert-card__title">
             {{ s.title }}
-            {% if s.is_repeat %}<span class="chip chip--warn">повтор программы</span>{% endif %}
+            {% if s.is_repeat %}<span class="chip chip--warn">🔁 повтор программы</span>{% endif %}
           </div>
           <div class="concert-card__meta">
-            {{ s.start | hhmm }}–{{ s.end | hhmm }} · {{ s.hall }} · переход {{ s.transition_minutes }} мин
+            🕒 {{ s.start | hhmm }}–{{ s.end | hhmm }} · 📍 {{ s.hall }} · 🚶 переход {{ s.transition_minutes }} мин
           </div>
         </div>
         <div class="concert-card__actions">
@@ -80,12 +82,12 @@
 
 {% if view.offprogram %}
 <section class="section">
-  <h3>Офф-программа рядом</h3>
+  <h3>🎭 Офф-программа рядом</h3>
   {% for o in view.offprogram %}
   <div class="offprogram">
     {{ o.title }}
-    {% if o.is_recommended %}<span class="chip chip--ok">рекомендуем</span>{% endif %}
-    · переход {{ o.transition_minutes }} мин
+    {% if o.is_recommended %}<span class="chip chip--ok">⭐ рекомендуем</span>{% endif %}
+    · 🚶 переход {{ o.transition_minutes }} мин
   </div>
   {% endfor %}
 </section>

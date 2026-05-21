@@ -1,19 +1,32 @@
-/* Светлая тема Figaro. Дизайн-язык опирается на прежнюю версию сервиса:
-   светло-серый фон, белые карточки, синий акцент, цветные чипы статусов. */
-:root {
+/* Тема Figaro. Светлая — по умолчанию, тёмная — по переключателю (data-theme).
+   Дизайн-язык опирается на прежнюю версию сервиса: карточки, синий акцент,
+   цветные чипы статусов, плавающий шарик в шапке. */
+:root, [data-theme="light"] {
   --bg: #f4f6fb;
   --card: #ffffff;
   --line: #e5e7eb;
   --ink: #1f2937;
   --muted: #6b7280;
-  --brand: #2563eb;
-  --brand-dark: #1e40af;
+  --neutral-bg: #eef1f6; --neutral-ink: #475569;
   --ok-bg: #dcfce7;   --ok-ink: #166534;
   --warn-bg: #fef3c7; --warn-ink: #92400e;
   --bad-bg: #fee2e2;  --bad-ink: #b91c1c;
-  --neutral-bg: #eef1f6; --neutral-ink: #475569;
-
-  /* Подмешиваем фирменный синий в Pico */
+}
+[data-theme="dark"] {
+  --bg: #0f1320;
+  --card: #171c2b;
+  --line: #2a3245;
+  --ink: #e6e9ef;
+  --muted: #9aa4b2;
+  --neutral-bg: #222a3d; --neutral-ink: #c2c9d6;
+  --ok-bg: #103324;   --ok-ink: #6ee7a8;
+  --warn-bg: #3a2c0c; --warn-ink: #fbd56b;
+  --bad-bg: #3a1620;  --bad-ink: #fca5b5;
+}
+:root {
+  --brand: #2563eb;
+  --brand-dark: #1e40af;
+  /* фирменный синий в Pico */
   --pico-primary: var(--brand);
   --pico-primary-background: var(--brand);
   --pico-primary-hover: var(--brand-dark);
@@ -22,20 +35,27 @@
   --pico-font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
 }
 
-html { color-scheme: light; }
 body { background: var(--bg); color: var(--ink); }
-
 main.container { padding-block: 1.5rem 3rem; }
 .muted { color: var(--muted); }
 .row { display: flex; gap: 1rem; align-items: baseline; justify-content: space-between; flex-wrap: wrap; }
 .inline { display: inline; }
 
 /* ---- Шапка ---- */
-.topbar { background: #fff; border-bottom: 1px solid var(--line);
+.topbar { background: var(--card); border-bottom: 1px solid var(--line);
   box-shadow: 0 1px 3px rgba(16,24,40,.04); position: sticky; top: 0; z-index: 20; }
 .topbar nav { padding-block: .25rem; }
-.brand { color: var(--brand); font-weight: 800; letter-spacing: .2px; text-decoration: none; }
+.brand { color: var(--brand); font-weight: 800; letter-spacing: .2px; text-decoration: none;
+  display: inline-flex; align-items: center; gap: .4rem; }
 .topbar a { text-decoration: none; }
+#theme-toggle { width: auto; padding: .25rem .6rem; margin: 0; }
+
+/* плавающий шарик (как floatIconNav в прежней версии) */
+.brand-balloon { display: inline-block; font-size: 1.4em; line-height: 1;
+  animation: floatBalloon 3s ease-in-out infinite; transition: transform .3s ease; }
+.brand:hover .brand-balloon { transform: scale(1.12); }
+@keyframes floatBalloon { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@media (prefers-reduced-motion: reduce) { .brand-balloon { animation: none; } }
 
 /* ---- Чипы статусов ---- */
 .chip { display: inline-block; padding: .12rem .6rem; border-radius: 999px;
@@ -46,6 +66,7 @@ main.container { padding-block: 1.5rem 3rem; }
 .chip--bad  { background: var(--bad-bg);  color: var(--bad-ink); }
 .chip--muted{ background: var(--neutral-bg); color: var(--neutral-ink); }
 .chip--brand{ background: #e0e7ff; color: var(--brand-dark); }
+[data-theme="dark"] .chip--brand { background: #1e2748; color: #a9b6ff; }
 
 /* ---- Маршрутный лист: карточки концертов ---- */
 .timeline { display: flex; flex-direction: column; gap: .2rem; }
@@ -57,7 +78,8 @@ main.container { padding-block: 1.5rem 3rem; }
 .num-badge { flex: 0 0 auto; min-width: 2.5rem; height: 2.5rem; padding: 0 .55rem;
   border-radius: 999px; background: var(--brand); color: #fff; font-weight: 700; font-size: .85rem;
   display: flex; align-items: center; justify-content: center; }
-.num-badge--ghost { background: #eef2ff; color: var(--brand-dark); }
+.num-badge--ghost { background: var(--neutral-bg); color: var(--brand-dark); }
+[data-theme="dark"] .num-badge--ghost { color: #a9b6ff; }
 .concert-card__body { flex: 1 1 auto; min-width: 0; }
 .concert-card__title { font-weight: 600; font-size: 1.02rem; }
 .concert-card__meta { color: var(--muted); font-size: .85rem; margin-top: .15rem; }
@@ -67,14 +89,16 @@ main.container { padding-block: 1.5rem 3rem; }
 
 /* промежуток-переход между концертами */
 .gap { display: flex; align-items: center; gap: .5rem; margin: .35rem 0 .35rem 1.25rem; }
-.gap__rule { width: 1px; height: 1.1rem; background: var(--line); margin-left: 1rem; }
+.gap__rule { width: 2px; height: 1.2rem; background: var(--line); margin-left: 1rem; border-radius: 2px; }
+.gap__text { font-size: .8rem; }
+.gap__text .sep { color: var(--muted); margin: 0 .15rem; }
 
 /* секции и подсказки */
 .section { margin-top: 1.6rem; }
 .section h3 { margin-bottom: .6rem; }
 .notice { background: var(--warn-bg); color: var(--warn-ink); border-radius: 10px;
   padding: .55rem .9rem; margin-bottom: .9rem; font-weight: 600; }
-.offprogram { background: var(--ok-bg); color: var(--ok-ink); border: 1px solid #bbf7d0;
+.offprogram { background: var(--ok-bg); color: var(--ok-ink); border: 1px solid color-mix(in srgb, var(--ok-ink) 25%, transparent);
   border-radius: 10px; padding: .55rem .9rem; margin: .4rem 0; }
 
 /* карточки подбора */
