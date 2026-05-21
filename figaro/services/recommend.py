@@ -154,10 +154,14 @@ def recommend(session, festival_id: int, prof: WeightProfile, top_k: int = 10):
                                       DayRouteConcert)
     from sqlmodel import select
 
+    from figaro.services import availability
+
     arche = {a.id: a.key for a in session.exec(
         select(Archetype).where(Archetype.festival_id == festival_id)).all()}
     cards = []
     for dr in session.exec(select(DayRoute).where(DayRoute.festival_id == festival_id)).all():
+        if not availability.route_available(session, dr.id):
+            continue  # шов наличия: распроданные маршруты не попадают в подбор
         concert_ids = [link.concert_id for link in session.exec(
             select(DayRouteConcert).where(DayRouteConcert.day_route_id == dr.id)).all()]
         authors = set()

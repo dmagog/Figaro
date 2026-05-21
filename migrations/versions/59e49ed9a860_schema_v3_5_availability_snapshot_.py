@@ -1,8 +1,8 @@
-"""schema v3.4 (availability)
+"""schema v3.5 (availability snapshot, simstate)
 
-Revision ID: 0ba19c51de4e
+Revision ID: 59e49ed9a860
 Revises: 
-Create Date: 2026-05-21 15:19:29.728361
+Create Date: 2026-05-21 15:36:15.114732
 """
 from typing import Sequence, Union
 
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 import sqlmodel
 
 
-revision: str = '0ba19c51de4e'
+revision: str = '59e49ed9a860'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -150,6 +150,13 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_routesheet_festival_id'), 'routesheet', ['festival_id'], unique=False)
     op.create_index(op.f('ix_routesheet_user_id'), 'routesheet', ['user_id'], unique=False)
+    op.create_table('simstate',
+    sa.Column('festival_id', sa.Integer(), nullable=False),
+    sa.Column('availability_mode', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('seed', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['festival_id'], ['festival.id'], ),
+    sa.PrimaryKeyConstraint('festival_id')
+    )
     op.create_table('userpreferences',
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('festival_id', sa.Integer(), nullable=False),
@@ -268,6 +275,18 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_offprogram_festival_id'), 'offprogram', ['festival_id'], unique=False)
+    op.create_table('availabilitysnapshot',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('concert_id', sa.Integer(), nullable=False),
+    sa.Column('at', sa.DateTime(), nullable=False),
+    sa.Column('tickets_left', sa.Integer(), nullable=True),
+    sa.Column('is_on_sale', sa.Boolean(), nullable=False),
+    sa.Column('source', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.ForeignKeyConstraint(['concert_id'], ['concert.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_availabilitysnapshot_at'), 'availabilitysnapshot', ['at'], unique=False)
+    op.create_index(op.f('ix_availabilitysnapshot_concert_id'), 'availabilitysnapshot', ['concert_id'], unique=False)
     op.create_table('concertartist',
     sa.Column('concert_id', sa.Integer(), nullable=False),
     sa.Column('artist_id', sa.Integer(), nullable=False),
@@ -360,6 +379,9 @@ def downgrade() -> None:
     op.drop_table('concertcomposition')
     op.drop_table('concertavailability')
     op.drop_table('concertartist')
+    op.drop_index(op.f('ix_availabilitysnapshot_concert_id'), table_name='availabilitysnapshot')
+    op.drop_index(op.f('ix_availabilitysnapshot_at'), table_name='availabilitysnapshot')
+    op.drop_table('availabilitysnapshot')
     op.drop_index(op.f('ix_offprogram_festival_id'), table_name='offprogram')
     op.drop_table('offprogram')
     op.drop_index(op.f('ix_halltransition_to_hall_id'), table_name='halltransition')
@@ -384,6 +406,7 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_usersession_token'), table_name='usersession')
     op.drop_table('usersession')
     op.drop_table('userpreferences')
+    op.drop_table('simstate')
     op.drop_index(op.f('ix_routesheet_user_id'), table_name='routesheet')
     op.drop_index(op.f('ix_routesheet_festival_id'), table_name='routesheet')
     op.drop_table('routesheet')

@@ -147,6 +147,21 @@ class ConcertAvailability(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
+class AvailabilitySnapshot(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    concert_id: int = Field(foreign_key="concert.id", index=True)
+    at: datetime = Field(index=True)
+    tickets_left: Optional[int] = None
+    is_on_sale: bool = True
+    source: str = "crm_import"
+
+
+class SimState(SQLModel, table=True):
+    festival_id: int = Field(foreign_key="festival.id", primary_key=True)
+    availability_mode: str = "sim_curve"  # sim_curve | sim_replay | crm_import
+    seed: int = 42
+
+
 # --- маршруты (предрасчёт, этап 2) ---
 class Archetype(SQLModel, table=True):
     __table_args__ = (UniqueConstraint("festival_id", "key", name="uq_archetype"),)
