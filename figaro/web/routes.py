@@ -5,21 +5,20 @@
 """
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Optional
-
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
+from figaro.domain.clock import phase_for
 from figaro.domain.models import (Archetype, Author, Concert, Hall, RouteSheet,
                                   RouteSheetItem)
-from figaro.services import auth, sheets
+from figaro.services import auth, availability, sheets
 from figaro.services.festival import get_active
 from figaro.services.recommend import (load_prefs, profile_for_user,
                                        recommend, relax_by_concert_count,
@@ -32,8 +31,9 @@ router = APIRouter()
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 templates.env.filters["rub"] = lambda k: f"{(k or 0) // 100:,} ₽".replace(",", " ")
 templates.env.filters["hhmm"] = lambda dt: dt.strftime("%H:%M") if dt else ""
+templates.env.filters["dtlocal"] = lambda dt: dt.strftime("%Y-%m-%dT%H:%M") if dt else ""
 
-DEMO_ACCOUNTS = ["user@figaro.dev / figaro12345"]
+DEMO_ACCOUNTS = ["user@figaro.dev / figaro12345", "admin@figaro.dev / figaro12345 (пульт)"]
 
 
 # --- хелперы ---
@@ -291,3 +291,114 @@ def sheet_pin(request: Request, sheet_id: int, concert_id: int, csrf: str = Form
         RouteSheetItem.concert_id == concert_id)).first()
     sheets.set_pin(session, sheet, concert_id, pinned=not (cur.is_pinned if cur else False))
     return _sheet_partial(request, session, user, sheet)
+
+
+# --- админский пульт эмуляции (RBAC: только admin) ---
+def _require_admin(user) -> None:
+    if not user or not auth.can_access(user.role, "пульт эмуляции"):
+        raise auth.Forbidden("403")
+
+
+def _save_clock(request: Request) -> None:
+    path = request.app.state.clock_path
+    if path:  # в тестах None → на диск не пишем
+        request.app.state.clock.save(path)
+
+
+def _parse_dt(raw: Optional[str]) -> datetime:
+    if not raw:
+        raise HTTPException(400, "нужна дата/время")
+    return datetime.fromisoformat(raw)
+
+
+def _pult_view(request: Request, user, session: Session):
+    clock = request.app.state.clock
+    fest = get_active(session)
+    now = clock.now().replace(tzinfo=None)
+    ctx = {"festival": fest, "clock_mode": clock.mode.value, "virtual_now": now,
+           "phase": None, "sim_mode": None, "seed": None, "on_sale": 0, "sold_out": 0}
+    if fest is not None:
+        ctx["phase"] = phase_for(now.date(), fest.sales_start_on,
+                                 fest.starts_on, fest.ends_on).value
+        sim = availability.get_sim_state(session, fest.id)
+        ctx["sim_mode"], ctx["seed"] = sim.availability_mode, sim.seed
+        for c in session.exec(select(Concert).where(Concert.festival_id == fest.id)).all():
+            if availability.is_on_sale(session, c.id):
+                ctx["on_sale"] += 1
+            else:
+                ctx["sold_out"] += 1
+    return _page(request, "pult.html", user, ctx)
+
+
+@router.get("/admin/pult")
+def pult(request: Request, user=Depends(current_user),
+         session: Session = Depends(get_session)):
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    _require_admin(user)
+    return _pult_view(request, user, session)
+
+
+@router.post("/admin/pult/clock")
+def pult_clock(request: Request, csrf: str = Form(...), mode: str = Form("real"),
+               virtual: str = Form(""), speed: float = Form(1.0),
+               user=Depends(current_user), session: Session = Depends(get_session)):
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    _require_admin(user)
+    _verify_csrf(request, csrf)
+    clock = request.app.state.clock
+    if mode == "real":
+        clock.set_real()
+    elif mode == "offset":
+        clock.set_offset(_parse_dt(virtual))
+    elif mode == "accelerated":
+        clock.set_accelerated(_parse_dt(virtual), speed)
+    else:
+        raise HTTPException(400, "неизвестный режим часов")
+    _save_clock(request)
+    return RedirectResponse("/admin/pult", status_code=303)
+
+
+@router.post("/admin/pult/availability")
+def pult_availability(request: Request, csrf: str = Form(...),
+                      mode: str = Form("sim_curve"), seed: int = Form(42),
+                      user=Depends(current_user), session: Session = Depends(get_session)):
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    _require_admin(user)
+    _verify_csrf(request, csrf)
+    fest = get_active(session)
+    if fest is None:
+        raise HTTPException(409, "нет активного фестиваля")
+    availability.set_mode(session, fest.id, mode, seed)
+    availability.tick(session, fest.id, request.app.state.clock)  # пересчёт под виртуальное время
+    return RedirectResponse("/admin/pult", status_code=303)
+
+
+@router.post("/admin/pult/recompute")
+def pult_recompute(request: Request, csrf: str = Form(...),
+                   user=Depends(current_user), session: Session = Depends(get_session)):
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    _require_admin(user)
+    _verify_csrf(request, csrf)
+    fest = get_active(session)
+    if fest is None:
+        raise HTTPException(409, "нет активного фестиваля")
+    availability.tick(session, fest.id, request.app.state.clock)
+    return RedirectResponse("/admin/pult", status_code=303)
+
+
+@router.post("/admin/pult/reset")
+def pult_reset(request: Request, csrf: str = Form(...),
+               user=Depends(current_user), session: Session = Depends(get_session)):
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    _require_admin(user)
+    _verify_csrf(request, csrf)
+    fest = get_active(session)
+    if fest is None:
+        raise HTTPException(409, "нет активного фестиваля")
+    availability.reset_to_sales_start(session, fest.id)
+    return RedirectResponse("/admin/pult", status_code=303)

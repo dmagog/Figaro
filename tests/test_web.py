@@ -7,16 +7,23 @@ from datetime import date, datetime
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from figaro.db import make_test_engine
-from figaro.domain.models import (Archetype, Concert, DayRoute, DayRouteConcert,
-                                  FestivalDay, Hall)
+from figaro.domain.models import (Archetype, AvailabilitySnapshot, Concert,
+                                  DayRoute, DayRouteConcert, FestivalDay, Hall)
 from figaro.services import auth
 from figaro.services.festival import create_festival
 from figaro.web.app import create_app
 
 PW = "figaro12345"
+
+
+def _login_as(client, email):
+    client.get("/login")
+    csrf = client.cookies.get("figaro_csrf")
+    return client.post("/login", data={"email": email, "password": PW, "csrf": csrf},
+                       follow_redirects=False)
 
 
 @pytest.fixture
@@ -57,6 +64,10 @@ def app_world():
     u = auth.register(s, email="u@figaro.dev", password=PW, consent=True)
     u.email_verified = True
     s.add(u)
+    admin = auth.register(s, email="admin@figaro.dev", password=PW, consent=True)
+    admin.email_verified = True
+    admin.role = "admin"
+    s.add(admin)
     s.commit()
     dr_id, c2_id = dr.id, c2.id  # снимаем id до закрытия сессии (иначе detached)
     s.close()
@@ -169,3 +180,41 @@ def test_questionnaire_get_renders(app_world):
     _login(client)
     r = client.get("/questionnaire")
     assert r.status_code == 200 and "Анкета" in r.text and "Марафон" in r.text
+
+
+def test_pult_requires_admin(app_world):
+    app, _, _ = app_world
+    client = TestClient(app)
+    _login_as(client, "u@figaro.dev")  # роль user
+    assert client.get("/admin/pult").status_code == 403
+
+
+def test_pult_admin_can_set_clock(app_world):
+    app, _, _ = app_world
+    client = TestClient(app)
+    _login_as(client, "admin@figaro.dev")
+    page = client.get("/admin/pult")
+    assert page.status_code == 200 and "Пульт эмуляции" in page.text
+
+    csrf = client.cookies.get("figaro_csrf")
+    r = client.post("/admin/pult/clock",
+                    data={"csrf": csrf, "mode": "offset", "virtual": "2026-07-01T12:00"},
+                    follow_redirects=False)
+    assert r.status_code == 303
+    assert app.state.clock.mode.value == "offset"
+    assert app.state.clock.now().date().isoformat() == "2026-07-01"
+    assert "offset" in client.get("/admin/pult").text
+
+
+def test_pult_availability_recompute_writes_snapshots(app_world):
+    app, _, _ = app_world
+    client = TestClient(app)
+    _login_as(client, "admin@figaro.dev")
+    csrf = client.cookies.get("figaro_csrf")
+    r = client.post("/admin/pult/availability",
+                    data={"csrf": csrf, "mode": "sim_curve", "seed": "7"},
+                    follow_redirects=False)
+    assert r.status_code == 303
+    with Session(app.state.engine) as s:
+        snaps = s.exec(select(AvailabilitySnapshot)).all()
+    assert len(snaps) == 3 and all(sn.source == "sim_curve" for sn in snaps)

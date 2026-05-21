@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Пульт эмуляции — Figaro{% endblock %}
+{% block content %}
+<hgroup>
+  <h1>Пульт эмуляции</h1>
+  <p class="muted">Управление виртуальным временем фестиваля и режимом наличия (только admin).</p>
+</hgroup>
+
+<article>
+  <div class="row">
+    <span><strong>Часы:</strong> <span class="tag">{{ clock_mode }}</span>
+      виртуальное время <strong>{{ virtual_now | hhmm }}</strong>, {{ virtual_now.date() }}
+      {% if phase %}· фаза <span class="tag">{{ phase }}</span>{% endif %}
+    </span>
+    <span><strong>Наличие:</strong> в продаже {{ on_sale }} · распродано {{ sold_out }}
+      {% if sim_mode %}· режим <span class="tag">{{ sim_mode }}</span> (seed {{ seed }}){% endif %}
+    </span>
+  </div>
+</article>
+
+<section>
+  <h3>Часы</h3>
+  <form method="post" action="/admin/pult/clock">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <fieldset>
+      <label><input type="radio" name="mode" value="real" {% if clock_mode == 'real' %}checked{% endif %}> Реальное время</label>
+      <label><input type="radio" name="mode" value="offset" {% if clock_mode == 'offset' %}checked{% endif %}> Сдвиг (offset)</label>
+      <label><input type="radio" name="mode" value="accelerated" {% if clock_mode == 'accelerated' %}checked{% endif %}> Ускорение</label>
+    </fieldset>
+    <div class="grid">
+      <label>Виртуальное время
+        <input type="datetime-local" name="virtual" value="{{ virtual_now | dtlocal }}">
+      </label>
+      <label>Множитель (для ускорения)
+        <input type="number" name="speed" value="1" step="1" min="1">
+      </label>
+    </div>
+    <button type="submit">Применить часы</button>
+  </form>
+</section>
+
+<section>
+  <h3>Наличие</h3>
+  <form method="post" action="/admin/pult/availability">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <fieldset>
+      <label><input type="radio" name="mode" value="sim_curve" {% if sim_mode != 'sim_replay' %}checked{% endif %}> Кривая (sim_curve)</label>
+      <label><input type="radio" name="mode" value="sim_replay" {% if sim_mode == 'sim_replay' %}checked{% endif %}> Реплей покупок (sim_replay)</label>
+    </fieldset>
+    <label>Seed <input type="number" name="seed" value="{{ seed or 42 }}"></label>
+    <button type="submit">Применить режим и пересчитать</button>
+  </form>
+  <div class="grid">
+    <form method="post" action="/admin/pult/recompute">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="secondary" type="submit">Пересчитать под текущее время</button>
+    </form>
+    <form method="post" action="/admin/pult/reset">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="contrast outline" type="submit">Сбросить к началу продаж</button>
+    </form>
+  </div>
+</section>
+{% endblock %}
