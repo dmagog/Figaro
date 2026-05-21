@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Мой маршрутный лист — Figaro{% endblock %}
+{% block content %}
+<div class="row">
+  <hgroup>
+    <h1>{{ view.sheet.title or "Маршрутный лист" }}</h1>
+    <p class="muted">{% if festival %}{{ festival.name }}{% endif %}</p>
+  </hgroup>
+  <form method="post" action="/sheet/new">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <button class="secondary" type="submit">Начать новый лист</button>
+  </form>
+</div>
+
+<div id="sheet">
+  {% include "_sheet.html" %}
+</div>
+{% endblock %}

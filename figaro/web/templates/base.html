@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Figaro{% endblock %}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <style>
+    .muted { color: var(--pico-muted-color); }
+    .tag { display: inline-block; padding: .1rem .5rem; border-radius: 1rem;
+           font-size: .75rem; background: var(--pico-secondary-background); }
+    .tag.warn { background: #ffe9c7; color: #8a5a00; }
+    .tag.ok { background: #d8f5e3; color: #1a7f48; }
+    .row { display: flex; gap: 1rem; align-items: baseline; justify-content: space-between; }
+    article.item { margin-bottom: .5rem; }
+    .inline { display: inline; }
+  </style>
+</head>
+<body>
+  <nav class="container">
+    <ul><li><strong><a href="/">Figaro</a></strong></li></ul>
+    <ul>
+      {% if user %}
+      <li><a href="/recommend">Подбор</a></li>
+      <li><a href="/sheet">Мой лист</a></li>
+      <li class="muted">{{ user.email }}</li>
+      <li>
+        <form class="inline" method="post" action="/logout">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <button class="secondary outline" type="submit">Выйти</button>
+        </form>
+      </li>
+      {% else %}
+      <li><a href="/login" role="button">Войти</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

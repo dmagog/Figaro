@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Подбор маршрутов — Figaro{% endblock %}
+{% block content %}
+<hgroup>
+  <h1>Подбор маршрутов</h1>
+  <p class="muted">
+    {% if festival %}{{ festival.name }} · по умолчанию — сбалансированный темп{% endif %}
+  </p>
+</hgroup>
+
+{% if not festival %}
+  <p>Сейчас нет активного фестиваля. Подбор будет доступен после активации.</p>
+{% elif not groups %}
+  <p>Пока нет предложенных маршрутов.</p>
+{% else %}
+  {% for group in groups %}
+  <section>
+    <h3>{{ group.title }}</h3>
+    <div>
+      {% for card in group.cards %}
+      <article>
+        <div class="row">
+          <strong>{{ card.concerts_count }} концерт(ов)</strong>
+          <span class="muted">{{ card.cost_kopecks | rub }}</span>
+        </div>
+        <p class="muted">
+          переходы {{ card.transition_minutes }} мин · ожидание {{ card.wait_minutes }} мин
+          {% if card.key_authors %}· {{ card.key_authors | join(", ") }}{% endif %}
+        </p>
+        <form method="post" action="/sheet/from-route/{{ card.id }}">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <button type="submit">Открыть как маршрутный лист</button>
+        </form>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+{% endif %}
+{% endblock %}

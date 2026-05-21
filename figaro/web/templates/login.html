@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Вход — Figaro{% endblock %}
+{% block content %}
+<article style="max-width: 28rem; margin: 2rem auto;">
+  <hgroup>
+    <h1>Вход</h1>
+    <p class="muted">Упрощённый вход для демо. Регистрация и подтверждение почты — позже.</p>
+  </hgroup>
+  {% if error %}<p style="color: var(--pico-del-color)">{{ error }}</p>{% endif %}
+  <form method="post" action="/login">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label>Email
+      <input type="email" name="email" value="{{ email or '' }}" required autofocus>
+    </label>
+    <label>Пароль
+      <input type="password" name="password" required>
+    </label>
+    <button type="submit">Войти</button>
+  </form>
+  {% if demo_accounts %}
+  <details>
+    <summary class="muted">Демо-аккаунты</summary>
+    <ul>
+      {% for acc in demo_accounts %}<li><code>{{ acc }}</code></li>{% endfor %}
+    </ul>
+  </details>
+  {% endif %}
+</article>
+{% endblock %}
