@@ -38,4 +38,4 @@ tests/       юнит-тесты (pytest)
 
 ## Дорожная карта
 
-По этапам — [docs/06-mvp-roadmap.md](docs/06-mvp-roadmap.md). Текущий этап: **0 — Каркас** (FestivalClock).
+По этапам — [docs/06-mvp-roadmap.md](docs/06-mvp-roadmap.md). Версия **3.1.0** — завершён этап 1 (доменная схема + Festival + импорт каталога). Дальше: этап 2 (движок маршрутов).

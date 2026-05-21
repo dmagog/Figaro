@@ -5,9 +5,11 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
-app = FastAPI(title="Figaro v3")
+from figaro import __version__
+
+app = FastAPI(title="Figaro v3", version=__version__)
 
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok"}
+    return {"status": "ok", "version": __version__}
