@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Optional
 
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import JSON, Column, UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 
@@ -171,6 +171,72 @@ class DayRouteConcert(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     day_route_id: int = Field(foreign_key="dayroute.id", index=True)
     concert_id: int = Field(foreign_key="concert.id", index=True)
+    position: int = 0
+
+
+# --- пользователи и доступ (этап 3) ---
+class User(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    email: str = Field(unique=True, index=True)
+    email_verified: bool = False
+    name: Optional[str] = None
+    hashed_password: str
+    role: str = "user"  # user | researcher | admin
+    is_active: bool = True
+    consent_at: Optional[datetime] = None
+    marketing_consent: bool = False
+    failed_login_count: int = 0
+    locked_until: Optional[datetime] = None
+    telegram_id: Optional[int] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class UserPreferences(SQLModel, table=True):
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    festival_id: int = Field(foreign_key="festival.id", primary_key=True)
+    pace: Optional[str] = None             # marathon | balanced | relaxed
+    interest_vector: Optional[str] = None  # new | deep
+    available_days: list = Field(default_factory=list, sa_column=Column(JSON))
+    time_windows: list = Field(default_factory=list, sa_column=Column(JSON))
+    favorite_author_ids: list = Field(default_factory=list, sa_column=Column(JSON))
+    favorite_genre_ids: list = Field(default_factory=list, sa_column=Column(JSON))
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class AuthToken(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    kind: str  # verify | reset
+    token: str = Field(unique=True, index=True)
+    expires_at: datetime
+    used: bool = False
+
+
+class UserSession(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    token: str = Field(unique=True, index=True)
+    expires_at: datetime
+    revoked: bool = False
+
+
+class RouteSheet(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    festival_id: int = Field(foreign_key="festival.id", index=True)
+    title: Optional[str] = None
+    source: str = "manual"  # from_archetype | manual | split_from_purchases
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class RouteSheetItem(SQLModel, table=True):
+    __table_args__ = (UniqueConstraint("route_sheet_id", "concert_id", name="uq_sheetitem"),)
+    id: Optional[int] = Field(default=None, primary_key=True)
+    route_sheet_id: int = Field(foreign_key="routesheet.id", index=True)
+    concert_id: int = Field(foreign_key="concert.id", index=True)
+    is_pinned: bool = False
     position: int = 0
 
 

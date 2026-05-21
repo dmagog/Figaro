@@ -1,8 +1,8 @@
-"""initial schema v3.2 (catalog + routes)
+"""schema v3.3 (users, auth, prefs, sheets)
 
-Revision ID: cccd976feaa0
+Revision ID: 7501467c79d5
 Revises: 
-Create Date: 2026-05-21 14:36:53.354393
+Create Date: 2026-05-21 14:56:52.927408
 """
 from typing import Sequence, Union
 
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 import sqlmodel
 
 
-revision: str = 'cccd976feaa0'
+revision: str = '7501467c79d5'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -31,6 +31,24 @@ def upgrade() -> None:
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('user',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('email', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('email_verified', sa.Boolean(), nullable=False),
+    sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('hashed_password', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('role', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('consent_at', sa.DateTime(), nullable=True),
+    sa.Column('marketing_consent', sa.Boolean(), nullable=False),
+    sa.Column('failed_login_count', sa.Integer(), nullable=False),
+    sa.Column('locked_until', sa.DateTime(), nullable=True),
+    sa.Column('telegram_id', sa.Integer(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_user_email'), 'user', ['email'], unique=True)
     op.create_table('archetype',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('festival_id', sa.Integer(), nullable=False),
@@ -61,6 +79,18 @@ def upgrade() -> None:
     sa.UniqueConstraint('festival_id', 'name', name='uq_author')
     )
     op.create_index(op.f('ix_author_festival_id'), 'author', ['festival_id'], unique=False)
+    op.create_table('authtoken',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('kind', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('token', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('expires_at', sa.DateTime(), nullable=False),
+    sa.Column('used', sa.Boolean(), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_authtoken_token'), 'authtoken', ['token'], unique=True)
+    op.create_index(op.f('ix_authtoken_user_id'), 'authtoken', ['user_id'], unique=False)
     op.create_table('festivalday',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('festival_id', sa.Integer(), nullable=False),
@@ -106,6 +136,45 @@ def upgrade() -> None:
     sa.UniqueConstraint('festival_id', 'signature', name='uq_program')
     )
     op.create_index(op.f('ix_program_festival_id'), 'program', ['festival_id'], unique=False)
+    op.create_table('routesheet',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('festival_id', sa.Integer(), nullable=False),
+    sa.Column('title', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('source', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['festival_id'], ['festival.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_routesheet_festival_id'), 'routesheet', ['festival_id'], unique=False)
+    op.create_index(op.f('ix_routesheet_user_id'), 'routesheet', ['user_id'], unique=False)
+    op.create_table('userpreferences',
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('festival_id', sa.Integer(), nullable=False),
+    sa.Column('pace', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('interest_vector', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('available_days', sa.JSON(), nullable=True),
+    sa.Column('time_windows', sa.JSON(), nullable=True),
+    sa.Column('favorite_author_ids', sa.JSON(), nullable=True),
+    sa.Column('favorite_genre_ids', sa.JSON(), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['festival_id'], ['festival.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('user_id', 'festival_id')
+    )
+    op.create_table('usersession',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('token', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('expires_at', sa.DateTime(), nullable=False),
+    sa.Column('revoked', sa.Boolean(), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_usersession_token'), 'usersession', ['token'], unique=True)
+    op.create_index(op.f('ix_usersession_user_id'), 'usersession', ['user_id'], unique=False)
     op.create_table('composition',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('festival_id', sa.Integer(), nullable=False),
@@ -249,11 +318,27 @@ def upgrade() -> None:
     op.create_index(op.f('ix_purchase_customer_external_id'), 'purchase', ['customer_external_id'], unique=False)
     op.create_index(op.f('ix_purchase_external_op_id'), 'purchase', ['external_op_id'], unique=False)
     op.create_index(op.f('ix_purchase_festival_id'), 'purchase', ['festival_id'], unique=False)
+    op.create_table('routesheetitem',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('route_sheet_id', sa.Integer(), nullable=False),
+    sa.Column('concert_id', sa.Integer(), nullable=False),
+    sa.Column('is_pinned', sa.Boolean(), nullable=False),
+    sa.Column('position', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['concert_id'], ['concert.id'], ),
+    sa.ForeignKeyConstraint(['route_sheet_id'], ['routesheet.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('route_sheet_id', 'concert_id', name='uq_sheetitem')
+    )
+    op.create_index(op.f('ix_routesheetitem_concert_id'), 'routesheetitem', ['concert_id'], unique=False)
+    op.create_index(op.f('ix_routesheetitem_route_sheet_id'), 'routesheetitem', ['route_sheet_id'], unique=False)
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_index(op.f('ix_routesheetitem_route_sheet_id'), table_name='routesheetitem')
+    op.drop_index(op.f('ix_routesheetitem_concert_id'), table_name='routesheetitem')
+    op.drop_table('routesheetitem')
     op.drop_index(op.f('ix_purchase_festival_id'), table_name='purchase')
     op.drop_index(op.f('ix_purchase_external_op_id'), table_name='purchase')
     op.drop_index(op.f('ix_purchase_customer_external_id'), table_name='purchase')
@@ -285,6 +370,13 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_composition_festival_id'), table_name='composition')
     op.drop_index(op.f('ix_composition_author_id'), table_name='composition')
     op.drop_table('composition')
+    op.drop_index(op.f('ix_usersession_user_id'), table_name='usersession')
+    op.drop_index(op.f('ix_usersession_token'), table_name='usersession')
+    op.drop_table('usersession')
+    op.drop_table('userpreferences')
+    op.drop_index(op.f('ix_routesheet_user_id'), table_name='routesheet')
+    op.drop_index(op.f('ix_routesheet_festival_id'), table_name='routesheet')
+    op.drop_table('routesheet')
     op.drop_index(op.f('ix_program_festival_id'), table_name='program')
     op.drop_table('program')
     op.drop_index(op.f('ix_hall_festival_id'), table_name='hall')
@@ -293,11 +385,16 @@ def downgrade() -> None:
     op.drop_table('genre')
     op.drop_index(op.f('ix_festivalday_festival_id'), table_name='festivalday')
     op.drop_table('festivalday')
+    op.drop_index(op.f('ix_authtoken_user_id'), table_name='authtoken')
+    op.drop_index(op.f('ix_authtoken_token'), table_name='authtoken')
+    op.drop_table('authtoken')
     op.drop_index(op.f('ix_author_festival_id'), table_name='author')
     op.drop_table('author')
     op.drop_index(op.f('ix_artist_festival_id'), table_name='artist')
     op.drop_table('artist')
     op.drop_index(op.f('ix_archetype_festival_id'), table_name='archetype')
     op.drop_table('archetype')
+    op.drop_index(op.f('ix_user_email'), table_name='user')
+    op.drop_table('user')
     op.drop_table('festival')
     # ### end Alembic commands ###
