@@ -10,19 +10,30 @@
   <p>Нет активного фестиваля.</p>
 {% else %}
 
-<section>
-  <h3>Обзор фестиваля</h3>
-  <div class="grid">
-    <article><strong>{{ overview.concerts }}</strong><br><span class="muted">концертов</span></article>
-    <article><strong>{{ overview.halls }}</strong><br><span class="muted">залов</span></article>
-    <article><strong>{{ overview.day_routes }}</strong><br><span class="muted">дневных маршрутов</span></article>
-    <article><strong>{{ overview.archetypes }}</strong><br><span class="muted">архетипов</span></article>
+<section class="section">
+  <h3><i class="bi bi-clipboard-data"></i> Обзор фестиваля</h3>
+  <div class="cards">
+    <article>
+      <strong>🎵 {{ overview.on_sale }} / {{ overview.concerts }}</strong><br>
+      <span class="muted">концертов доступно / всего</span>
+    </article>
+    <article>
+      <strong>🗺️ {{ overview.available_routes }} / {{ overview.day_routes }}</strong><br>
+      <span class="muted">маршрутов доступно / всего</span>
+    </article>
+    <article><strong>🏛️ {{ overview.halls }}</strong><br><span class="muted">залов</span></article>
+    <article><strong>🎭 {{ overview.archetypes }}</strong><br><span class="muted">архетипов</span></article>
   </div>
-  <p>В продаже: <span class="tag ok">{{ overview.on_sale }}</span> · распродано: <span class="tag warn">{{ overview.sold_out }}</span></p>
+  <p class="muted" style="margin-top:.6rem">
+    «Доступно» = ещё в продаже при текущем виртуальном времени (см. пульт).
+    «Всего маршрутов» — это <strong>Парето-оптимальные</strong> дневные маршруты (не-доминируемые
+    по числу концертов / переходам / ожиданию / разнообразию), а не все комбинации.
+  </p>
 </section>
 
-<section>
-  <h3>Маршруты по архетипам</h3>
+<section class="section">
+  <h3><i class="bi bi-diagram-3"></i> Маршруты по архетипам</h3>
+  <p class="muted">Архетипы — 4 фиксированных «персоны» (Марафон / Комфортный / Исследователь / Глубокое погружение); каждый маршрут отнесён к ближайшей при предрасчёте.</p>
   {% if not supply %}
     <p class="muted">Маршруты ещё не предрассчитаны.</p>
   {% else %}
@@ -37,8 +48,8 @@
   {% endif %}
 </section>
 
-<section>
-  <h3>Кривая наличия (по снимкам)</h3>
+<section class="section">
+  <h3><i class="bi bi-graph-up-arrow"></i> Кривая наличия (по снимкам)</h3>
   {% if not timeline %}
     <p class="muted">Снимков ещё нет — запустите пересчёт на пульте эмуляции.</p>
   {% else %}
@@ -53,8 +64,8 @@
   {% endif %}
 </section>
 
-<section>
-  <h3>Покупатели (псевдонимы)</h3>
+<section class="section">
+  <h3><i class="bi bi-people"></i> Покупатели (псевдонимы)</h3>
   {% if not customers or customers.customers == 0 %}
     <p class="muted">Данных о покупках нет.</p>
   {% else %}

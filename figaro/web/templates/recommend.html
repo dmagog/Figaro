@@ -26,12 +26,13 @@
       {% for card in group.cards %}
       <article>
         <div class="row">
-          <strong>🎵 {{ card.concerts_count }} концерт(ов)</strong>
-          <span class="muted">💰 {{ card.cost_kopecks | rub }}</span>
+          <strong><i class="bi bi-music-note-beamed"></i> {{ card.concerts_count }} концерт(ов)</strong>
+          <span class="muted"><i class="bi bi-cash-coin"></i> {{ card.cost_kopecks | rub }}</span>
         </div>
         <p class="muted">
-          🚶 переходы {{ card.transition_minutes }} мин · ⏳ ожидание {{ card.wait_minutes }} мин
-          {% if card.key_authors %}<br>🎼 {{ card.key_authors | join(", ") }}{% endif %}
+          <i class="bi bi-person-walking"></i> переходы {{ card.transition_minutes }} мин ·
+          <i class="bi bi-hourglass-split"></i> ожидание {{ card.wait_minutes }} мин
+          {% if card.key_authors %}<br><i class="bi bi-people"></i> {{ card.key_authors | join(", ") }}{% endif %}
         </p>
         <form method="post" action="/sheet/from-route/{{ card.id }}">
           <input type="hidden" name="csrf" value="{{ csrf }}">

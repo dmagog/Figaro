@@ -21,8 +21,10 @@ def festival_overview(session: Session, festival_id: int) -> Dict[str, int]:
     routes = session.exec(select(DayRoute).where(DayRoute.festival_id == festival_id)).all()
     arches = session.exec(select(Archetype).where(Archetype.festival_id == festival_id)).all()
     on_sale = sum(1 for c in concerts if availability.is_on_sale(session, c.id))
+    available_routes = sum(1 for dr in routes if availability.route_available(session, dr.id))
     return {"concerts": len(concerts), "halls": len(halls), "day_routes": len(routes),
-            "archetypes": len(arches), "on_sale": on_sale, "sold_out": len(concerts) - on_sale}
+            "available_routes": available_routes, "archetypes": len(arches),
+            "on_sale": on_sale, "sold_out": len(concerts) - on_sale}
 
 
 def archetype_supply(session: Session, festival_id: int) -> List[dict]:

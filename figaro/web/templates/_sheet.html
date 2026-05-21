@@ -1,93 +1,103 @@
 {% if notice %}<div class="notice">{{ notice }}</div>{% endif %}
 
-<section class="section">
-  <h3>🗺️ В маршруте</h3>
-  {% if not view.items %}
-    <p class="muted">Лист пуст. Добавьте концерты из подсказок ниже.</p>
-  {% else %}
-  <div class="timeline">
-    {% for it in view.items %}
-      {% if it.transition %}
-      {% set t = it.transition %}
-      <div class="gap">
-        <span class="gap__rule"></span>
-        <span class="chip chip--{{ t.kind }}">{{ t.icon }} {{ t.label }}</span>
-        <span class="gap__text muted">
-          {% if t.overlap %}
-            концерт до {{ t.prev_end | hhmm }}, следующий в {{ t.cur_start | hhmm }} — не успеть{% if t.walk is not none %} ({{ t.walk }} мин на переход){% endif %}
-          {% else %}
-            <span class="sep">·</span> между концертами {{ t.gap }} мин{% if t.walk is not none and t.walk > 0 %}<span class="sep">·</span> переход {{ t.walk }} мин<span class="sep">·</span> запас {{ t.buffer }} мин{% endif %}
-          {% endif %}
-        </span>
-      </div>
-      {% endif %}
-      <article class="concert-card{% if it.pinned %} is-pinned{% endif %}">
+{% macro insert_slot(b, view, csrf) %}
+  {% if b.candidates %}
+  <details class="slot">
+    <summary><i class="bi bi-plus-circle"></i>
+      Добавить
+      {%- if b.concert and b.concert.transition %} перед «{{ b.concert.title }}»
+      {%- elif b.concert %} в начало
+      {%- elif view.items %} в конец
+      {%- else %} первый концерт{% endif %} ({{ b.candidates | length }})</summary>
+    <div class="slot__list">
+      {% for s in b.candidates %}
+      <article class="concert-card concert-card--cand">
         <div class="concert-card__head">
-          <span class="num-badge">№{{ it.show_num }}</span>
+          <span class="num-badge num-badge--ghost">№{{ s.show_num }}</span>
           <div class="concert-card__body">
-            <div class="concert-card__title">{{ it.title }}</div>
+            <div class="concert-card__title">{{ s.title }}
+              {% if s.is_repeat %}<span class="chip chip--warn">повтор программы</span>{% endif %}
+            </div>
             <div class="concert-card__meta">
-              🕒 {{ it.start | hhmm }}–{{ it.end | hhmm }} · 📍 {{ it.hall }}
-              {% if it.pinned %} · <span class="chip chip--brand">📌 закреплён</span>{% endif %}
+              <i class="bi bi-clock"></i> {{ s.start | hhmm }}–{{ s.end | hhmm }} ·
+              <i class="bi bi-geo-alt"></i> {{ s.hall }} ·
+              <i class="bi bi-person-walking"></i> переход {{ s.transition_minutes }} мин
             </div>
           </div>
           <div class="concert-card__actions">
-            <form hx-post="/sheet/{{ view.sheet.id }}/pin/{{ it.id }}" hx-target="#sheet" hx-swap="innerHTML">
+            <form hx-post="/sheet/{{ view.sheet.id }}/add/{{ s.concert_id }}" hx-target="#sheet" hx-swap="innerHTML">
               <input type="hidden" name="csrf" value="{{ csrf }}">
-              <button class="secondary outline" type="submit">{% if it.pinned %}Открепить{% else %}Закрепить{% endif %}</button>
-            </form>
-            <form hx-post="/sheet/{{ view.sheet.id }}/remove/{{ it.id }}" hx-target="#sheet" hx-swap="innerHTML">
-              <input type="hidden" name="csrf" value="{{ csrf }}">
-              <button class="contrast outline" type="submit">Убрать</button>
+              <button type="submit"><i class="bi bi-plus-lg"></i> Добавить</button>
             </form>
           </div>
         </div>
       </article>
-    {% endfor %}
-  </div>
+      {% endfor %}
+    </div>
+  </details>
   {% endif %}
-</section>
+{% endmacro %}
 
 <section class="section">
-  <h3>➕ Что добавить</h3>
-  {% if not view.suggestions %}
-    <p class="muted">Нет подходящих концертов для дополнения.</p>
-  {% else %}
+  <h3><i class="bi bi-map"></i> В маршруте</h3>
+  {% if not view.items %}
+    <p class="muted">Лист пуст — раскройте блок ниже и добавьте первый концерт.</p>
+  {% endif %}
   <div class="timeline">
-    {% for s in view.suggestions %}
-    <article class="concert-card">
-      <div class="concert-card__head">
-        <span class="num-badge num-badge--ghost">№{{ s.show_num }}</span>
-        <div class="concert-card__body">
-          <div class="concert-card__title">
-            {{ s.title }}
-            {% if s.is_repeat %}<span class="chip chip--warn">🔁 повтор программы</span>{% endif %}
-          </div>
-          <div class="concert-card__meta">
-            🕒 {{ s.start | hhmm }}–{{ s.end | hhmm }} · 📍 {{ s.hall }} · 🚶 переход {{ s.transition_minutes }} мин
-          </div>
+    {% for b in view.boundaries %}
+      {{ insert_slot(b, view, csrf) }}
+      {% if b.concert %}
+        {% set it = b.concert %}
+        {% if it.transition %}
+        {% set t = it.transition %}
+        <div class="gap">
+          <span class="gap__rule"></span>
+          <span class="chip chip--{{ t.kind }}"><i class="bi {{ t.icon }}"></i> {{ t.label }}</span>
+          <span class="gap__text muted">
+            {% if t.overlap %}
+              концерт до {{ t.prev_end | hhmm }}, следующий в {{ t.cur_start | hhmm }} — не успеть{% if t.walk is not none %} ({{ t.walk }} мин на переход){% endif %}
+            {% else %}
+              <span class="sep">·</span> между концертами {{ t.gap }} мин{% if t.walk is not none and t.walk > 0 %}<span class="sep">·</span> переход {{ t.walk }} мин<span class="sep">·</span> запас {{ t.buffer }} мин{% endif %}
+            {% endif %}
+          </span>
         </div>
-        <div class="concert-card__actions">
-          <form hx-post="/sheet/{{ view.sheet.id }}/add/{{ s.concert_id }}" hx-target="#sheet" hx-swap="innerHTML">
-            <input type="hidden" name="csrf" value="{{ csrf }}">
-            <button type="submit">Добавить</button>
-          </form>
-        </div>
-      </div>
-    </article>
+        {% endif %}
+        <article class="concert-card{% if it.pinned %} is-pinned{% endif %}">
+          <div class="concert-card__head">
+            <span class="num-badge">№{{ it.show_num }}</span>
+            <div class="concert-card__body">
+              <div class="concert-card__title">{{ it.title }}</div>
+              <div class="concert-card__meta">
+                <i class="bi bi-clock"></i> {{ it.start | hhmm }}–{{ it.end | hhmm }} ·
+                <i class="bi bi-geo-alt"></i> {{ it.hall }}
+                {% if it.pinned %} · <span class="chip chip--brand"><i class="bi bi-pin-angle-fill"></i> закреплён</span>{% endif %}
+              </div>
+            </div>
+            <div class="concert-card__actions">
+              <form hx-post="/sheet/{{ view.sheet.id }}/pin/{{ it.id }}" hx-target="#sheet" hx-swap="innerHTML">
+                <input type="hidden" name="csrf" value="{{ csrf }}">
+                <button class="secondary outline" type="submit">{% if it.pinned %}Открепить{% else %}Закрепить{% endif %}</button>
+              </form>
+              <form hx-post="/sheet/{{ view.sheet.id }}/remove/{{ it.id }}" hx-target="#sheet" hx-swap="innerHTML">
+                <input type="hidden" name="csrf" value="{{ csrf }}">
+                <button class="contrast outline" type="submit">Убрать</button>
+              </form>
+            </div>
+          </div>
+        </article>
+      {% endif %}
     {% endfor %}
   </div>
-  {% endif %}
 </section>
 
 {% if view.offprogram %}
 <section class="section">
-  <h3>🎭 Офф-программа рядом</h3>
+  <h3><i class="bi bi-stars"></i> Офф-программа рядом</h3>
   {% for o in view.offprogram %}
   <div class="offprogram">
     {{ o.title }}
-    {% if o.is_recommended %}<span class="chip chip--ok">⭐ рекомендуем</span>{% endif %}
-    · 🚶 переход {{ o.transition_minutes }} мин
+    {% if o.is_recommended %}<span class="chip chip--ok">рекомендуем</span>{% endif %}
+    · <i class="bi bi-person-walking"></i> переход {{ o.transition_minutes }} мин
   </div>
   {% endfor %}
 </section>

@@ -48,15 +48,15 @@ def _verify_csrf(request: Request, form_csrf: Optional[str]) -> None:
     auth.verify_csrf(form_csrf, request.cookies.get(CSRF_COOKIE))
 
 
-# статус перехода → пиктограмма, подпись и цветовой класс чипа (см. routing/conflicts.Status)
+# статус перехода → bootstrap-иконка, подпись и цветовой класс чипа (см. routing/conflicts.Status)
 TRANSITION_UI = {
-    "ok": ("🚶", "хватает времени", "ok"),
-    "tight": ("🚶", "впритык", "warn"),
-    "hurry": ("🏃", "нужно поторопиться", "bad"),
-    "overlap": ("⚠️", "накладка по времени", "bad"),
-    "same_hall": ("📍", "тот же зал", "muted"),
-    "same_building": ("🏛️", "то же здание", "muted"),
-    "no_data": ("❔", "нет данных о переходе", "muted"),
+    "ok": ("bi-check-circle", "хватает времени", "ok"),
+    "tight": ("bi-hourglass-split", "впритык", "warn"),
+    "hurry": ("bi-stopwatch", "нужно поторопиться", "bad"),
+    "overlap": ("bi-exclamation-triangle", "накладка по времени", "bad"),
+    "same_hall": ("bi-geo-alt", "тот же зал", "muted"),
+    "same_building": ("bi-building", "то же здание", "muted"),
+    "no_data": ("bi-question-circle", "нет данных о переходе", "muted"),
 }
 
 
@@ -72,10 +72,10 @@ def _transition_disp(trans, prev_d: Optional[dict], cur_d: dict) -> Optional[dic
     if trans is None:
         return None
     status, walk, gap = trans
-    icon, label, kind = TRANSITION_UI.get(status.value, ("•", status.value, "muted"))
+    icon, label, kind = TRANSITION_UI.get(status.value, ("bi-dot", status.value, "muted"))
     # домен помечает walk=0 как same_hall даже для РАЗНЫХ залов (рядом, 0 мин) — уточняем подпись
     if status.value == "same_hall" and prev_d and prev_d["hall"] != cur_d["hall"]:
-        icon, label = "🏛️", "рядом, переход не нужен"
+        icon, label = "bi-geo-alt", "рядом, переход не нужен"
     return {"icon": icon, "label": label, "kind": kind, "walk": walk, "gap": gap,
             "buffer": (gap - walk) if walk is not None else None,
             "overlap": status.value == "overlap",
@@ -94,16 +94,27 @@ def _sheet_view(session: Session, sheet: RouteSheet) -> dict:
         d["transition"] = _transition_disp(trans, prev_d, d)
         items.append(d)
         prev_d = d
-    suggestions = []
+
+    # подсказки группируем по «щели»: (после какого, перед каким концертом встают)
+    slots: dict = {}
     for s in sheets.suggest_additions(session, sheet):
         d = _concert_disp(session, s.concert_id)
         d.update(transition_minutes=s.transition_minutes, is_repeat=s.is_repeat)
-        suggestions.append(d)
+        slots.setdefault((s.after_id, s.before_id), []).append(d)
+    # границы таймлайна: перед первым, между парами, после последнего — каждая со своими кандидатами
+    boundaries = []
+    n = len(items)
+    for i in range(n + 1):
+        after = items[i - 1]["id"] if i > 0 else None
+        before = items[i]["id"] if i < n else None
+        boundaries.append({"candidates": slots.get((after, before), []),
+                           "concert": items[i] if i < n else None})
+
     offprogram = [{"title": o.title, "is_recommended": o.is_recommended,
                    "transition_minutes": o.transition_minutes}
                   for o in sheets.suggest_off_program(session, sheet)]
     # SimpleNamespace, чтобы view.items в шаблоне не коллизировал с dict.items
-    return SimpleNamespace(sheet=sheet, items=items, suggestions=suggestions,
+    return SimpleNamespace(sheet=sheet, items=items, boundaries=boundaries,
                            offprogram=offprogram)
 
 

@@ -26,6 +26,8 @@
 :root {
   --brand: #2563eb;
   --brand-dark: #1e40af;
+  /* фирменный шрифт прежней версии (Noteworthy на macOS, иначе — рукописный фолбэк) */
+  --brand-font: "Noteworthy", "Segoe Script", "Bradley Hand", cursive;
   /* фирменный синий в Pico */
   --pico-primary: var(--brand);
   --pico-primary-background: var(--brand);
@@ -45,10 +47,13 @@ main.container { padding-block: 1.5rem 3rem; }
 .topbar { background: var(--card); border-bottom: 1px solid var(--line);
   box-shadow: 0 1px 3px rgba(16,24,40,.04); position: sticky; top: 0; z-index: 20; }
 .topbar nav { padding-block: .25rem; }
-.brand { color: var(--brand); font-weight: 800; letter-spacing: .2px; text-decoration: none;
-  display: inline-flex; align-items: center; gap: .4rem; }
+.brand { color: var(--brand); font-family: var(--brand-font); font-weight: 700;
+  font-size: 1.5rem; letter-spacing: .3px; text-decoration: none;
+  display: inline-flex; align-items: center; gap: .45rem; }
 .topbar a { text-decoration: none; }
-#theme-toggle { width: auto; padding: .25rem .6rem; margin: 0; }
+.topbar nav .bi { margin-right: .3rem; opacity: .85; }
+#theme-toggle { width: auto; padding: .25rem .55rem; margin: 0; }
+#theme-toggle .bi { margin: 0; }
 
 /* плавающий шарик (как floatIconNav в прежней версии) */
 .brand-balloon { display: inline-block; font-size: 1.4em; line-height: 1;
@@ -100,6 +105,19 @@ main.container { padding-block: 1.5rem 3rem; }
   padding: .55rem .9rem; margin-bottom: .9rem; font-weight: 600; }
 .offprogram { background: var(--ok-bg); color: var(--ok-ink); border: 1px solid color-mix(in srgb, var(--ok-ink) 25%, transparent);
   border-radius: 10px; padding: .55rem .9rem; margin: .4rem 0; }
+
+/* вставка между концертами (раскрывающийся блок) */
+.slot { margin: .25rem 0 .25rem 1.25rem; }
+.slot > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center;
+  gap: .4rem; font-size: .82rem; font-weight: 600; color: var(--brand);
+  border: 1px dashed color-mix(in srgb, var(--brand) 45%, transparent); border-radius: 999px;
+  padding: .2rem .8rem; background: color-mix(in srgb, var(--brand) 7%, transparent); }
+.slot > summary::-webkit-details-marker { display: none; }
+.slot > summary:hover { background: color-mix(in srgb, var(--brand) 14%, transparent); }
+.slot[open] > summary { margin-bottom: .5rem; }
+.slot__list { display: flex; flex-direction: column; gap: .4rem; padding-left: .25rem;
+  border-left: 2px solid var(--line); margin-left: .4rem; }
+.concert-card--cand { border-style: dashed; }
 
 /* карточки подбора */
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .9rem; }

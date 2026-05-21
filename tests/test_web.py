@@ -144,6 +144,19 @@ def test_from_route_then_edit_sheet(app_world):
     assert rm.status_code == 200
 
 
+def test_sheet_insertion_slot_offers_candidate(app_world):
+    app, dr_id, _ = app_world
+    client = TestClient(app)
+    _login(client)
+    csrf = client.cookies.get("figaro_csrf")
+    r = client.post(f"/sheet/from-route/{dr_id}", data={"csrf": csrf}, follow_redirects=False)
+    sid = int(r.headers["location"].split("=")[1])
+    page = client.get(f"/sheet?sheet_id={sid}")
+    assert 'class="slot"' in page.text          # раскрывающийся блок вставки между концертами
+    assert "Добавить перед" in page.text         # подпись щели указывает, куда встанет
+    assert "Дневной" in page.text                # кандидат предложен именно в эту щель
+
+
 def test_csrf_required_on_post(app_world):
     app, dr_id, _ = app_world
     client = TestClient(app)
