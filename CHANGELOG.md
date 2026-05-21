@@ -2,6 +2,12 @@
 
 Версионирование итеративное; мажор = **3** (третья итерация сервиса). Минор растёт с каждым завершённым этапом [дорожной карты](docs/06-mvp-roadmap.md).
 
+## [3.8.0] — Офф-программа: импорт и подсказки (зона роста)
+- `importing/source.py`: `OffProgramRow` + `CatalogSource.off_program`; `offprogram_from_excel(data_dir)` парсит `Offprogram-good.xlsx` (EventNum/EventName/Description/EventDate/EventLong/HallName/Format/Recommend/link), `_long_to_min` («HH:MM[:SS]» → минуты); `from_excel` теперь подтягивает офф-программу.
+- `importing/seed.py`: секция 9 — импорт внепрограммных событий в рамках `festival_id`, идемпотентно по `external_num` (привязка зала по имени, устойчивый парсинг дат).
+- `services/sheets.py`: `OffProgramSuggestion` + `suggest_off_program(session, sheet)` — внепрограммные события, помещающиеся в щели маршрута (переиспользует `_fits_gap`); рекомендованные ранжируются выше.
+- BDD: зелёная `off_program` (импорт со скоупом и флагом рекомендации, идемпотентность, подсказка в щель, ранжирование рекомендованных, отсев накладок). Тесты: pytest 54/54, behave 117 сценариев (15 фич, 4 `@growth` отложены). Реальная выгрузка офф-программы парсится в pytest.
+
 ## [3.7.0] — Этап 7: импорт наличия из файла (MVP завершён)
 - `importing/availability.py`: `import_availability` — файл остатков → `ConcertAvailability(source=crm_import)` + снимок + инвалидация кэша; каталог не трогает; привязка по `crm_show_id`. Тем же контрактом — будущий pull по CRM API.
 - **MVP завершён** (этапы 0–7). Тесты: pytest 51/51, behave 112 сценариев (14 фич, 4 `@growth` отложены).

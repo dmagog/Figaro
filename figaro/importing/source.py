@@ -66,6 +66,19 @@ class PurchaseRow:
 
 
 @dataclass
+class OffProgramRow:
+    external_num: int
+    title: str
+    hall_name: Optional[str] = None
+    starts_at: object = None        # datetime/str/excel-serial
+    duration_min: Optional[int] = None
+    description: Optional[str] = None
+    fmt: Optional[str] = None
+    recommend: bool = False
+    link: Optional[str] = None
+
+
+@dataclass
 class CatalogSource:
     halls: List[HallRow] = field(default_factory=list)
     transitions: List[TransitionRow] = field(default_factory=list)
@@ -73,6 +86,35 @@ class CatalogSource:
     artists: List[ArtistRow] = field(default_factory=list)
     compositions: List[CompositionRow] = field(default_factory=list)
     purchases: List[PurchaseRow] = field(default_factory=list)
+    off_program: List[OffProgramRow] = field(default_factory=list)
+
+
+def _long_to_min(v) -> Optional[int]:
+    if v is None or str(v).strip() == "" or str(v) == "nan":
+        return None
+    parts = str(v).split(":")
+    h = int(parts[0])
+    m = int(parts[1]) if len(parts) > 1 else 0
+    return h * 60 + m
+
+
+def offprogram_from_excel(data_dir: str) -> List[OffProgramRow]:
+    """Парсинг файла офф-программы (Offprogram-good.xlsx) → строки. Для CLI и проверки данных."""
+    import pandas as pd
+    from pathlib import Path
+
+    df = pd.read_excel(Path(data_dir) / "Offprogram-good.xlsx")
+    rows = []
+    for _, r in df.iterrows():
+        rows.append(OffProgramRow(
+            external_num=int(r["EventNum"]), title=str(r["EventName"]),
+            hall_name=(None if str(r.get("HallName")) == "nan" else r.get("HallName")),
+            starts_at=r.get("EventDate"), duration_min=_long_to_min(r.get("EventLong")),
+            description=(None if str(r.get("Description")) == "nan" else r.get("Description")),
+            fmt=(None if str(r.get("Format")) == "nan" else r.get("Format")),
+            recommend=bool(r.get("Recommend")),
+            link=(None if str(r.get("link")) == "nan" else r.get("link"))))
+    return rows
 
 
 def from_excel(data_dir: str) -> CatalogSource:  # pragma: no cover - путь CLI, не покрывается BDD
@@ -122,5 +164,8 @@ def from_excel(data_dir: str) -> CatalogSource:  # pragma: no cover - путь C
                              price_kopecks=int(r.get("Price") or 0) * 100)
                  for _, r in pd.read_excel(d / "GoodOperations.xlsx").iterrows()]
 
+    off_program = offprogram_from_excel(data_dir)
+
     return CatalogSource(halls=halls, transitions=transitions, concerts=concerts,
-                         artists=artists, compositions=compositions, purchases=purchases)
+                         artists=artists, compositions=compositions, purchases=purchases,
+                         off_program=off_program)

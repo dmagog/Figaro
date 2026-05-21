@@ -16,7 +16,8 @@ from sqlmodel import Session, select
 
 from figaro.domain.models import (
     Artist, Author, Composition, Concert, ConcertArtist, ConcertComposition,
-    ConcertGenre, FestivalDay, Genre, Hall, HallTransition, Program, Purchase,
+    ConcertGenre, FestivalDay, Genre, Hall, HallTransition, OffProgram, Program,
+    Purchase,
 )
 from figaro.importing.dates import parse_datetime
 from figaro.importing.source import CatalogSource
@@ -169,5 +170,25 @@ def import_catalog(session: Session, festival_id: int, src: CatalogSource) -> No
         obj.concert_id = concert.id
         obj.purchased_at = purchased
         obj.price_kopecks = p.price_kopecks or 0
+        session.add(obj)
+    session.flush()
+
+    # 9. Офф-программа (внепрограммные события)
+    for op in src.off_program:
+        hall = hall_by_name.get(op.hall_name) if op.hall_name else None
+        starts = parse_datetime(op.starts_at) if op.starts_at is not None else None
+        obj = session.exec(select(OffProgram).where(
+            OffProgram.festival_id == fid, OffProgram.external_num == op.external_num)).first()
+        if obj is None:
+            obj = OffProgram(festival_id=fid, external_num=op.external_num, title=op.title)
+            session.add(obj)
+        obj.title = op.title
+        obj.description = op.description
+        obj.starts_at = starts
+        obj.duration_min = op.duration_min
+        obj.hall_id = hall.id if hall else None
+        obj.fmt = op.fmt
+        obj.is_recommended = bool(op.recommend)
+        obj.link = op.link
         session.add(obj)
     session.flush()

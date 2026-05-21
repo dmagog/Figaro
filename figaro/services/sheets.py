@@ -9,8 +9,8 @@ from typing import List, Optional
 from sqlmodel import Session, select
 
 from figaro.batch.precompute import build_resolver
-from figaro.domain.models import (Concert, DayRouteConcert, RouteSheet,
-                                  RouteSheetItem)
+from figaro.domain.models import (Concert, DayRouteConcert, OffProgram,
+                                  RouteSheet, RouteSheetItem)
 from figaro.domain.routing.conflicts import (PASSABLE, Status, TransitionConfig,
                                              evaluate)
 from figaro.services import availability
@@ -175,6 +175,37 @@ def suggest_additions(session: Session, sheet: RouteSheet,
         out.append(Suggestion(concert_id=c.id, after_id=after_id, before_id=before_id,
                               transition_minutes=trans, is_repeat=is_repeat, score=score))
     out.sort(key=lambda s: s.score, reverse=True)
+    return out
+
+
+@dataclass
+class OffProgramSuggestion:
+    off_program_id: int
+    title: str
+    is_recommended: bool
+    after_id: Optional[int]
+    before_id: Optional[int]
+    transition_minutes: int
+
+
+def suggest_off_program(session: Session, sheet: RouteSheet) -> List[OffProgramSuggestion]:
+    """Внепрограммные события, помещающиеся в щели маршрута. Рекомендованные — выше."""
+    fid = sheet.festival_id
+    resolver = build_resolver(session, fid)
+    cfg = TransitionConfig()
+    chain = _concerts_in(session, sheet)
+    out = []
+    for op in session.exec(select(OffProgram).where(OffProgram.festival_id == fid)).all():
+        if op.starts_at is None or op.duration_min is None or op.hall_id is None:
+            continue
+        fit = _fits_gap(op, chain, resolver, cfg)  # у OffProgram есть hall_id/starts_at/duration_min
+        if fit is None:
+            continue
+        after_id, before_id, trans = fit
+        out.append(OffProgramSuggestion(off_program_id=op.id, title=op.title,
+                                        is_recommended=op.is_recommended, after_id=after_id,
+                                        before_id=before_id, transition_minutes=trans))
+    out.sort(key=lambda s: (not s.is_recommended,))  # рекомендованные выше
     return out
 
 
