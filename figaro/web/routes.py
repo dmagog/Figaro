@@ -18,7 +18,7 @@ from sqlmodel import Session, select
 from figaro.domain.clock import phase_for
 from figaro.domain.models import (Archetype, Author, Concert, Hall, RouteSheet,
                                   RouteSheetItem)
-from figaro.services import auth, availability, sheets
+from figaro.services import analytics, auth, availability, sheets
 from figaro.services.festival import get_active
 from figaro.services.recommend import (load_prefs, profile_for_user,
                                        recommend, relax_by_concert_count,
@@ -329,6 +329,28 @@ def sheet_pin(request: Request, sheet_id: int, concert_id: int, csrf: str = Form
         RouteSheetItem.concert_id == concert_id)).first()
     sheets.set_pin(session, sheet, concert_id, pinned=not (cur.is_pinned if cur else False))
     return _sheet_partial(request, session, user, sheet)
+
+
+# --- дашборды исследователя (RBAC: researcher/admin) ---
+def _require_research(user) -> None:
+    if not user or not auth.can_access(user.role, "дашборды"):
+        raise auth.Forbidden("403")
+
+
+@router.get("/research")
+def research(request: Request, user=Depends(current_user),
+             session: Session = Depends(get_session)):
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    _require_research(user)
+    fest = get_active(session)
+    ctx = {"festival": fest, "overview": None, "supply": [], "timeline": [], "customers": None}
+    if fest is not None:
+        ctx["overview"] = analytics.festival_overview(session, fest.id)
+        ctx["supply"] = analytics.archetype_supply(session, fest.id)
+        ctx["timeline"] = analytics.availability_timeline(session, fest.id)
+        ctx["customers"] = analytics.customer_purchase_counts(session, fest.id)
+    return _page(request, "research.html", user, ctx)
 
 
 # --- админский пульт эмуляции (RBAC: только admin) ---

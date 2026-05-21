@@ -25,6 +25,7 @@
       <li><a href="/questionnaire">Анкета</a></li>
       <li><a href="/recommend">Подбор</a></li>
       <li><a href="/sheet">Мой лист</a></li>
+      {% if user.role in ['researcher', 'admin'] %}<li><a href="/research">Дашборды</a></li>{% endif %}
       {% if user.role == 'admin' %}<li><a href="/admin/pult">Пульт</a></li>{% endif %}
       <li class="muted">{{ user.email }}</li>
       <li>

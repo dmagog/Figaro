@@ -68,6 +68,10 @@ def app_world():
     admin.email_verified = True
     admin.role = "admin"
     s.add(admin)
+    researcher = auth.register(s, email="res@figaro.dev", password=PW, consent=True)
+    researcher.email_verified = True
+    researcher.role = "researcher"
+    s.add(researcher)
     s.commit()
     dr_id, c2_id = dr.id, c2.id  # снимаем id до закрытия сессии (иначе detached)
     s.close()
@@ -217,6 +221,43 @@ def test_register_duplicate_email(app_world):
     r = client.post("/register", data={"email": "u@figaro.dev", "password": PW,
                                        "consent": "on", "csrf": csrf})
     assert r.status_code == 200 and "занят" in r.text.lower()
+
+
+def test_research_requires_role(app_world):
+    app, _, _ = app_world
+    client = TestClient(app)
+    _login_as(client, "u@figaro.dev")  # роль user — без доступа к дашбордам
+    assert client.get("/research").status_code == 403
+
+
+def test_research_overview_and_supply(app_world):
+    app, _, _ = app_world
+    client = TestClient(app)
+    _login_as(client, "res@figaro.dev")
+    r = client.get("/research")
+    assert r.status_code == 200
+    assert "Обзор фестиваля" in r.text
+    assert "Комфортный" in r.text          # архетип из supply
+    assert "концертов" in r.text
+
+
+def test_research_customer_aggregates_pseudonymous(app_world):
+    from figaro.domain.models import Concert, Festival, Purchase
+    app, _, c2_id = app_world
+    with Session(app.state.engine) as s:
+        fid = s.exec(select(Festival)).first().id
+        s.add(Purchase(festival_id=fid, external_op_id=1, customer_external_id="cust-A",
+                       concert_id=c2_id, purchased_at=datetime(2026, 6, 10)))
+        s.add(Purchase(festival_id=fid, external_op_id=2, customer_external_id="cust-A",
+                       concert_id=c2_id, purchased_at=datetime(2026, 6, 11)))
+        s.add(Purchase(festival_id=fid, external_op_id=3, customer_external_id="cust-B",
+                       concert_id=c2_id, purchased_at=datetime(2026, 6, 12)))
+        s.commit()
+    client = TestClient(app)
+    _login_as(client, "res@figaro.dev")
+    r = client.get("/research")
+    assert "cust-A" in r.text and "cust-B" in r.text  # псевдонимы, не ПДн
+    assert "Покупателей: <strong>2</strong>" in r.text
 
 
 def test_pult_requires_admin(app_world):

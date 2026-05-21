@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Дашборды исследователя — Figaro{% endblock %}
+{% block content %}
+<hgroup>
+  <h1>Дашборды исследователя</h1>
+  <p class="muted">Агрегаты без персональных данных{% if festival %} · {{ festival.name }}{% endif %}.</p>
+</hgroup>
+
+{% if not festival %}
+  <p>Нет активного фестиваля.</p>
+{% else %}
+
+<section>
+  <h3>Обзор фестиваля</h3>
+  <div class="grid">
+    <article><strong>{{ overview.concerts }}</strong><br><span class="muted">концертов</span></article>
+    <article><strong>{{ overview.halls }}</strong><br><span class="muted">залов</span></article>
+    <article><strong>{{ overview.day_routes }}</strong><br><span class="muted">дневных маршрутов</span></article>
+    <article><strong>{{ overview.archetypes }}</strong><br><span class="muted">архетипов</span></article>
+  </div>
+  <p>В продаже: <span class="tag ok">{{ overview.on_sale }}</span> · распродано: <span class="tag warn">{{ overview.sold_out }}</span></p>
+</section>
+
+<section>
+  <h3>Маршруты по архетипам</h3>
+  {% if not supply %}
+    <p class="muted">Маршруты ещё не предрассчитаны.</p>
+  {% else %}
+  <table>
+    <thead><tr><th>Архетип</th><th>Маршрутов</th><th>Ср. comfort</th><th>Ср. diversity</th></tr></thead>
+    <tbody>
+      {% for s in supply %}
+      <tr><td>{{ s.title }}</td><td>{{ s.routes }}</td><td>{{ s.avg_comfort }}</td><td>{{ s.avg_diversity }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</section>
+
+<section>
+  <h3>Кривая наличия (по снимкам)</h3>
+  {% if not timeline %}
+    <p class="muted">Снимков ещё нет — запустите пересчёт на пульте эмуляции.</p>
+  {% else %}
+  <table>
+    <thead><tr><th>Момент</th><th>Остаток билетов</th><th>В продаже</th><th>Распродано</th></tr></thead>
+    <tbody>
+      {% for t in timeline %}
+      <tr><td>{{ t.at }}</td><td>{{ t.tickets_left }}</td><td>{{ t.on_sale }}</td><td>{{ t.sold_out }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</section>
+
+<section>
+  <h3>Покупатели (псевдонимы)</h3>
+  {% if not customers or customers.customers == 0 %}
+    <p class="muted">Данных о покупках нет.</p>
+  {% else %}
+  <p>Покупателей: <strong>{{ customers.customers }}</strong> · покупок: <strong>{{ customers.purchases }}</strong></p>
+  <table>
+    <thead><tr><th>Псевдоним</th><th>Покупок</th></tr></thead>
+    <tbody>
+      {% for c in customers.top %}
+      <tr><td><code>{{ c.customer }}</code></td><td>{{ c.purchases }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</section>
+
+{% endif %}
+{% endblock %}
