@@ -1,8 +1,8 @@
-"""initial schema
+"""initial schema v3.2 (catalog + routes)
 
-Revision ID: ba85c77a3aa6
+Revision ID: cccd976feaa0
 Revises: 
-Create Date: 2026-05-21 14:18:36.014186
+Create Date: 2026-05-21 14:36:53.354393
 """
 from typing import Sequence, Union
 
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 import sqlmodel
 
 
-revision: str = 'ba85c77a3aa6'
+revision: str = 'cccd976feaa0'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -31,6 +31,17 @@ def upgrade() -> None:
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('archetype',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('festival_id', sa.Integer(), nullable=False),
+    sa.Column('key', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('title', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('description', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.ForeignKeyConstraint(['festival_id'], ['festival.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('festival_id', 'key', name='uq_archetype')
+    )
+    op.create_index(op.f('ix_archetype_festival_id'), 'archetype', ['festival_id'], unique=False)
     op.create_table('artist',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('festival_id', sa.Integer(), nullable=False),
@@ -134,6 +145,28 @@ def upgrade() -> None:
     op.create_index(op.f('ix_concert_hall_id'), 'concert', ['hall_id'], unique=False)
     op.create_index(op.f('ix_concert_program_id'), 'concert', ['program_id'], unique=False)
     op.create_index(op.f('ix_concert_show_num'), 'concert', ['show_num'], unique=False)
+    op.create_table('dayroute',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('festival_id', sa.Integer(), nullable=False),
+    sa.Column('festival_day_id', sa.Integer(), nullable=False),
+    sa.Column('archetype_id', sa.Integer(), nullable=True),
+    sa.Column('concerts_count', sa.Integer(), nullable=False),
+    sa.Column('halls_count', sa.Integer(), nullable=False),
+    sa.Column('show_minutes', sa.Integer(), nullable=False),
+    sa.Column('transition_minutes', sa.Integer(), nullable=False),
+    sa.Column('wait_minutes', sa.Integer(), nullable=False),
+    sa.Column('cost_kopecks', sa.Integer(), nullable=False),
+    sa.Column('hall_changes', sa.Integer(), nullable=False),
+    sa.Column('comfort_score', sa.Float(), nullable=False),
+    sa.Column('diversity_score', sa.Float(), nullable=False),
+    sa.ForeignKeyConstraint(['archetype_id'], ['archetype.id'], ),
+    sa.ForeignKeyConstraint(['festival_day_id'], ['festivalday.id'], ),
+    sa.ForeignKeyConstraint(['festival_id'], ['festival.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_dayroute_archetype_id'), 'dayroute', ['archetype_id'], unique=False)
+    op.create_index(op.f('ix_dayroute_festival_day_id'), 'dayroute', ['festival_day_id'], unique=False)
+    op.create_index(op.f('ix_dayroute_festival_id'), 'dayroute', ['festival_id'], unique=False)
     op.create_table('halltransition',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('festival_id', sa.Integer(), nullable=False),
@@ -187,6 +220,18 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['genre_id'], ['genre.id'], ),
     sa.PrimaryKeyConstraint('concert_id', 'genre_id')
     )
+    op.create_table('dayrouteconcert',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('day_route_id', sa.Integer(), nullable=False),
+    sa.Column('concert_id', sa.Integer(), nullable=False),
+    sa.Column('position', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['concert_id'], ['concert.id'], ),
+    sa.ForeignKeyConstraint(['day_route_id'], ['dayroute.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('day_route_id', 'concert_id', name='uq_dayrouteconcert')
+    )
+    op.create_index(op.f('ix_dayrouteconcert_concert_id'), 'dayrouteconcert', ['concert_id'], unique=False)
+    op.create_index(op.f('ix_dayrouteconcert_day_route_id'), 'dayrouteconcert', ['day_route_id'], unique=False)
     op.create_table('purchase',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('festival_id', sa.Integer(), nullable=False),
@@ -214,6 +259,9 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_purchase_customer_external_id'), table_name='purchase')
     op.drop_index(op.f('ix_purchase_concert_id'), table_name='purchase')
     op.drop_table('purchase')
+    op.drop_index(op.f('ix_dayrouteconcert_day_route_id'), table_name='dayrouteconcert')
+    op.drop_index(op.f('ix_dayrouteconcert_concert_id'), table_name='dayrouteconcert')
+    op.drop_table('dayrouteconcert')
     op.drop_table('concertgenre')
     op.drop_table('concertcomposition')
     op.drop_table('concertartist')
@@ -223,6 +271,10 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_halltransition_from_hall_id'), table_name='halltransition')
     op.drop_index(op.f('ix_halltransition_festival_id'), table_name='halltransition')
     op.drop_table('halltransition')
+    op.drop_index(op.f('ix_dayroute_festival_id'), table_name='dayroute')
+    op.drop_index(op.f('ix_dayroute_festival_day_id'), table_name='dayroute')
+    op.drop_index(op.f('ix_dayroute_archetype_id'), table_name='dayroute')
+    op.drop_table('dayroute')
     op.drop_index(op.f('ix_concert_show_num'), table_name='concert')
     op.drop_index(op.f('ix_concert_program_id'), table_name='concert')
     op.drop_index(op.f('ix_concert_hall_id'), table_name='concert')
@@ -245,5 +297,7 @@ def downgrade() -> None:
     op.drop_table('author')
     op.drop_index(op.f('ix_artist_festival_id'), table_name='artist')
     op.drop_table('artist')
+    op.drop_index(op.f('ix_archetype_festival_id'), table_name='archetype')
+    op.drop_table('archetype')
     op.drop_table('festival')
     # ### end Alembic commands ###

@@ -138,6 +138,42 @@ class Purchase(SQLModel, table=True):
     price_kopecks: int = 0
 
 
+# --- маршруты (предрасчёт, этап 2) ---
+class Archetype(SQLModel, table=True):
+    __table_args__ = (UniqueConstraint("festival_id", "key", name="uq_archetype"),)
+    id: Optional[int] = Field(default=None, primary_key=True)
+    festival_id: int = Field(foreign_key="festival.id", index=True)
+    key: str            # marathon | comfort | explorer | deep
+    title: str
+    description: Optional[str] = None
+
+
+class DayRoute(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    festival_id: int = Field(foreign_key="festival.id", index=True)
+    festival_day_id: int = Field(foreign_key="festivalday.id", index=True)
+    archetype_id: Optional[int] = Field(default=None, foreign_key="archetype.id", index=True)
+    # аддитивные агрегаты
+    concerts_count: int = 0
+    halls_count: int = 0
+    show_minutes: int = 0
+    transition_minutes: int = 0
+    wait_minutes: int = 0
+    cost_kopecks: int = 0
+    hall_changes: int = 0
+    # признаки (нормируются при ранжировании)
+    comfort_score: float = 0.0
+    diversity_score: float = 0.0
+
+
+class DayRouteConcert(SQLModel, table=True):
+    __table_args__ = (UniqueConstraint("day_route_id", "concert_id", name="uq_dayrouteconcert"),)
+    id: Optional[int] = Field(default=None, primary_key=True)
+    day_route_id: int = Field(foreign_key="dayroute.id", index=True)
+    concert_id: int = Field(foreign_key="concert.id", index=True)
+    position: int = 0
+
+
 # --- link-таблицы (M2M) ---
 class ConcertArtist(SQLModel, table=True):
     concert_id: int = Field(foreign_key="concert.id", primary_key=True)

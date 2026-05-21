@@ -10,7 +10,11 @@ from typing import List, Optional
 
 from sqlmodel import Session, select
 
-from figaro.domain.models import Concert, Festival
+from figaro.domain.models import Concert, DayRoute, Festival
+
+
+class PrecomputeRequired(Exception):
+    """Активация невозможна без предрасчёта маршрутов (этап 2)."""
 
 
 def create_festival(session: Session, *, name: str, year: int, sales_start_on: date,
@@ -26,8 +30,14 @@ def get_active(session: Session) -> Optional[Festival]:
     return session.exec(select(Festival).where(Festival.status == "active")).first()
 
 
-def activate(session: Session, festival_id: int) -> Festival:
-    """Этап 2: гейт по предрасчёту добавится там. Здесь — базовый инвариант 'один активный'."""
+def activate(session: Session, festival_id: int, *, require_precompute: bool = True) -> Festival:
+    """Активация draft→active. Гейт: маршруты должны быть предрассчитаны. Инвариант 'один активный'."""
+    if require_precompute:
+        has_routes = session.exec(select(DayRoute).where(
+            DayRoute.festival_id == festival_id)).first()
+        if has_routes is None:
+            raise PrecomputeRequired(
+                "нельзя активировать фестиваль без предрасчёта дневных маршрутов")
     for f in session.exec(select(Festival).where(Festival.status == "active")).all():
         f.status = "archived"
         session.add(f)

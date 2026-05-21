@@ -5,11 +5,25 @@ from datetime import date, datetime
 from behave import given, then, when
 from sqlmodel import select
 
-from figaro.domain.models import Concert, Hall, Program, Purchase
+from figaro.batch.precompute import precompute_festival
+from figaro.domain.models import Concert, Festival, Hall, Program, Purchase
 from figaro.importing import source as S
 from figaro.importing.seed import import_catalog
-from figaro.services.festival import (activate, concerts_for_active,
-                                      create_festival, get_active)
+from figaro.services.festival import (PrecomputeRequired, activate,
+                                      concerts_for_active, create_festival,
+                                      get_active)
+
+
+def _multiday_source():
+    halls = [S.HallRow("A", seats=100), S.HallRow("B", seats=100)]
+    transitions = [S.TransitionRow("A", "B", 10)]
+    concerts, crm = [], 1
+    for d in (1, 2, 3):
+        concerts.append(S.ConcertRow(crm, crm, f"K{crm}", "A", datetime(2026, 7, d, 13, 0), 45))
+        crm += 1
+        concerts.append(S.ConcertRow(crm, crm, f"K{crm}", "B", datetime(2026, 7, d, 15, 0), 45))
+        crm += 1
+    return S.CatalogSource(halls=halls, transitions=transitions, concerts=concerts)
 
 
 def _mini_source(show_num=1, crm=42, hall="A"):
@@ -30,7 +44,7 @@ def _new_festival(context, name, status="draft"):
     f = create_festival(context.session, name=name, year=y, sales_start_on=date(y, 6, 1),
                         starts_on=date(y, 7, 1), ends_on=date(y, 7, 3))
     if status == "active":
-        activate(context.session, f.id)
+        activate(context.session, f.id, require_precompute=False)  # этап 1: без гейта предрасчёта
     context.festivals[name] = f
     return f
 
@@ -132,3 +146,55 @@ def step_only_active(context, name):
 def step_not_in(context, name):
     fid = context.festivals[name].id
     assert all(c.festival_id != fid for c in context.public)
+
+
+# ============ активация (этап 2) ============
+@given('фестиваль "{name}" с импортированным каталогом, но без предрасчёта')
+def step_festival_imported_no_precompute(context, name):
+    f = _new_festival(context, name)
+    import_catalog(context.session, f.id, _multiday_source())
+    context.festival = f
+
+
+@when('администратор пытается активировать фестиваль')
+def step_try_activate(context):
+    try:
+        activate(context.session, context.festival.id)
+        context.activation_error = None
+    except PrecomputeRequired as e:
+        context.activation_error = e
+
+
+@then('активация отклонена с требованием выполнить предрасчёт')
+def step_activation_rejected(context):
+    assert isinstance(context.activation_error, PrecomputeRequired)
+
+
+@given('фестиваль "{name}" прошёл импорт и предрасчёт всех дней')
+def step_festival_precomputed(context, name):
+    f = _new_festival(context, name)
+    import_catalog(context.session, f.id, _multiday_source())
+    precompute_festival(context.session, f.id)
+
+
+@when('администратор активирует фестиваль "{name}"')
+def step_activate_named(context, name):
+    activate(context.session, context.festivals[name].id)
+
+
+@then('фестиваль "{name}" становится "active"')
+def step_becomes_active(context, name):
+    context.session.refresh(context.festivals[name])
+    assert context.festivals[name].status == "active"
+
+
+@then('фестиваль "{name}" становится "archived"')
+def step_becomes_archived(context, name):
+    context.session.refresh(context.festivals[name])
+    assert context.festivals[name].status == "archived"
+
+
+@then('активным остаётся ровно один фестиваль')
+def step_one_active(context):
+    actives = context.session.exec(select(Festival).where(Festival.status == "active")).all()
+    assert len(actives) == 1, len(actives)
