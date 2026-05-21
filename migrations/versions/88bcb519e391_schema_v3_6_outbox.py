@@ -1,8 +1,8 @@
-"""schema v3.5 (availability snapshot, simstate)
+"""schema v3.6 (outbox)
 
-Revision ID: 59e49ed9a860
+Revision ID: 88bcb519e391
 Revises: 
-Create Date: 2026-05-21 15:36:15.114732
+Create Date: 2026-05-21 15:49:40.230034
 """
 from typing import Sequence, Union
 
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 import sqlmodel
 
 
-revision: str = '59e49ed9a860'
+revision: str = '88bcb519e391'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -127,6 +127,23 @@ def upgrade() -> None:
     sa.UniqueConstraint('festival_id', 'name', name='uq_hall_festival_name')
     )
     op.create_index(op.f('ix_hall_festival_id'), 'hall', ['festival_id'], unique=False)
+    op.create_table('outboxmessage',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('type', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('payload', sa.JSON(), nullable=True),
+    sa.Column('scheduled_for', sa.DateTime(), nullable=False),
+    sa.Column('status', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('attempts', sa.Integer(), nullable=False),
+    sa.Column('next_attempt_at', sa.DateTime(), nullable=True),
+    sa.Column('idempotency_key', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('sent_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_outboxmessage_idempotency_key'), 'outboxmessage', ['idempotency_key'], unique=True)
+    op.create_index(op.f('ix_outboxmessage_user_id'), 'outboxmessage', ['user_id'], unique=False)
     op.create_table('program',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('festival_id', sa.Integer(), nullable=False),
@@ -412,6 +429,9 @@ def downgrade() -> None:
     op.drop_table('routesheet')
     op.drop_index(op.f('ix_program_festival_id'), table_name='program')
     op.drop_table('program')
+    op.drop_index(op.f('ix_outboxmessage_user_id'), table_name='outboxmessage')
+    op.drop_index(op.f('ix_outboxmessage_idempotency_key'), table_name='outboxmessage')
+    op.drop_table('outboxmessage')
     op.drop_index(op.f('ix_hall_festival_id'), table_name='hall')
     op.drop_table('hall')
     op.drop_index(op.f('ix_genre_festival_id'), table_name='genre')

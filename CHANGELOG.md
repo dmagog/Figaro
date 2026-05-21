@@ -2,6 +2,11 @@
 
 Версионирование итеративное; мажор = **3** (третья итерация сервиса). Минор растёт с каждым завершённым этапом [дорожной карты](docs/06-mvp-roadmap.md).
 
+## [3.6.0] — Этап 6: уведомления
+- Модель `OutboxMessage` (тип, payload, scheduled_for, status, attempts, next_attempt_at, idempotency_key unique).
+- `services/notifications.py`: `enqueue` (идемпотентно по ключу), `dispatch(now, sender)` (отправка due, sent/failed, backoff+лимит попыток), `schedule_reminders`, `alert_soldout` (с альтернативой). Транспорт подменяем (доменный код знает только enqueue) — без брокера.
+- BDD: зелёная `notifications` (постановка/отправка по времени, не раньше срока, ускоренный прогон, алерт, идемпотентность, ретраи/failed, транспорт-агностичность). Тесты: pytest 49/49, behave 7 сценариев.
+
 ## [3.5.0] — Этап 5: наличие и эмуляция
 - Модели `AvailabilitySnapshot` (история), `SimState` (режим/seed эмуляции).
 - `services/availability.py`: движок `sim_curve` (детерминир. кривая+seed, популярные раньше) и `sim_replay` (по `purchased_at`); `recompute` пишет состояние + снимок; `reset_to_sales_start`; `tick(clock)`; фильтры `route_available`/`available_day_routes`; пульт (`set_mode`).

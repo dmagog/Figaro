@@ -162,6 +162,20 @@ class SimState(SQLModel, table=True):
     seed: int = 42
 
 
+class OutboxMessage(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    type: str  # concert_reminder | availability_alert
+    user_id: Optional[int] = Field(default=None, foreign_key="user.id", index=True)
+    payload: dict = Field(default_factory=dict, sa_column=Column(JSON))
+    scheduled_for: datetime
+    status: str = "pending"  # pending | sent | failed
+    attempts: int = 0
+    next_attempt_at: Optional[datetime] = None
+    idempotency_key: str = Field(unique=True, index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    sent_at: Optional[datetime] = None
+
+
 # --- маршруты (предрасчёт, этап 2) ---
 class Archetype(SQLModel, table=True):
     __table_args__ = (UniqueConstraint("festival_id", "key", name="uq_archetype"),)
