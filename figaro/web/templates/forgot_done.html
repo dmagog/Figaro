@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Ссылка отправлена — Figaro{% endblock %}
+{% block content %}
+<article style="max-width: 32rem; margin: 2rem auto;">
+  <h1>Проверьте почту</h1>
+  <p class="muted">Если аккаунт <strong>{{ email }}</strong> существует, мы отправили ссылку для сброса пароля.</p>
+  {% if reset_url %}
+  <p class="muted">Почтовая рассылка пока не подключена (зона роста). Для демо ссылка здесь:</p>
+  <p><a href="{{ reset_url }}" role="button">Задать новый пароль</a></p>
+  {% endif %}
+  <p class="muted"><a href="/login">Вернуться ко входу</a></p>
+</article>
+{% endblock %}

@@ -223,6 +223,35 @@ def test_register_duplicate_email(app_world):
     assert r.status_code == 200 and "занят" in r.text.lower()
 
 
+def test_password_reset_flow(app_world):
+    import re
+    app, _, _ = app_world
+    client = TestClient(app)
+    client.get("/forgot")
+    csrf = client.cookies.get("figaro_csrf")
+    r = client.post("/forgot", data={"email": "u@figaro.dev", "csrf": csrf})
+    assert r.status_code == 200 and "Проверьте почту" in r.text
+    m = re.search(r"/reset\?token=([\w\-]+)", r.text)
+    assert m
+    token = m.group(1)
+    # старый пароль ещё работает
+    assert _login_as(TestClient(app), "u@figaro.dev").status_code == 303
+    # задаём новый пароль
+    client.get(f"/reset?token={token}")
+    csrf = client.cookies.get("figaro_csrf")
+    rr = client.post("/reset", data={"token": token, "password": "newpass123", "csrf": csrf},
+                     follow_redirects=False)
+    assert rr.status_code == 303 and rr.headers["location"] == "/login"
+    # новый пароль работает, старый — нет
+    c2 = TestClient(app)
+    c2.get("/login")
+    cs = c2.cookies.get("figaro_csrf")
+    ok = c2.post("/login", data={"email": "u@figaro.dev", "password": "newpass123", "csrf": cs},
+                 follow_redirects=False)
+    assert ok.status_code == 303
+    assert _login_as(TestClient(app), "u@figaro.dev").status_code == 200  # старый пароль → форма с ошибкой
+
+
 def test_research_requires_role(app_world):
     app, _, _ = app_world
     client = TestClient(app)

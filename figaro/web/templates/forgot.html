@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Сброс пароля — Figaro{% endblock %}
+{% block content %}
+<article style="max-width: 28rem; margin: 2rem auto;">
+  <hgroup>
+    <h1>Сброс пароля</h1>
+    <p class="muted">Укажите email — пришлём ссылку для смены пароля.</p>
+  </hgroup>
+  <form method="post" action="/forgot">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label>Email
+      <input type="email" name="email" required autofocus>
+    </label>
+    <button type="submit">Получить ссылку</button>
+  </form>
+  <p class="muted"><a href="/login">Вернуться ко входу</a></p>
+</article>
+{% endblock %}

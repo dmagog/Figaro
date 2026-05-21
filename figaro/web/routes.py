@@ -179,6 +179,40 @@ def verify(request: Request, token: str = "", session: Session = Depends(get_ses
         return _page(request, "verify.html", None, {"ok": False, "msg": str(e)})
 
 
+# --- сброс пароля ---
+@router.get("/forgot")
+def forgot_form(request: Request, user=Depends(current_user)):
+    if user:
+        return RedirectResponse("/recommend", status_code=303)
+    return _page(request, "forgot.html", None, {})
+
+
+@router.post("/forgot")
+def forgot_submit(request: Request, email: str = Form(...), csrf: str = Form(...),
+                  session: Session = Depends(get_session)):
+    _verify_csrf(request, csrf)
+    token = auth.request_password_reset(session, email)
+    # не раскрываем, существует ли аккаунт; почты нет → для dev показываем ссылку, если выдан токен
+    reset_url = f"/reset?token={token}" if token else None
+    return _page(request, "forgot_done.html", None, {"email": email, "reset_url": reset_url})
+
+
+@router.get("/reset")
+def reset_form(request: Request, token: str = ""):
+    return _page(request, "reset.html", None, {"token": token})
+
+
+@router.post("/reset")
+def reset_submit(request: Request, token: str = Form(...), password: str = Form(...),
+                 csrf: str = Form(...), session: Session = Depends(get_session)):
+    _verify_csrf(request, csrf)
+    try:
+        auth.reset_password(session, token, password)
+    except auth.AuthError as e:
+        return _page(request, "reset.html", None, {"token": token, "error": str(e)})
+    return RedirectResponse("/login", status_code=303)
+
+
 # --- анкета (холодный старт) ---
 PACE_OPTIONS = [("relaxed", "Расслабленно"), ("balanced", "Баланс"), ("marathon", "Марафон")]
 INTEREST_OPTIONS = [("new", "Открывать новое"), ("deep", "Глубже в любимое")]
