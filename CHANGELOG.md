@@ -2,6 +2,10 @@
 
 Версионирование итеративное; мажор = **3** (третья итерация сервиса). Минор растёт с каждым завершённым этапом [дорожной карты](docs/06-mvp-roadmap.md).
 
+## [3.7.0] — Этап 7: импорт наличия из файла (MVP завершён)
+- `importing/availability.py`: `import_availability` — файл остатков → `ConcertAvailability(source=crm_import)` + снимок + инвалидация кэша; каталог не трогает; привязка по `crm_show_id`. Тем же контрактом — будущий pull по CRM API.
+- **MVP завершён** (этапы 0–7). Тесты: pytest 51/51, behave 112 сценариев (14 фич, 4 `@growth` отложены).
+
 ## [3.6.0] — Этап 6: уведомления
 - Модель `OutboxMessage` (тип, payload, scheduled_for, status, attempts, next_attempt_at, idempotency_key unique).
 - `services/notifications.py`: `enqueue` (идемпотентно по ключу), `dispatch(now, sender)` (отправка due, sent/failed, backoff+лимит попыток), `schedule_reminders`, `alert_soldout` (с альтернативой). Транспорт подменяем (доменный код знает только enqueue) — без брокера.
