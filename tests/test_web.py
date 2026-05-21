@@ -50,6 +50,10 @@ def app_world():
     s.flush()
     s.add(DayRouteConcert(day_route_id=dr.id, concert_id=c1.id, position=0))
     s.add(DayRouteConcert(day_route_id=dr.id, concert_id=c3.id, position=1))
+    # длинный маршрут того же архетипа — для проверки влияния темпа анкеты
+    dr_long = DayRoute(festival_id=f.id, festival_day_id=day.id, archetype_id=arch.id,
+                       concerts_count=8, comfort_score=0.3, diversity_score=0.9, cost_kopecks=900000)
+    s.add(dr_long)
     u = auth.register(s, email="u@figaro.dev", password=PW, consent=True)
     u.email_verified = True
     s.add(u)
@@ -131,3 +135,37 @@ def test_csrf_required_on_post(app_world):
     _login(client)
     r = client.post(f"/sheet/from-route/{dr_id}", data={"csrf": "wrong"}, follow_redirects=False)
     assert r.status_code == 403
+
+
+def test_questionnaire_pace_changes_recommendations(app_world):
+    app, _, _ = app_world
+    client = TestClient(app)
+    _login(client)
+
+    # дефолт (без анкеты): подсказка заполнить анкету; баланс (target 5) скрывает маршрут на 8
+    rec = client.get("/recommend")
+    assert "Заполнить анкету" in rec.text
+    assert "2 концерт" in rec.text and "8 концерт" not in rec.text
+
+    # марафон — длинные маршруты остаются
+    csrf = client.cookies.get("figaro_csrf")
+    r = client.post("/questionnaire", data={"csrf": csrf, "pace": "marathon"},
+                    follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/recommend"
+    rec = client.get("/recommend")
+    assert "настроено по вашей анкете" in rec.text
+    assert "8 концерт" in rec.text and "2 концерт" in rec.text
+
+    # расслабленно — длинный маршрут (8) отфильтрован, короткий (2) остаётся
+    csrf = client.cookies.get("figaro_csrf")
+    client.post("/questionnaire", data={"csrf": csrf, "pace": "relaxed"})
+    rec = client.get("/recommend")
+    assert "2 концерт" in rec.text and "8 концерт" not in rec.text
+
+
+def test_questionnaire_get_renders(app_world):
+    app, _, _ = app_world
+    client = TestClient(app)
+    _login(client)
+    r = client.get("/questionnaire")
+    assert r.status_code == 200 and "Анкета" in r.text and "Марафон" in r.text

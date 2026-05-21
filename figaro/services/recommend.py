@@ -181,6 +181,53 @@ def recommend(session, festival_id: int, prof: WeightProfile, top_k: int = 10):
     return {key: rank_cards(group, prof)[:top_k] for key, group in grouped.items()}
 
 
+# ============ персистентность анкеты (этап 3-веб): UserPreferences ↔ WeightProfile ============
+def save_preferences(session, *, user_id: int, festival_id: int,
+                     pace: Optional[str] = None, interest_vector: Optional[str] = None,
+                     available_days=(), time_windows=(),
+                     favorite_author_ids=(), favorite_genre_ids=()):
+    """Сохранить/обновить анкету пользователя в рамках фестиваля (upsert по составному ключу)."""
+    from figaro.domain.models import UserPreferences
+
+    prefs = session.get(UserPreferences, (user_id, festival_id))
+    if prefs is None:
+        prefs = UserPreferences(user_id=user_id, festival_id=festival_id)
+    prefs.pace = _PACE.get((pace or "").strip().lower())
+    prefs.interest_vector = _INTEREST.get((interest_vector or "").strip().lower())
+    prefs.available_days = [int(d) for d in available_days]
+    prefs.time_windows = list(time_windows)
+    prefs.favorite_author_ids = [int(a) for a in favorite_author_ids]
+    prefs.favorite_genre_ids = [int(g) for g in favorite_genre_ids]
+    session.add(prefs)
+    session.flush()
+    return prefs
+
+
+def load_prefs(session, user_id: int, festival_id: int) -> Optional[Prefs]:
+    """Прочитать анкету и собрать Prefs (id любимых авторов/жанров → имена для бонуса)."""
+    from sqlmodel import select
+
+    from figaro.domain.models import Author, Genre, UserPreferences
+
+    p = session.get(UserPreferences, (user_id, festival_id))
+    if p is None:
+        return None
+    authors = {a.name for a in session.exec(select(Author).where(
+        Author.id.in_(p.favorite_author_ids or [-1]))).all()}
+    genres = {g.name for g in session.exec(select(Genre).where(
+        Genre.id.in_(p.favorite_genre_ids or [-1]))).all()}
+    return Prefs(pace=p.pace, interest_vector=p.interest_vector,
+                 available_days=tuple(p.available_days or ()),
+                 time_windows=tuple(p.time_windows or ()),
+                 favorite_authors=frozenset(authors), favorite_genres=frozenset(genres))
+
+
+def profile_for_user(session, user_id: int, festival_id: int) -> WeightProfile:
+    """Веса подбора по сохранённой анкете; если анкеты нет — дефолтные веса."""
+    prefs = load_prefs(session, user_id, festival_id)
+    return weights_from(prefs or Prefs())
+
+
 def relax_by_concert_count(cards, target_min: int, target_max: int):
     """Релаксация: если в [min,max] пусто — расширяем диапазон, пока не появятся варианты.
     Возвращает (cards, relaxed: bool). Дни/наличие НЕ ослабляем (это делается раньше/отдельно)."""

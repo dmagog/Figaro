@@ -4,9 +4,15 @@
 <hgroup>
   <h1>Подбор маршрутов</h1>
   <p class="muted">
-    {% if festival %}{{ festival.name }} · по умолчанию — сбалансированный темп{% endif %}
+    {% if festival %}{{ festival.name }} ·
+      {% if has_prefs %}настроено по вашей анкете{% else %}по умолчанию — сбалансированный темп{% endif %}
+    {% endif %}
   </p>
 </hgroup>
+
+{% if festival and not has_prefs %}
+<p><a href="/questionnaire" role="button" class="secondary">Заполнить анкету для точного подбора</a></p>
+{% endif %}
 
 {% if not festival %}
   <p>Сейчас нет активного фестиваля. Подбор будет доступен после активации.</p>

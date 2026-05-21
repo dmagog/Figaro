@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Анкета — Figaro{% endblock %}
+{% block content %}
+<hgroup>
+  <h1>Анкета</h1>
+  <p class="muted">Несколько ответов — и подбор маршрутов настроится под вас. Любой шаг можно пропустить.</p>
+</hgroup>
+
+{% if not festival %}
+  <p>Сейчас нет активного фестиваля.</p>
+{% else %}
+<form method="post" action="/questionnaire">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+
+  <fieldset>
+    <legend><strong>Темп</strong> — насколько плотный день вам комфортен</legend>
+    {% for value, label in pace_options %}
+    <label>
+      <input type="radio" name="pace" value="{{ value }}"
+             {% if current and current.pace == value %}checked{% endif %}>
+      {{ label }}
+    </label>
+    {% endfor %}
+  </fieldset>
+
+  <fieldset>
+    <legend><strong>Интерес</strong> — открывать новое или углубляться в любимое</legend>
+    {% for value, label in interest_options %}
+    <label>
+      <input type="radio" name="interest_vector" value="{{ value }}"
+             {% if current and current.interest_vector == value %}checked{% endif %}>
+      {{ label }}
+    </label>
+    {% endfor %}
+  </fieldset>
+
+  {% if authors %}
+  <fieldset>
+    <legend><strong>Любимые авторы</strong> — дадут бонус, но не отсекут остальное</legend>
+    <select name="author_ids" multiple size="8">
+      {% for a in authors %}
+      <option value="{{ a.id }}" {% if a.id in fav_ids %}selected{% endif %}>{{ a.name }}</option>
+      {% endfor %}
+    </select>
+    <small class="muted">Удерживайте Ctrl/Cmd, чтобы выбрать несколько</small>
+  </fieldset>
+  {% endif %}
+
+  <button type="submit">Сохранить и подобрать</button>
+</form>
+{% endif %}
+{% endblock %}

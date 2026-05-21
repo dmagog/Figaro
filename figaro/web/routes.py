@@ -10,16 +10,20 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Optional
 
+from typing import List
+
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
-from figaro.domain.models import (Archetype, Concert, Hall, RouteSheet,
+from figaro.domain.models import (Archetype, Author, Concert, Hall, RouteSheet,
                                   RouteSheetItem)
 from figaro.services import auth, sheets
 from figaro.services.festival import get_active
-from figaro.services.recommend import Prefs, recommend, weights_from
+from figaro.services.recommend import (load_prefs, profile_for_user,
+                                       recommend, relax_by_concert_count,
+                                       save_preferences)
 from figaro.web.deps import (CSRF_COOKIE, SESSION_COOKIE, clear_session_cookie,
                              csrf_token, current_user, get_session,
                              set_csrf_cookie, set_session_cookie)
@@ -137,6 +141,49 @@ def logout(request: Request, csrf: str = Form(...),
     return resp
 
 
+# --- анкета (холодный старт) ---
+PACE_OPTIONS = [("relaxed", "Расслабленно"), ("balanced", "Баланс"), ("marathon", "Марафон")]
+INTEREST_OPTIONS = [("new", "Открывать новое"), ("deep", "Глубже в любимое")]
+
+
+@router.get("/questionnaire")
+def questionnaire_form(request: Request, user=Depends(current_user),
+                       session: Session = Depends(get_session)):
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    fest = get_active(session)
+    authors, current = [], None
+    if fest is not None:
+        authors = session.exec(select(Author).where(
+            Author.festival_id == fest.id).order_by(Author.name)).all()
+        current = load_prefs(session, user.id, fest.id)
+    fav_ids = set()
+    if current is not None and fest is not None:
+        from figaro.domain.models import UserPreferences
+        p = session.get(UserPreferences, (user.id, fest.id))
+        fav_ids = set(p.favorite_author_ids or []) if p else set()
+    return _page(request, "questionnaire.html", user,
+                 {"festival": fest, "authors": authors, "fav_ids": fav_ids,
+                  "current": current, "pace_options": PACE_OPTIONS,
+                  "interest_options": INTEREST_OPTIONS})
+
+
+@router.post("/questionnaire")
+def questionnaire_save(request: Request, csrf: str = Form(...),
+                       pace: str = Form(""), interest_vector: str = Form(""),
+                       author_ids: List[int] = Form(default=[]),
+                       user=Depends(current_user), session: Session = Depends(get_session)):
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    _verify_csrf(request, csrf)
+    fest = get_active(session)
+    if fest is None:
+        raise HTTPException(409, "нет активного фестиваля")
+    save_preferences(session, user_id=user.id, festival_id=fest.id, pace=pace,
+                     interest_vector=interest_vector, favorite_author_ids=author_ids)
+    return RedirectResponse("/recommend", status_code=303)
+
+
 # --- подбор маршрутов ---
 @router.get("/recommend")
 def recommend_page(request: Request, user=Depends(current_user),
@@ -145,13 +192,20 @@ def recommend_page(request: Request, user=Depends(current_user),
         return RedirectResponse("/login", status_code=303)
     fest = get_active(session)
     groups = []
+    has_prefs = False
     if fest is not None:
+        has_prefs = load_prefs(session, user.id, fest.id) is not None
+        prof = profile_for_user(session, user.id, fest.id)
         titles = {a.key: a.title for a in session.exec(
             select(Archetype).where(Archetype.festival_id == fest.id)).all()}
-        res = recommend(session, fest.id, weights_from(Prefs()))
+        res = recommend(session, fest.id, prof)
         for key, cards in res.items():
-            groups.append({"title": titles.get(key, key), "cards": cards})
-    return _page(request, "recommend.html", user, {"festival": fest, "groups": groups})
+            # темп анкеты влияет на длину маршрута: фильтр по числу концертов (с релаксацией)
+            cards = relax_by_concert_count(cards, 1, prof.target_max_concerts)[0]
+            if cards:
+                groups.append({"title": titles.get(key, key), "cards": cards})
+    return _page(request, "recommend.html", user,
+                 {"festival": fest, "groups": groups, "has_prefs": has_prefs})
 
 
 # --- маршрутный лист ---
