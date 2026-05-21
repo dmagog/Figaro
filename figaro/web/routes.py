@@ -48,12 +48,32 @@ def _verify_csrf(request: Request, form_csrf: Optional[str]) -> None:
     auth.verify_csrf(form_csrf, request.cookies.get(CSRF_COOKIE))
 
 
+# статус перехода → подпись и цветовой класс чипа (см. routing/conflicts.Status)
+TRANSITION_UI = {
+    "ok": ("хватает времени", "ok"),
+    "tight": ("впритык", "warn"),
+    "hurry": ("нужно поторопиться", "bad"),
+    "overlap": ("накладка по времени", "bad"),
+    "same_hall": ("тот же зал", "muted"),
+    "same_building": ("то же здание", "muted"),
+    "no_data": ("нет данных о переходе", "muted"),
+}
+
+
 def _concert_disp(session: Session, concert_id: int) -> dict:
     c = session.get(Concert, concert_id)
     h = session.get(Hall, c.hall_id)
-    return {"id": c.id, "concert_id": c.id, "title": c.title,
+    return {"id": c.id, "concert_id": c.id, "show_num": c.show_num, "title": c.title,
             "hall": h.name if h else "—", "start": c.starts_at,
             "end": c.starts_at + timedelta(minutes=c.duration_min)}
+
+
+def _transition_disp(trans) -> Optional[dict]:
+    if trans is None:
+        return None
+    status, walk = trans
+    label, kind = TRANSITION_UI.get(status.value, (status.value, "muted"))
+    return {"label": label, "kind": kind, "walk": walk, "overlap": status.value == "overlap"}
 
 
 def _sheet_view(session: Session, sheet: RouteSheet) -> dict:
@@ -61,10 +81,10 @@ def _sheet_view(session: Session, sheet: RouteSheet) -> dict:
         RouteSheetItem.route_sheet_id == sheet.id)).all()
     pinned = {r.concert_id: r.is_pinned for r in rows}
     items = []
-    for c in sorted((session.get(Concert, r.concert_id) for r in rows),
-                    key=lambda c: c.starts_at):
+    for c, trans in sheets.chain_with_transitions(session, sheet):
         d = _concert_disp(session, c.id)
         d["pinned"] = pinned.get(c.id, False)
+        d["transition"] = _transition_disp(trans)
         items.append(d)
     suggestions = []
     for s in sheets.suggest_additions(session, sheet):

@@ -77,6 +77,20 @@ def _status_between(a: Concert, b: Concert, resolver, cfg) -> Status:
     return evaluate(_end(first), second.starts_at, first.hall_id, second.hall_id, walk, cfg)
 
 
+def chain_with_transitions(session, sheet):
+    """Концерты листа по времени + (статус, минуты) перехода с предыдущим — для отображения."""
+    resolver = build_resolver(session, sheet.festival_id)
+    cfg = TransitionConfig()
+    out, prev = [], None
+    for c in _concerts_in(session, sheet):
+        trans = None
+        if prev is not None:
+            trans = (_status_between(prev, c, resolver, cfg), resolver.walk(prev.hall_id, c.hall_id))
+        out.append((c, trans))
+        prev = c
+    return out
+
+
 def add_concert(session: Session, sheet: RouteSheet, concert_id: int) -> AddResult:
     fid = sheet.festival_id
     concert = session.get(Concert, concert_id)

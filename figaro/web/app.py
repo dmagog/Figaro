@@ -17,6 +17,7 @@ from typing import Optional
 
 from fastapi import FastAPI, Request
 from fastapi.responses import PlainTextResponse
+from fastapi.staticfiles import StaticFiles
 from sqlmodel import SQLModel
 
 from figaro import __version__
@@ -48,6 +49,7 @@ def create_app(engine: Optional[object] = None, clock_path: Optional[str] = None
     app.state.clock_path = clock_path        # None → пульт не пишет на диск (тесты чисты)
     if engine is not None:
         _init_sqlite(engine)
+    app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")), name="static")
     app.include_router(router)
 
     @app.exception_handler(auth.CsrfError)

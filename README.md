@@ -31,8 +31,9 @@ docker compose up -d   # app на http://localhost:49080/health
 ```bash
 # сид реального каталога + предрасчёт + активный фестиваль + демо-аккаунты
 DATABASE_URL="sqlite:///instance/figaro_dev.db" python -m figaro.web.devseed --data-dir data
-DATABASE_URL="sqlite:///instance/figaro_dev.db" uvicorn figaro.web.app:app --port 8731
-# вход: user@figaro.dev / figaro12345
+DATABASE_URL="sqlite:///instance/figaro_dev.db" uvicorn figaro.web.app:app --port 8754
+# открыть http://127.0.0.1:8754/ · вход: user@figaro.dev / figaro12345
+# (admin@figaro.dev — пульт, researcher@figaro.dev — дашборды; пароль тот же)
 ```
 
 ## Структура
@@ -47,4 +48,4 @@ tests/       юнит-тесты (pytest)
 
 ## Дорожная карта
 
-По этапам — [docs/06-mvp-roadmap.md](docs/06-mvp-roadmap.md). Версия **3.14.0** — **MVP завершён** (этапы 0–7) + офф-программа + **веб-слой** (полный авторизационный контур: вход/регистрация/верификация/сброс пароля; анкета, подбор под анкету, маршрутный лист с подсказками, админский пульт эмуляции, дашборды исследователя; server-rendered + HTMX). Дальше: телеграм-бот, live-API CRM.
+По этапам — [docs/06-mvp-roadmap.md](docs/06-mvp-roadmap.md). Версия **3.15.0** — **MVP завершён** (этапы 0–7) + офф-программа + **веб-слой** (светлая тема; полный авторизационный контур: вход/регистрация/верификация/сброс пароля; анкета, подбор под анкету, маршрутный лист карточками с номером концерта и статусами переходов, админский пульт эмуляции, дашборды исследователя; server-rendered + HTMX). Дальше: телеграм-бот, live-API CRM.
