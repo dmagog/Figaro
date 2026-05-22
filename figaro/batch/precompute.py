@@ -15,28 +15,8 @@ from figaro.domain.models import (Archetype, Author, Composition, Concert,
                                   DayRouteConcert, FestivalDay, Genre, Hall,
                                   HallTransition)
 from figaro.domain.routing.conflicts import TransitionConfig, TransitionResolver
-from figaro.domain.routing.dayroutes import (ConcertLite, RouteCandidate,
-                                            build_day_routes, pareto_filter)
-
-_ARCHETYPES = [
-    ("marathon", "Марафон", "Максимум концертов"),
-    ("comfort", "Комфортный", "Минимум переходов и ожидания"),
-    ("explorer", "Исследователь", "Максимум разнообразия"),
-    ("deep", "Глубокое погружение", "Фокус на одном авторе/жанре"),
-]
-
-
-def _ensure_archetypes(session: Session, fid: int) -> Dict[str, int]:
-    out = {}
-    for key, title, desc in _ARCHETYPES:
-        a = session.exec(select(Archetype).where(
-            Archetype.festival_id == fid, Archetype.key == key)).first()
-        if a is None:
-            a = Archetype(festival_id=fid, key=key, title=title, description=desc)
-            session.add(a)
-            session.flush()
-        out[key] = a.id
-    return out
+from figaro.domain.routing.dayroutes import (ConcertLite, build_day_routes,
+                                            pareto_filter)
 
 
 def build_resolver(session: Session, fid: int) -> TransitionResolver:
@@ -61,16 +41,6 @@ def _concert_lite(session: Session, c: Concert) -> ConcertLite:
                        genre=genre, authors=frozenset(authors), price_kopecks=c.price_kopecks)
 
 
-def _pick_archetype(r: RouteCandidate, max_concerts: int) -> str:
-    if r.diversity_score <= 1 and r.concerts_count >= 2:
-        return "deep"
-    if r.concerts_count == max_concerts:
-        return "marathon"
-    if (r.transition_minutes + r.wait_minutes) == 0:
-        return "comfort"
-    return "explorer"
-
-
 def _clear_day(session: Session, fid: int, day_id: int) -> None:
     routes = session.exec(select(DayRoute).where(
         DayRoute.festival_id == fid, DayRoute.festival_day_id == day_id)).all()
@@ -92,12 +62,10 @@ def precompute_day(session: Session, festival_id: int, day_id: int) -> int:
     resolver = build_resolver(session, fid)
     lites = [_concert_lite(session, c) for c in concerts]
     candidates = pareto_filter(build_day_routes(lites, resolver))
-    arche = _ensure_archetypes(session, fid)
-    max_concerts = max((c.concerts_count for c in candidates), default=0)
+    # архетип (кластер) присваивается позже, на уровне фестиваля — assign_clusters
     for cand in candidates:
         dr = DayRoute(
             festival_id=fid, festival_day_id=day_id,
-            archetype_id=arche[_pick_archetype(cand, max_concerts)],
             concerts_count=cand.concerts_count, halls_count=cand.halls_count,
             show_minutes=cand.show_minutes, transition_minutes=cand.transition_minutes,
             wait_minutes=cand.wait_minutes, cost_kopecks=cand.cost_kopecks,
@@ -111,10 +79,45 @@ def precompute_day(session: Session, festival_id: int, day_id: int) -> int:
     return len(candidates)
 
 
+def assign_clusters(session: Session, festival_id: int) -> List[Dict]:
+    """Кластеризует ВСЕ дневные маршруты фестиваля → архетипы (data-driven, k по силуэту).
+
+    Идемпотентно: сбрасывает ссылки маршрутов, удаляет старые архетипы и пересоздаёт.
+    """
+    from figaro.batch.clustering import FEATURES, cluster_routes
+
+    routes = session.exec(select(DayRoute).where(DayRoute.festival_id == festival_id)).all()
+    for r in routes:
+        r.archetype_id = None
+        session.add(r)
+    session.flush()
+    for old in session.exec(select(Archetype).where(Archetype.festival_id == festival_id)).all():
+        session.delete(old)
+    session.flush()
+    if not routes:
+        return []
+
+    rows = [{f: getattr(r, f) for f in FEATURES} for r in routes]
+    labels, clusters = cluster_routes(rows)
+    arch_ids = []
+    for c in clusters:
+        a = Archetype(festival_id=festival_id, key=c["key"], title=c["title"],
+                      description=c["description"])
+        session.add(a)
+        session.flush()
+        arch_ids.append(a.id)
+    for r, lab in zip(routes, labels):
+        r.archetype_id = arch_ids[lab]
+        session.add(r)
+    session.flush()
+    return clusters
+
+
 def precompute_festival(session: Session, festival_id: int) -> Dict[int, int]:
-    """Предрасчёт по ВСЕМ дням фестиваля. Возвращает {day_id: число маршрутов}."""
+    """Предрасчёт по ВСЕМ дням фестиваля + кластеризация маршрутов. Возвращает {day_id: число}."""
     stats = {}
     for day in session.exec(select(FestivalDay).where(
             FestivalDay.festival_id == festival_id)).all():
         stats[day.id] = precompute_day(session, festival_id, day.id)
+    assign_clusters(session, festival_id)
     return stats

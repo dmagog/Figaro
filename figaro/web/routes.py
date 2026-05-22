@@ -59,10 +59,16 @@ TRANSITION_UI = {
     "no_data": ("bi-question-circle", "нет данных о переходе", "muted"),
 }
 
-# архетипы маршрутов → bootstrap-иконка и порядок вывода в подборе
-ARCHETYPE_ICON = {"marathon": "bi-lightning-charge-fill", "comfort": "bi-emoji-smile",
-                  "explorer": "bi-compass", "deep": "bi-bullseye", "other": "bi-collection"}
-ARCHETYPE_ORDER = ["marathon", "comfort", "explorer", "deep"]
+# палитра иконок для кластеров-архетипов (по индексу кластера)
+CLUSTER_ICONS = ["bi-lightning-charge-fill", "bi-emoji-smile", "bi-compass", "bi-bullseye",
+                 "bi-collection", "bi-stars", "bi-gem", "bi-flag"]
+
+
+def _cluster_index(key: str) -> int:
+    try:
+        return int(str(key).split("-")[1])
+    except (IndexError, ValueError):
+        return 999
 
 
 def _concert_disp(session: Session, concert_id: int) -> dict:
@@ -321,13 +327,10 @@ def recommend_page(request: Request, user=Depends(current_user),
             cards = relax_by_concert_count(cards, 1, prof.target_max_concerts)[0]
             if cards:
                 chosen[key] = cards
-        order = ARCHETYPE_ORDER + [k for k in chosen if k not in ARCHETYPE_ORDER]
-        for key in order:
-            if key not in chosen:
-                continue
+        for pos, key in enumerate(sorted(chosen, key=_cluster_index)):
             title, desc = meta.get(key, (key, ""))
             groups.append({"key": key, "title": title, "description": desc,
-                           "icon": ARCHETYPE_ICON.get(key, "bi-collection"), "cards": chosen[key]})
+                           "icon": CLUSTER_ICONS[pos % len(CLUSTER_ICONS)], "cards": chosen[key]})
     return _page(request, "recommend.html", user,
                  {"festival": fest, "groups": groups, "has_prefs": has_prefs})
 
