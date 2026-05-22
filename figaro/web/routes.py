@@ -45,6 +45,10 @@ def _ru_date(d) -> str:
     return f"{d.day} {_RU_MONTHS[d.month]} ({_RU_WD[d.weekday()]})" if d else ""
 
 
+def _ru_date_plain(d) -> str:
+    return f"{d.day} {_RU_MONTHS[d.month]}, {_RU_WD[d.weekday()]}" if d else ""
+
+
 def _dedup(seq):
     """Убрать дубли, сохранив исходный порядок (порядок артистов/произведений не меняем)."""
     seen, out = set(), []
@@ -160,6 +164,11 @@ def _sheet_view(session: Session, sheet: RouteSheet) -> dict:
         d.update(transition_minutes=s.transition_minutes, is_repeat=s.is_repeat)
         slots.setdefault((s.after_id, s.before_id), []).append(d)
 
+    # порядковый номер дня фестиваля (1-based по дате) для отбивки «День N (дата)»
+    day_order = {fd.id: i + 1 for i, fd in enumerate(session.exec(
+        select(FestivalDay).where(FestivalDay.festival_id == sheet.festival_id
+        ).order_by(FestivalDay.day)).all())}
+
     chain = sheets.chain_with_transitions(session, sheet)
     n = len(chain)
     items, prev_day = [], None
@@ -169,7 +178,7 @@ def _sheet_view(session: Session, sheet: RouteSheet) -> dict:
         d["conflict"] = conflicts.get(c.id, [])
         d["day_first"] = c.festival_day_id != prev_day
         fday = session.get(FestivalDay, c.festival_day_id) if c.festival_day_id else None
-        d["day"] = _ru_date(fday.day if fday else None)
+        d["day"] = f"День {day_order.get(c.festival_day_id, '?')} ({_ru_date_plain(fday.day if fday else None)})"
         prev_day = c.festival_day_id
         if i + 1 < n:  # переход и щель крепятся к ТЕКУЩЕЙ карточке (сначала время, потом варианты)
             nxt, nxt_trans = chain[i + 1]

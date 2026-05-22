@@ -73,7 +73,7 @@
       {% if it.artists %}<p><i class="bi bi-people"></i> <b>Артисты:</b> {{ it.artists | join(", ") }}</p>{% endif %}
       {% if it.compositions %}
       <p><i class="bi bi-music-note-list"></i> <b>Программа:</b></p>
-      <ul>{% for w in it.compositions %}<li>{{ w.author }} — {{ w.title }}</li>{% endfor %}</ul>
+      <ul>{% for w in it.compositions %}<li>{{ w.author }}. {{ w.title }}</li>{% endfor %}</ul>
       {% endif %}
       {% if not it.artists and not it.compositions %}<p class="muted">Нет дополнительных данных.</p>{% endif %}
     </div>
@@ -88,6 +88,11 @@
       <button class="contrast outline" type="submit">Убрать</button>
     </form>
   </div>
+  {% if it.transition_next %}
+  <div class="concert-card__transition transition--{{ it.transition_next.kind }}">
+    <i class="bi {{ it.transition_next.icon }}"></i> {{ it.transition_next.text }}
+  </div>
+  {% endif %}
 </article>
 {% endmacro %}
 
@@ -101,10 +106,6 @@
     {% for it in view.items %}
       {% if it.day_first %}<div class="day-divider"><i class="bi bi-calendar-event"></i> {{ it.day }}</div>{% endif %}
       {{ concert_card(it, view.sheet, csrf) }}
-      {% if it.transition_next %}
-      <div class="transition transition--{{ it.transition_next.kind }}">
-        <i class="bi {{ it.transition_next.icon }}"></i> {{ it.transition_next.text }}</div>
-      {% endif %}
       {% if loop.last %}{% set slot_label = "в конец" %}{% else %}{% set slot_label = "перед «" ~ it.next_title ~ "»" %}{% endif %}
       {{ insert_slot(it.slot_after, slot_label, view.sheet, csrf) }}
     {% endfor %}

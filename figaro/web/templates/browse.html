@@ -4,8 +4,8 @@
 {% block content %}
 <hgroup>
   <h1><i class="bi bi-ui-checks"></i> Соберите маршрут сами</h1>
-  <p class="muted">Отметьте интересные концерты (раскройте строку — увидите артистов и программу).
-    Затем проверим выбранное на накладки, логистику и повторы программ.</p>
+  <p class="muted"><b>Нажмите на номер концерта</b>, чтобы добавить его в маршрут (повторное нажатие — убрать).
+    Раскройте строку, чтобы увидеть артистов и программу. Затем проверим выбранное на накладки, логистику и повторы программ.</p>
 </hgroup>
 
 {% if not festival %}
@@ -20,13 +20,15 @@
       <div class="browse-list">
         {% for c in d.concerts %}
         <div class="browse-row">
-          <input class="browse-row__cb" type="checkbox" name="concert_ids" value="{{ c.id }}"
-                 data-day="{{ c.day_id }}" data-hall="{{ c.hall }}" data-dur="{{ c.duration }}"
-                 data-price="{{ c.price_kopecks }}" data-composers="{{ c.composers | join('|') }}"
-                 {% if c.id in chosen %}checked{% endif %}>
+          <label class="num-toggle" title="Нажмите, чтобы добавить в маршрут">
+            <input type="checkbox" class="visually-hidden" name="concert_ids" value="{{ c.id }}"
+                   data-day="{{ c.day_id }}" data-hall="{{ c.hall }}" data-dur="{{ c.duration }}"
+                   data-price="{{ c.price_kopecks }}" data-composers="{{ c.composers | join('|') }}"
+                   {% if c.id in chosen %}checked{% endif %}>
+            <span class="num-toggle__badge">№{{ c.show_num }}</span>
+          </label>
           <details class="browse-row__details">
             <summary class="browse-row__summary">
-              <span class="num-badge num-badge--ghost">№{{ c.show_num }}</span>
               <span class="browse-row__main">
                 <span class="browse-row__title">{{ c.title }}</span>
                 <span class="concert-card__meta">
@@ -43,7 +45,7 @@
               {% if c.artists %}<p><i class="bi bi-people"></i> <b>Артисты:</b> {{ c.artists | join(", ") }}</p>{% endif %}
               {% if c.compositions %}
               <p><i class="bi bi-music-note-list"></i> <b>Программа:</b></p>
-              <ul>{% for w in c.compositions %}<li>{{ w.author }} — {{ w.title }}</li>{% endfor %}</ul>
+              <ul>{% for w in c.compositions %}<li>{{ w.author }}. {{ w.title }}</li>{% endfor %}</ul>
               {% endif %}
               {% if not c.artists and not c.compositions %}<p class="muted">Нет дополнительных данных.</p>{% endif %}
             </div>
