@@ -79,6 +79,27 @@ def _concert_disp(session: Session, concert_id: int) -> dict:
             "end": c.starts_at + timedelta(minutes=c.duration_min)}
 
 
+def _concert_full(session: Session, c: Concert) -> dict:
+    """Расширенная карточка концерта для каталога: + артисты, программа, жанр, длительность, цена."""
+    from figaro.domain.models import (Artist, Author, Composition, ConcertArtist,
+                                      ConcertComposition, ConcertGenre, Genre)
+    h = session.get(Hall, c.hall_id)
+    artists = session.exec(select(Artist.name).where(
+        Artist.id == ConcertArtist.artist_id, ConcertArtist.concert_id == c.id)).all()
+    comps = session.exec(select(Author.name, Composition.title).where(
+        Author.id == Composition.author_id,
+        Composition.id == ConcertComposition.composition_id,
+        ConcertComposition.concert_id == c.id)).all()
+    genre = session.exec(select(Genre.name).where(
+        Genre.id == ConcertGenre.genre_id, ConcertGenre.concert_id == c.id)).first()
+    return {"id": c.id, "show_num": c.show_num, "title": c.title, "hall": h.name if h else "—",
+            "start": c.starts_at, "end": c.starts_at + timedelta(minutes=c.duration_min),
+            "duration": c.duration_min, "price_kopecks": c.price_kopecks, "genre": genre,
+            "day_id": c.festival_day_id, "artists": sorted(set(artists)),
+            "compositions": [{"author": a, "title": t} for a, t in comps],
+            "composers": sorted({a for a, _ in comps})}
+
+
 def _transition_disp(trans, prev_d: Optional[dict], cur_d: dict) -> Optional[dict]:
     if trans is None:
         return None
@@ -289,7 +310,7 @@ def browse(request: Request, user=Depends(current_user),
             cs = session.exec(select(Concert).where(
                 Concert.festival_id == fest.id, Concert.festival_day_id == d.id
                 ).order_by(Concert.starts_at)).all()
-            days.append({"day": d.day, "concerts": [_concert_disp(session, c.id) for c in cs]})
+            days.append({"day": d.day, "concerts": [_concert_full(session, c) for c in cs]})
     return _page(request, "browse.html", user, {"festival": fest, "days": days, "chosen": chosen})
 
 

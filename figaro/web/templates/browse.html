@@ -1,40 +1,98 @@
 {% extends "base.html" %}
 {% block title %}Выбрать концерты — Figaro{% endblock %}
+{% block main_extra %} container--wide{% endblock %}
 {% block content %}
 <hgroup>
   <h1><i class="bi bi-ui-checks"></i> Соберите маршрут сами</h1>
-  <p class="muted">Отметьте интересные концерты — затем проверим их на накладки по времени,
-    логистику переходов и повторы программ.</p>
+  <p class="muted">Отметьте интересные концерты (раскройте строку — увидите артистов и программу).
+    Затем проверим выбранное на накладки, логистику и повторы программ.</p>
 </hgroup>
 
 {% if not festival %}
   <p>Сейчас нет активного фестиваля.</p>
 {% else %}
-<form method="post" action="/browse">
-  <input type="hidden" name="csrf" value="{{ csrf }}">
-  {% for d in days %}
-  <section class="section">
-    <h3><i class="bi bi-calendar-event"></i> {{ d.day }}</h3>
-    <div class="browse-list">
-      {% for c in d.concerts %}
-      <label class="browse-row">
-        <input type="checkbox" name="concert_ids" value="{{ c.id }}" {% if c.id in chosen %}checked{% endif %}>
-        <span class="num-badge num-badge--ghost">№{{ c.show_num }}</span>
-        <span class="browse-row__body">
-          <span class="browse-row__title">{{ c.title }}</span>
-          <span class="concert-card__meta">
-            <i class="bi bi-clock"></i> {{ c.start | hhmm }}–{{ c.end | hhmm }} ·
-            <i class="bi bi-geo-alt"></i> {{ c.hall }}
-          </span>
-        </span>
-      </label>
-      {% endfor %}
-    </div>
-  </section>
-  {% endfor %}
-  <div class="browse-actions">
-    <button type="submit"><i class="bi bi-check2-circle"></i> Проверить и собрать маршрут</button>
-  </div>
-</form>
+<div class="browse-layout">
+  <form id="browse-form" method="post" action="/browse">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    {% for d in days %}
+    <section class="section">
+      <h3><i class="bi bi-calendar-event"></i> {{ d.day }}</h3>
+      <div class="browse-list">
+        {% for c in d.concerts %}
+        <div class="browse-row">
+          <input class="browse-row__cb" type="checkbox" name="concert_ids" value="{{ c.id }}"
+                 data-day="{{ c.day_id }}" data-hall="{{ c.hall }}" data-dur="{{ c.duration }}"
+                 data-price="{{ c.price_kopecks }}" data-composers="{{ c.composers | join('|') }}"
+                 {% if c.id in chosen %}checked{% endif %}>
+          <details class="browse-row__details">
+            <summary class="browse-row__summary">
+              <span class="num-badge num-badge--ghost">№{{ c.show_num }}</span>
+              <span class="browse-row__main">
+                <span class="browse-row__title">{{ c.title }}</span>
+                <span class="concert-card__meta">
+                  <i class="bi bi-clock"></i> {{ c.start | hhmm }}–{{ c.end | hhmm }} ·
+                  <i class="bi bi-geo-alt"></i> {{ c.hall }}
+                  {% if c.genre %} · <i class="bi bi-tag"></i> {{ c.genre }}{% endif %}
+                  · {{ c.duration }} мин
+                  {% if c.price_kopecks %} · {{ c.price_kopecks | rub }}{% endif %}
+                </span>
+              </span>
+              <i class="bi bi-chevron-down browse-row__chev"></i>
+            </summary>
+            <div class="browse-row__more">
+              {% if c.artists %}<p><i class="bi bi-people"></i> <b>Артисты:</b> {{ c.artists | join(", ") }}</p>{% endif %}
+              {% if c.compositions %}
+              <p><i class="bi bi-music-note-list"></i> <b>Программа:</b></p>
+              <ul>{% for w in c.compositions %}<li>{{ w.author }} — {{ w.title }}</li>{% endfor %}</ul>
+              {% endif %}
+              {% if not c.artists and not c.compositions %}<p class="muted">Нет дополнительных данных.</p>{% endif %}
+            </div>
+          </details>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endfor %}
+  </form>
+
+  <aside class="browse-summary">
+    <h3><i class="bi bi-clipboard-check"></i> Выбрано</h3>
+    <div class="browse-summary__count"><span id="sum-count">0</span> <span class="muted" style="font-size:1rem">концертов</span></div>
+    <ul class="browse-summary__list">
+      <li><span><i class="bi bi-calendar-event"></i> Дни</span> <b id="sum-days">0</b></li>
+      <li><span><i class="bi bi-geo-alt"></i> Залы</span> <b id="sum-halls">0</b></li>
+      <li><span><i class="bi bi-people"></i> Композиторы</span> <b id="sum-composers">0</b></li>
+      <li><span><i class="bi bi-clock"></i> Время</span> <b><span id="sum-dur">0</span> мин</b></li>
+      <li><span><i class="bi bi-cash-coin"></i> Стоимость</span> <b id="sum-cost">0 ₽</b></li>
+    </ul>
+    <button type="submit" form="browse-form"><i class="bi bi-check2-circle"></i> Проверить и собрать маршрут</button>
+  </aside>
+</div>
+
+<script>
+(function () {
+  const boxes = [...document.querySelectorAll('input[name="concert_ids"]')];
+  const $ = id => document.getElementById(id);
+  const rub = k => Math.round(k / 100).toLocaleString('ru-RU') + ' ₽';
+  function update() {
+    const sel = boxes.filter(b => b.checked);
+    const days = new Set(), halls = new Set(), comp = new Set();
+    let dur = 0, price = 0;
+    sel.forEach(b => {
+      const d = b.dataset;
+      days.add(d.day); halls.add(d.hall); dur += +d.dur || 0; price += +d.price || 0;
+      (d.composers || '').split('|').forEach(x => { if (x) comp.add(x); });
+    });
+    $('sum-count').textContent = sel.length;
+    $('sum-days').textContent = days.size;
+    $('sum-halls').textContent = halls.size;
+    $('sum-composers').textContent = comp.size;
+    $('sum-dur').textContent = dur;
+    $('sum-cost').textContent = rub(price);
+  }
+  boxes.forEach(b => b.addEventListener('change', update));
+  update();
+})();
+</script>
 {% endif %}
 {% endblock %}
