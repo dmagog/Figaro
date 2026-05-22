@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Выбрать концерты — Figaro{% endblock %}
+{% block content %}
+<hgroup>
+  <h1><i class="bi bi-ui-checks"></i> Соберите маршрут сами</h1>
+  <p class="muted">Отметьте интересные концерты — затем проверим их на накладки по времени,
+    логистику переходов и повторы программ.</p>
+</hgroup>
+
+{% if not festival %}
+  <p>Сейчас нет активного фестиваля.</p>
+{% else %}
+<form method="post" action="/browse">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  {% for d in days %}
+  <section class="section">
+    <h3><i class="bi bi-calendar-event"></i> {{ d.day }}</h3>
+    <div class="browse-list">
+      {% for c in d.concerts %}
+      <label class="browse-row">
+        <input type="checkbox" name="concert_ids" value="{{ c.id }}" {% if c.id in chosen %}checked{% endif %}>
+        <span class="num-badge num-badge--ghost">№{{ c.show_num }}</span>
+        <span class="browse-row__body">
+          <span class="browse-row__title">{{ c.title }}</span>
+          <span class="concert-card__meta">
+            <i class="bi bi-clock"></i> {{ c.start | hhmm }}–{{ c.end | hhmm }} ·
+            <i class="bi bi-geo-alt"></i> {{ c.hall }}
+          </span>
+        </span>
+      </label>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+  <div class="browse-actions">
+    <button type="submit"><i class="bi bi-check2-circle"></i> Проверить и собрать маршрут</button>
+  </div>
+</form>
+{% endif %}
+{% endblock %}

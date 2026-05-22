@@ -20,6 +20,7 @@
         {% if user %}
         <li><a href="/questionnaire"><i class="bi bi-clipboard-check"></i>Анкета</a></li>
         <li><a href="/recommend"><i class="bi bi-music-note-list"></i>Подбор</a></li>
+        <li><a href="/browse"><i class="bi bi-ui-checks"></i>Собрать самому</a></li>
         <li><a href="/sheet"><i class="bi bi-map"></i>Мой лист</a></li>
         {% if user.role in ['researcher', 'admin'] %}<li><a href="/research"><i class="bi bi-bar-chart-line"></i>Дашборды</a></li>{% endif %}
         {% if user.role == 'admin' %}<li><a href="/admin/pult"><i class="bi bi-sliders"></i>Пульт</a></li>{% endif %}

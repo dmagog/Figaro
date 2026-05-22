@@ -73,6 +73,21 @@ def test_soldout_rejected_with_alternative(world):
     assert not res.added and "распродан" in res.reason and res.alternative_id is not None
 
 
+def test_conflicts_and_summary(world):
+    s, f, u, hall, day = world
+    sheet = sheets.create_empty(s, u.id, f.id)
+    prog = Program(festival_id=f.id, signature="P")
+    s.add(prog)
+    s.flush()
+    c1 = _concert(s, f, hall, day, datetime(2026, 7, 1, 12, 0), dur=60, sn=1, program_id=prog.id)
+    c2 = _concert(s, f, hall, day, datetime(2026, 7, 1, 12, 30), dur=60, sn=2, program_id=prog.id)
+    sheets.replace_items(s, sheet, [c1.id, c2.id])
+    issues = sheets.conflicts_in(s, sheet)
+    assert "накладка по времени" in issues[c1.id] and "повтор программы" in issues[c1.id]
+    summ = sheets.route_summary(s, sheet)
+    assert summ["concerts"] == 2 and summ["days"] == 1 and summ["halls"] == ["A"]
+
+
 def test_suggestions_fit_and_exclude_chosen(world):
     s, f, u, hall, day = world
     sheet = sheets.create_empty(s, u.id, f.id)

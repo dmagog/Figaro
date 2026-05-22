@@ -97,12 +97,14 @@ def _sheet_view(session: Session, sheet: RouteSheet) -> dict:
     rows = session.exec(select(RouteSheetItem).where(
         RouteSheetItem.route_sheet_id == sheet.id)).all()
     pinned = {r.concert_id: r.is_pinned for r in rows}
+    conflicts = sheets.conflicts_in(session, sheet)
     items = []
     prev_d = None
     for c, trans in sheets.chain_with_transitions(session, sheet):
         d = _concert_disp(session, c.id)
         d["pinned"] = pinned.get(c.id, False)
         d["transition"] = _transition_disp(trans, prev_d, d)
+        d["conflict"] = conflicts.get(c.id, [])
         items.append(d)
         prev_d = d
 
@@ -126,7 +128,8 @@ def _sheet_view(session: Session, sheet: RouteSheet) -> dict:
                   for o in sheets.suggest_off_program(session, sheet)]
     # SimpleNamespace, чтобы view.items в шаблоне не коллизировал с dict.items
     return SimpleNamespace(sheet=sheet, items=items, boundaries=boundaries,
-                           offprogram=offprogram)
+                           offprogram=offprogram, summary=sheets.route_summary(session, sheet),
+                           has_conflicts=any(conflicts.values()))
 
 
 def _sheet_partial(request: Request, session: Session, user, sheet: RouteSheet,
@@ -261,6 +264,48 @@ def reset_submit(request: Request, token: str = Form(...), password: str = Form(
     except auth.AuthError as e:
         return _page(request, "reset.html", None, {"token": token, "error": str(e)})
     return RedirectResponse("/login", status_code=303)
+
+
+# --- сборка маршрута с нуля: выбор из всего каталога ---
+@router.get("/browse")
+def browse(request: Request, user=Depends(current_user),
+           session: Session = Depends(get_session)):
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    fest = get_active(session)
+    days = []
+    chosen = set()
+    if fest is not None:
+        from figaro.domain.models import FestivalDay
+        # отметить уже выбранные в последнем листе пользователя
+        last = session.exec(select(RouteSheet).where(
+            RouteSheet.user_id == user.id, RouteSheet.festival_id == fest.id
+            ).order_by(RouteSheet.id.desc())).first()
+        if last:
+            chosen = {it.concert_id for it in session.exec(select(RouteSheetItem).where(
+                RouteSheetItem.route_sheet_id == last.id)).all()}
+        for d in session.exec(select(FestivalDay).where(
+                FestivalDay.festival_id == fest.id).order_by(FestivalDay.day)).all():
+            cs = session.exec(select(Concert).where(
+                Concert.festival_id == fest.id, Concert.festival_day_id == d.id
+                ).order_by(Concert.starts_at)).all()
+            days.append({"day": d.day, "concerts": [_concert_disp(session, c.id) for c in cs]})
+    return _page(request, "browse.html", user, {"festival": fest, "days": days, "chosen": chosen})
+
+
+@router.post("/browse")
+def browse_save(request: Request, csrf: str = Form(...),
+                concert_ids: List[int] = Form(default=[]),
+                user=Depends(current_user), session: Session = Depends(get_session)):
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    _verify_csrf(request, csrf)
+    fest = get_active(session)
+    if fest is None:
+        raise HTTPException(409, "нет активного фестиваля")
+    sheet = sheets.create_empty(session, user.id, fest.id, title="Мой выбор")
+    sheets.replace_items(session, sheet, concert_ids)
+    return RedirectResponse(f"/sheet?sheet_id={sheet.id}", status_code=303)
 
 
 # --- анкета (холодный старт) ---

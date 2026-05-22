@@ -57,6 +57,75 @@ def create_empty(session, user_id, festival_id, title=None) -> RouteSheet:
     return s
 
 
+def replace_items(session, sheet, concert_ids) -> None:
+    """Заменить состав листа выбранными концертами (без отсева конфликтов — их подсветим)."""
+    for it in _items(session, sheet):
+        session.delete(it)
+    session.flush()
+    concerts = sorted((session.get(Concert, cid) for cid in set(concert_ids)),
+                      key=lambda c: c.starts_at)
+    for pos, c in enumerate(concerts):
+        session.add(RouteSheetItem(route_sheet_id=sheet.id, concert_id=c.id, position=pos))
+    session.flush()
+
+
+def conflicts_in(session, sheet) -> dict:
+    """Карта {concert_id: [причины конфликта]} по выбранным концертам: время, логистика, повтор программы."""
+    resolver = build_resolver(session, sheet.festival_id)
+    cfg = TransitionConfig()
+    chain = _concerts_in(session, sheet)
+    issues = {c.id: [] for c in chain}
+    # повтор программы (любая пара с одинаковым program_id)
+    by_prog = {}
+    for c in chain:
+        if c.program_id is not None:
+            by_prog.setdefault(c.program_id, []).append(c)
+    for group in by_prog.values():
+        if len(group) > 1:
+            for c in group:
+                issues[c.id].append("повтор программы")
+    # накладка по времени (любая пара пересекающихся интервалов)
+    for i, a in enumerate(chain):
+        for b in chain[i + 1:]:
+            if b.starts_at < _end(a):
+                issues[a.id].append("накладка по времени")
+                issues[b.id].append("накладка по времени")
+    # логистика: не успеть на переход между соседями
+    for a, b in zip(chain, chain[1:]):
+        if _status_between(a, b, resolver, cfg) == Status.HURRY:
+            issues[b.id].append("очень мало времени на переход")
+    return {cid: sorted(set(v)) for cid, v in issues.items()}
+
+
+def route_summary(session, sheet) -> dict:
+    """Сводка по выбранному маршруту: дни, залы, композиторы, метрики."""
+    from figaro.domain.models import Author, Composition, ConcertComposition, Hall
+    chain = _concerts_in(session, sheet)
+    if not chain:
+        return {"concerts": 0, "days": 0, "halls": [], "composers": [],
+                "cost_kopecks": 0, "show_minutes": 0, "transition_minutes": 0, "wait_minutes": 0}
+    resolver = build_resolver(session, sheet.festival_id)
+    halls = sorted({session.get(Hall, c.hall_id).name for c in chain if c.hall_id})
+    composers = set()
+    show = 0
+    for c in chain:
+        show += c.duration_min
+        composers |= set(session.exec(select(Author.name).where(
+            Author.id == Composition.author_id,
+            Composition.id == ConcertComposition.composition_id,
+            ConcertComposition.concert_id == c.id)).all())
+    trans = wait = 0
+    for a, b in zip(chain, chain[1:]):
+        walk = resolver.walk(a.hall_id, b.hall_id) or 0
+        gap = int((b.starts_at - _end(a)).total_seconds() // 60)
+        trans += walk
+        wait += max(0, gap - walk)
+    return {"concerts": len(chain), "days": len({c.festival_day_id for c in chain}),
+            "halls": halls, "composers": sorted(composers),
+            "cost_kopecks": sum(c.price_kopecks for c in chain), "show_minutes": show,
+            "transition_minutes": trans, "wait_minutes": wait}
+
+
 def create_from_route(session, user_id, festival_id, day_route_id, title=None) -> RouteSheet:
     s = RouteSheet(user_id=user_id, festival_id=festival_id, title=title, source="from_archetype")
     session.add(s)

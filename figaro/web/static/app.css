@@ -98,6 +98,32 @@ main.container { padding-block: 1.5rem 3rem; }
 .gap__text { font-size: .8rem; }
 .gap__text .sep { color: var(--muted); margin: 0 .15rem; }
 
+/* конфликт концерта в выбранном маршруте */
+.concert-card--conflict { border-color: #f1a8a8; box-shadow: inset 0 0 0 1px #f1a8a8; }
+.notice--bad { background: var(--bad-bg); color: var(--bad-ink); }
+
+/* сводка маршрута */
+.summary { background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: .85rem 1rem; margin-bottom: 1rem; }
+.summary h3 { margin: 0 0 .5rem; }
+.summary__metrics { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap;
+  gap: .4rem 1.1rem; font-size: .9rem; }
+.summary__metrics li { display: flex; align-items: center; gap: .35rem; }
+.summary__composers { margin: .5rem 0 0; font-size: .82rem; }
+
+/* выбор концертов из каталога */
+.browse-list { display: flex; flex-direction: column; gap: .35rem; }
+.browse-row { display: flex; align-items: center; gap: .7rem; background: var(--card);
+  border: 1px solid var(--line); border-radius: 10px; padding: .5rem .8rem; cursor: pointer; }
+.browse-row:hover { border-color: var(--brand); }
+.browse-row input[type=checkbox] { width: 1.15rem; height: 1.15rem; flex: 0 0 auto; }
+.browse-row__body { display: flex; flex-direction: column; }
+.browse-row__title { font-weight: 600; }
+.browse-row:has(input:checked) { border-color: var(--brand); background: #f0f5ff; }
+.browse-actions { position: sticky; bottom: 0; padding: .8rem 0; margin-top: 1rem;
+  background: linear-gradient(180deg, transparent, var(--bg) 35%); }
+.browse-actions button { margin: 0; }
+
 /* секции и подсказки */
 .section { margin-top: 1.6rem; }
 .section h3 { margin-bottom: .6rem; }

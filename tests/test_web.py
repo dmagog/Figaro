@@ -144,6 +144,42 @@ def test_from_route_then_edit_sheet(app_world):
     assert rm.status_code == 200
 
 
+def test_browse_lists_and_builds(app_world):
+    app, _, _ = app_world
+    client = TestClient(app)
+    _login(client)
+    page = client.get("/browse")
+    assert page.status_code == 200 and "Соберите маршрут сами" in page.text
+    assert "Утренний" in page.text and 'name="concert_ids"' in page.text
+    with Session(app.state.engine) as s:
+        ids = [c.id for c in s.exec(select(Concert)).all()]
+    csrf = client.cookies.get("figaro_csrf")
+    r = client.post("/browse", data={"csrf": csrf, "concert_ids": ids}, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"].startswith("/sheet?sheet_id=")
+    sheet = client.get(r.headers["location"])
+    assert "Сводка маршрута" in sheet.text and "Утренний" in sheet.text
+
+
+def test_browse_conflict_highlighted(app_world):
+    app, _, c2_id = app_world  # c2 = «Дневной» 11:30–12:15
+    with Session(app.state.engine) as s:
+        c2 = s.get(Concert, c2_id)
+        clash = Concert(festival_id=c2.festival_id, show_num=99, crm_show_id=99, title="Накладка",
+                        hall_id=c2.hall_id, festival_day_id=c2.festival_day_id,
+                        starts_at=datetime(2026, 7, 1, 11, 45), duration_min=45, capacity=50)
+        s.add(clash)
+        s.commit()
+        clash_id = clash.id
+    client = TestClient(app)
+    _login(client)
+    csrf = client.cookies.get("figaro_csrf")
+    r = client.post("/browse", data={"csrf": csrf, "concert_ids": [c2_id, clash_id]},
+                    follow_redirects=False)
+    sheet = client.get(r.headers["location"])
+    assert "накладка по времени" in sheet.text
+    assert "concert-card--conflict" in sheet.text and "есть конфликты" in sheet.text
+
+
 def test_sheet_insertion_slot_offers_candidate(app_world):
     app, dr_id, _ = app_world
     client = TestClient(app)

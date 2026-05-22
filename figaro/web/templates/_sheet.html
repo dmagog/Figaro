@@ -1,5 +1,29 @@
 {% if notice %}<div class="notice">{{ notice }}</div>{% endif %}
 
+{% if view.summary.concerts %}
+<section class="summary">
+  <h3><i class="bi bi-clipboard-data"></i> Сводка маршрута</h3>
+  <ul class="summary__metrics">
+    <li><i class="bi bi-music-note-beamed"></i> {{ view.summary.concerts }} концертов</li>
+    <li><i class="bi bi-calendar-event"></i> {{ view.summary.days }} дн.</li>
+    <li><i class="bi bi-geo-alt"></i> {{ view.summary.halls | length }} залов</li>
+    <li><i class="bi bi-people"></i> {{ view.summary.composers | length }} композиторов</li>
+    <li><i class="bi bi-person-walking"></i> переходы {{ view.summary.transition_minutes }} мин</li>
+    <li><i class="bi bi-hourglass-split"></i> ожидание {{ view.summary.wait_minutes }} мин</li>
+    <li><i class="bi bi-cash-coin"></i> {{ view.summary.cost_kopecks | rub }}</li>
+  </ul>
+  {% if view.summary.composers %}
+  <p class="muted summary__composers"><i class="bi bi-people"></i>
+    {{ view.summary.composers[:10] | join(", ") }}{% if view.summary.composers | length > 10 %} и ещё {{ view.summary.composers | length - 10 }}{% endif %}</p>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if view.has_conflicts %}
+<div class="notice notice--bad"><i class="bi bi-exclamation-octagon"></i>
+  В выбранном есть конфликты — они отмечены красным ниже. Уберите лишнее или оставьте как есть.</div>
+{% endif %}
+
 {% macro insert_slot(b, view, csrf) %}
   {% if b.candidates %}
   <details class="slot">
@@ -62,11 +86,13 @@
           </span>
         </div>
         {% endif %}
-        <article class="concert-card{% if it.pinned %} is-pinned{% endif %}">
+        <article class="concert-card{% if it.pinned %} is-pinned{% endif %}{% if it.conflict %} concert-card--conflict{% endif %}">
           <div class="concert-card__head">
             <span class="num-badge">№{{ it.show_num }}</span>
             <div class="concert-card__body">
-              <div class="concert-card__title">{{ it.title }}</div>
+              <div class="concert-card__title">{{ it.title }}
+                {% for x in it.conflict %}<span class="chip chip--bad"><i class="bi bi-exclamation-triangle"></i> {{ x }}</span>{% endfor %}
+              </div>
               <div class="concert-card__meta">
                 <i class="bi bi-clock"></i> {{ it.start | hhmm }}–{{ it.end | hhmm }} ·
                 <i class="bi bi-geo-alt"></i> {{ it.hall }}
