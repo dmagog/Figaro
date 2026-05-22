@@ -1,0 +1,21 @@
+# окружение и кэши — не нужны в образе
+.venv/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# локальные данные/состояние (sqlite, clock-state) — даёт runtime-том/bind-mount
+instance/
+*.sqlite
+*.db
+
+# vcs и мусор
+.git/
+.gitignore
+.DS_Store
+*.log
+
+# секреты
+.env

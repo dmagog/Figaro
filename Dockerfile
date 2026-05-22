@@ -10,4 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+# каталог для sqlite/clock-state (если контейнер запущен без bind-mount тома)
+RUN mkdir -p /app/instance
+
 CMD ["uvicorn", "figaro.web.app:app", "--host", "0.0.0.0", "--port", "8080"]

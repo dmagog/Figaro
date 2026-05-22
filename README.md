@@ -19,21 +19,26 @@ pytest          # юнит-тесты
 behave          # BDD-сценарии
 ```
 
-Через Docker:
+### Через Docker (рекомендуется)
+
+Самодостаточный образ `figaro-v3`: sqlite в `./instance`, код смонтирован (авто-reload),
+схема и демо-данные засеиваются при старте.
 
 ```bash
-cp .env.example .env
-docker compose up -d   # app на http://localhost:49080/health
+docker compose up -d --build      # собрать образ и поднять контейнер
+# открыть http://localhost:8754/ · вход: user@figaro.dev / figaro12345
+# (admin@figaro.dev — пульт, researcher@figaro.dev — дашборды; пароль тот же)
+docker compose logs -f app        # логи
+docker compose down               # остановить
 ```
 
-Веб-слой (демо: подбор маршрутов + маршрутный лист):
+Изменения в `figaro/**.py` подхватываются авто-reload'ом, шаблоны/CSS — на лету (нужно лишь обновить вкладку). Postgres/redis/scheduler для веб-демо не нужны (добавим для прод-паритета позже).
+
+### Локально (без Docker)
 
 ```bash
-# сид реального каталога + предрасчёт + активный фестиваль + демо-аккаунты
 DATABASE_URL="sqlite:///instance/figaro_dev.db" python -m figaro.web.devseed --data-dir data
-DATABASE_URL="sqlite:///instance/figaro_dev.db" uvicorn figaro.web.app:app --port 8754
-# открыть http://127.0.0.1:8754/ · вход: user@figaro.dev / figaro12345
-# (admin@figaro.dev — пульт, researcher@figaro.dev — дашборды; пароль тот же)
+DATABASE_URL="sqlite:///instance/figaro_dev.db" uvicorn figaro.web.app:app --port 8754 --reload
 ```
 
 ## Структура

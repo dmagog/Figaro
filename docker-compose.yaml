@@ -1,45 +1,21 @@
+# Отдельный образ Figaro v3 (figaro-v3): самодостаточный dev-контейнер.
+# БД — sqlite в ./instance (переживает рестарт), код смонтирован для авто-reload,
+# схема и демо-данные засеиваются при старте (идемпотентно). Postgres/redis/scheduler
+# не нужны для веб-демо — их можно добавить позже для прод-паритета.
 services:
   app:
     build: .
-    restart: unless-stopped
-    env_file: [.env]
-    command: uvicorn figaro.web.app:app --host 0.0.0.0 --port 8080 --reload
-    volumes:
-      - .:/app
-    ports:
-      - "49080:8080"   # нестандартный хост-порт, чтобы не толкаться с другими проектами
-    depends_on:
-      - db
-      - redis
-
-  scheduler:
-    build: .
-    restart: unless-stopped
-    env_file: [.env]
-    command: python -m figaro.scheduler
-    volumes:
-      - .:/app
-    depends_on:
-      - db
-      - redis
-
-  db:
-    image: postgres:17
+    image: figaro-v3
+    container_name: figaro-v3
     restart: unless-stopped
     environment:
-      POSTGRES_USER: figaro
-      POSTGRES_PASSWORD: figaro
-      POSTGRES_DB: figaro
+      - DATABASE_URL=sqlite:////app/instance/figaro_dev.db
+      - PYTHONUNBUFFERED=1
+    # засеять (идемпотентно) и поднять uvicorn с авто-reload по изменениям в figaro/
+    command: >
+      sh -c "python -m figaro.web.devseed --data-dir data &&
+             uvicorn figaro.web.app:app --host 0.0.0.0 --port 8080 --reload --reload-dir figaro"
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - .:/app                       # код + ./instance (sqlite) монтируются с хоста → live-reload и персист
     ports:
-      - "49432:5432"
-
-  redis:
-    image: redis:7
-    restart: unless-stopped
-    ports:
-      - "49379:6379"
-
-volumes:
-  pg_data:
+      - "8754:8080"                  # нестандартный хост-порт (8731/49080/49432 заняты другими проектами)
