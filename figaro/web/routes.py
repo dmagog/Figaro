@@ -151,53 +151,74 @@ def _transition_plate(trans, cur: Concert, nxt: Concert, session: Session) -> di
             "text": f"Переходим в → {nxt_hall} • {walk_txt} • {_hm(gap)} до следующего концерта"}
 
 
+def _offprogram_slots(session: Session, sheet: RouteSheet) -> dict:
+    """Внепрограммные события по щелям маршрута (до/между концертами) с деталями для блока."""
+    from figaro.domain.models import OffProgram
+    out: dict = {}
+    for s in sheets.suggest_off_program(session, sheet):
+        op = session.get(OffProgram, s.off_program_id)
+        if op is None:
+            continue
+        h = session.get(Hall, op.hall_id) if op.hall_id else None
+        out.setdefault((s.after_id, s.before_id), []).append({
+            "title": op.title, "start": op.starts_at, "fmt": op.fmt,
+            "hall": h.name if h else None, "duration": op.duration_min,
+            "is_recommended": op.is_recommended, "description": op.description})
+    return out
+
+
 def _sheet_view(session: Session, sheet: RouteSheet) -> dict:
     rows = session.exec(select(RouteSheetItem).where(
         RouteSheetItem.route_sheet_id == sheet.id)).all()
     pinned = {r.concert_id: r.is_pinned for r in rows}
     conflicts = sheets.conflicts_in(session, sheet)
 
-    # подсказки группируем по «щели»: (после какого, перед каким концертом встают)
+    # подсказки-концерты по «щели»: (после какого, перед каким концертом встают)
     slots: dict = {}
     for s in sheets.suggest_additions(session, sheet):
         d = _concert_disp(session, s.concert_id)
         d.update(transition_minutes=s.transition_minutes, is_repeat=s.is_repeat)
         slots.setdefault((s.after_id, s.before_id), []).append(d)
+    op_slots = _offprogram_slots(session, sheet)  # офф-программа по тем же щелям
 
-    # порядковый номер дня фестиваля (1-based по дате) для отбивки «День N (дата)»
+    # порядковый номер дня фестиваля (1-based) — для отбивки и тоновых оттенков
     day_order = {fd.id: i + 1 for i, fd in enumerate(session.exec(
         select(FestivalDay).where(FestivalDay.festival_id == sheet.festival_id
         ).order_by(FestivalDay.day)).all())}
 
     chain = sheets.chain_with_transitions(session, sheet)
+    day_count: dict = {}
+    for c, _t in chain:
+        day_count[c.festival_day_id] = day_count.get(c.festival_day_id, 0) + 1
+
     n = len(chain)
     items, prev_day = [], None
     for i, (c, _trans_from_prev) in enumerate(chain):
         d = _concert_full(session, c)
+        idx = day_order.get(c.festival_day_id, 1)
+        fday = session.get(FestivalDay, c.festival_day_id) if c.festival_day_id else None
         d["pinned"] = pinned.get(c.id, False)
         d["conflict"] = conflicts.get(c.id, [])
         d["day_first"] = c.festival_day_id != prev_day
-        fday = session.get(FestivalDay, c.festival_day_id) if c.festival_day_id else None
-        d["day"] = f"День {day_order.get(c.festival_day_id, '?')} ({_ru_date_plain(fday.day if fday else None)})"
+        d["day"] = f"День {idx} ({_ru_date_plain(fday.day if fday else None)})"
+        d["day_count"] = day_count.get(c.festival_day_id, 0)
+        d["tone"] = (idx - 1) % 5          # оттенок дня (циклически)
         prev_day = c.festival_day_id
-        if i + 1 < n:  # переход и щель крепятся к ТЕКУЩЕЙ карточке (сначала время, потом варианты)
+        if i + 1 < n:  # переход/щель/офф-программа крепятся к ТЕКУЩЕЙ карточке
             nxt, nxt_trans = chain[i + 1]
             d["transition_next"] = _transition_plate(nxt_trans, c, nxt, session)
-            d["slot_after"] = slots.get((c.id, nxt.id), [])
-            d["next_title"] = nxt.title
+            key, d["next_title"] = (c.id, nxt.id), nxt.title
         else:
-            d["transition_next"] = None
-            d["slot_after"] = slots.get((c.id, None), [])
-            d["next_title"] = None
+            d["transition_next"], d["next_title"], key = None, None, (c.id, None)
+        d["slot_after"] = slots.get(key, [])
+        d["op_after"] = op_slots.get(key, [])
         items.append(d)
 
-    slot_before = slots.get((None, items[0]["id"]), []) if items else slots.get((None, None), [])
-    offprogram = [{"title": o.title, "is_recommended": o.is_recommended,
-                   "transition_minutes": o.transition_minutes}
-                  for o in sheets.suggest_off_program(session, sheet)]
-    # SimpleNamespace, чтобы view.items в шаблоне не коллизировал с dict.items
-    return SimpleNamespace(sheet=sheet, items=items, slot_before=slot_before,
-                           offprogram=offprogram, summary=sheets.route_summary(session, sheet),
+    first_id = items[0]["id"] if items else None
+    return SimpleNamespace(sheet=sheet, items=items,
+                           slot_before=slots.get((None, first_id), []),
+                           op_before=op_slots.get((None, first_id), []),
+                           summary=sheets.route_summary(session, sheet),
                            has_conflicts=any(conflicts.values()))
 
 

@@ -12,10 +12,6 @@
     <li><i class="bi bi-hourglass-split"></i> ожидание {{ view.summary.wait_minutes | hm }}</li>
     <li><i class="bi bi-cash-coin"></i> {{ view.summary.cost_kopecks | rub }}</li>
   </ul>
-  {% if view.summary.composers %}
-  <p class="muted summary__composers"><i class="bi bi-people"></i>
-    {{ view.summary.composers[:10] | join(", ") }}{% if view.summary.composers | length > 10 %} и ещё {{ view.summary.composers | length - 10 }}{% endif %}</p>
-  {% endif %}
 </section>
 {% endif %}
 
@@ -32,9 +28,9 @@
       {% for s in cands %}
       <article class="concert-card concert-card--cand">
         <div class="concert-card__summary">
-          <span class="time-badge time-badge--ghost">{{ s.start | hhmm }}</span>
+          <span class="num-badge num-badge--ghost">№{{ s.show_num }}</span>
           <span class="concert-card__main">
-            <span class="concert-card__title">№{{ s.show_num }}. {{ s.title }}
+            <span class="concert-card__title">{{ s.start | hhmm }} · {{ s.title }}
               {% if s.is_repeat %}<span class="chip chip--warn">повтор программы</span>{% endif %}</span>
             <span class="concert-card__meta">
               <i class="bi bi-geo-alt"></i> {{ s.hall }} · <i class="bi bi-person-walking"></i> переход {{ s.transition_minutes }} мин</span>
@@ -51,49 +47,75 @@
   {% endif %}
 {% endmacro %}
 
-{% macro concert_card(it, sheet, csrf) %}
-<article class="concert-card{% if it.pinned %} is-pinned{% endif %}{% if it.conflict %} concert-card--conflict{% endif %}">
-  <details class="concert-card__details">
-    <summary class="concert-card__summary">
-      <span class="time-badge">{{ it.start | hhmm }}</span>
-      <span class="concert-card__main">
-        <span class="concert-card__title">№{{ it.show_num }}. {{ it.title }}
-          {% for x in it.conflict %}<span class="chip chip--bad"><i class="bi bi-exclamation-triangle"></i> {{ x }}</span>{% endfor %}
-          {% if it.pinned %}<span class="chip chip--brand"><i class="bi bi-pin-angle-fill"></i> закреплён</span>{% endif %}
+{% macro offprogram_block(events, label, emoji) %}
+  {% if events %}
+  <details class="offprog-block" open>
+    <summary class="offprog-block__head"><span>{{ emoji }} {{ label }}:</span><i class="bi bi-chevron-down"></i></summary>
+    <div class="offprog-block__list">
+      {% for e in events %}
+      <div class="offprog-row">
+        <span class="offprog-row__time">{{ e.start | hhmm }}</span>
+        <span class="offprog-row__body">
+          <span class="offprog-row__title">{{ e.title }}
+            {% if e.fmt %}<span class="tag-fmt">{{ e.fmt }}</span>{% endif %}
+            {% if e.is_recommended %}<span class="chip chip--ok">рекомендуем</span>{% endif %}</span>
+          {% if e.description %}<span class="offprog-row__desc">{{ e.description }}</span>{% endif %}
         </span>
-        <span class="concert-card__meta">{{ it.hall }}{% if it.address %} • {{ it.address }}{% endif %}</span>
-      </span>
-      <span class="concert-card__aside">
-        {% if it.genre %}<span class="muted">{{ it.genre }}</span>{% endif %}
-        <span><i class="bi bi-clock"></i> {{ it.duration | hm }}</span>
-      </span>
-      <i class="bi bi-chevron-down concert-card__chev"></i>
-    </summary>
-    <div class="concert-card__more">
-      {% if it.artists %}<p><i class="bi bi-people"></i> <b>Артисты:</b> {{ it.artists | join(", ") }}</p>{% endif %}
-      {% if it.compositions %}
-      <p><i class="bi bi-music-note-list"></i> <b>Программа:</b></p>
-      <ul>{% for w in it.compositions %}<li>{{ w.author }}. {{ w.title }}</li>{% endfor %}</ul>
-      {% endif %}
-      {% if not it.artists and not it.compositions %}<p class="muted">Нет дополнительных данных.</p>{% endif %}
+        <span class="offprog-row__loc">{% if e.hall %}<i class="bi bi-geo-alt-fill"></i> {{ e.hall }}{% endif %}</span>
+        <span class="offprog-row__dur">{{ e.duration | hm }}</span>
+      </div>
+      {% endfor %}
     </div>
   </details>
-  <div class="concert-card__actions">
+  {% endif %}
+{% endmacro %}
+
+{% macro concert_row(it, sheet, csrf) %}
+<div class="route-row tone-{{ it.tone }}">
+  <span class="time-badge">{{ it.start | hhmm }}</span>
+  <article class="concert-card{% if it.pinned %} is-pinned{% endif %}{% if it.conflict %} concert-card--conflict{% endif %}">
+    <details class="concert-card__details">
+      <summary class="concert-card__summary">
+        <span class="concert-card__main">
+          <span class="concert-card__title"><span class="num">№{{ it.show_num }}.</span> {{ it.title }}
+            {% for x in it.conflict %}<span class="chip chip--bad"><i class="bi bi-exclamation-triangle"></i> {{ x }}</span>{% endfor %}
+            {% if it.pinned %}<span class="chip chip--brand"><i class="bi bi-pin-angle-fill"></i> закреплён</span>{% endif %}
+          </span>
+          <span class="concert-card__meta">{{ it.hall }}{% if it.address %} • {{ it.address }}{% endif %}</span>
+        </span>
+        <span class="concert-card__aside">
+          {% if it.genre %}<span class="muted">{{ it.genre }}</span>{% endif %}
+          <span><i class="bi bi-clock"></i> {{ it.duration | hm }}</span>
+        </span>
+        <i class="bi bi-chevron-down concert-card__chev" title="Подробнее"></i>
+      </summary>
+      <div class="concert-card__more">
+        {% if it.artists %}<p><i class="bi bi-people"></i> <b>Артисты:</b> {{ it.artists | join(", ") }}</p>{% endif %}
+        {% if it.compositions %}
+        <p><i class="bi bi-music-note-list"></i> <b>Программа:</b></p>
+        <ul>{% for w in it.compositions %}<li>{{ w.author }}. {{ w.title }}</li>{% endfor %}</ul>
+        {% endif %}
+        {% if not it.artists and not it.compositions %}<p class="muted">Нет дополнительных данных.</p>{% endif %}
+      </div>
+    </details>
+    {% if it.transition_next %}
+    <div class="concert-card__transition transition--{{ it.transition_next.kind }}">
+      <i class="bi {{ it.transition_next.icon }}"></i> {{ it.transition_next.text }}
+    </div>
+    {% endif %}
+  </article>
+  <div class="route-row__actions">
     <form hx-post="/sheet/{{ sheet.id }}/pin/{{ it.id }}" hx-target="#sheet" hx-swap="innerHTML">
       <input type="hidden" name="csrf" value="{{ csrf }}">
-      <button class="secondary outline" type="submit">{% if it.pinned %}Открепить{% else %}Закрепить{% endif %}</button>
+      <button class="secondary outline" type="submit" title="{% if it.pinned %}Открепить{% else %}Закрепить{% endif %}">
+        <i class="bi {% if it.pinned %}bi-pin-fill{% else %}bi-pin-angle{% endif %}"></i></button>
     </form>
     <form hx-post="/sheet/{{ sheet.id }}/remove/{{ it.id }}" hx-target="#sheet" hx-swap="innerHTML">
       <input type="hidden" name="csrf" value="{{ csrf }}">
-      <button class="contrast outline" type="submit">Убрать</button>
+      <button class="contrast outline" type="submit" title="Убрать"><i class="bi bi-x-lg"></i></button>
     </form>
   </div>
-  {% if it.transition_next %}
-  <div class="concert-card__transition transition--{{ it.transition_next.kind }}">
-    <i class="bi {{ it.transition_next.icon }}"></i> {{ it.transition_next.text }}
-  </div>
-  {% endif %}
-</article>
+</div>
 {% endmacro %}
 
 <section class="section">
@@ -102,25 +124,23 @@
     <p class="muted">Лист пуст — раскройте блок ниже и добавьте первый концерт.</p>
   {% endif %}
   <div class="timeline">
+    {{ offprogram_block(view.op_before, "Начните день с офф-программы", "🌅") }}
     {{ insert_slot(view.slot_before, "в начало", view.sheet, csrf) }}
     {% for it in view.items %}
-      {% if it.day_first %}<div class="day-divider"><i class="bi bi-calendar-event"></i> {{ it.day }}</div>{% endif %}
-      {{ concert_card(it, view.sheet, csrf) }}
+      {% if it.day_first %}
+      <div class="day-divider tone-{{ it.tone }}">
+        <span><i class="bi bi-calendar-event"></i> {{ it.day }}</span>
+        <span class="day-divider__count">{{ it.day_count }} концерт(ов)</span>
+      </div>
+      {% endif %}
+      {{ concert_row(it, view.sheet, csrf) }}
+      {% if loop.last %}
+        {{ offprogram_block(it.op_after, "Продолжите маршрут офф-программой", "🌙") }}
+      {% else %}
+        {{ offprogram_block(it.op_after, "У вас есть время посетить события офф-программы", "👇") }}
+      {% endif %}
       {% if loop.last %}{% set slot_label = "в конец" %}{% else %}{% set slot_label = "перед «" ~ it.next_title ~ "»" %}{% endif %}
       {{ insert_slot(it.slot_after, slot_label, view.sheet, csrf) }}
     {% endfor %}
   </div>
 </section>
-
-{% if view.offprogram %}
-<section class="section">
-  <h3><i class="bi bi-stars"></i> Офф-программа рядом</h3>
-  {% for o in view.offprogram %}
-  <div class="offprogram">
-    {{ o.title }}
-    {% if o.is_recommended %}<span class="chip chip--ok">рекомендуем</span>{% endif %}
-    · <i class="bi bi-person-walking"></i> переход {{ o.transition_minutes }} мин
-  </div>
-  {% endfor %}
-</section>
-{% endif %}
