@@ -33,7 +33,7 @@
                   <i class="bi bi-clock"></i> {{ c.start | hhmm }}–{{ c.end | hhmm }} ·
                   <i class="bi bi-geo-alt"></i> {{ c.hall }}
                   {% if c.genre %} · <i class="bi bi-tag"></i> {{ c.genre }}{% endif %}
-                  · {{ c.duration }} мин
+                  · {{ c.duration | hm }}
                   {% if c.price_kopecks %} · {{ c.price_kopecks | rub }}{% endif %}
                 </span>
               </span>

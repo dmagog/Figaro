@@ -16,8 +16,8 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
 from figaro.domain.clock import phase_for
-from figaro.domain.models import (Archetype, Author, Concert, Hall, RouteSheet,
-                                  RouteSheetItem)
+from figaro.domain.models import (Archetype, Author, Concert, FestivalDay, Hall,
+                                  RouteSheet, RouteSheetItem)
 from figaro.services import analytics, auth, availability, sheets
 from figaro.services.festival import get_active
 from figaro.services.recommend import (load_prefs, profile_for_user,
@@ -27,11 +27,40 @@ from figaro.web.deps import (CSRF_COOKIE, SESSION_COOKIE, clear_session_cookie,
                              csrf_token, current_user, get_session,
                              set_csrf_cookie, set_session_cookie)
 
+_RU_MONTHS = ["", "января", "февраля", "марта", "апреля", "мая", "июня",
+              "июля", "августа", "сентября", "октября", "ноября", "декабря"]
+_RU_WD = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"]
+
+
+def _hm(minutes) -> str:
+    """Минуты → «N мин» или «N ч M мин» (крупные значения читабельнее в часах)."""
+    m = int(minutes or 0)
+    if m < 60:
+        return f"{m} мин"
+    h, mm = divmod(m, 60)
+    return f"{h} ч {mm} мин" if mm else f"{h} ч"
+
+
+def _ru_date(d) -> str:
+    return f"{d.day} {_RU_MONTHS[d.month]} ({_RU_WD[d.weekday()]})" if d else ""
+
+
+def _dedup(seq):
+    """Убрать дубли, сохранив исходный порядок (порядок артистов/произведений не меняем)."""
+    seen, out = set(), []
+    for x in seq:
+        if x not in seen:
+            seen.add(x)
+            out.append(x)
+    return out
+
+
 router = APIRouter()
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 templates.env.filters["rub"] = lambda k: f"{(k or 0) // 100:,} ₽".replace(",", " ")
 templates.env.filters["hhmm"] = lambda dt: dt.strftime("%H:%M") if dt else ""
 templates.env.filters["dtlocal"] = lambda dt: dt.strftime("%Y-%m-%dT%H:%M") if dt else ""
+templates.env.filters["hm"] = _hm
 
 DEMO_ACCOUNTS = ["user@figaro.dev / figaro12345", "admin@figaro.dev / figaro12345 (пульт)"]
 
@@ -47,17 +76,6 @@ def _page(request: Request, name: str, user, ctx: dict):
 def _verify_csrf(request: Request, form_csrf: Optional[str]) -> None:
     auth.verify_csrf(form_csrf, request.cookies.get(CSRF_COOKIE))
 
-
-# статус перехода → bootstrap-иконка, подпись и цветовой класс чипа (см. routing/conflicts.Status)
-TRANSITION_UI = {
-    "ok": ("bi-check-circle", "хватает времени", "ok"),
-    "tight": ("bi-hourglass-split", "впритык", "warn"),
-    "hurry": ("bi-stopwatch", "нужно поторопиться", "bad"),
-    "overlap": ("bi-exclamation-triangle", "накладка по времени", "bad"),
-    "same_hall": ("bi-geo-alt", "тот же зал", "muted"),
-    "same_building": ("bi-building", "то же здание", "muted"),
-    "no_data": ("bi-question-circle", "нет данных о переходе", "muted"),
-}
 
 # палитра иконок для кластеров-архетипов (по индексу кластера)
 CLUSTER_ICONS = ["bi-lightning-charge-fill", "bi-emoji-smile", "bi-compass", "bi-bullseye",
@@ -84,8 +102,9 @@ def _concert_full(session: Session, c: Concert) -> dict:
     from figaro.domain.models import (Artist, Author, Composition, ConcertArtist,
                                       ConcertComposition, ConcertGenre, Genre)
     h = session.get(Hall, c.hall_id)
-    artists = session.exec(select(Artist.name).where(
-        Artist.id == ConcertArtist.artist_id, ConcertArtist.concert_id == c.id)).all()
+    # порядок артистов/произведений — как при импорте (естественный порядок строк связи), не сортируем
+    artists = _dedup(session.exec(select(Artist.name).where(
+        Artist.id == ConcertArtist.artist_id, ConcertArtist.concert_id == c.id)).all())
     comps = session.exec(select(Author.name, Composition.title).where(
         Author.id == Composition.author_id,
         Composition.id == ConcertComposition.composition_id,
@@ -93,25 +112,39 @@ def _concert_full(session: Session, c: Concert) -> dict:
     genre = session.exec(select(Genre.name).where(
         Genre.id == ConcertGenre.genre_id, ConcertGenre.concert_id == c.id)).first()
     return {"id": c.id, "show_num": c.show_num, "title": c.title, "hall": h.name if h else "—",
+            "address": h.address if h else None,
             "start": c.starts_at, "end": c.starts_at + timedelta(minutes=c.duration_min),
             "duration": c.duration_min, "price_kopecks": c.price_kopecks, "genre": genre,
-            "day_id": c.festival_day_id, "artists": sorted(set(artists)),
+            "day_id": c.festival_day_id, "artists": artists,
             "compositions": [{"author": a, "title": t} for a, t in comps],
-            "composers": sorted({a for a, _ in comps})}
+            "composers": _dedup([a for a, _ in comps])}
 
 
-def _transition_disp(trans, prev_d: Optional[dict], cur_d: dict) -> Optional[dict]:
-    if trans is None:
-        return None
+def _transition_plate(trans, cur: Concert, nxt: Concert, session: Session) -> dict:
+    """Плашка перехода к СЛЕДУЮЩЕМУ концерту. Формулировки — выверенные в прежней версии."""
     status, walk, gap = trans
-    icon, label, kind = TRANSITION_UI.get(status.value, ("bi-dot", status.value, "muted"))
-    # домен помечает walk=0 как same_hall даже для РАЗНЫХ залов (рядом, 0 мин) — уточняем подпись
-    if status.value == "same_hall" and prev_d and prev_d["hall"] != cur_d["hall"]:
-        icon, label = "bi-geo-alt", "рядом, переход не нужен"
-    return {"icon": icon, "label": label, "kind": kind, "walk": walk, "gap": gap,
-            "buffer": (gap - walk) if walk is not None else None,
-            "overlap": status.value == "overlap",
-            "prev_end": prev_d["end"] if prev_d else None, "cur_start": cur_d["start"]}
+    gap = max(0, gap)
+    walk_txt = f"~{walk} мин пешком" if walk is not None else "переход в другой зал"
+    if cur.hall_id == nxt.hall_id:
+        return {"kind": "ok", "icon": "bi-geo-alt-fill",
+                "text": f"Остаёмся в том же зале • {_hm(gap)} до следующего концерта"}
+    nh = session.get(Hall, nxt.hall_id)
+    nxt_hall = nh.name if nh else "следующий зал"
+    sv = status.value
+    if sv == "overlap":
+        return {"kind": "bad", "icon": "bi-exclamation-triangle",
+                "text": "Накладка по времени — следующий концерт начинается раньше"}
+    if sv == "hurry":
+        return {"kind": "bad", "icon": "bi-stopwatch",
+                "text": f"Нужно поторопиться • {_hm(gap)} между концертами • {walk_txt}"}
+    if sv == "tight":
+        return {"kind": "warn", "icon": "bi-hourglass-split",
+                "text": f"Впритык по времени • {_hm(gap)} между концертами • {walk_txt}"}
+    if sv == "same_building":
+        return {"kind": "ok", "icon": "bi-building",
+                "text": f"Остаёмся в том же здании • {_hm(gap)} между концертами • переход в другой зал: {walk_txt}"}
+    return {"kind": "ok", "icon": "bi-person-walking",
+            "text": f"Переходим в → {nxt_hall} • {walk_txt} • {_hm(gap)} до следующего концерта"}
 
 
 def _sheet_view(session: Session, sheet: RouteSheet) -> dict:
@@ -119,15 +152,6 @@ def _sheet_view(session: Session, sheet: RouteSheet) -> dict:
         RouteSheetItem.route_sheet_id == sheet.id)).all()
     pinned = {r.concert_id: r.is_pinned for r in rows}
     conflicts = sheets.conflicts_in(session, sheet)
-    items = []
-    prev_d = None
-    for c, trans in sheets.chain_with_transitions(session, sheet):
-        d = _concert_disp(session, c.id)
-        d["pinned"] = pinned.get(c.id, False)
-        d["transition"] = _transition_disp(trans, prev_d, d)
-        d["conflict"] = conflicts.get(c.id, [])
-        items.append(d)
-        prev_d = d
 
     # подсказки группируем по «щели»: (после какого, перед каким концертом встают)
     slots: dict = {}
@@ -135,20 +159,35 @@ def _sheet_view(session: Session, sheet: RouteSheet) -> dict:
         d = _concert_disp(session, s.concert_id)
         d.update(transition_minutes=s.transition_minutes, is_repeat=s.is_repeat)
         slots.setdefault((s.after_id, s.before_id), []).append(d)
-    # границы таймлайна: перед первым, между парами, после последнего — каждая со своими кандидатами
-    boundaries = []
-    n = len(items)
-    for i in range(n + 1):
-        after = items[i - 1]["id"] if i > 0 else None
-        before = items[i]["id"] if i < n else None
-        boundaries.append({"candidates": slots.get((after, before), []),
-                           "concert": items[i] if i < n else None})
 
+    chain = sheets.chain_with_transitions(session, sheet)
+    n = len(chain)
+    items, prev_day = [], None
+    for i, (c, _trans_from_prev) in enumerate(chain):
+        d = _concert_full(session, c)
+        d["pinned"] = pinned.get(c.id, False)
+        d["conflict"] = conflicts.get(c.id, [])
+        d["day_first"] = c.festival_day_id != prev_day
+        fday = session.get(FestivalDay, c.festival_day_id) if c.festival_day_id else None
+        d["day"] = _ru_date(fday.day if fday else None)
+        prev_day = c.festival_day_id
+        if i + 1 < n:  # переход и щель крепятся к ТЕКУЩЕЙ карточке (сначала время, потом варианты)
+            nxt, nxt_trans = chain[i + 1]
+            d["transition_next"] = _transition_plate(nxt_trans, c, nxt, session)
+            d["slot_after"] = slots.get((c.id, nxt.id), [])
+            d["next_title"] = nxt.title
+        else:
+            d["transition_next"] = None
+            d["slot_after"] = slots.get((c.id, None), [])
+            d["next_title"] = None
+        items.append(d)
+
+    slot_before = slots.get((None, items[0]["id"]), []) if items else slots.get((None, None), [])
     offprogram = [{"title": o.title, "is_recommended": o.is_recommended,
                    "transition_minutes": o.transition_minutes}
                   for o in sheets.suggest_off_program(session, sheet)]
     # SimpleNamespace, чтобы view.items в шаблоне не коллизировал с dict.items
-    return SimpleNamespace(sheet=sheet, items=items, boundaries=boundaries,
+    return SimpleNamespace(sheet=sheet, items=items, slot_before=slot_before,
                            offprogram=offprogram, summary=sheets.route_summary(session, sheet),
                            has_conflicts=any(conflicts.values()))
 
