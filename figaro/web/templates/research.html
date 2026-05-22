@@ -20,6 +20,7 @@
     <article>
       <strong>🗺️ {{ overview.available_routes }} / {{ overview.day_routes }}</strong><br>
       <span class="muted">маршрутов доступно / всего</span>
+      {% if enumerated %}<br><span class="muted" style="font-size:.78rem">перечислено путей: {{ enumerated }} (потолок 50 000/день)</span>{% endif %}
     </article>
     <article><strong>🏛️ {{ overview.halls }}</strong><br><span class="muted">залов</span></article>
     <article><strong>🎭 {{ overview.archetypes }}</strong><br><span class="muted">архетипов</span></article>

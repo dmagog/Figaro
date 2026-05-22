@@ -27,6 +27,23 @@ def festival_overview(session: Session, festival_id: int) -> Dict[str, int]:
             "on_sale": on_sale, "sold_out": len(concerts) - on_sale}
 
 
+def enumerated_route_total(session: Session, festival_id: int) -> int:
+    """Сколько путей перечисляется до Парето-отсева (dev-метрика «сжатия»; с потолком перечисления)."""
+    from figaro.batch.precompute import _concert_lite, build_resolver
+    from figaro.domain.models import FestivalDay
+    from figaro.domain.routing.dayroutes import build_day_routes
+
+    resolver = build_resolver(session, festival_id)
+    total = 0
+    for day in session.exec(select(FestivalDay).where(
+            FestivalDay.festival_id == festival_id)).all():
+        concerts = session.exec(select(Concert).where(
+            Concert.festival_id == festival_id, Concert.festival_day_id == day.id)).all()
+        if concerts:
+            total += len(build_day_routes([_concert_lite(session, c) for c in concerts], resolver))
+    return total
+
+
 def archetype_supply(session: Session, festival_id: int) -> List[dict]:
     """Сколько предрассчитанных маршрутов на архетип + средние comfort/diversity."""
     titles = {a.id: (a.key, a.title) for a in session.exec(

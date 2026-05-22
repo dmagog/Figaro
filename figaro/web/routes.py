@@ -59,6 +59,11 @@ TRANSITION_UI = {
     "no_data": ("bi-question-circle", "нет данных о переходе", "muted"),
 }
 
+# архетипы маршрутов → bootstrap-иконка и порядок вывода в подборе
+ARCHETYPE_ICON = {"marathon": "bi-lightning-charge-fill", "comfort": "bi-emoji-smile",
+                  "explorer": "bi-compass", "deep": "bi-bullseye", "other": "bi-collection"}
+ARCHETYPE_ORDER = ["marathon", "comfort", "explorer", "deep"]
+
 
 def _concert_disp(session: Session, concert_id: int) -> dict:
     c = session.get(Concert, concert_id)
@@ -307,14 +312,22 @@ def recommend_page(request: Request, user=Depends(current_user),
     if fest is not None:
         has_prefs = load_prefs(session, user.id, fest.id) is not None
         prof = profile_for_user(session, user.id, fest.id)
-        titles = {a.key: a.title for a in session.exec(
+        meta = {a.key: (a.title, a.description) for a in session.exec(
             select(Archetype).where(Archetype.festival_id == fest.id)).all()}
         res = recommend(session, fest.id, prof)
+        chosen = {}
         for key, cards in res.items():
             # темп анкеты влияет на длину маршрута: фильтр по числу концертов (с релаксацией)
             cards = relax_by_concert_count(cards, 1, prof.target_max_concerts)[0]
             if cards:
-                groups.append({"title": titles.get(key, key), "cards": cards})
+                chosen[key] = cards
+        order = ARCHETYPE_ORDER + [k for k in chosen if k not in ARCHETYPE_ORDER]
+        for key in order:
+            if key not in chosen:
+                continue
+            title, desc = meta.get(key, (key, ""))
+            groups.append({"key": key, "title": title, "description": desc,
+                           "icon": ARCHETYPE_ICON.get(key, "bi-collection"), "cards": chosen[key]})
     return _page(request, "recommend.html", user,
                  {"festival": fest, "groups": groups, "has_prefs": has_prefs})
 
@@ -417,9 +430,11 @@ def research(request: Request, user=Depends(current_user),
         return RedirectResponse("/login", status_code=303)
     _require_research(user)
     fest = get_active(session)
-    ctx = {"festival": fest, "overview": None, "supply": [], "timeline": [], "customers": None}
+    ctx = {"festival": fest, "overview": None, "supply": [], "timeline": [],
+           "customers": None, "enumerated": None}
     if fest is not None:
         ctx["overview"] = analytics.festival_overview(session, fest.id)
+        ctx["enumerated"] = analytics.enumerated_route_total(session, fest.id)
         ctx["supply"] = analytics.archetype_supply(session, fest.id)
         ctx["timeline"] = analytics.availability_timeline(session, fest.id)
         ctx["customers"] = analytics.customer_purchase_counts(session, fest.id)

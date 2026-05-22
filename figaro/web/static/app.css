@@ -120,5 +120,16 @@ main.container { padding-block: 1.5rem 3rem; }
 .concert-card--cand { border-style: dashed; }
 
 /* карточки подбора */
-.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .9rem; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: .9rem; }
 .cards article { margin: 0; }
+.archetype-desc { margin-top: -.4rem; }
+.route-card { display: flex; flex-direction: column; gap: .55rem; }
+.route-card__head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.route-card__cost { font-weight: 700; color: var(--brand-dark); white-space: nowrap; }
+.route-card__count { font-size: 1.05rem; }
+.route-card__metrics { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap;
+  gap: .3rem .9rem; font-size: .84rem; color: var(--muted); }
+.route-card__metrics li { display: flex; align-items: center; gap: .3rem; }
+.route-card__authors { font-size: .85rem; margin: 0; }
+.route-card form { margin: 0; }
+.route-card button { width: 100%; margin: 0; }

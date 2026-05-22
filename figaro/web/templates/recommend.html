@@ -21,22 +21,29 @@
 {% else %}
   {% for group in groups %}
   <section class="section">
-    <h3>{{ group.title }}</h3>
+    <h3><i class="bi {{ group.icon }}"></i> {{ group.title }}</h3>
+    {% if group.description %}<p class="muted archetype-desc">{{ group.description }}</p>{% endif %}
     <div class="cards">
       {% for card in group.cards %}
-      <article>
-        <div class="row">
-          <strong><i class="bi bi-music-note-beamed"></i> {{ card.concerts_count }} концерт(ов)</strong>
-          <span class="muted"><i class="bi bi-cash-coin"></i> {{ card.cost_kopecks | rub }}</span>
+      <article class="route-card">
+        <header class="route-card__head">
+          <span class="chip chip--brand"><i class="bi {{ group.icon }}"></i> {{ group.title }}</span>
+          <span class="route-card__cost"><i class="bi bi-cash-coin"></i> {{ card.cost_kopecks | rub }}</span>
+        </header>
+        <div class="route-card__count">
+          <i class="bi bi-music-note-beamed"></i> <strong>{{ card.concerts_count }} концерт(ов)</strong>
         </div>
-        <p class="muted">
-          <i class="bi bi-person-walking"></i> переходы {{ card.transition_minutes }} мин ·
-          <i class="bi bi-hourglass-split"></i> ожидание {{ card.wait_minutes }} мин
-          {% if card.key_authors %}<br><i class="bi bi-people"></i> {{ card.key_authors | join(", ") }}{% endif %}
-        </p>
+        <ul class="route-card__metrics">
+          <li><i class="bi bi-person-walking"></i> переходы {{ card.transition_minutes }} мин</li>
+          <li><i class="bi bi-hourglass-split"></i> ожидание {{ card.wait_minutes }} мин</li>
+          <li><i class="bi bi-shuffle"></i> разнообразие {{ card.diversity_score | int }}</li>
+        </ul>
+        {% if card.key_authors %}
+        <p class="muted route-card__authors"><i class="bi bi-people"></i> {{ card.key_authors | join(", ") }}</p>
+        {% endif %}
         <form method="post" action="/sheet/from-route/{{ card.id }}">
           <input type="hidden" name="csrf" value="{{ csrf }}">
-          <button type="submit">Открыть как маршрутный лист</button>
+          <button type="submit"><i class="bi bi-map"></i> Открыть как маршрутный лист</button>
         </form>
       </article>
       {% endfor %}
